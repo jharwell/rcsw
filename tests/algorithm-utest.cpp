@@ -22,16 +22,14 @@
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-char th_multiply_cb(
-    char x,
-    char y) {
+static char th_multiply_cb(char x, char y) {
   if (x == 'a' && y == 'b') {
     return 'a';
   }
   return 'b';
 } /* th_multiply_cb */
 
-bool_t th_char_cmp(const void* const e1, const void* const e2) {
+static bool_t th_char_cmp(const void* const e1, const void* const e2) {
   return (bool_t)(*((const char*)e1) == *((const char*)e2));
 } /* th_char_cmp() */
 /*******************************************************************************

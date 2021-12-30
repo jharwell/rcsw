@@ -37,7 +37,7 @@
 /*******************************************************************************
  * Forward Declarations
  ******************************************************************************/
-int sort_cmpe(const void* const e1, const void* const e2) {
+static int sort_cmpe(const void* const e1, const void* const e2) {
   return *(int*)e1 - *(int*)e2;
 }
 
@@ -46,7 +46,7 @@ int sort_cmpe(const void* const e1, const void* const e2) {
  ******************************************************************************/
 CATCH_TEST_CASE("Insertion Sort Test","[sort]") {
     struct element_set data(DATA_SIZE);
-    /* data.data_gen(); */
+    data.data_gen();
     insertion_sort(data.elts(),DATA_SIZE,sizeof(struct element),th_cmpe);
     /* for (int i = 0; i < DATA_SIZE-2; ++i) { */
       /* CATCH_REQUIRE(th_cmpe(data.elts()+i,data.elts()+i+1) <= 0); */

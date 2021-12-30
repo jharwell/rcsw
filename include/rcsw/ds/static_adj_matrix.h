@@ -1,25 +1,7 @@
 /**
- * @file static_adj_matrix.h
- * @ingroup ds
- * @brief Implementation of adjacency matrix representation of a "static" graph.
+ * \file static_adj_matrix.h
  *
- * Static in the sense that the # of vertices in the graph cannot be changed
- * after initialization. Graphs can be both weighted/unweighted,
- * directed/undirected, per configuration. However, you can't have an undirected
- * graph that is weighted.
- *
- * Sentinel values in the matrix used for detecting if an edge exists are 0 for
- * undirected graphs, and NAN for directed graphs, so don't use those values for
- * valid edges (though why would you?).
- *
- * Pros: Removing edges takes O(1). Queries like "is there an edge from vertex u
- * to vertex v" are efficient and can be done in O(1).
- *
- * Cons: Consumes O(V^2) space, regardless of # edges (i.e. don't use this for
- * sparse graphs). Also you cannot use this data structure if the max # of edges
- * in the graph is not known a priori.
- *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -55,8 +37,24 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Adjacency matrix representation of a graph.
+ * @ingroup ds
+ * @brief Implementation of adjacency matrix representation of a "static" graph.
  *
+ * Static in the sense that the # of vertices in the graph cannot be changed
+ * after initialization. Graphs can be both weighted/unweighted,
+ * directed/undirected, per configuration. However, you can't have an undirected
+ * graph that is weighted.
+ *
+ * Sentinel values in the matrix used for detecting if an edge exists are 0 for
+ * undirected graphs, and NAN for directed graphs, so don't use those values for
+ * valid edges (though why would you?).
+ *
+ * Pros: Removing edges takes O(1). Queries like "is there an edge from vertex u
+ * to vertex v" are efficient and can be done in O(1).
+ *
+ * Cons: Consumes O(V^2) space, regardless of # edges (i.e. don't use this for
+ * sparse graphs). Also you cannot use this data structure if the max # of edges
+ * in the graph is not known a priori.
  */
 struct static_adj_matrix {
   bool_t is_directed;            /// Is the graph directed?
@@ -119,7 +117,7 @@ static inline size_t static_adj_matrix_space(size_t n_vertices, bool_t is_weight
  */
 static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* const matrix,
                                             size_t u, size_t v) {
-  RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_vertices,
+  RCSW_FPC_NV(FALSE, NULL != matrix, u < matrix->n_vertices,
             v < matrix->n_vertices);
   if (matrix->is_weighted) {
     return (bool_t)(!isnan(*(double*)static_adj_matrix_access(matrix, u, v)));

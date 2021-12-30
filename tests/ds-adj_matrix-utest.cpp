@@ -1,5 +1,5 @@
 /**
- * @file adj_matrix-test.cpp
+ * @file ds-adj_matrix-test.cpp
  *
  * Test of adjacency matrix (static only at the moment...)
  *
@@ -36,10 +36,11 @@ extern "C" {
    */
 #include <cmath>
 using std::isnan;
+}
+
 #include "rcsw/ds/static_adj_matrix.h"
 #include "rcsw/common/dbg.h"
 #include "tests/ds_test.h"
-}
 
 /*******************************************************************************
  * Test Functions
@@ -48,6 +49,7 @@ using std::isnan;
 void static_edge_add_test(struct ds_params* params);
 void static_edge_remove_test(struct ds_params* params);
 void static_transpose_test(struct ds_params* params);
+void test_runner(void (*test)(struct ds_params *params));
 
 /*******************************************************************************
  * Test Helper Functions

@@ -42,7 +42,7 @@ static void transpose_test(struct ds_params* params);
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-void test_runner(void (*test)(struct ds_params *params)) {
+static void test_runner(void (*test)(struct ds_params *params)) {
   dbg_init();
   dbg_insmod(M_TESTING,"Testing");
   dbg_insmod(M_DS_STATIC_MATRIX,"STATIC_MATRIX");

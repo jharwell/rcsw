@@ -123,8 +123,18 @@
     RCSW_WARNING_DISABLE(-Wstack-protector)
 #define RCSW_WARNING_DISABLE_FUNC_CAST(...) \
   RCSW_WARNING_DISABLE(-Wbad-function-cast)
+
+/*
+ * Needed when compiling C++ unit tests for C code to suppress
+ * spurious warnings.
+*/
+#if !defined(__cplusplus)
 #define RCSW_WARNING_DISABLE_STRICT_PROTO(...) \
   RCSW_WARNING_DISABLE(-Wstrict-prototypes)
+#else
+#define RCSW_WARNING_DISABLE_STRICT_PROTO(...)
+#endif /* __cplusplus */
+
 #define RCSW_WARNING_DISABLE_FLOAT_EQUAL(...) \
   RCSW_WARNING_DISABLE(-Wfloat-equal)
 

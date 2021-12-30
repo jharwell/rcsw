@@ -26,6 +26,7 @@
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
+
 #include "rcsw/utils/utils.h"
 #include "rcsw/utils/checksum.h"
 #include "rcsw/utils/hash.h"
