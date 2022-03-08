@@ -50,7 +50,6 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
             params->el_size > 0);
 
   struct rbuffer* rb = NULL;
-
   if (params->flags & DS_APP_DOMAIN_HANDLE) {
     RCSW_CHECK_PTR(rb_in);
     rb = rb_in;

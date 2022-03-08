@@ -94,6 +94,7 @@ pid_t procm_fork_exec(char** const cmd,
     execv(cmd[0], cmd);
     perror(NULL);
     assert(0); /* execv() should never return */
+    exit(EXIT_FAILURE);
   } else {
     return pid;
   }

@@ -190,8 +190,8 @@
 #define RCSW_UNLIKELY(x) __builtin_expect((x), 0)
 
 /**
- * @def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer to an array) in
- * bytes.
+ * @def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
+ * to an array) in bytes.
  */
 #define RCSW_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
