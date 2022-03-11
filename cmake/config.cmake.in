@@ -1,6 +1,6 @@
 @PACKAGE_INIT@
 
-set(@PROJECT_NAME@_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(rcsw_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 set(rcsw_common_FOUND @rcsw_common_FOUND@)
 set(rcsw_algorithm_FOUND @rcsw_algorithm_FOUND@)
