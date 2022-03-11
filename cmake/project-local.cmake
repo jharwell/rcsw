@@ -105,31 +105,44 @@ foreach(component ${rcsw_FIND_COMPONENTS})
   endif()
 endforeach()
 
+set(rcsw_LIBRARY rcsw)
 add_library(
-  rcsw
+  ${rcsw_LIBRARY}
   STATIC
   ${rcsw_components_SRC}
   )
 
-target_link_libraries(rcsw pthread dl)
+execute_process(COMMAND git rev-list --count HEAD
+  OUTPUT_VARIABLE RCSW_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(rcsw_LIBRARY_NAME rcsw-v${RCSW_VERSION})
+set_target_properties(${rcsw_LIBRARY} PROPERTIES OUTPUT_NAME ${rcsw_LIBRARY_NAME})
 
+########################################
+# Include directories
+########################################
 target_include_directories(
-  rcsw
+  ${rcsw_LIBRARY}
   SYSTEM PUBLIC
   $<BUILD_INTERFACE:${rcsw_DIR}/ext>
   )
 target_include_directories(
-  rcsw
+  ${rcsw_LIBRARY}
   PUBLIC
   $<BUILD_INTERFACE:${rcsw_DIR}/include>
   )
 
+########################################
+# Link Libraries
+########################################
+target_link_libraries(${rcsw_LIBRARY} pthread dl)
+
 ################################################################################
 # Installation                                                                 #
 ################################################################################
-configure_exports_as(rcsw ${CMAKE_INSTALL_PREFIX})
-register_target_for_install(rcsw ${CMAKE_INSTALL_PREFIX})
-register_headers_for_install(include/rcsw ${CMAKE_INSTALL_PREFIX})
+configure_exports_as(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+register_target_for_install(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+register_headers_for_install(include/${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 
 ################################################################################
 # Status                                                                       #
