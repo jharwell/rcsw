@@ -1,7 +1,7 @@
 /**
- * @file exception.h
- * @ingroup common
- * @brief Exception handling in C (woot woot!)
+ * \file exception.h
+ * \ingroup common
+ * \brief Exception handling in C (woot woot!)
  *
  * Taken from online source and modified (original copyright below).
  */
@@ -40,7 +40,7 @@
  */
 
 /**
- * @brief Start of a try-catch block (just like in OOP languages)
+ * \brief Start of a try-catch block (just like in OOP languages)
  *
  */
 #define TRY                                     \
@@ -50,7 +50,7 @@
         case 0:                                 \
             while (1) {
 /**
- * @brief Catch an exception. In C, this is a number which can be anything your
+ * \brief Catch an exception. In C, this is a number which can be anything your
  * platform supports.
  */
 #define CATCH(x)                                \
@@ -58,7 +58,7 @@
 case x:
 
 /**
- * @brief A finally block, just like in OOP languages
+ * \brief A finally block, just like in OOP languages
  *
  */
 #define FINALLY                                 \
@@ -72,7 +72,7 @@ default:
     } while (0)
 
 /**
- * @brief Throw an exception, which in C is just an integer
+ * \brief Throw an exception, which in C is just an integer
  */
 #define THROW(x) longjmp(ex_buf__, x)
 

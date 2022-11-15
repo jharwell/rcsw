@@ -1,7 +1,7 @@
 /**
- * @file int_tree.c
+ * \file int_tree.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -35,12 +35,12 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Compare two intervals to see if they overlap
+ * \brief Compare two intervals to see if they overlap
  *
- * @param a Interval #1
- * @param b Interval #2
+ * \param a Interval #1
+ * \param b Interval #2
  *
- * @return TRUE if intervals overlap, FALSE otherwise
+ * \return TRUE if intervals overlap, FALSE otherwise
  */
 static bool_t int_tree_cmp_overlap(const void* a, const void* b);
 

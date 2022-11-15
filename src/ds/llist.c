@@ -1,7 +1,7 @@
 /**
- * @file llist.c
+ * \file llist.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

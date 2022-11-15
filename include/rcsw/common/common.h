@@ -1,9 +1,9 @@
 /**
- * @file common.h
- * @ingroup common
- * @brief Definitions, etc. common to all of RCSW.
+ * \file common.h
+ * \ingroup common
+ * \brief Definitions, etc. common to all of RCSW.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -55,19 +55,19 @@
 #define RCSW_JOIN_(x, y) x##y /* don't use this one */
 
 /**
- * @def RCSW_XSTR(X) Stringification. Use when you need to stringify the result
+ * \def RCSW_XSTR(X) Stringification. Use when you need to stringify the result
  * of a macro expansion.
  */
 #define RCSW_XSTR(X) RCSW_XSTR_(X)
 
 /**
- * @def RCSW_JOIN(x, y) Stringification. Use when you need to join two tokens
+ * \def RCSW_JOIN(x, y) Stringification. Use when you need to join two tokens
  * ``x`` and ``y`` together.
  */
 #define RCSW_JOIN(x, y) RCSW_JOIN_(x, y)
 
 /**
- * @def RCSW_UNIQUE_ID(prefix)
+ * \def RCSW_UNIQUE_ID(prefix)
  *
  * Generate a translation unit unique identifier using gcc's __COUNTER__.
  */
@@ -79,7 +79,7 @@
  * Comparison Macros
  ******************************************************************************/
 /**
- * @def RCSW_MIN_(t1, t2, min1, min2, a, b)
+ * \def RCSW_MIN_(t1, t2, min1, min2, a, b)
  *
  * Gets the minimum of (\a a, \a b) while also performing a type comparison. If
  * the arguments do not have the same type, a compiler warning will be
@@ -94,7 +94,7 @@
       (min1) < (min2) ? (min1) : (min2); })
 
 /**
- * @def RCSW_MAX_(t1, t2, min1, min2, a, b)
+ * \def RCSW_MAX_(t1, t2, min1, min2, a, b)
  *
  * Gets the maximum of (\a a, \a b) while also performing a type comparison. If
  * the arguments do not have the same type, a compiler warning will be
@@ -109,7 +109,7 @@
       (max1) > (max2) ? (max1) : (max2); })
 
 /**
- * @def RCSW_MIN(a, b) Returns a type-same minimum of its arguments (compiler
+ * \def RCSW_MIN(a, b) Returns a type-same minimum of its arguments (compiler
  * warnings for unsafe comparisons of different types).
  */
 #define RCSW_MIN(a, b)                          \
@@ -118,13 +118,13 @@
         a, b)
 
 /**
- * @def RCSW_MIN(a, b, c) Returns a type-same minimum of its arguments (compiler
+ * \def RCSW_MIN(a, b, c) Returns a type-same minimum of its arguments (compiler
  * warnings for unsafe comparisons of different types).
  */
 #define RCSW_MIN3(a, b, c) RCSW_MIN((typeof(a))RCSW_MIN(a, b), c)
 
 /**
- * @def RCSW_MAX(a, b) Returns a type-same maximum of its arguments (compiler
+ * \def RCSW_MAX(a, b) Returns a type-same maximum of its arguments (compiler
  * warnings for unsafe comparisons of different types).
  */
 #define RCSW_MAX(a, b)                                    \
@@ -134,13 +134,13 @@
 
 
 /**
- * @def RCSW_MAX(a, b, c) Returns a type-same maximum of its arguments (compiler
+ * \def RCSW_MAX(a, b, c) Returns a type-same maximum of its arguments (compiler
  * warnings for unsafe comparisons of different types).
  */
 #define RCSW_MAX3(a, b, c) RCSW_MAX((typeof(a))RCSW_MAX(a, b), c)
 
 /**
- * @def RCSW_IS_ODD(n)
+ * \def RCSW_IS_ODD(n)
  *
  * Readability macro for determining if something is odd.
  *
@@ -150,7 +150,7 @@
 #define RCSW_IS_ODD(n) ((n)&1U)
 
 /**
- * @def RCSW_IS_EVEN(n)
+ * \def RCSW_IS_EVEN(n)
  *
  * Readability macro for determining if something is even.
  *
@@ -160,7 +160,7 @@
 #define RCSW_IS_EVEN(n) (!RCSW_IS_ODD((n)))
 
 /**
- * @def RCSW_IS_BETWEEN(n, low, high)
+ * \def RCSW_IS_BETWEEN(n, low, high)
  *
  * Readability macro for determining if something is between an upper and lower
  * bound (inclusive).
@@ -174,7 +174,7 @@
  * Other Macros
  ******************************************************************************/
 /**
- * @def RCSW_LIKELY(x)
+ * \def RCSW_LIKELY(x)
  *
  * Inform the compiler that a conditional branch is almost certain to be taken,
  * for optimization purposes.
@@ -182,7 +182,7 @@
 #define RCSW_LIKELY(x) __builtin_expect((x), 1)
 
 /**
- * @def RCSW_UNLIKELY(x)
+ * \def RCSW_UNLIKELY(x)
  *
  * Inform the compiler that a conditional branch is almost certain not to be
  * taken, for optimization purposes.
@@ -190,7 +190,7 @@
 #define RCSW_UNLIKELY(x) __builtin_expect((x), 0)
 
 /**
- * @def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
+ * \def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
  * to an array) in bytes.
  */
 #define RCSW_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -200,13 +200,13 @@
         (type *)( (char *)__mptr - offsetof(type, member) );})
 
 /**
- * @def RCSW_FIELD_SIZEOF(t, f)
+ * \def RCSW_FIELD_SIZEOF(t, f)
  * Get the size of a field in a struct \a t named \a f.
  */
 #define RCSW_FIELD_SIZEOF(t, f) (sizeof(((t *)0)->f))
 
 /**
- * @brief Masking macros. Get the upper/lower 16 or 32 bits of a 32 or 64 bit
+ * \brief Masking macros. Get the upper/lower 16 or 32 bits of a 32 or 64 bit
  * number, respectively.
  *
  * Note that these macros cast their arguments as UNSIGNED integers, so using
@@ -218,7 +218,7 @@
 #define RCSW_LOWER32(n) ((uint32_t)((n)))
 
 /**
- * @def RCSW_CHECK(cond) Check a condition in a function.
+ * \def RCSW_CHECK(cond) Check a condition in a function.
  *
  * If condition is not true, go to the error/bailout section for function (you
  * must have a label called \c error in your function).
@@ -229,7 +229,7 @@
     }
 
 /**
- * @def RCSW_CHECK_PTR(ptr) Check a pointer \a ptr in a function.
+ * \def RCSW_CHECK_PTR(ptr) Check a pointer \a ptr in a function.
  *
  * If \a ptr is NULL, go to the error/bailout section for function (you
  * must have a label called \c error in your function).
@@ -237,7 +237,7 @@
 #define RCSW_CHECK_PTR(ptr) RCSW_CHECK(NULL != (ptr))
 
 /**
- * @def RCSW_CHECK_FD(fd) Check a file descriptor \a fdin a function.
+ * \def RCSW_CHECK_FD(fd) Check a file descriptor \a fdin a function.
  *
  * If the descriptor \a fdis invalid (i.e. < 0), go to the error/bailout section
  * for function (you must have a label called \c error in your function).
@@ -247,7 +247,7 @@
 /*******************************************************************************
  * Tricky Variadac Macro Manipulation
  ******************************************************************************/
-/* @cond INTERNAL */
+/* \cond INTERNAL */
 /* 3 Helper macros--don't use them */
 #define RCSW_VAR_NARG_(...) VAR_ARG_N(__VA_ARGS__)
 #define RCSW_VAR_ARG_N(                                                      \
@@ -268,7 +268,7 @@
         14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 /**
- * @brief XFOR_EACH() macro helpers. (You should never ever use these)
+ * \brief XFOR_EACH() macro helpers. (You should never ever use these)
  *
  * WHAT is the name of the macro/function that each arg of __VA_ARGS__ is
  * successively passed to.
@@ -326,7 +326,7 @@
 #define RCSW_XFE1_50(WHAT, X, ...) WHAT(X) RCSW_XFE1_49(WHAT, __VA_ARGS__)
 
 /**
- * @brief XFOR_EACH2() macro helpers. (You should never ever use these)
+ * \brief XFOR_EACH2() macro helpers. (You should never ever use these)
  *
  * WHAT is the name of the macro/function that each arg of __VA_ARGS__ is
  * successively passed to.
@@ -384,7 +384,7 @@
 #define RCSW_XFE2_50(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_49(WHAT, v, __VA_ARGS__)
 
 /**
- * @brief Helper macro to get the name of the XFOR_EACH[1,2]() helper macro for the
+ * \brief Helper macro to get the name of the XFOR_EACH[1,2]() helper macro for the
  * current iteration. Don't ever use it.
  */
 #define RCSW_XGET_MACRO(                                                     \
@@ -424,10 +424,10 @@
       RCSW_XFE2_10, RCSW_XFE2_9, RCSW_XFE2_8, RCSW_XFE2_7, RCSW_XFE2_6, \
       RCSW_XFE2_5, RCSW_XFE2_4, RCSW_XFE2_3, RCSW_XFE2_2, RCSW_XFE2_1)  \
       (action, v, __VA_ARGS__)
-/* @endcond */
+/* \endcond */
 
 /**
- * @brief Tricky preprocessor awesomeness to get the # of arguments passed to a
+ * \brief Tricky preprocessor awesomeness to get the # of arguments passed to a
  * variadac macro.
  *
  * It works by using the fact that __VA_ARGS__ is a comma-separated list of
@@ -440,7 +440,7 @@
  * Enum Generation Macros
  ******************************************************************************/
 /**
- * @brief RCSW_XTABLE_STR(X) is a string representation of a token passed to
+ * \brief RCSW_XTABLE_STR(X) is a string representation of a token passed to
  * RCSW_XFOR_EACH().  An \ref RCSW_XTABLE_ENUM is just an entry within an enum.
  *
  * Don't use these.
@@ -449,7 +449,7 @@
 #define RCSW_XTABLE_ENUM(X) X,
 
 /**
- * @brief RCSW_XGEN_STRS(...) The actual table generation macros. These are VERY
+ * \brief RCSW_XGEN_STRS(...) The actual table generation macros. These are VERY
  * useful if you want to generate a table of strings from a set of tokens and/or
  * a table of enums from a set of tokens.
  *
@@ -476,13 +476,13 @@
 /*******************************************************************************
  * General Macros
  ******************************************************************************/
-/* @cond INTERNAL */
+/* \cond INTERNAL */
 #define STATIC_ASSERT_HELPER(expr, msg)                                 \
     (!!sizeof(struct { size_t int STATIC_ASSERTION__##msg : (expr) ? 1 : -1; }))
-/* @endcond */
+/* \endcond */
 
 /**
- * @brief Compile time asserts for size, alignment, etc.
+ * \brief Compile time asserts for size, alignment, etc.
  *
  * Note that the message can't have spaces (i.e. this will fail):
  *

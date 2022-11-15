@@ -1,9 +1,9 @@
 /**
- * @file rbuffer-test.cpp
+ * \file rbuffer-test.cpp
  *
  * Test of rbuffer module.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -45,34 +45,34 @@ extern "C" {
  * Test Functions
  ******************************************************************************/
 /**
- * @brief Test adding things to the rbuffer and then reading them out
+ * \brief Test adding things to the rbuffer and then reading them out
  */
 static void rdwr_test(int len, struct ds_params *  params);
 
 /**
- * @brief Test adding/removing things from the rbuffer in tandem, including
+ * \brief Test adding/removing things from the rbuffer in tandem, including
  * overwrites.
  */
 static void overwrite_test(int len, struct ds_params *  params);
 
 /**
- * @brief Test of \ref rbuffer_map()
+ * \brief Test of \ref rbuffer_map()
  */
 static void map_test(int len, struct ds_params *  params);
 
 /**
- * @brief Test using the rbuffer as a FIFO
+ * \brief Test using the rbuffer as a FIFO
  */
 static void fifo_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref rbuffer_inject()
+ * \brief Test of \ref rbuffer_inject()
  *
  */
 static void inject_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of rbuffer iteration
+ * \brief Test of rbuffer iteration
  */
 static void iter_test(int len, struct ds_params * params);
 

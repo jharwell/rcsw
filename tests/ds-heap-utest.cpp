@@ -1,9 +1,9 @@
 /**
- * @file heap_test.cpp
+ * \file heap_test.cpp
  *
  * Test of binary heap.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -41,18 +41,18 @@ extern "C" {
  * Test Function Forward Declarations
  ******************************************************************************/
 /**
- * @brief Test adding data to the heap in order, in reverse order, or
+ * \brief Test adding data to the heap in order, in reverse order, or
  * in a random order.
  */
 static void insert_test(int type, struct ds_params* params);
 
 /**
- * @brief Test of \ref bin_heap_delete_key()
+ * \brief Test of \ref bin_heap_delete_key()
  */
 static void delete_test(int type, struct ds_params* params);
 
 /**
- * @brief Test of \ref bin_heap_make()
+ * \brief Test of \ref bin_heap_make()
  */
 static void make_test(int type, struct ds_params* params);
 

@@ -1,9 +1,9 @@
 /**
- * @file stdio-test.cpp
+ * \file stdio-test.cpp
  *
  * Test of simple stdio library.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

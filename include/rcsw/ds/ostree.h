@@ -1,11 +1,11 @@
 /**
- * @file ostree.h
- * @ingroup ds
- * @brief Order Statistics Tree implementation.
+ * \file ostree.h
+ * \ingroup ds
+ * \brief Order Statistics Tree implementation.
  *
  * Built on top of \ref bstree.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,7 +34,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief A node in an ostree, derived from a bstree_node (share common fields).
+ * \brief A node in an ostree, derived from a bstree_node (share common fields).
  */
 struct ostree_node {
     uint8_t key[BSTREE_NODE_KEYSIZE];
@@ -88,34 +88,34 @@ struct ostree_node {
 BEGIN_C_DECLS
 
 /**
- * @brief Select the ith smallest element in the OS-Tree.
+ * \brief Select the ith smallest element in the OS-Tree.
  *
- * @param tree The ostree handle.
- * @param node The node to start searching at (should probably be the root).
- * @param i The element rank to select.
+ * \param tree The ostree handle.
+ * \param node The node to start searching at (should probably be the root).
+ * \param i The element rank to select.
  *
- * @return The ith smallest element, or NULL if no such element or an error
+ * \return The ith smallest element, or NULL if no such element or an error
  * occurred.
  */
 struct ostree_node* ostree_select(const struct bstree* tree,
                                   struct bstree_node * node_in, size_t i);
 
 /**
- * @brief Get the rank of an element within an OS-tree.
+ * \brief Get the rank of an element within an OS-tree.
  *
- * @param tree The ostree handle.
- * @param node The node to get the rank of.
+ * \param tree The ostree handle.
+ * \param node The node to get the rank of.
  *
- * @return The rank, or -1 on ERROR.
+ * \return The rank, or -1 on ERROR.
  */
 int ostree_rank(const struct bstree * tree,
                 const struct ostree_node* node);
 
 /**
- * @brief Initialize OSTree specific bits of a BST.
+ * \brief Initialize OSTree specific bits of a BST.
  *
  * Do not call this function directly.
- * @param tree The ostree handle.
+ * \param tree The ostree handle.
  */
 void ostree_init_helper(struct bstree* tree);
 

@@ -1,14 +1,14 @@
 /**
- * @file test_frmwk.h
- * @ingroup common
- * @brief Simple testing framework.
+ * \file test_frmwk.h
+ * \ingroup common
+ * \brief Simple testing framework.
  *
  * This should really only be used if you do not have access to a C++ test
  * framework (i.e. on an embedded platform). It's something I hacked together in
  * a few hours that violates a whole bunch of good programming practices. It
  * isn't that elegant either. But it WORKS, and can be a time saver.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -37,7 +37,7 @@
  * Constant Definitions
  ******************************************************************************/
 /**
- * @brief Function pointer type tags used by the application to determine #
+ * \brief Function pointer type tags used by the application to determine #
  * params, type when using variable argument function pointers.
  */
 enum test_type { TEST_FP0, TEST_FP1, TEST_FP2, TEST_FP3, TEST_FP4, TEST_FP5 };
@@ -46,7 +46,7 @@ enum test_type { TEST_FP0, TEST_FP1, TEST_FP2, TEST_FP3, TEST_FP4, TEST_FP5 };
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Representation of a test within the framework.
+ * \brief Representation of a test within the framework.
  *
  * Each test has a function pointer that points to the test function, setup
  * callback for test setup, teardown pointer for post-test cleanup.
@@ -71,7 +71,7 @@ struct test_inst {
 RCSW_WARNING_DISABLE_POP()
 
 /**
- * @brief The test framework, which contains all registered tests, as well as a
+ * \brief The test framework, which contains all registered tests, as well as a
  * cumulative pass/fail value.
  */
 struct test_frmwk {
@@ -87,13 +87,13 @@ struct test_frmwk {
  * Macros
  ******************************************************************************/
 /**
- * @brief A checkpoint/condition check
+ * \brief A checkpoint/condition check
  *
  * Like the RCSW_CHECK() macro, but also prints if something was OK. Very useful in
  * unit tests so you can see the progress of the test, instead of it just
  * sitting there. Should really only be used in unit tests.
  *
- * @param cond The condition to check
+ * \param cond The condition to check
  */
 #define RCSW_CHECKPOINT(cond)                                                \
     if (!(cond)) {                                                      \
@@ -118,20 +118,20 @@ RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_STRICT_PROTO()
 
 /**
- * @brief Initialize a test
+ * \brief Initialize a test
  *
- * @param tests A pointer to a test_frmwk structure.
- * @param index The index for the test. Tests are run in the order specified by their
+ * \param tests A pointer to a test_frmwk structure.
+ * \param index The index for the test. Tests are run in the order specified by their
  * indices. Indices can be overwritten without issue.
  *
- * @param fp_in The function pointer that corresponds to the main function for
+ * \param fp_in The function pointer that corresponds to the main function for
  * the test. This is a variable argument function pointer.
  *
- * @param tag_in This is a field which the application can choose to use or
+ * \param tag_in This is a field which the application can choose to use or
  * ignore. It's intent to to provide a way to define how many/what type of
  * function arguments to different test functions.
  *
- * @param name_in A string representing the name of the test. This name is
+ * \param name_in A string representing the name of the test. This name is
  * printed when the test is finished along with the pass/fail status.
  */
 
@@ -147,35 +147,35 @@ RCSW_WARNING_DISABLE_STRICT_PROTO()
 RCSW_WARNING_DISABLE_POP()
 
 /**
- * @brief Define a setup function for a test
+ * \brief Define a setup function for a test
  *
  * The provided callback must return OK if the setup was successful, nonzero
  * otherwise.  The callback is passed the function pointer for the current test
  * so that different setup can be performed for different tests if desired.
  *
- * @param tests The test framework pointer
- * @param index Index of the test
- * @param fp_in Pointer to function to perform the setup
+ * \param tests The test framework pointer
+ * \param index Index of the test
+ * \param fp_in Pointer to function to perform the setup
  */
 #define TEST_REQ_SETUP(tests, index, fp_in, ...)        \
     tests->test_insts[(index)].setup = fp_in;
 
 /**
- * @brief Define a teardown function for a test
+ * \brief Define a teardown function for a test
  *
  * The provided callback must return OK if the teardown was successful, nonzero
  * otherwise.  The callback is passed the function pointer for the current test
  * so that different teardown can be performed for different tests if desired.
  *
- * @param tests The test framework pointer
- * @param index Index of the test
- * @param fp_in Pointer to function to perform the teardown
+ * \param tests The test framework pointer
+ * \param index Index of the test
+ * \param fp_in Pointer to function to perform the teardown
  */
 #define TEST_REQ_TEARDOWN(tests, index, fp_in)  \
     tests->test_insts[(index)].teardown = fp_in;
 
 /**
- * @brief Called automatically as part of TEST_RUN()--don't call directly
+ * \brief Called automatically as part of TEST_RUN()--don't call directly
  */
 #define TEST_SETUP(tests, index)                                        \
   if ((tests)->test_insts[(index)].setup) {                             \
@@ -185,7 +185,7 @@ RCSW_WARNING_DISABLE_POP()
     }
 
 /**
- * @brief Called automatically as part of TEST_RUN() (don't call directly)
+ * \brief Called automatically as part of TEST_RUN() (don't call directly)
  */
 #define TEST_TEARDOWN(tests, index)                                     \
     if ((tests)->test_insts[(index)].teardown) {                            \
@@ -195,10 +195,10 @@ RCSW_WARNING_DISABLE_POP()
     }
 
 /**
- * @brief Run a test, including setup/teardown
+ * \brief Run a test, including setup/teardown
  *
- * @param tests The test framework handle
- * @param index Index of test to run
+ * \param tests The test framework handle
+ * \param index Index of test to run
  * ... Any arguments to pass to the test function
  */
 #define TEST_RUN(tests, index, ...)                                     \
@@ -212,17 +212,17 @@ RCSW_WARNING_DISABLE_POP()
     } while (0);
 
 /**
- * @brief Get the pass/fail status of a test
+ * \brief Get the pass/fail status of a test
  */
 #define TEST_STATUS(tests, index) (tests)->test_insts[i].status
 
 /**
- * @brief Get the test tag
+ * \brief Get the test tag
  */
 #define TEST_TAG(tests, index) (tests)->test_insts[i].tag
 
 /**
- * @brief A colorized test header
+ * \brief A colorized test header
  */
 #define TEST_HDR(str, ...)                                      \
     DPRINTF("%s" str "%s", DBG_HEADC, ##__VA_ARGS__, DBG_ENDC)
@@ -233,33 +233,33 @@ RCSW_WARNING_DISABLE_POP()
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize the test framework
+ * \brief Initialize the test framework
  *
- * @param n_inst How many tests this framework will handle
+ * \param n_inst How many tests this framework will handle
  *
- * @return The initialized framework or NULL if an ERROR occurred
+ * \return The initialized framework or NULL if an ERROR occurred
  */
 struct test_frmwk *test_frmwk_init(size_t n_inst);
 
 /**
- * @brief Shutdown the test framework
+ * \brief Shutdown the test framework
  *
- * @param tests The framework handle
+ * \param tests The framework handle
  */
 void test_frmwk_shutdown(struct test_frmwk *tests);
 
 /**
- * @brief Print the status of the selected test
+ * \brief Print the status of the selected test
  *
- * @param tests The framework handle
- * @param index The index of the test to print
+ * \param tests The framework handle
+ * \param index The index of the test to print
  */
 void test_frmwk_test_status(struct test_frmwk *tests, int index);
 
 /**
- * @brief Get the pass/fail summary of last round of tests
+ * \brief Get the pass/fail summary of last round of tests
  *
- * @param tests The framework handle
+ * \param tests The framework handle
  */
 void test_frmwk_summary(struct test_frmwk *tests);
 

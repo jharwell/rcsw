@@ -1,9 +1,9 @@
 /**
- * @file dynamic_matrix-test.cpp
+ * \file dynamic_matrix-test.cpp
  *
  * Test of static matrix.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

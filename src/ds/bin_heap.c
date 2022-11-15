@@ -1,7 +1,7 @@
 /**
- * @file bin_heap.c
+ * \file bin_heap.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -36,28 +36,28 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Sift mth element down to its correct place in heap after a deletion
+ * \brief Sift mth element down to its correct place in heap after a deletion
  * from the heap.
  *
- * @param heap The heap handle.
- * @param m The index of the element to sift.
+ * \param heap The heap handle.
+ * \param m The index of the element to sift.
  */
 static void bin_heap_sift_down(struct bin_heap* heap, size_t m);
 
 /**
- * @brief Sift nth element up to correct place in heap after insertion.
+ * \brief Sift nth element up to correct place in heap after insertion.
  *
- * @param heap The heap handle.
- * @param n The index of the element to sift.
+ * \param heap The heap handle.
+ * \param n The index of the element to sift.
  */
 static void bin_heap_sift_up(struct bin_heap* heap, size_t i);
 
 /**
- * @brief Swap two elements in the heap using the temporary slot.
+ * \brief Swap two elements in the heap using the temporary slot.
  *
- * @param heap The heap handle.
- * @param i1 Index of element #1
- * @param i2 Index of element #2
+ * \param heap The heap handle.
+ * \param i1 Index of element #1
+ * \param i2 Index of element #2
  */
 static void bin_heap_swap(struct bin_heap* heap, size_t i1, size_t i2);
 

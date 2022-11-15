@@ -1,9 +1,9 @@
 /**
- * @file llist-test.cpp
+ * \file llist-test.cpp
  *
  * Test of linked list module.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -44,69 +44,69 @@ extern "C" {
  * Test Function Forward Declarations
  ******************************************************************************/
 /**
- * @brief Test appending/prepending items into a linked list
+ * \brief Test appending/prepending items into a linked list
  */
 static void insert_test(int len, struct ds_params * params);
 
 /**
- * @brief Test clearing lists of different sizes
+ * \brief Test clearing lists of different sizes
  */
 static void clear_test(int len, struct ds_params * params);
 
 /**
- * @brief Test deleting lists of different sizes
+ * \brief Test deleting lists of different sizes
  */
 static void delete_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_data_query()
+ * \brief Test of \ref llist_data_query()
  */
 static void contains_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_copy()
+ * \brief Test of \ref llist_copy()
  */
 static void copy_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_copy2()
+ * \brief Test of \ref llist_copy2()
  *
  */
 static void copy2_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_filter()
+ * \brief Test of \ref llist_filter()
  */
 static void filter_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_filter2()
+ * \brief Test of \ref llist_filter2()
  */
 static void filter2_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_splice()
+ * \brief Test of \ref llist_splice()
  */
 
 static void sort_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_sort()
+ * \brief Test of \ref llist_sort()
  */
 static void splice_test(int len1, int len2, struct ds_params * params);
 
 /**
- * @brief Test sharing llist_nodes between linked lists
+ * \brief Test sharing llist_nodes between linked lists
  */
 static void pool_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of \ref llist_inject()
+ * \brief Test of \ref llist_inject()
  */
 static void inject_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of linked list iteration
+ * \brief Test of linked list iteration
  */
 static void iter_test(int len, struct ds_params * params);
 

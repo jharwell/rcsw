@@ -1,7 +1,7 @@
 /**
- * @file omp_radix_sort.c
+ * \file omp_radix_sort.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -37,14 +37,14 @@
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Perform a single step of the radix sort algorithm; that is, sort the
+ * \brief Perform a single step of the radix sort algorithm; that is, sort the
  * next digit.
  *
- * @param sorter The sorting algorithm handle.
- * @param digit The current digit (1, 10, 100, 1000, etc. in base 10 for
+ * \param sorter The sorting algorithm handle.
+ * \param digit The current digit (1, 10, 100, 1000, etc. in base 10 for
  * example).
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
                                       int digit);

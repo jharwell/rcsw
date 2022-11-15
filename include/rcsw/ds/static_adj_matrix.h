@@ -37,8 +37,8 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @ingroup ds
- * @brief Implementation of adjacency matrix representation of a "static" graph.
+ * \ingroup ds
+ * \brief Implementation of adjacency matrix representation of a "static" graph.
  *
  * Static in the sense that the # of vertices in the graph cannot be changed
  * after initialization. Graphs can be both weighted/unweighted,
@@ -76,13 +76,13 @@ struct static_adj_matrix {
 BEGIN_C_DECLS
 
 /**
- * @brief Access an element of the adjacency matrix.
+ * \brief Access an element of the adjacency matrix.
  *
- * @param matrix The matrix handle.
- * @param u Edge source.
- * @param v Edge sink.
+ * \param matrix The matrix handle.
+ * \param u Edge source.
+ * \param v Edge sink.
  *
- * @return The value of the edge between the two vertices (may dereference as 0
+ * \return The value of the edge between the two vertices (may dereference as 0
  * if no edge exists--used \ref static_adj_matrix_edge_query() to be sure).
  */
 static inline void* static_adj_matrix_access(const struct static_adj_matrix* const matrix,
@@ -93,13 +93,13 @@ static inline void* static_adj_matrix_access(const struct static_adj_matrix* con
 }
 
 /**
- * @brief Get the # of bytes needed for an adjacency matrix.
+ * \brief Get the # of bytes needed for an adjacency matrix.
  *
- * @param n_vertices # edges in the graph to be represented.
- * @param is_weighted Is the graph weighted or not? Weighted graphs use doubles
+ * \param n_vertices # edges in the graph to be represented.
+ * \param is_weighted Is the graph weighted or not? Weighted graphs use doubles
  * as the edge weights, and unweighted graphs use ints.
  *
- * @return
+ * \return
  */
 static inline size_t static_adj_matrix_space(size_t n_vertices, bool_t is_weighted) {
   return static_matrix_space(n_vertices, n_vertices,
@@ -107,13 +107,13 @@ static inline size_t static_adj_matrix_space(size_t n_vertices, bool_t is_weight
 }
 
 /**
- * @brief Determine if (u,v) exists.
+ * \brief Determine if (u,v) exists.
  *
- * @param matrix The matrix handle.
- * @param u Vertex #1.
- * @param v Vertex #2.
+ * \param matrix The matrix handle.
+ * \param u Vertex #1.
+ * \param v Vertex #2.
  *
- * @return \ref bool_t.
+ * \return \ref bool_t.
  */
 static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* const matrix,
                                             size_t u, size_t v) {
@@ -128,11 +128,11 @@ static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* cons
 }
 
 /**
- * @brief Get the # of edges currently defined in the graph.
+ * \brief Get the # of edges currently defined in the graph.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  *
- * @return The # of edges, or 0 on ERROR.
+ * \return The # of edges, or 0 on ERROR.
  */
 static inline size_t adj_matrix_n_edges(
     const struct static_adj_matrix *const matrix) {
@@ -141,21 +141,21 @@ static inline size_t adj_matrix_n_edges(
 }
 
 /**
- * @brief Print an adjacency matrix.
+ * \brief Print an adjacency matrix.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  */
 static inline void static_adj_matrix_print(const struct static_adj_matrix* const matrix) {
   static_matrix_print(&matrix->matrix);
 }
 
 /**
- * @brief Determine if the matrix/graph is empty, defined as having 0 defined
+ * \brief Determine if the matrix/graph is empty, defined as having 0 defined
  * edges.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  *
- * @return \ref bool_t.
+ * \return \ref bool_t.
  */
 static inline bool_t static_adj_matrix_isempty(const struct static_adj_matrix* matrix) {
   RCSW_FPC_NV(FALSE, NULL != matrix);
@@ -163,12 +163,12 @@ static inline bool_t static_adj_matrix_isempty(const struct static_adj_matrix* m
 }
 
 /**
- * @brief Transpose an adjacency matrix. Use for moving from row -> col major
+ * \brief Transpose an adjacency matrix. Use for moving from row -> col major
  * and vice versa.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 static inline status_t static_adj_matrix_transpose(struct static_adj_matrix* const matrix) {
   return static_matrix_transpose(&matrix->matrix);
@@ -179,41 +179,41 @@ static inline status_t static_adj_matrix_transpose(struct static_adj_matrix* con
  ******************************************************************************/
 
 /**
- * @brief Initialize an adjacency matrix.
+ * \brief Initialize an adjacency matrix.
  *
- * @param matrix_in The matrix handle to be filled (can be NULL if
+ * \param matrix_in The matrix handle to be filled (can be NULL if
  * \ref DS_APP_DOMAIN_HANDLE not passed).
- * @param params Initialization parameters.
+ * \param params Initialization parameters.
  *
- * @return The initialized adjacency matrix, or NULL if an error occurred.
+ * \return The initialized adjacency matrix, or NULL if an error occurred.
  */
 struct static_adj_matrix* static_adj_matrix_init(struct static_adj_matrix* matrix_in,
                                      const struct ds_params* params) RCSW_CHECK_RET;
 
 /**
- * @brief Destroy an adjacency matrix. Any further use of the provided handle is
+ * \brief Destroy an adjacency matrix. Any further use of the provided handle is
  * undefined.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  */
 void static_adj_matrix_destroy(struct static_adj_matrix* matrix);
 
 /**
- * @brief Add a directed edge to the graph (which must have been initialized as
+ * \brief Add a directed edge to the graph (which must have been initialized as
  * a directed graph obviously).
  *
- * @param matrix The matrix handle.
- * @param u Source vertex.
- * @param v Sink vertex.
- * @param w Weight of edge. Ignored for unweighted graphs (pass NULL probably).
+ * \param matrix The matrix handle.
+ * \param u Source vertex.
+ * \param v Sink vertex.
+ * \param w Weight of edge. Ignored for unweighted graphs (pass NULL probably).
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t static_adj_matrix_edge_addd(struct static_adj_matrix* matrix,
                                size_t u, size_t v, const double *w);
 
 /**
- * @brief Add an undirected edge to the graph (which must have been initialized
+ * \brief Add an undirected edge to the graph (which must have been initialized
  * as an undirected graph obviously).
  *
  * Adding an edge  (u, v) will also automatically add an edge (v, u) with the
@@ -221,24 +221,24 @@ status_t static_adj_matrix_edge_addd(struct static_adj_matrix* matrix,
  * undirected and weighted is disallowed, and was checked during
  * initialization.
  *
- * @param matrix The matrix handle.
- * @param u Vertex #1.
- * @param v Vertex #2.
+ * \param matrix The matrix handle.
+ * \param u Vertex #1.
+ * \param v Vertex #2.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t static_adj_matrix_edge_addu(struct static_adj_matrix* matrix, size_t u,
                                size_t v);
 
 /**
- * @brief Remove an edge (u,v). If the graph was undirected, also remove the
+ * \brief Remove an edge (u,v). If the graph was undirected, also remove the
  * edge (v,u).
  *
- * @param matrix The matrix handle.
- * @param u Source vertex.
- * @param v Sink vertex.
+ * \param matrix The matrix handle.
+ * \param u Source vertex.
+ * \param v Sink vertex.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t static_adj_matrix_edge_remove(struct static_adj_matrix* matrix,
                                  size_t u, size_t v);

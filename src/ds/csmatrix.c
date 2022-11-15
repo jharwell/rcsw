@@ -1,7 +1,7 @@
 /**
- * @file csmatrix.c
+ * \file csmatrix.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -43,38 +43,38 @@ struct col_pair {
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Multiply an entry in the matrix by something (must be of same data
+ * \brief Multiply an entry in the matrix by something (must be of same data
  * type)
  *
- * @param matrix The matrix handle.
- * @param e1 The matrix entry.
- * @param e2 The other element.
+ * \param matrix The matrix handle.
+ * \param e1 The matrix entry.
+ * \param e2 The other element.
  *
- * @return The result.
+ * \return The result.
  */
 static double csmatrix_entry_mult(const struct csmatrix* matrix,
                                   const void* e1,
                                   const void* e2);
 
 /**
- * @brief Divide an entry in the matrix by something (must be of same data
+ * \brief Divide an entry in the matrix by something (must be of same data
  * type)
  *
- * @param matrix The matrix handle.
- * @param e1 The matrix entry.
- * @param e2 The other element.
+ * \param matrix The matrix handle.
+ * \param e1 The matrix entry.
+ * \param e2 The other element.
  *
- * @return The result.
+ * \return The result.
  */
 static double csmatrix_entry_div(const struct csmatrix* matrix,
                                  const void* e1,
                                  const void* e2);
 
 /**
- * @brief Print a matrix entry
+ * \brief Print a matrix entry
  *
- * @param matrix The matrix handle.
- * @param e1 The matrix entry.
+ * \param matrix The matrix handle.
+ * \param e1 The matrix entry.
  */
 
 static void csmatrix_entry_print(const struct csmatrix* matrix, const void* e1);

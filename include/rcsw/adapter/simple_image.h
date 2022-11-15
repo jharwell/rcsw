@@ -1,10 +1,10 @@
 /**
- * @file simple_image.h
- * @ingroup pulse
- * @brief Implementation of adapter design pattern for STB.
+ * \file simple_image.h
+ * \ingroup pulse
+ * \brief Implementation of adapter design pattern for STB.
  * Originally intended to make GPU programming in C easier.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,7 +34,7 @@
  * Type Definitions
  ******************************************************************************/
 /**
- * @brief A structure representing an RGB image. Pixels are stored row-major.
+ * \brief A structure representing an RGB image. Pixels are stored row-major.
  */
 typedef struct {
     int width;   /// The width of the image in pixels.
@@ -55,60 +55,60 @@ typedef struct {
 BEGIN_C_DECLS
 
 /**
- * @brief Count the number of FLOPs performed during an arbitrary stencil
+ * \brief Count the number of FLOPs performed during an arbitrary stencil
  *        application.
  *
- * @param image       The image we are evaluating.
- * @param kernel_dim The number of rows or columns in the stencil.
+ * \param image       The image we are evaluating.
+ * \param kernel_dim The number of rows or columns in the stencil.
  *
- * @return The number of FLOPs.
+ * \return The number of FLOPs.
  */
 size_t simple_image_kernel2d_flops(simple_image_t const * image,
                                 size_t kernel_dim) RCSW_PURE;
 
 /**
- * @brief Load an image from a file. The image can be JPEG, PNG, or BMP.
+ * \brief Load an image from a file. The image can be JPEG, PNG, or BMP.
  *
- * @param filename The name of the file to load.
+ * \param filename The name of the file to load.
  *
- * @return  The loaded image, or NULL on error.
+ * \return  The loaded image, or NULL on error.
  */
 simple_image_t * simple_image_load(char const * filename);
 
 /**
- * @brief Some pixels can escape the [0, 255] range. This maps all values back
+ * \brief Some pixels can escape the [0, 255] range. This maps all values back
  *        into the valid range.
  *
- * @param image The image to scale.
+ * \param image The image to scale.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t simple_image_clamp_rgb(simple_image_t * image);
 
 /**
- * @brief Write an image to a bitmap file. Note that this will map the pixels
+ * \brief Write an image to a bitmap file. Note that this will map the pixels
  *        back to a valid range if necessary, so the image data *may* change.
  *
- * @param filename The name of the file to create.
- * @param image The image structure to write.
+ * \param filename The name of the file to create.
+ * \param image The image structure to write.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t simple_image_write_bmp(char const * filename,
                                 simple_image_t * image);
 
 /**
- * @brief Allocate an image.
+ * \brief Allocate an image.
  *
- * @param width The width, in pixels.
- * @param height The height, in pixels.
+ * \param width The width, in pixels.
+ * \param height The height, in pixels.
  */
 simple_image_t * simple_image_alloc(size_t width, size_t height);
 
 /**
- * @brief Free the memory allocated by \ref simple_image_load().
+ * \brief Free the memory allocated by \ref simple_image_load().
  *
- * @param im The image to free.
+ * \param im The image to free.
  */
 void simple_image_free(simple_image_t * im);
 

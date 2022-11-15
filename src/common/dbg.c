@@ -1,7 +1,7 @@
 /**
- * @file dbg.c
+ * \file dbg.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -35,12 +35,12 @@ struct dbg_frmwk dbg_g;
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Compare to debug modules
+ * \brief Compare to debug modules
  *
- * @param e1 - The first module
- * @param e2 - The second module
+ * \param e1 - The first module
+ * \param e2 - The second module
  *
- * @return < 0, 0, or >0, depending
+ * \return < 0, 0, or >0, depending
  */
 static int dbg_mod_cmp(const void* e1, const void* e2);
 

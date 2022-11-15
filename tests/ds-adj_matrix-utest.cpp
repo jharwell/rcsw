@@ -1,9 +1,9 @@
 /**
- * @file ds-adj_matrix-test.cpp
+ * \file ds-adj_matrix-test.cpp
  *
  * Test of adjacency matrix (static only at the moment...)
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

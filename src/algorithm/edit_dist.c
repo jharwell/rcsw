@@ -1,7 +1,7 @@
 /**
- * @file edit_dist.c
+ * \file edit_dist.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -31,19 +31,19 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Find min # of operations to convert A -> B
+ * \brief Find min # of operations to convert A -> B
  *
- * @param a The first string
- * @param b The string to transform a into
- * @param c The memoization table
- * @param i Current index in a
- * @param j Current index in b
- * @param length String length of a, so it does not have to be computed each
+ * \param a The first string
+ * \param b The string to transform a into
+ * \param c The memoization table
+ * \param i Current index in a
+ * \param j Current index in b
+ * \param length String length of a, so it does not have to be computed each
  * recursive step.
- * @param cmpe Callback for comparing two elements for equality
- * @param el_size Size of elements in bytes
+ * \param cmpe Callback for comparing two elements for equality
+ * \param el_size Size of elements in bytes
  *
- * @return # of operations, or -1 if an error occurred.
+ * \return # of operations, or -1 if an error occurred.
  */
 static int edit_dist_rec_sub(const char* a,
                              const char* b,
@@ -54,16 +54,16 @@ static int edit_dist_rec_sub(const char* a,
                              bool_t (*cmpe)(const void* e1, const void* e2),
                              size_t el_size);
 /**
- * @brief Find min # of operation to convert A -> B recursively with memoization
+ * \brief Find min # of operation to convert A -> B recursively with memoization
  *
- * @param a String # 1
- * @param b String # 2
- * @param c The memoization table [strlen(a) x strlen(b)]
- * @param seq_len A callback to determine the length of a sequence.
- * @param cmpe Callback for comparing two elements for equality
- * @param el_size Size of elements in bytes
+ * \param a String # 1
+ * \param b String # 2
+ * \param c The memoization table [strlen(a) x strlen(b)]
+ * \param seq_len A callback to determine the length of a sequence.
+ * \param cmpe Callback for comparing two elements for equality
+ * \param el_size Size of elements in bytes
  *
- * @return minimum # operations, or -1 if an error occurred
+ * \return minimum # operations, or -1 if an error occurred
  */
 static int edit_dist_rec(const char* a,
                          const char* b,
@@ -73,17 +73,17 @@ static int edit_dist_rec(const char* a,
                          size_t el_size);
 
 /**
- * @brief Compute min # of operations to convert A -> B using
+ * \brief Compute min # of operations to convert A -> B using
  * bottom up dynamic programming.
  *
- * @param a String # 1
- * @param b String # 2
- * @param c The memoization table [strlen(a) x strlen(b)]
- * @param seq_len A callback to determine the length of a sequence.
- * @param cmpe Callback for comparing two elements for equality
- * @param el_size Size of elements in bytes
+ * \param a String # 1
+ * \param b String # 2
+ * \param c The memoization table [strlen(a) x strlen(b)]
+ * \param seq_len A callback to determine the length of a sequence.
+ * \param cmpe Callback for comparing two elements for equality
+ * \param el_size Size of elements in bytes
  *
- * @return min # of of operations, or -1 if an error occurred
+ * \return min # of of operations, or -1 if an error occurred
  */
 static int edit_dist_iter(const void* a,
                           const void* b,

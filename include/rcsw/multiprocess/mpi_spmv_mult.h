@@ -1,9 +1,9 @@
 /**
- * @file mpi_spmv_mult.h
- * @ingroup multiprocess
- * @brief Implementation of MPI-based sparse matrix-vector multiplication.
+ * \file mpi_spmv_mult.h
+ * \ingroup multiprocess
+ * \brief Implementation of MPI-based sparse matrix-vector multiplication.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -140,54 +140,54 @@ struct mpi_spmv_mult {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize the MPI multiplier. All ranks call this function.
+ * \brief Initialize the MPI multiplier. All ranks call this function.
  *
- * @param params The initialization parameters.
+ * \param params The initialization parameters.
  *
- * @return The initialized multiplier, or NULL if an ERROR occurred.
+ * \return The initialized multiplier, or NULL if an ERROR occurred.
  */
 struct mpi_spmv_mult* mpi_spmv_mult_init(
     const struct mpi_spmv_mult_params* const params);
 
 /**
- * @brief Destroy an MPI multiplier.
+ * \brief Destroy an MPI multiplier.
  *
  * Any further use of the handle after calling this function is undefined.
  *
- * @param mult The multiplier handle.
+ * \param mult The multiplier handle.
  */
 void mpi_spmv_mult_destroy(struct mpi_spmv_mult* const mult);
 
 /**
- * @brief Initialize multiplier data structures on all non-zero ranks by
+ * \brief Initialize multiplier data structures on all non-zero ranks by
  * distributing the dimensions of the matrix/vector components each rank will be
  * responsible for.
  *
  * This must be called after \ref mpi_spmv_mult_init(), but before \ref
  * mpi_spmv_mult_distribute() or \ref mpi_spmv_mult_exec().
  *
- * @param mult The multiplier handle.
+ * \param mult The multiplier handle.
  */
 status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult);
 
 /**
- * @brief Distribute the data in the matrix/vector at the root to all ranks
+ * \brief Distribute the data in the matrix/vector at the root to all ranks
  *
  * This must be called after \ref mpi_spmv_mult_ds_init(), but before \ref
  * mpi_spmv_mult_exec().
  *
- * @param mult The multiplier handle.
- * @param vector The vector to multiply with
+ * \param mult The multiplier handle.
+ * \param vector The vector to multiply with
  */
 status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                                   struct darray* vector);
 
 /**
- * @brief Execute the multiply in parallel via MIA.
+ * \brief Execute the multiply in parallel via MIA.
  *
  * This must be called after \ref mpi_spmv_mult_distribute(),
  *
- * @param mult The multiplier handle.
+ * \param mult The multiplier handle.
  */
 struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult);
 

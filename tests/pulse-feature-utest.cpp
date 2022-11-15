@@ -1,8 +1,8 @@
 /**
- * @file pulse-feature-test.cpp
- * @brief Test of basic PULSE features.
+ * \file pulse-feature-test.cpp
+ * \brief Test of basic PULSE features.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

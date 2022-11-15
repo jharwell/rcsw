@@ -1,9 +1,9 @@
 /**
- * @file mt_bsem.h
- * @ingroup multithread
- * @brief Binary semaphore implemented using mutex and cv.
+ * \file mt_bsem.h
+ * \ingroup multithread
+ * \brief Binary semaphore implemented using mutex and cv.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -36,7 +36,7 @@
  * Type Definitions
  ******************************************************************************/
 /**
- * @brief Binary semaphore implementation using a mutex and condition
+ * \brief Binary semaphore implementation using a mutex and condition
  * variable. This is not provided on linux.
  */
 typedef struct {
@@ -52,63 +52,63 @@ typedef struct {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a binary semaphore.
+ * \brief Initialize a binary semaphore.
  *
- * @param sem_in The semaphore to initialize. Can be NULL if \ref
+ * \param sem_in The semaphore to initialize. Can be NULL if \ref
  * MT_APP_DOMAIN_MEM is not passed.
- * @param flags Initialization flags
+ * \param flags Initialization flags
  *
- * @return The initialized binary semaphore, or NULL if an ERROR occurred.
+ * \return The initialized binary semaphore, or NULL if an ERROR occurred.
  */
 mt_bsem_t* mt_bsem_init(mt_bsem_t * sem_in, uint32_t flags);
 
 /**
- * @brief Destroy a binary semaphore.
+ * \brief Destroy a binary semaphore.
  *
  * Any further use of the semaphore after calling this function is undefined.
  *
- * @param sem_p The semaphore to destroy.
+ * \param sem_p The semaphore to destroy.
  */
 void mt_bsem_destroy(mt_bsem_t * sem_p);
 
 /**
- * @brief Unlock a binary semaphore.
+ * \brief Unlock a binary semaphore.
  *
- * @param sem_p The semaphore handle.
+ * \param sem_p The semaphore handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_bsem_post(mt_bsem_t * sem_p);
 
 /**
- * @brief - Notify whoever is waiting on the semaphore and make it available
+ * \brief - Notify whoever is waiting on the semaphore and make it available
  * again.
  *
- * @param sem_p The semaphore handle.
+ * \param sem_p The semaphore handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_bsem_flush(mt_bsem_t * sem_p);
 
 /**
- * @brief Wait on binary semaphore with a timeout.
+ * \brief Wait on binary semaphore with a timeout.
  *
- * @param sem_p The semaphore handle.
- * @param to  A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
+ * \param sem_p The semaphore handle.
+ * \param to  A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
  * specifies. This function converts the relative timeout to absolute timeout
  * required.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_bsem_timedwait(mt_bsem_t * sem_p,
                            const struct timespec * to);
 
 /**
- * @brief Block on binary semaphore until it becomes available.
+ * \brief Block on binary semaphore until it becomes available.
  *
- * @param sem_p The semaphore handle.
+ * \param sem_p The semaphore handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_bsem_wait(mt_bsem_t * sem_p);
 

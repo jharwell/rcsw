@@ -1,9 +1,9 @@
 /**
- * @file threadm.h
- * @ingroup multithread
- * @brief Various thread management tools
+ * \file threadm.h
+ * \ingroup multithread
+ * \brief Various thread management tools
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,12 +34,12 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Lock a thread to a core.
+ * \brief Lock a thread to a core.
  *
- * @param thread The thread handle.
- * @param core The core to lock to, 0-indexed.
+ * \param thread The thread handle.
+ * \param core The core to lock to, 0-indexed.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t threadm_core_lock(pthread_t thread, size_t core);
 

@@ -1,9 +1,9 @@
 /**
- * @file darray-test.cpp
+ * \file darray-test.cpp
  *
  * Test of dynamic array.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -44,47 +44,47 @@ extern "C" {
  * Test Functions
  ******************************************************************************/
 /**
- * @brief Test appending/prepending items into an darray and then removing them.
+ * \brief Test appending/prepending items into an darray and then removing them.
  */
 static void addremove_test(int len, struct ds_params* params);
 
 /**
- * @brief Test deleting arrs of different sizes.
+ * \brief Test deleting arrs of different sizes.
  */
 static void delete_test(int len, struct ds_params* params);
 
 /**
- * @brief Test for looking up items in darray
+ * \brief Test for looking up items in darray
  */
 static void contains_test(int len, struct ds_params* params);
 
 /**
- * @brief Test of \ref darray_filter().
+ * \brief Test of \ref darray_filter().
  */
 static void filter_test(int len, struct ds_params* params);
 
 /**
- * @brief Test of \ref darray_copy().
+ * \brief Test of \ref darray_copy().
  */
 static void copy_test(int len, struct ds_params* params);
 
 /**
- * @brief Test of \ref darray_sort()
+ * \brief Test of \ref darray_sort()
  */
 static void sort_test(int len, struct ds_params *params);
 
 /**
- * @brief Test of builtin darray binary search on sorted _arrs.
+ * \brief Test of builtin darray binary search on sorted _arrs.
  */
 static void binarysearch_test(int len, struct ds_params *params);
 
 /**
- * @brief Test of \ref darray_inject()
+ * \brief Test of \ref darray_inject()
  */
 static void inject_test(int len, struct ds_params * params);
 
 /**
- * @brief Test of darray iteration.
+ * \brief Test of darray iteration.
  */
 static void iter_test(int len, struct ds_params * params);
 

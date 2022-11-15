@@ -1,7 +1,7 @@
 /**
- * @file compilers.h
+ * \file compilers.h
  *
- * @copyright 2019 John Harwell, All rights reserved.
+ * \copyright 2019 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -32,7 +32,7 @@
 #if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
 
 /**
- * @def RCSW_PRAGMA(X) Indirection to get the argument to the pragma as a
+ * \def RCSW_PRAGMA(X) Indirection to get the argument to the pragma as a
  * string.
  */
 #define RCSW_PRAGMA(X) _Pragma(RCSW_XSTR(X))
@@ -85,7 +85,7 @@
   RCSW_PRAGMA(GCC diagnostic pop)
 
 /**
- * @def RCSW_WARNING_DISABLE_END(X) Specify a compiler warning to disable
+ * \def RCSW_WARNING_DISABLE_END(X) Specify a compiler warning to disable
  * (additional #defines needed to define compiler-agnostic names for warnings),
  * ending scope. This should *NOT* be used willy-nilly; 99% of the time
  * compilers emit warnings for a good reason.
@@ -152,7 +152,7 @@
 #else
 
 /**
- * @def RCSW_ATTR(...) Shorthand for attaching a list of attributes to a
+ * \def RCSW_ATTR(...) Shorthand for attaching a list of attributes to a
  * function/variable/etc.
  */
 #define RCSW_ATTR(...) __attribute__((__VA_ARGS__))
@@ -165,7 +165,7 @@
 #else
 
 /**
- * @def RCSW_CONST Shorthand for marked a function as purely function of its
+ * \def RCSW_CONST Shorthand for marked a function as purely function of its
  * input parameters only (no global memory access allowed).
  */
 #define RCSW_CONST __attribute__((const))
@@ -177,7 +177,7 @@
 
 #else
 /**
- * @def RCSW_EXPORT Shorthand for marked a function as publicly visible in a
+ * \def RCSW_EXPORT Shorthand for marked a function as publicly visible in a
  * shared library.
  */
 #define RCSW_EXPORT __attribute__((visibility("default")))
@@ -203,7 +203,7 @@
 #else
 
 /**
- * @def RCSW_COLD Shorthand for declaring something as unlikely to be executed.
+ * \def RCSW_COLD Shorthand for declaring something as unlikely to be executed.
  */
 #define RCSW_COLD __attribute__((cold))
 
@@ -215,7 +215,7 @@
 #else
 
 /**
- * @def RCSW_UNUSED Shorthand for declaring something unused. We only need it to
+ * \def RCSW_UNUSED Shorthand for declaring something unused. We only need it to
  * stop spurious compiler warnings when optimizations are on. When they are not,
  * then such warnings are should keep showing up to remind developers that
  * something is (potentially) off with their function(s).
@@ -234,7 +234,7 @@
 #else
 
 /**
- * @def RCSW_CHECK_RET Shorthand for enhancing compile checking of return value
+ * \def RCSW_CHECK_RET Shorthand for enhancing compile checking of return value
  * usage.
  */
 #define RCSW_CHECK_RET __attribute__((warn_unused_result))
@@ -247,7 +247,7 @@
 #else
 
 /**
- * @def RCSW_PURE Shorthand for marked a function as purely function of its
+ * \def RCSW_PURE Shorthand for marked a function as purely function of its
  * input parameters and (possibly) global data.
  */
 #define RCSW_PURE __attribute__((pure))
@@ -260,7 +260,7 @@
 
 #else
 /**
- * @def RCSW_DEAD Shorthand for marked a function as one that will not return.
+ * \def RCSW_DEAD Shorthand for marked a function as one that will not return.
  */
 #define RCSW_DEAD __attribute__((noreturn))
 
@@ -272,14 +272,14 @@
 
 #ifndef BEGIN_C_DECLS
 /**
- * @def BEGIN_C_DECLS Standard C++ compatability wrapper for C code (start)
+ * \def BEGIN_C_DECLS Standard C++ compatability wrapper for C code (start)
  */
 #define BEGIN_C_DECLS extern "C" {
 #endif /* BEGIN_C_DECLS */
 
 #ifndef END_C_DECLS
 /**
- * @def END_C_DECLS Standard C++ compatability wrapper for C code (end)
+ * \def END_C_DECLS Standard C++ compatability wrapper for C code (end)
  */
 #define END_C_DECLS }
 #endif /* END_C_DECLS */

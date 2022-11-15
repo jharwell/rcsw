@@ -1,7 +1,7 @@
 /**
- * @file static_matrix.h
- * @ingroup ds
- * @brief Implementation of static matrix.
+ * \file static_matrix.h
+ * \ingroup ds
+ * \brief Implementation of static matrix.
  *
  * Static in the sense that the matrix dimensions cannot be changed after
  * initialization. Assumes row-major order (this is C after all).
@@ -11,7 +11,7 @@
  * matrix is sparse, it will definitely be really inefficient, and possibly
  * won't even fit into memory).
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -42,7 +42,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Representation of a fixed-size (static) matrix using a single
+ * \brief Representation of a fixed-size (static) matrix using a single
  * contiguous array and indexing said array in 2 dimensions.
  */
 struct static_matrix {
@@ -61,13 +61,13 @@ struct static_matrix {
 BEGIN_C_DECLS
 
 /**
- * @brief Access an element within a static matrix.
+ * \brief Access an element within a static matrix.
  *
- * @param matrix The matrix handle.
- * @param u The row within the matrix.
- * @param v The column within the matrix.
+ * \param matrix The matrix handle.
+ * \param u The row within the matrix.
+ * \param v The column within the matrix.
  *
- * @return Reference to element, or NULL if an error occurred.
+ * \return Reference to element, or NULL if an error occurred.
  */
 static inline void* static_matrix_access(const struct static_matrix* const matrix,
                                          size_t u, size_t v) {
@@ -78,13 +78,13 @@ static inline void* static_matrix_access(const struct static_matrix* const matri
 }
 
 /**
- * @brief Calculate the # of bytes required for the static matrix.
+ * \brief Calculate the # of bytes required for the static matrix.
  *
- * @param n_rows Initial # rows.
- * @param n_cols Initial # columns.
- * @param el_size Size of the elements in bytes.
+ * \param n_rows Initial # rows.
+ * \param n_cols Initial # columns.
+ * \param el_size Size of the elements in bytes.
  *
- * @return The # of bytes required.
+ * \return The # of bytes required.
  */
 static inline size_t static_matrix_space(size_t n_rows, size_t n_cols,
                                          size_t el_size) {
@@ -92,13 +92,13 @@ static inline size_t static_matrix_space(size_t n_rows, size_t n_cols,
 }
 
 /**
- * @brief Clear an element within the static matrix.
+ * \brief Clear an element within the static matrix.
  *
- * @param matrix The matrix handle.
- * @param u Row of element to clear.
- * @param v Column of element to clear.
+ * \param matrix The matrix handle.
+ * \param u Row of element to clear.
+ * \param v Column of element to clear.
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 static inline status_t static_matrix_clear(struct static_matrix* const matrix,
                                            size_t u, size_t v) {
@@ -108,14 +108,14 @@ static inline status_t static_matrix_clear(struct static_matrix* const matrix,
 }
 
 /**
- * @brief Set an element in the static matrix to a specific value.
+ * \brief Set an element in the static matrix to a specific value.
  *
- * @param matrix The matrix handle.
- * @param u Element row index.
- * @param v Element column index.
- * @param w New element value.
+ * \param matrix The matrix handle.
+ * \param u Element row index.
+ * \param v Element column index.
+ * \param w New element value.
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 static inline status_t static_matrix_set(struct static_matrix* const matrix,
                                          size_t u, size_t v,
@@ -131,40 +131,40 @@ static inline status_t static_matrix_set(struct static_matrix* const matrix,
  * Function Prototypes
  ******************************************************************************/
 /**
- * @brief Initialize a static matrix.
+ * \brief Initialize a static matrix.
  *
- * @param matrix_in An application allocated handle for the static matrix. Can
+ * \param matrix_in An application allocated handle for the static matrix. Can
  * be NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
- * @param params The initialization parameters.
+ * \param params The initialization parameters.
  *
- * @return The initialized matrix, or NULL if an error occurred.
+ * \return The initialized matrix, or NULL if an error occurred.
  */
 struct static_matrix* static_matrix_init(struct static_matrix* matrix_in,
                                          const struct ds_params* params);
 
 /**
- * @brief Destroy a static matrix. Any further use of the handle is undefined
+ * \brief Destroy a static matrix. Any further use of the handle is undefined
  * after this function is called.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  */
 void static_matrix_destroy(struct static_matrix* matrix);
 
 /**
- * @brief Transpose a static matrix. Currently only works if the matrix is
+ * \brief Transpose a static matrix. Currently only works if the matrix is
  * square.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t static_matrix_transpose(struct static_matrix* matrix);
 
 /**
- * @brief Print a static matrix, by calling the printe() function on each
+ * \brief Print a static matrix, by calling the printe() function on each
  * element in the matrix.
  *
- * @param matrix The matrix handle.
+ * \param matrix The matrix handle.
  */
 void static_matrix_print(const struct static_matrix* matrix);
 

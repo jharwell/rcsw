@@ -1,9 +1,9 @@
 /**
- * @file omp_radix_sort.h
- * @ingroup multithread
- * @brief Multiprocess radix sorter using OpenMP
+ * \file omp_radix_sort.h
+ * \ingroup multithread
+ * \brief Multiprocess radix sorter using OpenMP
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,7 +34,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Parameters for \ref omp_radix_sorter.
+ * \brief Parameters for \ref omp_radix_sorter.
  */
 struct omp_radix_sorter_params {
     size_t* data;      /// Data to sort.
@@ -44,7 +44,7 @@ struct omp_radix_sorter_params {
 };
 
 /**
- * @brief Handle for OMP implementation of radix sort.
+ * \brief Handle for OMP implementation of radix sort.
  */
 struct omp_radix_sorter {
     size_t* data;       /// The data to sort.
@@ -66,28 +66,28 @@ struct omp_radix_sorter {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a multi-thread radix sorter.
+ * \brief Initialize a multi-thread radix sorter.
  *
- * @param params Initialization parameters.
+ * \param params Initialization parameters.
  *
- * @return The initialized sorter, or NULL if an error occurred.
+ * \return The initialized sorter, or NULL if an error occurred.
  */
 struct omp_radix_sorter* omp_radix_sorter_init(
     const struct omp_radix_sorter_params* const params) RCSW_CHECK_RET;
 
 /**
- * @brief Deallocate/destroy a sorter after use.
+ * \brief Deallocate/destroy a sorter after use.
  *
- * @param sorter The sorter to destroy.
+ * \param sorter The sorter to destroy.
  */
 void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter);
 
 /**
- * @brief Perform radix sort in parallel using OpenMP.
+ * \brief Perform radix sort in parallel using OpenMP.
  *
- * @param sorter The initialized sorter.
+ * \param sorter The initialized sorter.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter);
 

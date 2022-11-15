@@ -1,13 +1,13 @@
 /**
- * @file dbg.h
- * @ingroup common
- * @brief A simple C debugging/logging framework.
+ * \file dbg.h
+ * \ingroup common
+ * \brief A simple C debugging/logging framework.
  *
  * Comprises debug printing on a module basis, with the capability to set the
  * level for each module independently. All debug printing can be compiled out
  * for maximum speed by passing NDEBUG.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -40,7 +40,7 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-/** @cond INTERNAL */
+/** \cond INTERNAL */
 
 /** Used when you want to turn debugging OFF for all modules */
 #define DBG_OFF 6
@@ -77,10 +77,10 @@
  */
 #define DBG_V 1
 
-/** @endcond */
+/** \endcond */
 
 /**
- * @brief Debug color codes (for producing colored terminal output)
+ * \brief Debug color codes (for producing colored terminal output)
  */
 #define DBG_HEADC "\033[36m" /* blue */
 #define DBG_OKC "\033[32m"   /* green */
@@ -92,14 +92,14 @@
  * Platform Independent Printing
  ******************************************************************************/
 /**
- * @brief Platform/OS independent macro for printing to the terminal
+ * \brief Platform/OS independent macro for printing to the terminal
  */
 #if defined(__linux__)
 #define PRINTF(...) printf(__VA_ARGS__);
 #endif
 
 /**
- * @brief Print floating point numbers on platforms where using %f directly in
+ * \brief Print floating point numbers on platforms where using %f directly in
  * printf()/printk() doesn't work.
  */
 #define PRINTF_FLOAT(...)                               \
@@ -110,7 +110,7 @@
   }
 
 /**
- * @brief Print 64 bit integers on 32 bit platforms where printing 64 bits
+ * \brief Print 64 bit integers on 32 bit platforms where printing 64 bits
  * directly in printf()/printk() doesn't work.
  */
 #define PRINTF64(...)                                   \
@@ -149,14 +149,14 @@
 #else /* debugging is enabled */
 
 /**
- * @brief General debug macros that will display whenever debugging is enabled,
+ * \brief General debug macros that will display whenever debugging is enabled,
  * regardless of the value of DBG_LVL.
  */
 #define DPRINTF(...) PRINTF(__VA_ARGS__)
 #define DPRINTF_FLOAT(...) PRINTF_FLOAT(__VA_ARGS__)
 
 /**
- * @brief Debug level statements that have the level encoded into the macro
+ * \brief Debug level statements that have the level encoded into the macro
  * itself so you don't have to type it in yourself.
  */
 #define DBGE(...) DEBUG(DBG_E, __VA_ARGS__)
@@ -172,7 +172,7 @@
 #define DBGTV(...) DEBUGT(DBG_V, __VA_ARGS__)
 
 /**
- * @brief Regular debug statement. It will only be printed is debug printing for
+ * \brief Regular debug statement. It will only be printed is debug printing for
  * the module is enabled AND the debug level for the statement is high enough.
  *
  * It will prepend the string of the module name, followed by a colon and a
@@ -198,7 +198,7 @@
   }
 
 /**
- * @brief Timestamped debug statement.
+ * \brief Timestamped debug statement.
  *
  * The timestamp has a maximum resolution of 10000 seconds; after that it rolls
  * over. The decimal portion of the timestamp reports microseconds, though
@@ -231,7 +231,7 @@
 #endif /* NDEBUG */
 
 /**
- * @brief Like \ref RCSW_CHECK(), but has an additional message that is printed on failure
+ * \brief Like \ref RCSW_CHECK(), but has an additional message that is printed on failure
  * if debugging is enabled for the module it resides in.
  */
 #define SOFT_ASSERT(cond, msg, ...)                             \
@@ -242,7 +242,7 @@
   }
 
 /**
- * @brief Mark a place in the code as being universally bad. If execution ever
+ * \brief Mark a place in the code as being universally bad. If execution ever
  * reaches this spot, print a message and error out.
  */
 #define SENTINEL(msg, ...)                      \
@@ -255,7 +255,7 @@
  * String Macros
  ******************************************************************************/
 /**
- * @brief Print a token AND it's value. Useful for debugging. Comes in the
+ * \brief Print a token AND it's value. Useful for debugging. Comes in the
  * following flavors:
  *
  * TOK  - decimal/hexadecimal
@@ -272,7 +272,7 @@
  * Module codes
  ******************************************************************************/
 /**
- * @brief The debug module codes used by rcsw.
+ * \brief The debug module codes used by rcsw.
  *
  * When defining your own module codes, you should always start them with
  * M_EXTERNAL, so as to not conflict with the internal codes in rcsw.
@@ -313,7 +313,7 @@ enum dbg_module_codes {RCSW_XGEN_ENUMS(RCSW_DBG_MODULES)};
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Representation of a module for debugging.
+ * \brief Representation of a module for debugging.
  *
  * A module is defined on a per file basis (multiple modules in the same file
  * are disallowed). This is so that I can make use of the preprocessor to
@@ -326,7 +326,7 @@ struct dbg_module {
 };
 
 /**
- * @brief The debugging framework
+ * \brief The debugging framework
  *
  * The list of modules currently enabled is maintained by a linked list, and the
  * framework also contains a default level that can be set so that all future
@@ -349,67 +349,67 @@ extern struct dbg_frmwk dbg_g;
  * Function Prototypes
  ******************************************************************************/
 /**
- * @brief Initialize Debugging Framework
+ * \brief Initialize Debugging Framework
  *
  * This function is idempotent.
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t dbg_init(void);
 
 /**
- * @brief Shutdown the debugging framework, deallocating memory.
+ * \brief Shutdown the debugging framework, deallocating memory.
  *
  * The framework can be re-initialized later without error.
  */
 void dbg_shutdown(void);
 
 /**
- * @brief Add a module to the active list of debug printing modules
+ * \brief Add a module to the active list of debug printing modules
  *
  * If the module already exists, ERROR is returned.
  *
- * @param id A UUID for the module to be installed
- * @param name The name of the debugging module. This will be prepended to all
+ * \param id A UUID for the module to be installed
+ * \param name The name of the debugging module. This will be prepended to all
  * debug printing messages. Names do not necessarily have to be unique within
  * the application, though it's a good idea to make them that way.
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t dbg_insmod(int64_t id, const char *name);
 
 /**
- * @brief Remove a module from the active list by id. If the module is not in
+ * \brief Remove a module from the active list by id. If the module is not in
  * the list success, not failure, is returned.
  *
- * @param id The UUID of the module to remove
- * @return \ref status_t
+ * \param id The UUID of the module to remove
+ * \return \ref status_t
  */
 status_t dbg_rmmod(int64_t id);
 
 /**
- * @brief Remove a module from the active list by name. If the module is not in
+ * \brief Remove a module from the active list by name. If the module is not in
  * the list success, not failure, is returned.
  *
- * @param name The name of the module to remove
- * @return \ref status_t
+ * \param name The name of the module to remove
+ * \return \ref status_t
  */
 status_t dbg_rmmod2(const char *name);
 
 /**
- * @brief Set the debugging level for a module
+ * \brief Set the debugging level for a module
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t dbg_mod_lvl_set(int64_t id, uint8_t lvl);
 
 /**
- * @brief Set the default debugging level for the debugging framework.
+ * \brief Set the default debugging level for the debugging framework.
  *
  * All modules installed after calling this function will have the specified
  * level set by default.
  *
- * @param lvl The new default level (one of DBG_OFF, DBG_E, DBG_W, etc.)
+ * \param lvl The new default level (one of DBG_OFF, DBG_E, DBG_W, etc.)
  *
  */
 static inline void dbg_default_lvl_set(uint8_t lvl) {
@@ -417,11 +417,11 @@ static inline void dbg_default_lvl_set(uint8_t lvl) {
 }
 
 /**
- * @brief Get the ID of a module from its name
+ * \brief Get the ID of a module from its name
  *
- * @param name The name of the module to retrieve the UUID for
+ * \param name The name of the module to retrieve the UUID for
  *
- * @return The ID, or -1 if an error occurred.
+ * \return The ID, or -1 if an error occurred.
  */
 int64_t dbg_mod_id_get(const char* name) RCSW_PURE;
 

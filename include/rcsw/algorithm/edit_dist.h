@@ -1,9 +1,9 @@
 /**
- * @file edit_dist.h
- * @brief Algorithm for finding the edit distance between two
+ * \file edit_dist.h
+ * \brief Algorithm for finding the edit distance between two
  * sequences of objects.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -31,7 +31,7 @@
  * Constant Definitions
  ******************************************************************************/
 /**
- * @brief The runtime implementation method to use for the edit distance
+ * \brief The runtime implementation method to use for the edit distance
  * calculation.
  */
 enum edit_dist_exec_type {
@@ -43,7 +43,7 @@ enum edit_dist_exec_type {
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Representation of the algorithm for finding the edit distance between
+ * \brief Representation of the algorithm for finding the edit distance between
  * two contiguous sequences of objects.
  */
 struct edit_dist_finder {
@@ -64,16 +64,16 @@ struct edit_dist_finder {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize an edit distance finder
+ * \brief Initialize an edit distance finder
  *
- * @param finder The finder to initialize
- * @param a Pointer to sequence #1
- * @param b Pointer to sequence #2
- * @param el_size Size of elements in bytes
- * @param cmpe Callback for comparing if two sequences are equivalent or not
- * @param seq_len Callback for obtaining the length of a sequence
+ * \param finder The finder to initialize
+ * \param a Pointer to sequence #1
+ * \param b Pointer to sequence #2
+ * \param el_size Size of elements in bytes
+ * \param cmpe Callback for comparing if two sequences are equivalent or not
+ * \param seq_len Callback for obtaining the length of a sequence
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t edit_dist_init(struct edit_dist_finder * finder,
                         const void* a,
@@ -83,20 +83,20 @@ status_t edit_dist_init(struct edit_dist_finder * finder,
                                         const void* e2),
                         size_t (*seq_len)(const void* seq));
 /**
- * @brief Destroy an edit distance finder
+ * \brief Destroy an edit distance finder
  *
- * @param finder The edit distance finder handle
+ * \param finder The edit distance finder handle
  *
  */
 void edit_dist_destroy(struct edit_dist_finder * finder);
 
 /**
- * @brief Find the edit distance between two sequences
+ * \brief Find the edit distance between two sequences
  *
- * @param finder The edit distance finder handle
- * @param type The type of method to use: iterative or recursive with memoization
+ * \param finder The edit distance finder handle
+ * \param type The type of method to use: iterative or recursive with memoization
  *
- * @return The edit distance, or -1 on error
+ * \return The edit distance, or -1 on error
  */
 int edit_dist_find(struct edit_dist_finder * finder,
                    enum edit_dist_exec_type type);

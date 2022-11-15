@@ -1,9 +1,9 @@
 /**
- * @file utils-test.cpp
+ * \file utils-test.cpp
  *
  * Test of various things in the utils library.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

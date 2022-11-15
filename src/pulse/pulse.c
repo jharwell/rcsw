@@ -1,7 +1,7 @@
 /**
- * @file pulse.c
+ * \file pulse.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -39,14 +39,14 @@ static status_t pulse_subscriber_notify(struct pulse_bp_ent* bp_ent,
                                         struct pulse_rxq_ent* rxq_ent);
 
 /**
- * @brief Reserve a buffer on a pulse instance. A suitable buffer will be found
+ * \brief Reserve a buffer on a pulse instance. A suitable buffer will be found
  * in the first pool large enough to contain the packet and has free space.
  *
- * @param pulse The pulse handle.
- * @param bp_ent The buffer pool entry reserved for the packet (to be filled).
- * @param pkt_size Size of the packet in bytes.
+ * \param pulse The pulse handle.
+ * \param bp_ent The buffer pool entry reserved for the packet (to be filled).
+ * \param pkt_size Size of the packet in bytes.
  *
- * @return The allocated packet buffer, or NULL if none found or an error
+ * \return The allocated packet buffer, or NULL if none found or an error
  * occurred.
  */
 static void* pulse_publish_reserve(struct pulse_inst* pulse,

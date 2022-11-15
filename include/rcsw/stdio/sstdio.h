@@ -1,12 +1,12 @@
 /**
- * @file sstdio.h
- * @ingroup sstdio
- * @brief Implementation of stdio libary.
+ * \file sstdio.h
+ * \ingroup sstdio
+ * \brief Implementation of stdio libary.
  *
  * Contains mostly routines involved in supporting printf(). Should mainly be
  * used in bare-metal environments (i.e. no OS/stdlib, e.g.  bootstraps).
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -43,7 +43,7 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Print formatted strings to stdout.
+ * \brief Print formatted strings to stdout.
  *
  * This routine supports standard format string/variable arg display of chars to
  * the terminal/UART. It supports almost the same set of format specifiers that
@@ -54,12 +54,12 @@ BEGIN_C_DECLS
  * smashing will occur, because all newlines in the format string are replaced
  * with \\r\\n so that text displays correctly on raw serial terminals.
  *
- * @return The number of bytes written to stdout.
+ * \return The number of bytes written to stdout.
  */
 int sstdio_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 /**
- * @brief Print formatted strings to stdout.
+ * \brief Print formatted strings to stdout.
  *
  * This routine supports standard format string/variable arg display of chars to
  * a terminal, but requires the use of va_args, instead of a variable number of
@@ -142,94 +142,94 @@ int sstdio_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
  * G       : use the shorter of f and E
  * .qi     : Precision: minimum number of digits printed for integer. Zero fill.
  *
- * @param fmt The format string.
- * @param argp The list of arguments passed to printf().
+ * \param fmt The format string.
+ * \param argp The list of arguments passed to printf().
  *
  * NOTES:
  * If the number you request to print is more digits than you requested to print
  * (i.e. you said %3d for a 5 digit integer) then your request will be ignored
  * and the full number of digits printed.
  *
- * @return The number of bytes written to stdout
+ * \return The number of bytes written to stdout
  */
 int sstdio_vprintf(const char *fmt, va_list argp);
 
 /**
- * @brief Write a string to stdout.
+ * \brief Write a string to stdout.
  *
  * This routine writes a string to stdout WITHOUT a newline (this is different
  * than the GNUC version).
  *
- * @param s The string to write.
+ * \param s The string to write.
  *
- * @return The number of bytes written
+ * \return The number of bytes written
  */
 size_t sstdio_puts(const char *const s);
 
 /**
- * @brief Write a character to stdout.
+ * \brief Write a character to stdout.
  *
  * This routine is the implementation-specific "write a char to stdout"
  * function.  On x86, it is a wrapper around the putchar() function.
  *
- * @param c The char to write.
+ * \param c The char to write.
  */
 static inline void sstdio_putchar(char c) { putchar(c); }
 
 /**
- * @brief Get a character from stdin.
+ * \brief Get a character from stdin.
  *
  * This routine is the implementation-specific "get a char from stdin" function.
  * On x86, it is a wrapper() around the getchar() function.
  *
- * @return The character received.
+ * \return The character received.
  */
 static inline int sstdio_getchar(void) { return getchar(); }
 
 /**
- * @brief Convert a string to a integer
+ * \brief Convert a string to a integer
  *
  * This routine converts a string representing an integer in the specified base.
  * If the string is a hex number, it must have a 0x prefix. If the string
  * represents a hex number but does not have a 0x prefix, the result is
  * undefined.
  *
- * @param s The string to convert
- * @param base The base the string is in (10, 16, etc.)
+ * \param s The string to convert
+ * \param base The base the string is in (10, 16, etc.)
  *
- * @return The converted result.
+ * \return The converted result.
  */
 int sstdio_atoi(const char *s, int base) RCSW_PURE;
 
 /**
- * @brief Convert an integer into a decimal string.
+ * \brief Convert an integer into a decimal string.
  *
  * This routine converts an integer into a decimal string representing the value
  * of the original integer. Negative numbers are supported.
  *
- * @param n The number to convert
- * @param s The string to fill.
+ * \param n The number to convert
+ * \param s The string to fill.
  *
- * @return The converted string.
+ * \return The converted string.
  */
 char *sstdio_itoad(int n, char *s);
 
 /**
- * @brief Convert an integer into a hexadecimal string.
+ * \brief Convert an integer into a hexadecimal string.
  *
  * This routine converts an integer into a hexadecimal string representing the
  * value of the original integer. If i is negative, it will be treated as
  * size_t.
  *
- * @param i The number to convert.
- * @param s The string to fill.
+ * \param i The number to convert.
+ * \param s The string to fill.
  *
- * @return The converted string.
+ * \return The converted string.
  */
 char *sstdio_itoax(int i, char *s);
 
 /**
- * @brief Convert a double into a string.
+ * \brief Convert a double into a string.
  *
  * This routine converts a double into a string representing the value
  * of the original double. Negative numbers are supported.
@@ -239,9 +239,9 @@ char *sstdio_itoax(int i, char *s);
  * a decimal point is due to the algorithm used, and I can't figure out how to
  * make this corner case work without screwing up the general case.
  *
- * @param n The number to convert.
- * @param force_exp If TRUE, scientific notation will always be used.
- * @param s The string to fill.
+ * \param n The number to convert.
+ * \param force_exp If TRUE, scientific notation will always be used.
+ * \param s The string to fill.
  *
  * RETURN:
  *     char* - The converted string.

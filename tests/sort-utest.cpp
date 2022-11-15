@@ -1,9 +1,9 @@
 /**
- * @file sort-test.cpp
+ * \file sort-test.cpp
  *
  * Test of simple sorting library.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

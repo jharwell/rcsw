@@ -1,7 +1,7 @@
 /**
- * @file mcm_opt.c
+ * \file mcm_opt.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -35,14 +35,14 @@ BEGIN_C_DECLS
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Print the optimal parenthesization to stdout
+ * \brief Print the optimal parenthesization to stdout
  *
  * Since you want m[1][n], call with i=1, j=length-1
  *
- * @param arr Array containing parenthesization info
- * @param i Current index into row dimension of matrix
- * @param j Current index into column dimension of matrix
- * @param length The length of the matrix chain
+ * \param arr Array containing parenthesization info
+ * \param i Current index into row dimension of matrix
+ * \param j Current index into column dimension of matrix
+ * \param length The length of the matrix chain
  *
  */
 static void mcm_opt_print_parens(const size_t* arr,
@@ -51,17 +51,17 @@ static void mcm_opt_print_parens(const size_t* arr,
                                  size_t length);
 
 /**
- * @brief Report optimal parenthesization
+ * \brief Report optimal parenthesization
  *
  * Since you want m[1][n], call with i=1, j=length-1
  *
- * @param arr Array containing parenthesization info
- * @param i Current index into row dimension of matrix
- * @param j Current index into column dimension of matrix
- * @param length The length of the matrix chain
- * @param ordering Array containing indices of matrices in the chain, to be
+ * \param arr Array containing parenthesization info
+ * \param i Current index into row dimension of matrix
+ * \param j Current index into column dimension of matrix
+ * \param length The length of the matrix chain
+ * \param ordering Array containing indices of matrices in the chain, to be
  * filled
- * @param count How many positions in the ordering array have been filled so
+ * \param count How many positions in the ordering array have been filled so
  * far. Pass this as 0.
  *
  */

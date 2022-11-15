@@ -1,8 +1,8 @@
 /**
- * @file pulse_test.h
- * @brief PULSE test harness definitions.
+ * \file pulse_test.h
+ * \brief PULSE test harness definitions.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

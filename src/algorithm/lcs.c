@@ -1,7 +1,7 @@
 /**
- * @file lcs.c
+ * \file lcs.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -31,16 +31,16 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Recursive subroutine to compute LCS of x and y using memoization
+ * \brief Recursive subroutine to compute LCS of x and y using memoization
  *
- * @param x Sequence #1
- * @param y Sequence #2
- * @param c The memoization table
- * @param i Current index in sequence #1
- * @param j Current index in sequence #2
- * @param length The length of sequence #1 (X)
+ * \param x Sequence #1
+ * \param y Sequence #2
+ * \param c The memoization table
+ * \param i Current index in sequence #1
+ * \param j Current index in sequence #2
+ * \param length The length of sequence #1 (X)
  *
- * @return  LCS(x,y)
+ * \return  LCS(x,y)
  */
 static int lcs_rec_sub(const char* x,
                        const char* y,

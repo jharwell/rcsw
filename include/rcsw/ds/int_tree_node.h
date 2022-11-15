@@ -1,10 +1,10 @@
 /**
- * @file int_tree_node.h
- * @cond INTERNAL
- * @ingroup ds
- * @brief Functions related to interval tree nodes.
+ * \file int_tree_node.h
+ * \cond INTERNAL
+ * \ingroup ds
+ * \brief Functions related to interval tree nodes.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -35,16 +35,16 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Update the max high interval for a node during the fixup process after
+ * \brief Update the max high interval for a node during the fixup process after
  * an insertion/deletion.
  *
  * Do not call this function directly.
  *
- * @param node The node to update.
+ * \param node The node to update.
  */
 void int_tree_node_update_max(struct int_tree_node* node);
 
-/* @endcond */
+/* \endcond */
 END_C_DECLS
 
 #endif /* INCLUDE_RCSW_DS_INT_TREE_NODE_H_ */

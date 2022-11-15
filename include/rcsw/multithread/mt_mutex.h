@@ -1,9 +1,9 @@
 /**
- * @file mt_mutex.h
- * @ingroup multithread
- * @brief Wrapper for pthread_mutex_lock.
+ * \file mt_mutex.h
+ * \ingroup multithread
+ * \brief Wrapper for pthread_mutex_lock.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,7 +34,7 @@
  * Type Definitions
  ******************************************************************************/
 /**
- * @brief Wrapper around POSIX pthread mutexes variables. In the future, this
+ * \brief Wrapper around POSIX pthread mutexes variables. In the future, this
  * may incorporate mutexes from other operating systems.
  */
 typedef struct {
@@ -48,38 +48,38 @@ typedef struct {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a mutex.
+ * \brief Initialize a mutex.
  *
- * @param mutex_in The mutex to initialize. Can be NULL if \ref
+ * \param mutex_in The mutex to initialize. Can be NULL if \ref
  * MT_APP_DOMAIN_MEM is not passed.
- * @param flags Configuration flags.
+ * \param flags Configuration flags.
  *
- * @return The initialized mutex, or NULL if an ERROR occurred.
+ * \return The initialized mutex, or NULL if an ERROR occurred.
  */
 mt_mutex_t* mt_mutex_init(mt_mutex_t *mutex_in, uint32_t flags);
 
 /**
- * @brief Destroy a mutex.
+ * \brief Destroy a mutex.
  *
- * @param mutex The mutex handle.
+ * \param mutex The mutex handle.
  */
 void mt_mutex_destroy(mt_mutex_t *mutex);
 
 /**
- * @brief Acquire the lock.
+ * \brief Acquire the lock.
  *
- * @param mutex The mutex handle.
+ * \param mutex The mutex handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_mutex_lock(mt_mutex_t *mutex);
 
 /**
- * @brief Release the lock.
+ * \brief Release the lock.
  *
- * @param mutex The mutex handle.
+ * \param mutex The mutex handle.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_mutex_unlock(mt_mutex_t *mutex);
 

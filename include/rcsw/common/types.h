@@ -1,9 +1,9 @@
 /**
- * @file types.h
- * @ingroup common
- * @brief Base type definitions for RCSW.
+ * \file types.h
+ * \ingroup common
+ * \brief Base type definitions for RCSW.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -70,7 +70,7 @@ extern uint32_t errno;
  * Custom Type Definitions
  ******************************************************************************/
 /**
- * @brief The basic unit of determining if a function has succeeded or not.
+ * \brief The basic unit of determining if a function has succeeded or not.
  */
 #if defined(OK) || defined(ERROR)
 #undef OK
@@ -84,7 +84,7 @@ typedef enum {
 } status_t;
 
 /**
- * @brief A C boolean type.
+ * \brief A C boolean type.
  */
 #if defined(TRUE) || defined(FALSE)
 #undef TRUE

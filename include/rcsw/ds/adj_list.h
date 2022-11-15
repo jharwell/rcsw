@@ -1,7 +1,7 @@
 /**
- * @file adj_list.h
- * @ingroup ds
- * @brief Implementation of adj list representation for graphs.
+ * \file adj_list.h
+ * \ingroup ds
+ * \brief Implementation of adj list representation for graphs.
  *
  * Pros: O(|V| + |E|) space. Adding a vertex is more efficient than with an \ref
  * adj_matrix representation
@@ -9,7 +9,7 @@
  * Cons: Queries like "is there an edge from vertex u to vertex v" are not
  * efficient and are O(|V|).
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *

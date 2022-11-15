@@ -1,9 +1,9 @@
 /**
- * @file mt_queue.h
- * @ingroup multithread
- * @brief Producer-consumer queue implementation.
+ * \file mt_queue.h
+ * \ingroup multithread
+ * \brief Producer-consumer queue implementation.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,7 +34,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Producer-consumer queue initialization parameters.
+ * \brief Producer-consumer queue initialization parameters.
  */
 struct mt_queue_params {
     size_t el_size;     /// Size of each element in the queue.
@@ -48,7 +48,7 @@ struct mt_queue_params {
 };
 
 /**
- * @brief Producer-consumer queue, providing thread-safe access to data at both
+ * \brief Producer-consumer queue, providing thread-safe access to data at both
  * ends of a FIFO.
  */
 struct mt_queue {
@@ -63,11 +63,11 @@ struct mt_queue {
  * Macros
  ******************************************************************************/
 /**
- * @brief Determine if the queue is currently full.
+ * \brief Determine if the queue is currently full.
  *
- * @param queue The queue  handle.
+ * \param queue The queue  handle.
  *
- * @return \ref bool_t
+ * \return \ref bool_t
  */
 static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
     RCSW_FPC_NV(FALSE, NULL != queue);
@@ -75,11 +75,11 @@ static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
 }
 
 /**
- * @brief Determine if the queue is currently empty.
+ * \brief Determine if the queue is currently empty.
  *
- * @param queue The linked queue handle.
+ * \param queue The linked queue handle.
  *
- * @return \ref bool_t
+ * \return \ref bool_t
  */
 static inline bool_t mt_queue_isempty(const struct mt_queue* const queue) {
     RCSW_FPC_NV(FALSE, NULL != queue);
@@ -87,13 +87,13 @@ static inline bool_t mt_queue_isempty(const struct mt_queue* const queue) {
 }
 
 /**
- * @brief Determine # elements currently in the queue. The value returned by
+ * \brief Determine # elements currently in the queue. The value returned by
  * this function should not be relied upon for accuracy among multiple threads
  * without additional synchronization.
  *
- * @param queue The queue handle.
+ * \param queue The queue handle.
  *
- * @return # elements in queue, or 0 on ERROR.
+ * \return # elements in queue, or 0 on ERROR.
  */
 static inline size_t mt_queue_n_elts(const struct mt_queue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
@@ -101,13 +101,13 @@ static inline size_t mt_queue_n_elts(const struct mt_queue* const queue) {
 }
 
 /**
- * @brief Get the capacity of the queue. The value returned can be relied upon
+ * \brief Get the capacity of the queue. The value returned can be relied upon
  * in a multi-thread context, because it does not change during the lifetime of
  * the queue.
  *
- * @param queue The queue handle.
+ * \param queue The queue handle.
  *
- * @return Queue capacity, or 0 on ERROR.
+ * \return Queue capacity, or 0 on ERROR.
  */
 static inline size_t mt_queue_capacity(const struct mt_queue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
@@ -115,12 +115,12 @@ static inline size_t mt_queue_capacity(const struct mt_queue* const queue) {
 }
 
 /**
- * @brief Get the # slots available in the queue. The value returned cannot be
+ * \brief Get the # slots available in the queue. The value returned cannot be
  * relied upon in a multi-thread context without additional synchronization.
  *
- * @param queue The queue handle.
+ * \param queue The queue handle.
  *
- * @return # free slots, or 0 on ERROR.
+ * \return # free slots, or 0 on ERROR.
  */
 static inline size_t mt_queue_n_free(const struct mt_queue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
@@ -133,69 +133,69 @@ static inline size_t mt_queue_n_free(const struct mt_queue* const queue) {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a producer-consumer queue.
+ * \brief Initialize a producer-consumer queue.
  *
- * @param mt_queue_in An application allocated handle for the queue. Can be
+ * \param mt_queue_in An application allocated handle for the queue. Can be
  * NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
- * @param params The initialization parameters.
+ * \param params The initialization parameters.
  *
- * @return The initialized queue, or NULL if an error occurred.
+ * \return The initialized queue, or NULL if an error occurred.
  */
 struct mt_queue * mt_queue_init(
     struct mt_queue *mt_queue_in,
     const struct mt_queue_params * params) RCSW_CHECK_RET;
 
 /**
- * @brief Destroy a producer-consumer queue. Any further use of the queue handle
+ * \brief Destroy a producer-consumer queue. Any further use of the queue handle
  * after calling this function is undefined.
  *
- * @param mt_queue The queue handle.
+ * \param mt_queue The queue handle.
  */
 void mt_queue_destroy(struct mt_queue * mt_queue);
 
 /**
- * @brief Push an item to the back of the queue, waiting if necessary for space
+ * \brief Push an item to the back of the queue, waiting if necessary for space
  * to become available.
  *
- * @param mt_queue The queue handle.
- * @param e The item to enqueue.
+ * \param mt_queue The queue handle.
+ * \param e The item to enqueue.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_queue_push(struct mt_queue * mt_queue, const void * e);
 
 /**
- * @brief Pop and return the first element in the queue, waiting if
+ * \brief Pop and return the first element in the queue, waiting if
  * necessary for the queue to become non-empty.
  *
- * @param mt_queue The queue handle.
- * @param e The item to dequeue. Can be NULL.
+ * \param mt_queue The queue handle.
+ * \param e The item to dequeue. Can be NULL.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_queue_pop(struct mt_queue * mt_queue, void * e);
 
 /**
- * @brief Pop and return the first element in the queue, waiting until the
+ * \brief Pop and return the first element in the queue, waiting until the
  * timeout if necessary for the queue to become non-empty.
  *
- * @param mt_queue The queue handle.
- * @param to A RELATIVE timeout.
- * @param e The item to dequeue. Can be NULL.
+ * \param mt_queue The queue handle.
+ * \param to A RELATIVE timeout.
+ * \param e The item to dequeue. Can be NULL.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mt_queue_timed_pop(struct mt_queue * mt_queue,
                             const struct timespec * to, void * e);
 
 /**
- * @brief Get a reference to the first element in the queue if it exists. The
+ * \brief Get a reference to the first element in the queue if it exists. The
  * non-NULL value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
- * @param mt_queue The queue handle.
+ * \param mt_queue The queue handle.
  *
- * @return A reference to the first element in the queue, or NULL if no such
+ * \return A reference to the first element in the queue, or NULL if no such
  * element or an error occurred.
  */
 void* mt_queue_peek(struct mt_queue * mt_queue);

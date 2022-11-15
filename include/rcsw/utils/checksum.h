@@ -1,9 +1,9 @@
 /**
- * @file checksum.h
- * @ingroup utils
- * @brief Checksumming functions for embedded applications.
+ * \file checksum.h
+ * \ingroup utils
+ * \brief Checksumming functions for embedded applications.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
  * This file is part of RCSW.
  *
@@ -34,105 +34,105 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Compute an 8-bit checksum (XOR, rotate)
+ * \brief Compute an 8-bit checksum (XOR, rotate)
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 8-bit checksum
+ * \return computed 8-bit checksum
  */
 uint8_t xchks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
 
 /**
- * @brief Compute an 16-bit checksum (XOR, rotate)
+ * \brief Compute an 16-bit checksum (XOR, rotate)
  *
  * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 16-bit checksum
+ * \return computed 16-bit checksum
  */
 uint16_t xchks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
 
 /**
- * @brief Compute an 32-bit checksum (XOR, rotate)
+ * \brief Compute an 32-bit checksum (XOR, rotate)
  *
  * Both buf and n_bytes must be 32-bit aligned, or no action is performed.
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return Computed 32-bit checksum
+ * \return Computed 32-bit checksum
  */
 uint32_t xchks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
 
 /**
- * @brief Compute an 8-bit checksum (add-ignore-carry)
+ * \brief Compute an 8-bit checksum (add-ignore-carry)
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 8-bit checksum
+ * \return computed 8-bit checksum
  */
 uint8_t achks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
 
 /**
- * @brief Compute an 16-bit checksum (add-ignore-carry)
+ * \brief Compute an 16-bit checksum (add-ignore-carry)
  *
  * Both buf and n_bytes must be 16-bit aligned, or no action is performed
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 16-bit checksum
+ * \return computed 16-bit checksum
  */
 uint16_t achks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
 
 /**
- * @brief Compute an 32-bit checksum (add-ignore-carry)
+ * \brief Compute an 32-bit checksum (add-ignore-carry)
  *
  * Both buf and n_bytes must be 16-bit aligned, or no action is performed
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 32-bit checksum
+ * \return computed 32-bit checksum
  */
 uint32_t achks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
 
 /**
- * @brief Compute a 16-bit checksum (add-ignore-carry) over 8-bit values
+ * \brief Compute a 16-bit checksum (add-ignore-carry) over 8-bit values
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 16-bit checksum
+ * \return computed 16-bit checksum
  */
 uint16_t achks8_16(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
 
 /**
- * @brief Compute a 32-bit checksum (add-ignore-carry) over 16-bit values
+ * \brief Compute a 32-bit checksum (add-ignore-carry) over 16-bit values
  *
  * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
- * @param seed Starting value for checksum
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
+ * \param seed Starting value for checksum
  *
- * @return computed 32-bit checksum
+ * \return computed 32-bit checksum
  */
 uint32_t achks16_32(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
 
 /**
- * @brief Compute a 32-bit CRC using the work of Gary S. Brown
+ * \brief Compute a 32-bit CRC using the work of Gary S. Brown
  *
  *  COPYRIGHT (C) 1986 Gary S. Brown.  You may use this program, or
  *  code or tables extracted from it, as desired without __restrict__ion.
@@ -171,38 +171,38 @@ uint32_t achks16_32(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PU
  *      using byte-swap instructions
  *      polynomial $edb88320
  *
- * @param buf Buffer to compute over
- * @param size # bytes in buffer
- * @param crc Starting value for crc
+ * \param buf Buffer to compute over
+ * \param size # bytes in buffer
+ * \param crc Starting value for crc
  *
- * @return The CRC
+ * \return The CRC
  */
 uint32_t crc32_brown(const uint8_t * buf, uint32_t crc, size_t size);
 
 /**
- * @brief Initialize Ethernet 32 bit CRC lookup table
+ * \brief Initialize Ethernet 32 bit CRC lookup table
  */
 void crc32_ethl_init(void);
 
 /**
  *
- * @brief 32 bit CRC according to IEEE 802.3 Ethernet standard
+ * \brief 32 bit CRC according to IEEE 802.3 Ethernet standard
  *
  * Same as crc32_eth(), but uses a precomputed lookup table
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
  *
  * You have to call crc32_eth1_init() first, CRC will be wrong
  *
- * @return CRC of data
+ * \return CRC of data
  *
  */
 uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
 
 /**
  *
- * @brief 32 bit CRC according to IEEE 802.3 Ethernet standard
+ * \brief 32 bit CRC according to IEEE 802.3 Ethernet standard
  *
  * According to the standard, the CRC is:
  * - 32 bits
@@ -211,10 +211,10 @@ uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
  * - 8 bit reflected input at EACH stage of the CRC calculation,
  * - Final 32 bit remainder reflected and THEN XORed with 0xFFFFFFFF
  *
- * @param buf Buffer to compute over
- * @param n_bytes # bytes in buffer
+ * \param buf Buffer to compute over
+ * \param n_bytes # bytes in buffer
  *
- * @return CRC of data
+ * \return CRC of data
  */
 uint32_t crc32_eth(const uint8_t * buf, size_t n_bytes) RCSW_PURE;
 
