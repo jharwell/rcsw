@@ -1,23 +1,11 @@
 /**
- * @file types.h
- * @ingroup common
- * @brief Base type definitions for RCSW.
+ * \file types.h
+ * \ingroup common
+ * \brief Base type definitions for RCSW.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef INCLUDE_RCSW_COMMON_TYPES_H_
@@ -70,7 +58,7 @@ extern uint32_t errno;
  * Custom Type Definitions
  ******************************************************************************/
 /**
- * @brief The basic unit of determining if a function has succeeded or not.
+ * \brief The basic unit of determining if a function has succeeded or not.
  */
 #if defined(OK) || defined(ERROR)
 #undef OK
@@ -84,7 +72,7 @@ typedef enum {
 } status_t;
 
 /**
- * @brief A C boolean type.
+ * \brief A C boolean type.
  */
 #if defined(TRUE) || defined(FALSE)
 #undef TRUE

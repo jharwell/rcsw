@@ -1,12 +1,6 @@
-/*******************************************************************************
- * Name            : ds_test.h
- * Project         : ds
- * Module          : ds
- * Description     : Header file for common DS test routines (C++)
- * Creation Date   : Sun Apr 27 19:29:22 2014
- * Original Author : jharwell
- *
- ******************************************************************************/
+/**
+ * SPDX-License-Identifier: MIT
+ */
 
 #define _DS_TEST_HPP_
 

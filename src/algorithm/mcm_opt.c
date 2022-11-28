@@ -1,21 +1,9 @@
 /**
- * @file mcm_opt.c
+ * \file mcm_opt.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -35,14 +23,14 @@ BEGIN_C_DECLS
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Print the optimal parenthesization to stdout
+ * \brief Print the optimal parenthesization to stdout
  *
  * Since you want m[1][n], call with i=1, j=length-1
  *
- * @param arr Array containing parenthesization info
- * @param i Current index into row dimension of matrix
- * @param j Current index into column dimension of matrix
- * @param length The length of the matrix chain
+ * \param arr Array containing parenthesization info
+ * \param i Current index into row dimension of matrix
+ * \param j Current index into column dimension of matrix
+ * \param length The length of the matrix chain
  *
  */
 static void mcm_opt_print_parens(const size_t* arr,
@@ -51,17 +39,17 @@ static void mcm_opt_print_parens(const size_t* arr,
                                  size_t length);
 
 /**
- * @brief Report optimal parenthesization
+ * \brief Report optimal parenthesization
  *
  * Since you want m[1][n], call with i=1, j=length-1
  *
- * @param arr Array containing parenthesization info
- * @param i Current index into row dimension of matrix
- * @param j Current index into column dimension of matrix
- * @param length The length of the matrix chain
- * @param ordering Array containing indices of matrices in the chain, to be
+ * \param arr Array containing parenthesization info
+ * \param i Current index into row dimension of matrix
+ * \param j Current index into column dimension of matrix
+ * \param length The length of the matrix chain
+ * \param ordering Array containing indices of matrices in the chain, to be
  * filled
- * @param count How many positions in the ordering array have been filled so
+ * \param count How many positions in the ordering array have been filled so
  * far. Pass this as 0.
  *
  */

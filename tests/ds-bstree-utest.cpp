@@ -1,21 +1,9 @@
 /**
- * @file bstree-test.cpp
+ * \file bstree-test.cpp
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -50,7 +38,7 @@ int n_elements; /* global var for # elements in RBTREE */
  * Test Functions Forward Declarations
  ******************************************************************************/
 /**
- * @brief Test inserting nodes in a binary search tree and verifying
+ * \brief Test inserting nodes in a binary search tree and verifying
  *
  * This routine creates 3 BSTREEs of sorted, reverse-sorted, and random
  * data of the specified size and verifies the integrity of the BSTREE
@@ -60,7 +48,7 @@ static void insert_test(int len, struct ds_params *params,
                         int (*verify_cb)(const struct bstree* const tree,
                                          struct bstree_node * const node));
 /**
- * @brief Test removing elements from BSTREEs of different sizes
+ * \brief Test removing elements from BSTREEs of different sizes
  *
  * This routine creates 3 BSTREEs of sorted, reverse-sorted, and random
  * data of the specified size and tests removing elements from them in both the
@@ -71,28 +59,28 @@ static void remove_test(int len, int remove_type, struct ds_params *params,
                                          struct bstree_node * const node));
 
 /**
- * @brief Test inserting nodes in an interval tree and verifying
+ * \brief Test inserting nodes in an interval tree and verifying
  *
  */
 static void int_tree_insert_test(int len, struct ds_params *params);
 
 /**
- * @brief Test removeing nodes in an interval tree and verifying
+ * \brief Test removeing nodes in an interval tree and verifying
  */
 static void int_tree_remove_test(int len, struct ds_params *params);
 
 /**
- * @brief Test overlap search for interval trees
+ * \brief Test overlap search for interval trees
  */
 static void int_tree_overlap_test(int len, struct ds_params *params);
 
 /**
- * @brief Test rank for OStrees.
+ * \brief Test rank for OStrees.
  */
 static void ostree_rank_test(int len, struct ds_params *params);
 
 /**
- * @brief Test select for OStrees.
+ * \brief Test select for OStrees.
  */
 static void ostree_select_test(int len, struct ds_params *params);
 
@@ -101,23 +89,23 @@ static void ostree_select_test(int len, struct ds_params *params);
  * Test Helper Functions Forward Declarations
  ******************************************************************************/
 /**
- * @brief Verify parent-child relationships in a BSTREE (RB)
+ * \brief Verify parent-child relationships in a BSTREE (RB)
  *
- * @return 0 if OK, nonzero otherwise
+ * \return 0 if OK, nonzero otherwise
  */
 static int verify_nodes_rb(const struct bstree* const tree,
                            struct bstree_node * const node);
 /**
- * @brief Verify parent-child relationships in a BSTREE
+ * \brief Verify parent-child relationships in a BSTREE
  *
- * @return 0 if OK, nonzero otherwise
+ * \return 0 if OK, nonzero otherwise
  */
 static int verify_nodes_bst(const struct bstree* const tree,
                             struct bstree_node * const node);
 /**
- * @brief Verify parent-child relationships in an interval tree.
+ * \brief Verify parent-child relationships in an interval tree.
  *
- * @return 0 if OK, nonzero otherwise
+ * \return 0 if OK, nonzero otherwise
  */
 static int verify_nodes_int(const struct bstree* const tree,
                             struct int_tree_node * const node);

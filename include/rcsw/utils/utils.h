@@ -1,26 +1,14 @@
 /**
- * @file utils.h
- * @ingroup utils
- * @brief Miscellaneous utility functions/macros/definitions/etc.
+ * \file utils.h
+ * \ingroup utils
+ * \brief Miscellaneous utility functions/macros/definitions/etc.
  *
  * A catch all for random things I found interesting that didn't fit anywhere
  * else.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef INCLUDE_RCSW_UTILS_UTILS_H_
@@ -170,12 +158,12 @@ extern const uint8_t util_revtable[];
  * Inline Functions
  ******************************************************************************/
 /**
- * @brief Ensure a value is in the range [0, 255]. Value may be nearby after
+ * \brief Ensure a value is in the range [0, 255]. Value may be nearby after
  *        scaling due to floating point rounding.
  *
- * @param v The value to round.
+ * \param v The value to round.
  *
- * @return The rounded value.
+ * \return The rounded value.
  */
  RCSW_PURE static inline float utils_clamp_f255(float v) {
     if (v < 0) {
@@ -191,57 +179,57 @@ extern const uint8_t util_revtable[];
  ******************************************************************************/
 
 /**
- * @brief Reverse the bytes in a byte array.
+ * \brief Reverse the bytes in a byte array.
  *
- * @param arr The byte array to reverse.
- * @param size # of bytes in array.
+ * \param arr The byte array to reverse.
+ * \param size # of bytes in array.
  *
  */
 void reverse_byte_array(void * arr, size_t size);
 
 /**
- * @brief Generate permutations from elements within an array from
+ * \brief Generate permutations from elements within an array from
  * element "start" to element "size" 1.
  *
- * @param arr The array of integers to permute.
- * @param size # elements in array.
- * @param start Start position of array to permute
- * @param fp A callback which each permutation is handed to in turn.
+ * \param arr The array of integers to permute.
+ * \param size # elements in array.
+ * \param start Start position of array to permute
+ * \param fp A callback which each permutation is handed to in turn.
  */
 void arr_permute(uint32_t *arr, size_t size, size_t start,
                  void (*fp)(uint32_t * arr));
 
 /**
- * @brief Swap two elements in an array
+ * \brief Swap two elements in an array
  *
- * @param v The array
- * @param i Index #1
- * @param j Index #2
+ * \param v The array
+ * \param i Index #1
+ * \param j Index #2
  */
 void arr_el_swap(uint32_t * v, size_t i, size_t j);
 
 /**
- * @brief Generate a random alpha-numeric string of known length.
+ * \brief Generate a random alpha-numeric string of known length.
  *
  * Buf is filled with len - 1 alpha-numeric characters and a NULL byte at the
  * end such that strlen(buf) = len -1 after this function executes.
  *
- * @param buf The buffer to fill.
- * @param len The # of characters to put in the string, -1 for the NULL byte.
+ * \param buf The buffer to fill.
+ * \param len The # of characters to put in the string, -1 for the NULL byte.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t string_gen(char * buf, size_t len);
 
 /**
  *
- * @brief Reflect N bits about the center position. I'm not sure how this would
+ * \brief Reflect N bits about the center position. I'm not sure how this would
  * every be useful, but here it is.
  *
- * @param data The data to reflect.
- * @param n_bits # of bits to reflect.
+ * \param data The data to reflect.
+ * \param n_bits # of bits to reflect.
  *
- * @return The reflected data.
+ * \return The reflected data.
  */
 uint32_t reflect(uint32_t data, size_t n_bits) RCSW_CONST;
 

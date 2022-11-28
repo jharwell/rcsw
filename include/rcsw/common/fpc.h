@@ -1,7 +1,7 @@
 /**
- * @file fpc.h
- * @ingroup common
- * @brief Function precondition/post-condition definitions (very useful!).
+ * \file fpc.h
+ * \ingroup common
+ * \brief Function precondition/post-condition definitions (very useful!).
  *
  * Allows you to define a set of conditions that must be met for a function to
  * proceed/must be true when it returns. If any of the conditions fails, the
@@ -10,21 +10,9 @@
  * RCSW_FPC_ABORT is assumed, and the failure of any condition will cause the
  * program to halt.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef INCLUDE_RCSW_COMMON_FPC_H_
@@ -40,13 +28,13 @@
  * Constant Definitions
  ******************************************************************************/
 /**
- * @brief Readability constants for determining whether or not the program
+ * \brief Readability constants for determining whether or not the program
  * should halt if a function pre/post condition fails.
  */
 #define RCSW_FPC_ABORT 0
 
 /**
- * @brief Readability constants for determining whether or not the program
+ * \brief Readability constants for determining whether or not the program
  * should return an error code of some kind when a function pre/post condition
  * fails.
  */
@@ -56,7 +44,7 @@
  * Function Precondition Checking Macros
  ******************************************************************************/
 /**
- * @def RCSW_FPC_RET_NV(X, v)
+ * \def RCSW_FPC_RET_NV(X, v)
  *
  * Check a single function pre/post condition \a X, returning a value \a v if
  * the condition is not met. Requires that the function does not return
@@ -76,7 +64,7 @@
   }
 
 /**
- * @def RCSW_FPC_RET_V(X)
+ * \def RCSW_FPC_RET_V(X)
  *
  * Check a single function pre/post condition \a X, returning if the condition
  * is not met. Requires that the function returns void.
@@ -94,7 +82,7 @@
   }
 
 /**
- * @def RCSW_FPC_ASSERT(X)
+ * \def RCSW_FPC_ASSERT(X)
  *
  * Check a single function pre/post condition, halting the program if the
  * condition \a X fails.
@@ -102,7 +90,7 @@
 #define RCSW_FPC_ASSERT(X) { assert(X); }
 
 /**
- * @def RCSW_FPC_ABORT_NV(X)
+ * \def RCSW_FPC_ABORT_NV(X)
  *
  * Check a single function pre/post condition \a X, aborting if the condition
  * is not met.
@@ -114,7 +102,7 @@
 #define RCSW_FPC_ABORT_NV(X, v) RCSW_FPC_ASSERT(X)
 
 /**
- * @def RCSW_FPC_NV_ABORT_V(X)
+ * \def RCSW_FPC_NV_ABORT_V(X)
  *
  * Check a single function pre/post condition \a X, aborting if the condition
  * is not met.
@@ -128,7 +116,7 @@
 #if(RCSW_FPC_TYPE == RCSW_FPC_RETURN)
 
 /**
- * @def RCSW_FPC_NV(v, ...)
+ * \def RCSW_FPC_NV(v, ...)
  *
  * Function pre/post condition macro.
  *
@@ -146,7 +134,7 @@
     { RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__); }
 
 /**
- * @def RCSW_FPC_V(v, ...)
+ * \def RCSW_FPC_V(v, ...)
  *
  * Function pre/post condition macro for functions that return void.
  *

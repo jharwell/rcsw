@@ -1,23 +1,11 @@
 /**
- * @file mpi_radix_sort.h
- * @ingroup multiprocess
- * @brief Multiprocess radix sorter using MPI.
+ * \file mpi_radix_sort.h
+ * \ingroup multiprocess
+ * \brief Multiprocess radix sorter using MPI.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef INCLUDE_RCSW_MULTIPROCESS_MPI_RADIX_SORT_H_
@@ -32,7 +20,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Parameters for \ref mpi_radix_sorter.
+ * \brief Parameters for \ref mpi_radix_sorter.
  */
 struct mpi_radix_sorter_params {
     size_t* data;        /// Array to sort.
@@ -43,7 +31,7 @@ struct mpi_radix_sorter_params {
 };
 
 /**
- * @brief Handle for MPI implementation of radix sort.
+ * \brief Handle for MPI implementation of radix sort.
  */
 struct mpi_radix_sorter {
     size_t* data;       /// The data a rank is working on.
@@ -74,28 +62,28 @@ struct mpi_radix_sorter {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a multi-process radix sorter.
+ * \brief Initialize a multi-process radix sorter.
  *
- * @param params Initialization parameters.
+ * \param params Initialization parameters.
  *
- * @return The initialized sorter, or NULL if an error occurred.
+ * \return The initialized sorter, or NULL if an error occurred.
  */
 struct mpi_radix_sorter* mpi_radix_sorter_init(
     const struct mpi_radix_sorter_params* const params) RCSW_CHECK_RET;
 
 /**
- * @brief Deallocate/destroy a sorter after use.
+ * \brief Deallocate/destroy a sorter after use.
  *
- * @param sorter The sorter to destroy.
+ * \param sorter The sorter to destroy.
  */
 void mpi_radix_sorter_destroy(struct mpi_radix_sorter* const sorter);
 
 /**
- * @brief Perform radix sort in parallel using MPI.
+ * \brief Perform radix sort in parallel using MPI.
  *
- * @param sorter The initialized sorter.
+ * \param sorter The initialized sorter.
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 status_t mpi_radix_sorter_exec(struct mpi_radix_sorter* const sorter);
 

@@ -1,21 +1,9 @@
 /**
- * @file sstdio.c
+ * \file sstdio.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -45,30 +33,30 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Get number of digits to display for int in printf().
+ * \brief Get number of digits to display for int in printf().
  *
  * Get the number of digits to display based on the current position within the
  * format block. This is a helper function to help reduce code duplication.
  *
- * @param fmt_buf Scratch area.
- * @param fmt_block The format string.
- * @param pos Position within format string.
+ * \param fmt_buf Scratch area.
+ * \param fmt_block The format string.
+ * \param pos Position within format string.
  *
- * @return The number of digits to display.
+ * \return The number of digits to display.
  */
 static int decimal_digits_get(const char* fmt_buf,
                               const char* fmt_block,
                               size_t pos);
 
 /**
- * @brief Round a floating point string to a specified number of digits
+ * \brief Round a floating point string to a specified number of digits
  *
  * This function takes and modifies digits AFTER the number of requested decimal
  * places so that numbers appear rounded. This is a helper function to help
  * reduce code duplication.
  *
- * @param s The converted string
- * @param n_digits The # of decimal places to keep.
+ * \param s The converted string
+ * \param n_digits The # of decimal places to keep.
  */
 static void float_arg_round(char* s, size_t n_digits);
 
@@ -213,7 +201,7 @@ int sstdio_vprintf(const char* fmt, va_list argp) {
             sstdio_putchar(*s++);
 
             /*
-             * @todo This is necessary because this function and/or some of its
+             * \todo This is necessary because this function and/or some of its
              * subfunctions are not quite const correct. They should be made
              * that way at some point...
              */

@@ -1,21 +1,9 @@
 /**
- * @file sort.c
+ * \file sort.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -33,7 +21,7 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Partition an array in quicksort
+ * \brief Partition an array in quicksort
  *
  * This function partitions an array for quicksort(). It uses two pointers: one
  * moving in from the left and a second moving in from the right. They are moved
@@ -47,13 +35,13 @@ BEGIN_C_DECLS
  * can result in the worst case O(n^2) complexity if the array is already
  * sorted. I'll fix this eventually...
  *
- * @param a The array to partition
- * @param min_index Starting index
- * @param max_index Ending index
- * @param el_size Size of elements in bytes
- * @param cmpe Function to compare 2 elements
+ * \param a The array to partition
+ * \param min_index Starting index
+ * \param max_index Ending index
+ * \param el_size Size of elements in bytes
+ * \param cmpe Function to compare 2 elements
  *
- * @return The partition index
+ * \return The partition index
  */
 static size_t partition(void* a,
                         int min_index,

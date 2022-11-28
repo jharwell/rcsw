@@ -1,21 +1,9 @@
 /**
- * @file darray.c
+ * \file darray.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -41,17 +29,17 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Increase the capacity of a darray by a set amount
+ * \brief Increase the capacity of a darray by a set amount
  *
- * @param arr The darray handle
- * @param size The new size
+ * \param arr The darray handle
+ * \param size The new size
  *
- * @return \ref status_t.
+ * \return \ref status_t.
  */
 static status_t darray_extend(struct darray* arr, size_t size);
 
 /**
- * @brief Halve the size of an darray
+ * \brief Halve the size of an darray
  *
  * Decreases the capacity of a darray by a set amount. If after decreasing the
  * darray would become size 0, the underlying array is NOT free()ed, and the
@@ -60,10 +48,10 @@ static status_t darray_extend(struct darray* arr, size_t size);
  * This function will always fail if \ref DS_APP_DOMAIN_DATA was passed during
  * initialization.
  *
- * @param arr The darray handle
- * @param size The new size
+ * \param arr The darray handle
+ * \param size The new size
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 static status_t darray_shrink(struct darray* arr, size_t size);
 

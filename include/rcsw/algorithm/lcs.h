@@ -1,23 +1,11 @@
 /**
- * @file lcs.h
- * @ingroup algorithm
- * @brief Longest Common Subsequence (LCS) of two sequences of characters.
+ * \file lcs.h
+ * \ingroup algorithm
+ * \brief Longest Common Subsequence (LCS) of two sequences of characters.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 #ifndef INCLUDE_RCSW_ALGORITHM_LCS_H_
@@ -32,7 +20,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * @brief Representation of algorithm to find the longest common subsequence of
+ * \brief Representation of algorithm to find the longest common subsequence of
  * two strings.
  */
 struct lcs_calculator {
@@ -51,22 +39,22 @@ struct lcs_calculator {
 BEGIN_C_DECLS
 
 /**
- * @brief Initialize a longest common subsequence (LCS) calculator
+ * \brief Initialize a longest common subsequence (LCS) calculator
  *
- * @param lcs The LCS calculator to initialize
- * @param x Sequence # 1
- * @param y Sequence # 2
+ * \param lcs The LCS calculator to initialize
+ * \param x Sequence # 1
+ * \param y Sequence # 2
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 status_t lcs_init(struct lcs_calculator * lcs,
                   const char * x,
                   const char * y);
 
 /**
- * @brief Destroy a created LCS calculator
+ * \brief Destroy a created LCS calculator
  *
- * @param lcs The LCS handle
+ * \param lcs The LCS handle
  *
  * Any further use of the LCS after calling this function is undefined.
  *
@@ -74,20 +62,20 @@ status_t lcs_init(struct lcs_calculator * lcs,
 void lcs_destroy(struct lcs_calculator * lcs);
 
 /**
- * @brief Compute the LCS of x,y using top down dynamic programming
+ * \brief Compute the LCS of x,y using top down dynamic programming
  *
- * @param lcs The LCS handle
+ * \param lcs The LCS handle
  *
- * @return LCS of (x,y) or -1 if an error occurred
+ * \return LCS of (x,y) or -1 if an error occurred
  */
 int lcs_rec(const struct lcs_calculator* lcs);
 
 /**
- * @brief Compute LCS(x,y) using bottom up dynamic programming
+ * \brief Compute LCS(x,y) using bottom up dynamic programming
  *
- * @param lcs The LCS handle
+ * \param lcs The LCS handle
  *
- * @return \ref status_t
+ * \return \ref status_t
  */
 int lcs_iter(struct lcs_calculator * lcs);
 

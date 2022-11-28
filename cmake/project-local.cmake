@@ -112,6 +112,9 @@ add_library(
   ${rcsw_components_SRC}
   )
 
+# execute_process(COMMAND git rev-list --count HEAD
+#   OUTPUT_VARIABLE RCSW_VERSION
+#   OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(rcsw_LIBRARY_NAME rcsw)
 set_target_properties(${rcsw_LIBRARY} PROPERTIES OUTPUT_NAME ${rcsw_LIBRARY_NAME})
 

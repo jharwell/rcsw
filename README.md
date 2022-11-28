@@ -1,32 +1,9 @@
 # Reusable C Software Library
 
-[![Build Status](https://travis-ci.org/swarm-robotics/rcsw.svg?branch=devel)](https://travis-ci.org/swarm-robotics/rcsw.svg?branch=devel) (Devel)
-[![Build Status](https://travis-ci.org/swarm-robotics/rcsw.svg?branch=master)](https://travis-ci.org/swarm-robotics/rcsw.svg?branch=master) (Master)
-
-
 A highly flexible, and also (relatively) high performance C of a C version of
 the C++ STL. Unless otherwise stated, everything in here is for programming on a
 Linux platform (it might work on Windows, but I haven't tested it even a little
 bit).
-
-## Pre-cloning Setup
-
-1. This project uses the build scaffolding provided by
-   [cmake-config](https://github.com/jharwell/cmake-config). Please look at the
-   platform requirements for that project and install any needed
-   packages/libraries.
-
-## Post-cloning
-
-1. Pull in the cmake config and other submodules:
-
-        git submodule update --init --recursive
-
-2. Build via:
-
-        mkdir build && cd build
-        cmake ..
-        make
 
 # Modules Summary
 
@@ -138,16 +115,3 @@ A PUbLisher SubscribEr system, in which any number of
 tasks/threads/processes/etc. can send arbitrarily sized packets to each other
 using a distributed FIFO system. There is no centralized controller, meaning
 each publishing thread does the work of its publish().
-
-# Contributing
-
-For contributing to `rcsw`, see [CONTRIBUTING](docs/CONTRIBUTING.md)
-
-# License
-This project is licensed under GPL 3.0. See [LICENSE](LICENSE).
-
-# Donate
-If you've found this project helpful, please consider donating somewhere between
-a cup of coffe and a nice meal:
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/jharwell1406)

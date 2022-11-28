@@ -1,12 +1,10 @@
-/*******************************************************************************
- * Name            : algorithm-test.cpp
- * Project         : rcsw
- * Module          : algorithm
- * Description     : Test code for algorithms
- * Creation Date   : Mon Sep 26 17:39:55 2016
- * Original Author : jharwell
+/**
+ * \file algorithm-utest.cpp
  *
- ******************************************************************************/
+ * \copyright 2017 John Harwell, All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
 /*******************************************************************************
  * Includes

@@ -1,21 +1,9 @@
 /**
- * @file dbg.c
+ * \file dbg.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -35,12 +23,12 @@ struct dbg_frmwk dbg_g;
  * Forward Declarations
  ******************************************************************************/
 /**
- * @brief Compare to debug modules
+ * \brief Compare to debug modules
  *
- * @param e1 - The first module
- * @param e2 - The second module
+ * \param e1 - The first module
+ * \param e2 - The second module
  *
- * @return < 0, 0, or >0, depending
+ * \return < 0, 0, or >0, depending
  */
 static int dbg_mod_cmp(const void* e1, const void* e2);
 

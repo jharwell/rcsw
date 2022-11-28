@@ -1,9 +1,9 @@
 /**
- * @file string-test.cpp
+ * \file string-test.cpp
  *
- * Test of string part of stdio library.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * SPDX-License-Identifier: MIT
 */
 
 /*******************************************************************************

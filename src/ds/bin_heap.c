@@ -1,21 +1,9 @@
 /**
- * @file bin_heap.c
+ * \file bin_heap.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -36,28 +24,28 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Sift mth element down to its correct place in heap after a deletion
+ * \brief Sift mth element down to its correct place in heap after a deletion
  * from the heap.
  *
- * @param heap The heap handle.
- * @param m The index of the element to sift.
+ * \param heap The heap handle.
+ * \param m The index of the element to sift.
  */
 static void bin_heap_sift_down(struct bin_heap* heap, size_t m);
 
 /**
- * @brief Sift nth element up to correct place in heap after insertion.
+ * \brief Sift nth element up to correct place in heap after insertion.
  *
- * @param heap The heap handle.
- * @param n The index of the element to sift.
+ * \param heap The heap handle.
+ * \param n The index of the element to sift.
  */
 static void bin_heap_sift_up(struct bin_heap* heap, size_t i);
 
 /**
- * @brief Swap two elements in the heap using the temporary slot.
+ * \brief Swap two elements in the heap using the temporary slot.
  *
- * @param heap The heap handle.
- * @param i1 Index of element #1
- * @param i2 Index of element #2
+ * \param heap The heap handle.
+ * \param i1 Index of element #1
+ * \param i2 Index of element #2
  */
 static void bin_heap_swap(struct bin_heap* heap, size_t i1, size_t i2);
 

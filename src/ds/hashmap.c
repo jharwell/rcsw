@@ -1,21 +1,9 @@
 /**
- * @file hashmap.c
+ * \file hashmap.c
  *
- * @copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell, All rights reserved.
  *
- * This file is part of RCSW.
- *
- * RCSW is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * RCSW is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * RCSW.  If not, see <http://www.gnu.org/licenses/
+ * SPDX-License-Identifier: MIT
  */
 /*******************************************************************************
  * Includes
@@ -39,33 +27,33 @@
 BEGIN_C_DECLS
 
 /**
- * @brief Allocate a datablock.
+ * \brief Allocate a datablock.
  *
- * @param map The hashmap handle.
+ * \param map The hashmap handle.
  *
- * @return The allocated datablock, or NULL if no valid block could be found.
+ * \return The allocated datablock, or NULL if no valid block could be found.
  *
  */
 static void* datablock_alloc(const struct hashmap* map);
 
 /**
- * @brief Deallocate a datablock.
+ * \brief Deallocate a datablock.
  *
- * @param map The hashmap handle.
- * @param datablock The datablock to deallocate.
+ * \param map The hashmap handle.
+ * \param datablock The datablock to deallocate.
  *
  */
 static void datablock_dealloc(const struct hashmap* map,
                               const uint8_t* datablock);
 /**
- * @brief Use linear probing, starting at the specified bucket, to
+ * \brief Use linear probing, starting at the specified bucket, to
  * find a hashnode
  *
- * @param map The hashmap handle.
- * @param node The node to try to find.
- * @param bucket_index Set to hashed bucket index at start; filled with the
+ * \param map The hashmap handle.
+ * \param node The node to try to find.
+ * \param bucket_index Set to hashed bucket index at start; filled with the
  * actual bucket.
- * @param node_index Filled with node index within the bucket the hashnode was
+ * \param node_index Filled with node index within the bucket the hashnode was
  * found in.
  */
 static void linear_probe(const struct hashmap* map,
@@ -74,12 +62,12 @@ static void linear_probe(const struct hashmap* map,
                          int* node_index);
 
 /**
- * @brief Compare hashnodes for equality
+ * \brief Compare hashnodes for equality
  *
- * @param n1 hashnode #1
- * @param n2 hashnode #2
+ * \param n1 hashnode #1
+ * \param n2 hashnode #2
  *
- * @return TRUE if n1 = n2, FALSE otherwise
+ * \return TRUE if n1 = n2, FALSE otherwise
  */
 static int hashnode_cmp(const void* n1, const void* n2);
 
