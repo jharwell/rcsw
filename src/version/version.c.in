@@ -1,0 +1,35 @@
+/**
+ * \file build.c
+ *
+ * \copyright 2022 John Harwell, All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include "rcsw/version/version.h"
+
+#include "rcsw/version/licenses.h"
+
+/*******************************************************************************
+ * Global Variables
+ ******************************************************************************/
+struct meta_info kMetadata = {
+  .version = {
+    .version = "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@",
+    .license = {
+      .abbrev = RCSW_LICENSE_SHORT(MIT, RCSW),
+      .full = RCSW_LICENSE_FULL(MIT, RCSW),
+      .copyright = RCSW_COPYRIGHT(2022, John Harwell)
+    },
+  },
+  .build = {
+    .git_rev = "@LIBRA_GIT_REV@",
+    .git_diff = "@LIBRA_GIT_DIFF@",
+    .git_tag = "@LIBRA_GIT_TAG@",
+    .git_branch = "@LIBRA_GIT_BRANCH@",
+    .compiler_flags = "@LIBRA_C_FLAGS_BUILD@"
+  }
+};

@@ -10,7 +10,8 @@ Welcome to RCSW's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   api/api.rst
+   modules.rst
+   _api/api.rst
 
 Indices and tables
 ==================

@@ -1,5 +1,5 @@
 /**
- * \file licensing.h
+ * \file licenses.h
  *
  * \copyright 2022 John Harwell, All rights reserved.
  *
@@ -17,27 +17,47 @@
  * Macros
  ******************************************************************************/
 /**
- * \def RCSW_LICENSE(license, project, year, author)
+ * \def RCSW_COPYRIGHT(year, author)
  *
- * \brief Get the license notice for the project for displaying at program
- *        launch/library load.
+ * \param year The copyright year (current year usually).
+ * \param author The main/original author/organization owning the copyright.
+ */
+
+#define RCSW_COPYRIGHT(year, author) \
+  "Copyright (c) " RCSW_XSTR(year) " " RCSW_XSTR(author) ".\n"
+
+/**
+ * \def RCSW_LICENSE_SHORT(license, project, year, author)
+ *
+ * \brief Get the short-text license notice for the project for displaying at
+ *        program launch/library load.
+ *
+ * \param license The name of the license to use. Must be [LGPLV3, GPLV3, MIT].
+ * \param project The name of the project.
+ */
+#define RCSW_LICENSE_SHORT(license, project)      \
+  RCSW_JOIN(RCSW_LICENSE_SHORT_, license)(project)
+
+/**
+ * \def RCSW_LICENSE_FULL(license, project, year, author)
+ *
+ * \brief Get the full-text license notice for the project for displaying at
+ *        program launch/library load.
  *
  * \param license The name of the license to use. Must be [LGPLV3, GPLV3, MIT].
  * \param project The name of the project.
  * \param year The copyright year (current year usually).
  * \param author The main/original author/organization owning the copyright.
  */
-#define RCSW_LICENSE(license, project, year, author)      \
-  RCSW_JOIN(RCSW_LICENSE_, license)(project, year, author)
+#define RCSW_LICENSE_FULL(license, project)      \
+  RCSW_JOIN(RCSW_LICENSE_FULL_, license)(project)
 
 /**
- * \def RCSW_LICENSE_GPLV3(project, year, author)
+ * \def RCSW_LICENSE_FULL_GPLV3(project)
  *
- * \brief The license notice for GPLv3+-licensed projects.
+ * \brief The full license notice for GPLv3+-licensed projects.
  */
-#define RCSW_LICENSE_GPLV3(project, year, author)                       \
-  "Copyright (c) " RCSW_XSTR(year) " " RCSW_XSTR(author) ".\n"             \
-  "\n" \
+#define RCSW_LICENSE_FULL_GPLV3(project)                                \
   RCSW_XSTR(project) " is free software: you can redistribute it and/or modify it\n" \
   "under the terms of the GNU General Public License as published by the Free\n" \
   "Software Foundation, either version 3 of the License, or (at your option) any\n" \
@@ -52,13 +72,21 @@
   RCSW_XSTR(project) ". If not, see <https://www.gnu.org/licenses/>.\n"
 
 /**
- * \def RCSW_LICENSE_LGPLV3(project, year, author)
+ * \def RCSW_LICENSE_SHORT_GPLV3(project)
+ *
+ * \brief The short license notice for GPLv3+-licensed projects.
+ */
+#define RCSW_LICENSE_SHORT_GPLV3(project)                                \
+  RCSW_XSTR(project) " license: GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n" \
+      RCSW_XSTR(project) " is free software: you are free to change and redistribute it.\n" \
+      RCSW_XSTR(project) " comes with no warranty.\n"
+
+/**
+ * \def RCSW_LICENSE_FULL_LGPLV3(project, year, author)
  *
  * \brief The license notice for LGPLv3+-licensed projects.
  */
-#define RCSW_LICENSE_LGPLV3(project, year, author)                       \
-  "Copyright (c) " RCSW_XSTR(year) " " RCSW_XSTR(author) ".\n"             \
-  "\n" \
+#define RCSW_LICENSE_FULL_LGPLV3(project)                               \
   RCSW_XSTR(project) " is free software: you can redistribute it and/or modify it\n" \
   "under the terms of the GNU Lesser General Public License as published by the\n" \
   "Free Software Foundation, either version 3 of the License, or (at your option)\n" \
@@ -73,14 +101,11 @@
   "with " RCSW_XSTR(project) ". If not, see <https://www.gnu.org/licenses/>.\n"
 
 /**
- * \def RCSW_LICENSE_MIT(project, year, author)
+ * \def RCSW_LICENSE_FULL_MIT(project)
  *
- * \brief The license notice for MIT-licensed projects.
+ * \brief The full license notice for MIT-licensed projects.
  */
-#define RCSW_LICENSE_MIT(project, year, author)                         \
-  "Copyright (c) " RCSW_XSTR(year) " " RCSW_XSTR(author) ".\n" \
-  RCSW_XSTR(project) " is licensed under the terms of the MIT LICENSE:\n" \
-"\n" \
+#define RCSW_LICENSE_FULL_MIT(project)                                  \
 "Permission is hereby granted, free of charge, to any person obtaining a copy\n" \
 "of this software and associated documentation files (the \"Software\"), to deal\n" \
 "in the Software without restriction, including without limitation the rights\n" \
@@ -98,3 +123,13 @@
 "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n" \
 "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n" \
 "SOFTWARE.\n"
+
+/**
+ * \def RCSW_LICENSE_SHORT_MIT(project)
+ *
+ * \brief The short license notice for MIT-licensed projects.
+ */
+#define RCSW_LICENSE_SHORT_MIT(project)                    \
+  RCSW_XSTR(project) " is licensed under the terms of the MIT LICENSE.\n" \
+      RCSW_XSTR(project) " is free software: you are free to change and redistribute it.\n" \
+      RCSW_XSTR(project) " comes with no warranty.\n"

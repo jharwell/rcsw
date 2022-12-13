@@ -44,7 +44,7 @@ BEGIN_C_DECLS
  *
  * \return The number of bytes written to stdout.
  */
-int sstdio_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+int sstdio_printf(const char *fmt, ...) RCSW_ATTR(format(printf, 1, 2));
 
 /**
  * \brief Print formatted strings to stdout.
