@@ -32,37 +32,37 @@ version_major = subprocess.run(("grep "
                                 "grep -Eo [0-9]+"),
                                shell=True,
                                check=True,
-                               stdout=subprocess.PIPE).stdout.decode()
+                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
 version_minor = subprocess.run(("grep "
                                 "PROJECT_VERSION_MINOR "
                                 "../cmake/project-local.cmake |"
                                 "grep -Eo [0-9]+"),
                                shell=True,
                                check=True,
-                               stdout=subprocess.PIPE).stdout.decode()
+                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
 version_patch = subprocess.run(("grep "
                                 "PROJECT_VERSION_PATCH "
                                 "../cmake/project-local.cmake |"
                                 "grep -Eo [0-9]+"),
                                shell=True,
                                check=True,
-                               stdout=subprocess.PIPE).stdout.decode()
+                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = f'v{version_major}.{version_minor}.{version_patch}'
+version = f'{version_major}.{version_minor}.{version_patch}'
 
 # The full version, including alpha/beta/rc tags.
 git_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                             stdout=subprocess.PIPE,
-                            check=True)
+                            check=True).stdout.decode().strip('\n')
 if git_branch == 'devel':
-    release = f'v{version_major}.{version_minor}.{version_patch}.beta'
-else:
-    release = version
+    version = f'{version}.beta'
+
+release = version
 
 rcsw_root = pathlib.Path(os.path.abspath(".."))
 breathe_projects = {
@@ -106,7 +106,8 @@ extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.mathjax',
               'sphinx.ext.ifconfig',
               'breathe',
-              'exhale']
+              'exhale',
+              'sphinx_last_updated_by_git']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -143,3 +144,7 @@ html_sidebars = {
         'searchbox.html',
     ]
 }
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/',
+                                 None)}
