@@ -972,7 +972,7 @@ IMAGE_PATH             =
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
 
-INPUT_FILTER           =
+INPUT_FILTER           = @CMAKE_CURRENT_SOURCE_DIR@/scripts/doxy_prepare.sh
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern
 # basis. Doxygen will compare the file name with each pattern and apply the
@@ -2209,8 +2209,9 @@ PREDEFINED             = __cplusplus= \
                          RCSW_CHECK_RET= \
                          RCSW_PURE= \
                          RCSW_CONST= \
-                         RCSW_ATTR= \
+                         RCSW_EXPORT= \
                          BEGIN_C_DECLS= \
+                         __restrict__= \
                          END_C_DECLS= \
                          RCSW_WARNING_DISABLE_POP= \
                          RCSW_WARNING_DISABLE_PUSH= \

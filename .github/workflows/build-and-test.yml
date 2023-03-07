@@ -1,0 +1,50 @@
+name: Build and test
+
+on:
+  push:
+    branches:
+      - master
+      - devel
+
+concurrency:
+  group: "build-and-test"
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    container:
+      image: jharwell/ubuntu22.04:2023-03-07
+    strategy:
+      matrix:
+        build_type:
+          # - OPT # 2023/3/7: Tests don't pass with optimizations on...
+          - DEV
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build=${{ matrix.build_type }}
+        shell: bash
+        run: |
+
+          git config --global --add safe.directory /__w/rcsw/rcsw
+          git submodule update --init --remote --recursive
+          mkdir -p build && cd build
+
+          cmake  \
+          -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DLIBRA_TESTS=yes \
+          -DLIBRA_CODE_COV=YES \
+          -DLIBRA_ER=ALL \
+          ..
+
+          make build-and-test -j$(nproc)
+          make coverage-report
+
+      - name: Coverralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: build/coverage.info

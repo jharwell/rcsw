@@ -8,6 +8,7 @@ import sys
 import pathlib
 import subprocess
 import textwrap
+import datetime
 
 # -- Path setup --------------------------------------------------------------
 
@@ -21,8 +22,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
+today = datetime.date.today()
 project = 'RCSW'
-copyright = '2022, John Harwell'
+copyright = f'{today.year}, John Harwell'
 author = 'John Harwell'
 
 
@@ -146,5 +148,5 @@ html_sidebars = {
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/',
+intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/en/master/',
                                  None)}

@@ -3,5 +3,5 @@
 	url = https://github.com/nothings/stb.git
 [submodule "libra"]
 	path = libra
-	url = git@github.com:jharwell/libra.git
+	url = https://github.com/jharwell/libra.git
 	branch = devel
