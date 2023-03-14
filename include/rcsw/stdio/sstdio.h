@@ -186,6 +186,8 @@ static inline int sstdio_getchar(void) { return getchar(); }
  * \param base The base the string is in (10, 16, etc.)
  *
  * \return The converted result.
+ *
+ * \todo This does not currently work if the string to be converted is INT_MIN.
  */
 int sstdio_atoi(const char *s, int base) RCSW_PURE;
 

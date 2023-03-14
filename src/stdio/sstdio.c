@@ -505,9 +505,10 @@ int sstdio_atoi(const char* s, int base) {
   }
 
   int neg = (*s == '-') ? 1 : 0;
+  int pos = (*s == '+') ? 1 : 0;
 
-  if (neg) {
-    s++; /* advance pass the '-' */
+  if (neg || pos) {
+    s++; /* advance pass the '-'/'+' */
   }
 
   if (base == 16) {

@@ -448,11 +448,13 @@ static void convert_test(void) {
   CATCH_CHECK(sstdio_atoi("1234", 10) == 1234);
   CATCH_CHECK(sstdio_atoi("1234", 10) == 1234);
   CATCH_CHECK(sstdio_atoi("-1234", 10) == -1234);
+  CATCH_CHECK(sstdio_atoi("+1234", 10) == 1234);
   CATCH_CHECK(sstdio_atoi("0x1234", 16) == 0x1234);
 
   CATCH_CHECK(sstdio_atoi("    1234", 10) == 1234);
   CATCH_CHECK(sstdio_atoi("    0x1234", 16) == 0x1234);
   CATCH_CHECK(sstdio_atoi("    -1234", 10) == -1234);
+  CATCH_CHECK(sstdio_atoi("    +1234", 10) == 1234);
 
   printf("\n***** Test itoa *****\n");
   char buf[20];
