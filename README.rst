@@ -33,7 +33,7 @@ Reusable C Software (RCSW)
 
 :Misc:
 
-   |docs| |maintenance|
+   |license| |docs| |maintenance|
 
 
 RCSW is a collection of reusable (but not necessarily generic) C software

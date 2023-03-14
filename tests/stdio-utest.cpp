@@ -441,42 +441,33 @@ static void char_test(void) {
 
 static void convert_test(void) {
   printf("\n***** Test atoi() *****\n");
-  printf("Decimal string 1234    -> decimal number : %d\n", sstdio_atoi("1234", 10));
-  printf("Decimal string 0x1234  -> decimal number : %#X\n", sstdio_atoi("0x1234", 16));
-  printf("Decimal string -1234   -> decimal number : %d\n", sstdio_atoi("-1234", 10));
-  printf("Decimal string 0       -> decimal number : %d\n", sstdio_atoi("0", 10));
-  printf("Decimal string 1       -> decimal number : %d\n", sstdio_atoi("1", 10));
-  printf("Decimal string 0       -> hex number     : %d\n", sstdio_atoi("0", 10));
-  printf("Decimal string 1       -> hex number     : %d\n", sstdio_atoi("1", 10));
-  printf("Decimal string -0x1234 -> hex number     : %#x\n", sstdio_atoi("-0x1234", 16));
+  CATCH_CHECK(sstdio_atoi("0", 10) == 0);
+  CATCH_CHECK(sstdio_atoi("0x0", 16) == 0);
+  CATCH_CHECK(sstdio_atoi("1", 10) == 1);
+  CATCH_CHECK(sstdio_atoi("0x1", 16) == 1);
+  CATCH_CHECK(sstdio_atoi("1234", 10) == 1234);
+  CATCH_CHECK(sstdio_atoi("1234", 10) == 1234);
+  CATCH_CHECK(sstdio_atoi("-1234", 10) == -1234);
+  CATCH_CHECK(sstdio_atoi("0x1234", 16) == 0x1234);
 
-  printf("Hex string 0x100  -> decimal number : %d\n", sstdio_atoi("0x100", 16));
-  printf("Hex string 0x100  -> hex number     : %#X\n", sstdio_atoi("0x100", 16));
-  printf("Hex string -0x100 -> a hex number   : %#x\n", sstdio_atoi("-0x100", 16));
-  printf("Hex string -0x100 -> decimal number : %d\n", sstdio_atoi("-0x100", 16));
+  CATCH_CHECK(sstdio_atoi("    1234", 10) == 1234);
+  CATCH_CHECK(sstdio_atoi("    0x1234", 16) == 0x1234);
+  CATCH_CHECK(sstdio_atoi("    -1234", 10) == -1234);
 
   printf("\n***** Test itoa *****\n");
   char buf[20];
-  printf("Decimal 0      -> hex string: %s\n", sstdio_itoax(0, buf));
-  printf("Decimal 1      -> hex string: %s\n", sstdio_itoax(1, buf));
-  printf("Decimal -1     -> hex string: %s\n", sstdio_itoax(-1, buf));
-  printf("Decimal -100   -> hex string: %s\n", sstdio_itoax(-100, buf));
-  printf("Decimal 100    -> hex string: %s\n", sstdio_itoax(100, buf));
-  printf("Decimal 0xfe87 -> hex string: %s\n", sstdio_itoax(0xfe87, buf));
-  printf("Decimal 0x234  -> hex string: %s\n", sstdio_itoax(0x234, buf));
+  CATCH_CHECK(sstring_strcmp(sstdio_itoax(0, buf),"0x0") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoax(1, buf), "0x1") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoax(100, buf), "0x64") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoax(0xfe87, buf), "0xfe87") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoax(0x234, buf), "0x234") == 0);
 
-  printf("Hex 0x0    -> hex string: %s\n", sstdio_itoax(0, buf));
-  printf("Hex 0x1    -> hex string: %s\n", sstdio_itoax(1, buf));
-  printf("Hex 0x100  -> hex string: %s\n", sstdio_itoax(0x100, buf));
-  printf("Hex 0xfe87 -> hex string: %s\n", sstdio_itoax(0xfe87, buf));
-  printf("Hex 0x234  -> hex string: %s\n", sstdio_itoax(0x234, buf));
-
-  printf("Decimal 0      -> decimal string: %s\n", sstdio_itoad(0, buf));
-  printf("Decimal 1      -> decimal string: %s\n", sstdio_itoad(1, buf));
-  printf("Decimal -1     -> decimal string: %s\n", sstdio_itoad(-1, buf));
-  printf("Decimal 10     -> decimal string: %s\n", sstdio_itoad(10, buf));
-  printf("Decimal -123   -> decimal string: %s\n", sstdio_itoad(-123, buf));
-  printf("Decimal 102393 -> decimal string: %s\n", sstdio_itoad(102393, buf));
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(0, buf), "0") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(1, buf), "+1") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(-1, buf), "-1") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(10, buf), "+10") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(-123, buf), "-123") == 0);
+  CATCH_CHECK(sstring_strcmp(sstdio_itoad(102393, buf), "+102393") == 0);
 } /* convert_test() */
 
 static void puts_test(void) {

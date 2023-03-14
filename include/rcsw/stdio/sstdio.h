@@ -175,12 +175,12 @@ static inline void sstdio_putchar(char c) { putchar(c); }
 static inline int sstdio_getchar(void) { return getchar(); }
 
 /**
- * \brief Convert a string to a integer
+ * \brief Convert a string to a integer.
  *
- * This routine converts a string representing an integer in the specified base.
- * If the string is a hex number, it must have a 0x prefix. If the string
- * represents a hex number but does not have a 0x prefix, the result is
- * undefined.
+ * This routine converts a string representing an integer in the specified
+ * base. Any leading whitespace is stripped.  If the string is a hex number, it
+ * must have a 0x prefix. If the string represents a hex number but does not
+ * have a 0x prefix, the result is undefined.
  *
  * \param s The string to convert
  * \param base The base the string is in (10, 16, etc.)
@@ -193,7 +193,8 @@ int sstdio_atoi(const char *s, int base) RCSW_PURE;
  * \brief Convert an integer into a decimal string.
  *
  * This routine converts an integer into a decimal string representing the value
- * of the original integer. Negative numbers are supported.
+ * of the original integer. Negative numbers are supported. For uniformity, a
+ * '+' sign is prepended to the string of all converted positive numbers.
  *
  * \param n The number to convert
  * \param s The string to fill.
