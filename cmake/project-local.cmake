@@ -1,41 +1,52 @@
 ################################################################################
-# Configuration Options                                                        #
+# Configuration Options
 ################################################################################
 # We might be linking with a shared library
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(rcsw_CHECK_LANGUAGE "C")
 
+set(PROJECT_VERSION_MAJOR 1)
+set(PROJECT_VERSION_MINOR 2)
+set(PROJECT_VERSION_PATCH 0)
+set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+
+libra_configure_version(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c
+  rcsw_components_SRC
+  )
+
 ################################################################################
-# Components                                                                   #
+# Components
 ################################################################################
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_adapter_SRC
   rcsw
   "${rcsw_SRC}"
   adapter
   "src/adapter")
 
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_algorithm_SRC
   rcsw
   "${rcsw_SRC}"
   algorithm
   "src/algorithm")
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_common_SRC
   rcsw
   "${rcsw_SRC}"
   common
   "src/common")
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_ds_SRC
   rcsw
   "${rcsw_SRC}"
   ds
   "src/ds")
 
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_mp_common_SRC
   rcsw
   "${rcsw_SRC}"
@@ -45,32 +56,32 @@ component_register_as_src(
   # compiler wrappers even if we are not using MPI. (Slightly) better to
   # do it this way I think.
 if (LIBRA_MPI)
-  component_register_as_src(
+  libra_component_register_as_src(
     rcsw_mp_mpi_SRC
     rcsw
     "${rcsw_SRC}"
     mp_mpi
     "src/multiprocess/mpi")
 endif()
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_multithread_SRC
   rcsw
   "${rcsw_SRC}"
   multithread
   "src/multithread")
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_pulse_SRC
   rcsw
 "${rcsw_SRC}"
   pulse
   "src/pulse")
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_stdio_SRC
   rcsw
   "${rcsw_SRC}"
   stdio
   "src/stdio")
-component_register_as_src(
+libra_component_register_as_src(
   rcsw_utils_SRC
   rcsw
   "${rcsw_SRC}"
@@ -92,10 +103,10 @@ if (NOT rcsw_FIND_COMPONENTS)
     )
 endif()
 
-requested_components_check(rcsw)
+libra_requested_components_check(rcsw)
 
 ################################################################################
-# Libraries                                                                    #
+# Libraries
 ################################################################################
 # Create the source for the SINGLE library to build by combining the
 # source of the selected components
@@ -112,11 +123,21 @@ add_library(
   ${rcsw_components_SRC}
   )
 
-# execute_process(COMMAND git rev-list --count HEAD
-#   OUTPUT_VARIABLE RCSW_VERSION
-#   OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(rcsw_LIBRARY_NAME rcsw)
-set_target_properties(${rcsw_LIBRARY} PROPERTIES OUTPUT_NAME ${rcsw_LIBRARY_NAME})
+set_target_properties(${rcsw_LIBRARY}
+  PROPERTIES
+  OUTPUT_NAME ${rcsw_LIBRARY_NAME}
+  )
+
+# Setting this results in TWO files being installed: the actual
+# library with the version embedded, and a symlink to the actual
+# library with the same name sans the embedded version (if rcsw is
+# built as a shared library).
+set_target_properties(${rcsw_LIBRARY}
+  PROPERTIES
+  VERSION ${rcsw_VERSION}
+  SOVERSION ${rcsw_VERSION}
+  )
 
 ########################################
 # Include directories
@@ -135,16 +156,36 @@ target_include_directories(
 ########################################
 # Link Libraries
 ########################################
-target_link_libraries(${rcsw_LIBRARY} pthread dl)
+target_link_libraries(${rcsw_LIBRARY} pthread dl m)
 
 ################################################################################
-# Installation                                                                 #
+# Installation and Deployment
 ################################################################################
-configure_exports_as(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
-register_target_for_install(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
-register_headers_for_install(include/${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+libra_configure_exports_as(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+libra_register_target_for_install(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+libra_register_headers_for_install(include/${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
+
+set(CPACK_SET_DESTDIR YES)
+libra_configure_cpack(
+  "DEB;TGZ"
+  "RCSW is a collection of reusable C software modules, in the style of the C++ STL."
+
+  "John Harwell"
+  "https://rcsw.readthedocs.io"
+  "John Harwell <john.r.harwell@gmail.com>")
 
 ################################################################################
-# Status                                                                       #
+# Status
 ################################################################################
 libra_config_summary()
+
+message("")
+message("--------------------------------------------------------------------------------")
+message("                           RCSW Configuration Summary")
+message("--------------------------------------------------------------------------------")
+message("")
+
+message(STATUS "Version                               : rcsw_VERSION=${rcsw_VERSION}")
+
+message("")
+message("--------------------------------------------------------------------------------")

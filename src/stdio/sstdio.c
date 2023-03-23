@@ -499,27 +499,32 @@ size_t sstdio_puts(const char* const s) {
 int sstdio_atoi(const char* s, int base) {
   char c;
   int result = 0;
+
+  while (*s == ' ') {
+    ++s;  /* advance past any spaces */
+  }
+
   int neg = (*s == '-') ? 1 : 0;
 
   if (neg) {
-    s++;
-  }
-  if (base == 16) {
-    s += 2; /* advance past the 0x */
+    s++; /* advance pass the '-' */
   }
 
-  while (1) {
-    c = (char)sstring_toupper(*s++);
+  if (base == 16) {
+    s += 2; /* advance past the '0x' */
+  }
+
+  while (*s != '\0') {
+    c = (char)sstring_toupper(*s);
     if ((c >= '0') && (c <= '9')) {
       result = (result * base) + (c - '0');
-    }
-
-    else if ((c >= 'A') && (c <= 'F') && (base == 16)) {
+    } else if ((c >= 'A') && (c <= 'F') && (base == 16)) {
       result = (result * base) + (c + 10 - 'A');
     } else {
-      break;
+      break; /* unknown char--bail */
     }
-  }
+    ++s;
+  } /* while() */
 
   return neg ? -result : result;
 } /* sstdio_atoi() */
@@ -548,33 +553,34 @@ char* sstdio_itoad(int n, char* s) {
 char* sstdio_itoax(int i, char* s) {
   size_t n;
   size_t n_digits;
-  int j = i;
 
-  if (j < 0x10) {
+  if (i < 0x10) {
     n_digits = 1;
-  } else if (j < 0x100) {
+  } else if (i < 0x100) {
     n_digits = 2;
-  } else if (j < 0x1000) {
+  } else if (i < 0x1000) {
     n_digits = 3;
-  } else if (j < 0x10000) {
+  } else if (i < 0x10000) {
     n_digits = 4;
-  } else if (j < 0x100000) {
+  } else if (i < 0x100000) {
     n_digits = 5;
-  } else if (j < 0x1000000) {
+  } else if (i < 0x1000000) {
     n_digits = 6;
-  } else if (j < 0x10000000) {
+  } else if (i < 0x10000000) {
     n_digits = 7;
   } else {
     n_digits = 8;
   }
 
+  *s++ = '0';
+  *s++ = 'x';
   s += n_digits;
   *s = '\0';
   for (n = n_digits; n != 0; --n) {
     *--s = "0123456789abcdef"[i & 0x0F];
     i >>= 4;
   }
-  return s;
+  return s - 2;
 } /* sstdio_itoax() */
 
 /*******************************************************************************

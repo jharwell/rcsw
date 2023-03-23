@@ -165,8 +165,9 @@
 
 #else
 /**
- * \def RCSW_EXPORT Shorthand for marked a function as publicly visible in a
- * shared library.
+ * \def RCSW_EXPORT
+ *
+ * Shorthand for marked a function as publicly visible in a * shared library.
  */
 #define RCSW_EXPORT __attribute__((visibility("default")))
 
