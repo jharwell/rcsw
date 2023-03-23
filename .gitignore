@@ -50,3 +50,4 @@ build
 
 # Sphinx
 docs/_build
+docs/_api

@@ -1,21 +1,19 @@
-# Reusable C Software Library
+.. _ln-rcsw-modules:
 
-A highly flexible, and also (relatively) high performance C of a C version of
-the C++ STL. Unless otherwise stated, everything in here is for programming on a
-Linux platform (it might work on Windows, but I haven't tested it even a little
-bit).
-
-# Modules Summary
+===============
+Modules Summary
+===============
 
 RCSW is built around the idea of modules to help organize the code, and to
 provide logical segmentation between (un)complementary areas of
 functionality. Full details of modules is in the documentation, which can be
-built with `make documentation`. Only a brief summary is given here.
+built with `make apidoc`. Only a brief summary is given here.
 
 Most modules come with at least a cursory test suite to provide sanity checks,
 though many have thorough suites. Test suites also serve as example usages.
 
-## Data Structures
+Data Structures
+===============
 
 A general, yet highly performant data structures library. It highly run-time
 configurable, in the sense that the memory used by the data structure handle,
@@ -43,9 +41,10 @@ The data structures library is comprised of the following modules:
 - Adjacency List (in progress).
 - Compressed Sparse Matrix (in progress).
 
-## Algorithm
+Algorithms
+==========
 
-A general purpose, yet highly performant set of *serial* algorithms. Includes:
+A general purpose set of *serial* algorithms. Includes:
 
 - String parenthesization: Can a string be parenthesized to result in another
   string under the rules of some multiplicative paradigm?
@@ -61,7 +60,8 @@ A general purpose, yet highly performant set of *serial* algorithms. Includes:
 - Insertion sort.
 - Radix sort.
 
-## Multithread
+Multithread
+===========
 
 A collection of modules for programming in multithreaded environments (obviously
 all thread safe). Full documentation is in. The wrappers around POSIX primitives
@@ -84,12 +84,14 @@ single extensible interface.
 - OpenMP implementations of 2D kernel convolution, radix sort.
 - Various thread management tools like locking threads to a particular core.
 
-## Multiprocess
+Multiprocess
+============
 
 A collection of modules for managing multi-process applications, as well as a
-few simple-ish MPI routines I've written for various classes.
+few simple-ish MPI routines.
 
-## Simple I/O
+Simple I/O
+==========
 
 A re-implementation of the libc routines needed to make printf() work
 
@@ -97,7 +99,8 @@ I originally did this as a programming exercise, but have found it very useful
 for debugging in bare metal/embedded environments when libc is not available
 (i.e. bootstraps).
 
-## Utils
+Utils
+=====
 
 A miscellaneous collection of functions and macros that I found useful at one
 time or another, but that did not warrant their own module. Full documentation
@@ -109,9 +112,10 @@ is in utils. Includes:
 - Timespec comparison/addition/etc.
 - Random other things :-P
 
-## PULSE
+PUbLisher SubscribEr (PULSE)
+============================
 
-A PUbLisher SubscribEr system, in which any number of
+A publisher subscriber system, in which any number of
 tasks/threads/processes/etc. can send arbitrarily sized packets to each other
 using a distributed FIFO system. There is no centralized controller, meaning
 each publishing thread does the work of its publish().
