@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Inline Functions
  *
- * This functions are inlined, rather than prototyped, so that the compiler can
+ * These functions are inlined, rather than prototyped, so that the compiler can
  * still optimize them as if it was just a direct memory assignment without
  * checks.
  ******************************************************************************/
@@ -31,27 +31,33 @@ BEGIN_C_DECLS
  * \brief Write a memory location
  *
  * \param addr The address of register/memory location to write
- * \param wval The 32-bit value to write
+ * \param wval The value to write
+ *
+ * Use size_t for the addr so that it compiles correctly for both Linux and
+ * embedded systems.
  *
  * \return \ref status_t
  */
-static inline status_t mem_write(size_t addr, size_t wval) {
+static inline status_t mem_write32(size_t addr, uint32_t wval) {
     RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
-    *((volatile uintptr_t *)addr) = wval;
+    *((volatile uint32_t *)addr) = wval;
     return OK;
-} /* mem_write() */
+} /* mem_write32() */
 
 /**
  * \brief Read a 32-bit register/memory location
  *
  * \param addr The address of register/memory location to read from
  *
+ * Use size_t for the addr so that it compiles correctly for both Linux and
+ * embedded systems.
+ *
  * \return: The value of the register, or 0xFFFFFFFF if non word-aligned
  */
-static inline uint32_t mem_read(size_t addr) {
+static inline uint32_t mem_read32(size_t addr) {
     RCSW_FPC_NV(0, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t))));
     return *((volatile uint32_t*)addr);
-} /* mem_read() */
+} /* mem_read32() */
 
 /**
  * \brief Read, modify, write, and readback a memory value
@@ -65,7 +71,7 @@ static inline uint32_t mem_read(size_t addr) {
  *
  * \return \ref status_t
  */
-static inline status_t mem_rmwr(uint32_t addr, uint32_t wval, uint32_t mask) {
+static inline status_t mem_rmwr32(uint32_t addr, uint32_t wval, uint32_t mask) {
     RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
 
     volatile uint32_t curr_val = 0;
@@ -76,7 +82,7 @@ static inline status_t mem_rmwr(uint32_t addr, uint32_t wval, uint32_t mask) {
      * ARE in the mask.
      */
     if (mask != 0) {
-        curr_val = mem_read(addr);
+        curr_val = mem_read32(addr);
         wval     = (curr_val & ~mask) | (wval & mask);
     }
 
@@ -84,17 +90,17 @@ static inline status_t mem_rmwr(uint32_t addr, uint32_t wval, uint32_t mask) {
      * Write masked off bits back to memory/register, or just write wval to
      * memory, if mask was 0.
      */
-    mem_write(addr, wval);
+    mem_write32(addr, wval);
 
     /* read & compare */
-    curr_val = mem_read(addr);
+    curr_val = mem_read32(addr);
     RCSW_CHECK((curr_val & mask) == (wval & mask));
 
     return OK;
 
 error:
     return ERROR;
-} /* mem_rmwr() */
+} /* mem_rmwr32() */
 
 /*******************************************************************************
  * Function Protoypes

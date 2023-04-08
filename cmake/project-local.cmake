@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 1)
+set(PROJECT_VERSION_PATCH 3)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -161,14 +161,31 @@ target_link_libraries(${rcsw_LIBRARY} pthread dl m)
 ################################################################################
 # Installation and Deployment
 ################################################################################
+# Installation
 libra_configure_exports_as(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 libra_register_target_for_install(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 libra_register_headers_for_install(include/${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 
-set(CPACK_SET_DESTDIR YES)
+
+# Deployment
+if(NOT CPACK_PACKAGE_NAME)
+  set(CPACK_PACKAGE_NAME ${rcsw_LIBRARY})
+endif()
+
+libra_register_copyright_for_install(${rcsw_LIBRARY} ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/changelog")
+  libra_register_changelog_for_install(${rcsw_LIBRARY} ${CMAKE_CURRENT_SOURCE_DIR}/changelog)
+endif()
+
+
 libra_configure_cpack(
-  "DEB;TGZ"
-  "RCSW is a collection of reusable C software modules, in the style of the C++ STL."
+  "DEB"
+
+  "Collection of reusable C software modules for embedded programming, styled
+after the C++ STL.
+
+It has many data structures, a publisher-subscriber system, concurrent
+programming utilities, and simple I/O routines for bare-metal applications."
 
   "John Harwell"
   "https://jharwell.github.io/rcsw"
