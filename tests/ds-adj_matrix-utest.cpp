@@ -11,7 +11,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <stdlib.h>
 #include <limits.h>
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
@@ -50,15 +49,15 @@ void test_runner(void (*test)(struct ds_params *params)) {
   struct ds_params params;
   params.tag = DS_ADJ_MATRIX;
   params.flags = 0;
-  params.el_size = sizeof(struct element);
+  params.elt_size = sizeof(struct element8);
 
   for (size_t m = 0; m < 2; ++m) {
     params.type.adjm.is_directed = (bool_t)m;
     for (size_t k = 0; k < 2; ++k) {
       params.type.adjm.is_weighted = (bool_t)k;
-      params.type.adjm.n_vertices = NUM_ITEMS;
+      params.type.adjm.n_vertices = TH_NUM_ITEMS;
 
-      params.flags = DS_APP_DOMAIN_HANDLE;
+      params.flags = RCSW_DS_NOALLOC_HANDLE;
 
       /* cannot have matrix that is weighted but undirected */
       if (k && !m) {
@@ -67,7 +66,7 @@ void test_runner(void (*test)(struct ds_params *params)) {
       test(&params);
 
       CATCH_REQUIRE(th_ds_init(&params) == OK);
-      params.flags = DS_APP_DOMAIN_DATA;
+      params.flags = RCSW_DS_NOALLOC_DATA;
       test(&params);
       th_ds_shutdown(&params);
     } /* for(k..) */

@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/rawfifo.h"
 #include <string.h>
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/ds.h"
 
@@ -23,11 +23,11 @@ BEGIN_C_DECLS
 status_t rawfifo_init(struct rawfifo* const fifo,
                       uint8_t* const buf,
                       size_t max_elts,
-                      size_t el_size) {
+                      size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != fifo, NULL != buf);
   fifo->elements = buf;
   fifo->max_elts = max_elts; /* fifo elts + 1 */
-  fifo->el_size = el_size;
+  fifo->elt_size = elt_size;
 
   fifo->to_i = 0;
   fifo->from_i = 0;
@@ -44,7 +44,7 @@ size_t rawfifo_deq(struct rawfifo* fifo, void* e, size_t n_elts) {
   for (i = 0; i < n_elts; i++) {
     ds_elt_copy((uint8_t*)e + i,
                 fifo->elements + (fifo->from_i + i) % fifo->max_elts,
-                fifo->el_size);
+                fifo->elt_size);
   } /* for() */
   fifo->from_i = (fifo->from_i + i) % fifo->max_elts;
 
@@ -61,7 +61,7 @@ size_t rawfifo_enq(struct rawfifo* const fifo,
   for (i = 0; i < n_elts; i++) {
     ds_elt_copy(fifo->elements + (fifo->to_i + i) % fifo->max_elts,
                 (const uint8_t*)elts + i,
-                fifo->el_size);
+                fifo->elt_size);
   } /* for() */
   fifo->to_i = (fifo->to_i + i) % fifo->max_elts;
 

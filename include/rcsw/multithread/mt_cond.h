@@ -17,7 +17,7 @@
 #include "rcsw/multithread/mt.h"
 #include "rcsw/multithread/mt_mutex.h"
 #include "rcsw/multithread/mt_cond.h"
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Type Definitions

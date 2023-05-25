@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "rcsw/common/dbg.h"
 #include "rcsw/ds/bstree_node.h"
-#include "rcsw/ds/int_tree.h"
+#include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/ds/rbtree.h"
 #include "rcsw/utils/utils.h"
@@ -38,59 +38,56 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   RCSW_FPC_NV(NULL,
             params != NULL,
             params->tag == DS_BSTREE,
-            params->cmpe != NULL,
-            params->el_size > 0);
+            params->cmpkey != NULL,
+            params->elt_size > 0);
 
   struct bstree* tree = NULL;
-  int i;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
-    RCSW_CHECK_PTR(tree_in);
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     tree = tree_in;
   } else {
     tree = malloc(sizeof(struct bstree));
-    RCSW_CHECK_PTR(tree);
   }
+  RCSW_CHECK_PTR(tree);
+
   tree->flags = params->flags;
   tree->root = NULL;
   tree->nil = NULL;
 
-  if (params->flags & DS_APP_DOMAIN_NODES) {
+  if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    SOFT_ASSERT(
+    RCSW_ER_CHECK(
         params->max_elts != -1,
-        "ERROR: Cannot have uncapped tree size with DS_APP_DOMAIN_NODES");
+        "ERROR: Cannot have uncapped tree size with RCSW_DS_NOALLOC_NODES");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
      * nodes for root and nil, hence the +2.
      */
-    for (i = 0; i < params->max_elts + 2; ++i) {
-      ((int*)(params->nodes))[i] = -1;
-    }
-    tree->nodes = params->nodes;
+    tree->space.node_map = (struct allocm_entry*)params->nodes;
+    allocm_init(tree->space.node_map, params->max_elts + 2);
+    tree->space.nodes = (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
   }
 
-  if (params->flags & DS_APP_DOMAIN_DATA) {
+  if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    SOFT_ASSERT(
+    RCSW_ER_CHECK(
         params->max_elts != -1,
-        "ERROR: Cannot have uncapped tree size with DS_APP_DOMAIN_DATA");
+        "ERROR: Cannot have uncapped tree size with RCSW_DS_NOALLOC_DATA");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
      * nodes for root and nil, hence the +2.
      */
-    for (i = 0; i < params->max_elts + 2; ++i) {
-      ((int*)(params->elements))[i] = -1;
-    }
-    tree->elements = params->elements;
+    tree->space.db_map = (struct allocm_entry*)params->elements;
+    allocm_init(tree->space.db_map, params->max_elts + 2);
+    tree->space.datablocks = (uint8_t*)(tree->space.db_map + params->max_elts + 2);
   }
 
-  tree->cmpe = params->cmpe;
+  tree->cmpkey = params->cmpkey;
   tree->current = 0;
   tree->printe = params->printe;
   tree->max_elts = params->max_elts;
-  tree->el_size = params->el_size;
+  tree->elt_size = params->elt_size;
 
   tree->nil = bstree_node_create(tree, NULL, NULL, NULL, node_size);
   RCSW_CHECK_PTR(tree->nil);
@@ -102,14 +99,14 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   tree->root->parent = tree->root->left = tree->root->right = tree->nil;
   tree->root->red = FALSE;
 
-  if (tree->flags & DS_BSTREE_INTERVAL) {
-    int_tree_init_helper(tree);
-  } else if (tree->flags & DS_BSTREE_OS) {
+  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+    inttree_init_helper(tree);
+  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
     ostree_init_helper(tree);
   }
-  DBGD("max_elts=%d el_size=%zu flags=0x%08x\n",
+  DBGD("max_elts=%d elt_size=%zu flags=0x%08x\n",
        tree->max_elts,
-       tree->el_size,
+       tree->elt_size,
        tree->flags);
   return tree;
 
@@ -132,7 +129,7 @@ void bstree_destroy(struct bstree* tree) {
    */
   bstree_node_destroy(tree, tree->nil);
 
-  if (!(tree->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(tree->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(tree);
   }
 } /* bstree_destroy() */
@@ -150,7 +147,7 @@ struct bstree_node* bstree_node_query(const struct bstree* const tree,
   struct bstree_node* x = search_root;
   while (x != tree->nil) {
     int res;
-    if ((res = tree->cmpe(key, x->key)) == 0) {
+    if ((res = tree->cmpkey(key, x->key)) == 0) {
       return x;
     }
     x = res < 0 ? x->left : x->right;
@@ -164,11 +161,11 @@ int bstree_traverse(struct bstree* const tree,
                     enum bstree_traversal_type type) {
   RCSW_FPC_NV(ERROR, tree != NULL, cb != NULL);
 
-  if (BSTREE_TRAVERSE_PREORDER == type) {
+  if (ekBSTREE_TRAVERSE_PREORDER == type) {
     return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
-  } else if (BSTREE_TRAVERSE_INORDER == type) {
+  } else if (ekBSTREE_TRAVERSE_INORDER == type) {
     return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
-  } else if (BSTREE_TRAVERSE_POSTORDER == type) {
+  } else if (ekBSTREE_TRAVERSE_POSTORDER == type) {
     return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
   }
   return -1;
@@ -189,7 +186,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
     parent = node;
 
     /* no duplicates allowed */
-    if ((res = tree->cmpe(key, node->key)) == 0) {
+    if ((res = tree->cmpkey(key, node->key)) == 0) {
       return ERROR;
     }
     node = res < 0 ? node->left : node->right;
@@ -200,13 +197,13 @@ status_t bstree_insert_internal(struct bstree* const tree,
    */
   node = bstree_node_create(tree, parent, key, data, node_size);
   RCSW_CHECK_PTR(node);
-  if (parent == tree->root || tree->cmpe(key, parent->key) < 0) {
+  if (parent == tree->root || tree->cmpkey(key, parent->key) < 0) {
     parent->left = node;
   } else {
     parent->right = node;
   }
 
-  if (tree->flags & DS_BSTREE_REDBLACK) {
+  if (tree->flags & RCSW_DS_BSTREE_RB) {
     /*
      * Fixup interval tree/OS-Tree auxiliary field. Must be done BEFORE
      * fixing up tree red-black tree structure, to update the fields of
@@ -214,9 +211,9 @@ status_t bstree_insert_internal(struct bstree* const tree,
      * red-black fixup process will cause at most 3 rotations, simply fixing
      * up the auxiliary field during rotations is not enough.
      */
-    if (tree->flags & DS_BSTREE_INTERVAL) {
-      int_tree_high_fixup(tree, (struct int_tree_node*)node);
-    } else if (tree->flags & DS_BSTREE_OS) {
+    if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+      inttree_high_fixup(tree, (struct inttree_node*)node);
+    } else if (tree->flags & RCSW_DS_BSTREE_OS) {
       ostree_count_fixup(tree, (struct ostree_node*)node, OSTREE_FIXUP_INSERT);
     }
 
@@ -256,10 +253,9 @@ error:
 } /* bstree_remove() */
 
 status_t bstree_delete(struct bstree* const tree,
-                       struct bstree_node* z,
-                       void* const e) /* to be filled if non-NULL */
-{
-  RCSW_FPC_NV(ERROR, tree != NULL, z != NULL);
+                       struct bstree_node* victim,
+                       void* const elt) {
+  RCSW_FPC_NV(ERROR, tree != NULL, victim != NULL);
 
   struct bstree_node* x;
   struct bstree_node* y;
@@ -267,10 +263,10 @@ status_t bstree_delete(struct bstree* const tree,
   /*
    * Locate the parent or succesor of the node to delete
    */
-  if (z->left == tree->nil || z->right == tree->nil) {
-    y = z;
+  if (victim->left == tree->nil || victim->right == tree->nil) {
+    y = victim;
   } else {
-    y = bstree_node_successor(tree, z);
+    y = bstree_node_successor(tree, victim);
   }
   x = (y->left == tree->nil) ? y->right : y->left;
 
@@ -290,7 +286,7 @@ status_t bstree_delete(struct bstree* const tree,
   /*
    * Fix up RBTree structure if required
    */
-  if (tree->flags & DS_BSTREE_REDBLACK && y->red == FALSE) {
+  if (tree->flags & RCSW_DS_BSTREE_RB && y->red == FALSE) {
     /*
      * Fixup interval tree/OS-Tree auxiliary field. Must be done BEFORE
      * fixing up tree red-black tree structure, to update the fields of
@@ -298,29 +294,29 @@ status_t bstree_delete(struct bstree* const tree,
      * red-black fixup process will cause at most 3 rotations, simply fixing
      * up the auxiliary field during rotations is not enough.
      */
-    if (tree->flags & DS_BSTREE_INTERVAL) {
-      int_tree_high_fixup(tree, (struct int_tree_node*)x);
-    } else if (tree->flags & DS_BSTREE_OS) {
+    if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+      inttree_high_fixup(tree, (struct inttree_node*)x);
+    } else if (tree->flags & RCSW_DS_BSTREE_OS) {
       ostree_count_fixup(tree, (struct ostree_node*)x, OSTREE_FIXUP_DELETE);
     }
 
     rbtree_delete_fixup(tree, x);
   }
 
-  if (y != z) {
-    y->left = z->left;
-    y->right = z->right;
-    y->parent = z->parent;
-    y->red = z->red;
-    z->left->parent = z->right->parent = y;
-    if (z == z->parent->left) {
-      z->parent->left = y;
+  if (y != victim) {
+    y->left = victim->left;
+    y->right = victim->right;
+    y->parent = victim->parent;
+    y->red = victim->red;
+    victim->left->parent = victim->right->parent = y;
+    if (victim == victim->parent->left) {
+      victim->parent->left = y;
     } else {
-      z->parent->right = y;
+      victim->parent->right = y;
     }
   }
 
-  if (tree->flags & DS_BSTREE_REDBLACK) {
+  if (tree->flags & RCSW_DS_BSTREE_RB) {
     /* Verify properties of RB Tree still hold */
     RCSW_FPC_NV(ERROR, !tree->root->red);
     RCSW_FPC_NV(ERROR, !tree->nil->red);
@@ -328,10 +324,10 @@ status_t bstree_delete(struct bstree* const tree,
               rbtree_node_black_height(tree->root->left->left) ==
                   rbtree_node_black_height(tree->root->left->right));
   }
-  if (NULL != e) {
-    ds_elt_copy(e, z->data, tree->el_size);
+  if (NULL != elt) {
+    ds_elt_copy(elt, victim->data, tree->elt_size);
   }
-  bstree_node_destroy(tree, z);
+  bstree_node_destroy(tree, victim);
   tree->current--;
   return OK;
 } /* bstree_delete() */
@@ -349,7 +345,7 @@ void bstree_print(struct bstree* const tree) {
   }
 
   bstree_traverse_nodes_inorder(tree,
-                                tree->root,
+                                RCSW_BSTREE_ROOT(tree),
                                 (int (*)(const struct bstree* const,
                                          struct bstree_node*))bstree_node_print);
 } /* bstree_print() */

@@ -30,11 +30,10 @@ struct llist* llist_init(struct llist* list_in,
             params != NULL,
             params->tag == DS_LLIST,
             params->max_elts != 0,
-            params->el_size > 0);
+            params->elt_size > 0);
 
   struct llist* list = NULL;
-  int i;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(list_in);
     list = list_in;
   } else {
@@ -45,48 +44,46 @@ struct llist* llist_init(struct llist* list_in,
   list->flags = params->flags;
   list->first = NULL;
 
-  if (params->flags & DS_APP_DOMAIN_NODES) {
+  if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    SOFT_ASSERT(
+    RCSW_ER_CHECK(
         params->max_elts != -1,
-        "ERROR: Cannot have uncapped list length with DS_APP_DOMAIN_NODES");
+        "ERROR: Cannot have uncapped list length with RCSW_DS_NOALLOC_NODES");
 
     /* initialize free list of llist_nodes */
-    for (i = 0; i < params->max_elts; ++i) {
-      ((int*)(params->nodes))[i] = -1;
-    }
-    list->nodes = params->nodes;
+    list->space.node_map = (struct allocm_entry*)params->nodes;
+    list->space.nodes = (struct llist_node*)(list->space.node_map + params->max_elts);
+    allocm_init(list->space.node_map, params->max_elts);
   }
 
-  if (params->flags & DS_APP_DOMAIN_DATA) {
+  if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    SOFT_ASSERT(
+    RCSW_ER_CHECK(
         params->max_elts != -1,
-        "ERROR: Cannot have uncapped list length with DS_APP_DOMAIN_DATA");
+        "ERROR: Cannot have uncapped list length with RCSW_DS_NOALLOC_DATA");
 
     /* initialize free list of data elements */
-    for (i = 0; i < params->max_elts; ++i) {
-      ((int*)(params->elements))[i] = -1;
-    }
-    list->elements = params->elements;
+    list->space.db_map = (struct allocm_entry*)params->elements;
+    list->space.datablocks = (uint8_t*)(list->space.db_map + params->max_elts);
+    allocm_init(list->space.db_map, params->max_elts);
   }
 
-  if (params->cmpe == NULL && !(params->flags & DS_LLIST_PTR_CMP)) {
+  if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_PTR_CMP)) {
     DBGW(
-        "WARNING: No compare function provided and DS_LLIST_PTR_CMP not "
+        "WARNING: No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
         "passed\n");
   }
 
   list->first = NULL;
   list->last = NULL;
-  list->el_size = params->el_size;
+  list->elt_size = params->elt_size;
   list->cmpe = params->cmpe;
   list->printe = params->printe;
   list->max_elts = params->max_elts;
   list->sorted = FALSE;
 
-  DBGD("el_size=%zu max_elts=%d flags=0x%08x\n",
-       list->el_size,
+  DBGD("elt_size=%zu max_elts=%d flags=0x%08x\n",
+       list->elt_size,
        list->max_elts,
        list->flags);
   return list;
@@ -110,7 +107,7 @@ void llist_destroy(struct llist* list) {
     --list->current;
   } /* while() */
 
-  if (!(list->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(list->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(list);
   }
 } /* llist_destroy() */
@@ -169,7 +166,7 @@ status_t llist_delete(struct llist* const list,
 
   list->current--;
   if (NULL != e) {
-    ds_elt_copy(e, victim->data, list->el_size);
+    ds_elt_copy(e, victim->data, list->elt_size);
   }
   llist_node_destroy(list, victim);
   return OK;
@@ -200,7 +197,7 @@ status_t llist_append(struct llist* const list, void* const data) {
     list->last = node;
   }
   list->current++;
-  if (list->flags & DS_KEEP_SORTED) {
+  if (list->flags & RCSW_DS_SORTED) {
     list->sorted = FALSE;
     llist_sort(list, MSORT_REC);
   }
@@ -236,7 +233,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   }
   list->current++;
 
-  if (list->flags & DS_KEEP_SORTED) {
+  if (list->flags & RCSW_DS_SORTED) {
     list->sorted = FALSE;
     llist_sort(list, MSORT_REC);
   }
@@ -268,7 +265,7 @@ void llist_print(struct llist* const list) {
 void* llist_data_query(struct llist* const list, const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & DS_LLIST_PTR_CMP)) {
+  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
     DBGE("ERROR: Cannot search list: NULL cmpe()\n");
     return NULL;
   }
@@ -281,14 +278,14 @@ struct llist_node* llist_node_query(struct llist* const list,
                                     const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & DS_LLIST_PTR_CMP)) {
+  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
     DBGE("ERROR: Cannot search list: NULL cmpe()\n");
     return NULL;
   }
 
   void* match = NULL;
   LLIST_FOREACH(list, next, curr) {
-    if (list->flags & DS_LLIST_PTR_CMP) {
+    if (list->flags & RCSW_DS_LLIST_PTR_CMP) {
       if (curr->data == e) {
         match = curr;
         break;
@@ -347,7 +344,7 @@ struct llist* llist_copy(struct llist* const list,
 
   struct ds_params params = {.cmpe = list->cmpe,
                              .printe = list->printe,
-                             .el_size = list->el_size,
+                             .elt_size = list->elt_size,
                              .max_elts = list->max_elts,
                              .tag = DS_LLIST,
                              .flags = (cparams == NULL) ? 0 : cparams->flags,
@@ -360,7 +357,7 @@ struct llist* llist_copy(struct llist* const list,
 
   LLIST_FOREACH(list, next, curr) { llist_append(clist, curr->data); }
 
-  DBGD("Copied list: %zu %zu-byte elements\n", list->current, list->el_size);
+  DBGD("Copied list: %zu %zu-byte elements\n", list->current, list->elt_size);
 error:
   return clist;
 } /* llist_copy() */
@@ -372,7 +369,7 @@ struct llist* llist_copy2(struct llist* const list,
 
   struct ds_params params = {.cmpe = list->cmpe,
                              .printe = list->printe,
-                             .el_size = list->el_size,
+                             .elt_size = list->elt_size,
                              .max_elts = list->max_elts,
                              .tag = DS_LLIST,
                              .flags = (cparams == NULL) ? 0 : cparams->flags,
@@ -391,7 +388,7 @@ struct llist* llist_copy2(struct llist* const list,
   }
   DBGD("Copied list: %zu %zu-byte elements matched copy predicate\n",
        clist->current,
-       clist->el_size);
+       clist->elt_size);
 
 error:
   return clist;
@@ -404,7 +401,7 @@ struct llist* llist_filter(struct llist* list,
 
   struct ds_params params = {.cmpe = list->cmpe,
                              .printe = list->printe,
-                             .el_size = list->el_size,
+                             .elt_size = list->elt_size,
                              .max_elts = list->max_elts,
                              .tag = DS_LLIST,
                              .flags = (fparams == NULL) ? 0 : fparams->flags,
@@ -442,7 +439,7 @@ struct llist* llist_filter(struct llist* list,
       "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
       "remain.\n",
       flist->current,
-      flist->el_size,
+      flist->elt_size,
       list->current);
 
 error:
@@ -462,7 +459,7 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
       count++;
-      SOFT_ASSERT(llist_remove(list, match->data) == OK,
+      RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
                   "ERROR: Llist_Node remove failed");
       match = NULL;
     }
@@ -473,7 +470,7 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
 
   /* catch corner case where last item in list matched */
   if (match != NULL) {
-    SOFT_ASSERT(llist_remove(list, match->data) == OK,
+    RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
                 "ERROR: Llist_Node remove failed");
   }
 
@@ -482,7 +479,7 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
       "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
       "remain.\n",
       count,
-      list->el_size,
+      list->elt_size,
       list->current);
 
 error:
@@ -541,7 +538,7 @@ status_t llist_splice(struct llist* list1,
       list1->current += list2->current;
     }
 
-    if (!(list2->flags & DS_APP_DOMAIN_HANDLE)) {
+    if (!(list2->flags & RCSW_DS_NOALLOC_HANDLE)) {
       free(list2);
     }
     break;
@@ -580,13 +577,13 @@ size_t llist_heap_footprint(const struct llist* const list) {
   RCSW_FPC_NV(0, NULL != list);
 
   size_t size = 0;
-  if (list->flags & DS_APP_DOMAIN_HANDLE) {
+  if (list->flags & RCSW_DS_NOALLOC_HANDLE) {
     size += sizeof(struct llist);
   }
-  if (list->flags & DS_APP_DOMAIN_DATA) {
-    size += llist_element_space((size_t)list->max_elts, list->el_size);
+  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+    size += llist_element_space((size_t)list->max_elts, list->elt_size);
   }
-  if (list->flags & DS_APP_DOMAIN_NODES) {
+  if (list->flags & RCSW_DS_NOALLOC_NODES) {
     size += llist_node_space((size_t)list->max_elts);
   }
 

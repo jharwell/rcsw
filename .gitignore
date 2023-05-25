@@ -47,6 +47,7 @@ compile_commands.json
 
 # Build process
 build
+.gdb_history
 
 # Sphinx
 docs/_build

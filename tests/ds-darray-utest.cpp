@@ -1,7 +1,5 @@
 /**
- * \file darray-test.cpp
- *
- * Test of dynamic array.
+ * \file ds-darray-utest.cpp
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,71 +9,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <stdlib.h>
-
-extern "C" {
-#include "rcsw/ds/darray.h"
-#include "rcsw/algorithm/sort.h"
-#include "tests/ds_test.h"
-}
-
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
 
-/******************************************************************************
- * Constant declarations
- *****************************************************************************/
-#define NUM_TESTS       6
-#define MODULE_ID M_TESTING
-
-/*******************************************************************************
- * Test Functions
- ******************************************************************************/
-/**
- * \brief Test appending/prepending items into an darray and then removing them.
- */
-static void addremove_test(int len, struct ds_params* params);
-
-/**
- * \brief Test deleting arrs of different sizes.
- */
-static void delete_test(int len, struct ds_params* params);
-
-/**
- * \brief Test for looking up items in darray
- */
-static void contains_test(int len, struct ds_params* params);
-
-/**
- * \brief Test of \ref darray_filter().
- */
-static void filter_test(int len, struct ds_params* params);
-
-/**
- * \brief Test of \ref darray_copy().
- */
-static void copy_test(int len, struct ds_params* params);
-
-/**
- * \brief Test of \ref darray_sort()
- */
-static void sort_test(int len, struct ds_params *params);
-
-/**
- * \brief Test of builtin darray binary search on sorted _arrs.
- */
-static void binarysearch_test(int len, struct ds_params *params);
-
-/**
- * \brief Test of \ref darray_inject()
- */
-static void inject_test(int len, struct ds_params * params);
-
-/**
- * \brief Test of darray iteration.
- */
-static void iter_test(int len, struct ds_params * params);
+#include "rcsw/ds/darray.h"
+#include "rcsw/algorithm/sort.h"
+#include "tests/ds_test.h"
+#include "tests/ds_test.hpp"
 
 /**
  * \brief Test of \ref darray_map().
@@ -85,6 +26,7 @@ static void map_test(int len, struct ds_params * params);
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
+template<typename T>
 static void run_test(void (*test)(int len, struct ds_params *params)) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
@@ -93,16 +35,21 @@ static void run_test(void (*test)(int len, struct ds_params *params)) {
   struct ds_params params;
   params.tag = DS_DARRAY;
   params.flags = 0;
-  params.cmpe = th_key_cmp;
-  params.printe = th_printe;
-  params.el_size = sizeof(struct element);
+  params.cmpe = th_cmpe<T>;
+  params.printe = th_printe<T>;
+  params.elt_size = sizeof(T);
   CATCH_REQUIRE(th_ds_init(&params) == OK);
-  int j, k;
+
+  uint32_t flags[] = {
+    RCSW_DS_SORTED,
+    RCSW_DS_ORDERED,
+    RCSW_DS_NOALLOC_HANDLE,
+    RCSW_DS_NOALLOC_DATA,
+  };
   /* test with defined sizes */
-  for (j = 1; j <= NUM_ITEMS; ++j) {
-    params.type.da.init_size = j + 4;
-    for (int i = 0; i <= 0x100; ++i) {
-      params.flags = i;
+  for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
+    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+      params.flags = flags[i];
       test(j, &params);
     } /* for(i...) */
   } /* for(j...) */
@@ -110,85 +57,74 @@ static void run_test(void (*test)(int len, struct ds_params *params)) {
 } /* run_test() */
 
 /*******************************************************************************
- * Test Cases
- ******************************************************************************/
-CATCH_TEST_CASE("darray Add/Remove Test", "[darray]") { run_test(addremove_test); }
-CATCH_TEST_CASE("darray Delete Test", "[darray]") { run_test(delete_test); }
-CATCH_TEST_CASE("darray Contains Test", "[darray]") { run_test(contains_test); }
-CATCH_TEST_CASE("darray Filter Test", "[darray]") { run_test(filter_test); }
-CATCH_TEST_CASE("darray Copy Test", "[darray]") { run_test(copy_test); }
-CATCH_TEST_CASE("darray Sort Test", "[darray]") { run_test(sort_test); }
-CATCH_TEST_CASE("darray Binary Search Test", "[darray]") { run_test(binarysearch_test); }
-CATCH_TEST_CASE("darray Inject Test", "[darray]") { run_test(inject_test); }
-CATCH_TEST_CASE("darray Iter Test", "[darray]") { run_test(iter_test); }
-CATCH_TEST_CASE("darray Map Test", "[darray]") { run_test(map_test); }
-
-/*******************************************************************************
  * Test Functions
  ******************************************************************************/
+template <typename T>
 static void addremove_test(int len, struct ds_params *params) {
   struct darray *_arr;
   struct darray my_arr;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+    CATCH_REQUIRE(nullptr == darray_init(nullptr, params));
     _arr = darray_init(&my_arr, params);
   } else {
-    _arr = darray_init(NULL, params);
+    _arr = darray_init(nullptr, params);
   }
 
-  int i, j;
-  int arr[NUM_ITEMS];
-  CATCH_REQUIRE(NULL != _arr);
+  T arr[TH_NUM_ITEMS];
+  CATCH_REQUIRE(nullptr != _arr);
 
-  for (i = 0; i < len; i++) {
-    struct element e1;
-    e1.value1 = i;
+  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+
+  printf("START\n");
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    /* arr[i].value1 += 1; */
 
     if (rand() % 2) {  /* prepend */
-      CATCH_REQUIRE(darray_insert(_arr, &e1, 0) == OK);
+      CATCH_REQUIRE(darray_insert(_arr, &arr[i], 0) == OK);
     } else { /* append */
-      CATCH_REQUIRE(darray_insert(_arr, &e1, _arr->current) == OK);
+      CATCH_REQUIRE(darray_insert(_arr, &arr[i], _arr->current) == OK);
     }
 
-    for (j = 0; j < (len/4) %(j + 1); ++i) {
-      struct element e = {.value1 = arr[len %(j+1)], .value2 = 17};
-      darray_remove(_arr, NULL, len % (j+1));
-      CATCH_REQUIRE(darray_index_query(_arr, &e) == -1);
+    for (int j = 0; j <= i; ++j) {
+      CATCH_REQUIRE(darray_idx_query(_arr, &arr[j]) != -1);
     }
-    arr[i] = i;
   } /* for() */
 
-  CATCH_REQUIRE(_arr->current == len);
+  CATCH_REQUIRE(darray_n_elts(_arr) == (size_t)len);
 
-  for (i = 0; i < len; ++i) {
-    struct element e = {.value1 = arr[i], .value2 = 17};
-    CATCH_REQUIRE(darray_index_query(_arr, &e) != -1);
+  if (!(_arr->flags & RCSW_DS_NOALLOC_DATA)) {
+    CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr) * 2));
   }
 
-  for (i = 0; i < len %(i + 1); i++) {
-    struct element e =  {.value1 = arr[len%(i+1)], .value2 = 17};
-    darray_remove(_arr, NULL, len % (i+1));
-    CATCH_REQUIRE(darray_index_query(_arr, &e) == -1);
-  }
   darray_print(_arr);
+  for (int i = 0; i < len; i++) {
+    T e;
+    CATCH_REQUIRE(OK == darray_remove(_arr, &e, 0));
+    CATCH_REQUIRE(darray_idx_query(_arr, &e) == -1);
+  }
+  CATCH_REQUIRE(darray_isempty(_arr));
   darray_destroy(_arr);
 } /* addremove_test () */
 
+template <typename T>
 static void delete_test(int len, struct ds_params *params) {
   struct darray* _arr;
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
   } else {
-    _arr = darray_init(NULL, params);
+    _arr = darray_init(nullptr, params);
   }
 
-  CATCH_REQUIRE(NULL != _arr);
+  CATCH_REQUIRE(nullptr != _arr);
+
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 1; i <= len; i++) {
-    struct element e;
-    int value = (rand() % len) % (len + 1);
-    e.value1 = value;
+    T e = g.next();
     CATCH_REQUIRE(darray_insert(_arr, &e, _arr->current) == OK);
   }
 
@@ -200,83 +136,93 @@ static void delete_test(int len, struct ds_params *params) {
 
   CATCH_REQUIRE(sum == 0);
 
+  g.reset();
+  for (int i = 0; i < len; i++) {
+    T e = g.next();
+    CATCH_REQUIRE(darray_insert(_arr, &e, _arr->current) == OK);
+  }
+
+  if (len / 2 > 0) {
+    if (_arr->flags & RCSW_DS_NOALLOC_DATA) {
+      CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_n_elts(_arr)/ 2));
+    } else {
+      CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr)/ 2));
+      CATCH_REQUIRE(darray_n_elts(_arr) == (size_t)(len / 2 - 1));
+    }
+  } else {
+    CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr)/ 2));
+    CATCH_REQUIRE(darray_n_elts(_arr) == 0);
+  }
   darray_destroy(_arr);
   darray_print(_arr);
   darray_print(NULL);
 } /* delete_test() */
 
+template <typename T>
 static void contains_test(int len, struct ds_params *params) {
   struct darray* _arr;
-  int i, j;
-  int arr[NUM_ITEMS];
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  T arr[TH_NUM_ITEMS];
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
   } else {
-    _arr = darray_init(NULL, params);
+    _arr = darray_init(nullptr, params);
   }
 
-  CATCH_REQUIRE(NULL != _arr);
+  CATCH_REQUIRE(nullptr != _arr);
 
-  for(i = 0; i < len; i++) {
-    struct element e;
-    int value = (rand() % len) % (len + 1);
-    e.value1 = value;
-    CATCH_REQUIRE(darray_insert(_arr, &e, _arr->current) == OK);
-    arr[i] = value;
-  }
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
-  for (i = 0; i < len; i++) {
-    int value = rand() % (i+ 1);
-    for (j = 0; j < len; j++){
-      if (value == arr[j]) {
-        struct element e = {.value1 = value, .value2 = 17};
-        CATCH_REQUIRE(darray_index_query(_arr, &e) != -1);
-        break;
-      }
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    CATCH_REQUIRE(darray_insert(_arr, &arr[i], _arr->current) == OK);
+
+    for (int j = 0; j <= i; ++j) {
+      CATCH_REQUIRE(darray_idx_query(_arr, &arr[j]) != -1);
     } /* end for() */
-  } /* end for() */
+  }
 
   darray_destroy(_arr);
 } /* contains_test() */
 
+template <typename T>
 static void filter_test(int len, struct ds_params *params) {
   struct darray* _arr1, *_arr2;
-  int i;
-  int arr[NUM_ITEMS];
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  T arr[TH_NUM_ITEMS];
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
-    _arr1 = darray_init(NULL, params);
+    _arr1 = darray_init(nullptr, params);
   }
 
-  CATCH_REQUIRE(NULL != _arr1);
+  CATCH_REQUIRE(nullptr != _arr1);
 
-  for (i = 0; i < len; i++) {
-    struct element e;
-    /* int value = rand() % (i+1); */
-    int value = i;
-    e.value1 = value;
-    e.value2 = value + 1;
-    CATCH_REQUIRE(darray_insert(_arr1, &e, _arr1->current) == OK);
-    arr[i] = value;
+  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   }
 
-  if (!(params->flags & (DS_APP_DOMAIN_DATA | DS_APP_DOMAIN_HANDLE))) {
-    _arr2 = darray_filter(_arr1, th_filter_func, params);
+  if (!(params->flags & (RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
+    _arr2 = darray_filter(_arr1, th_filter_func<T>, params);
   } else {
-    _arr2 = darray_filter(_arr1, th_filter_func, NULL);
+    _arr2 = darray_filter(_arr1, th_filter_func<T>, nullptr);
   }
-  CATCH_REQUIRE(NULL != _arr2);
+  CATCH_REQUIRE(nullptr != _arr2);
 
-  for (i = 0; i < len; i++) {
-    struct element e = {.value1 = arr[i], .value2 = 17};
-    if (th_filter_func(&e)) {
-      CATCH_REQUIRE(darray_index_query(_arr2, &e) != -1);
-      CATCH_REQUIRE(darray_index_query(_arr1, &e) == -1);
+  for (int i = 0; i < len; i++) {
+    if (th_filter_func<T>(&arr[i])) {
+      CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) != -1);
+      CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) == -1);
+    } else {
+      CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) == -1);
+      CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
     }
   }
 
@@ -284,63 +230,62 @@ static void filter_test(int len, struct ds_params *params) {
   darray_destroy(_arr2);
 } /* filter_test() */
 
+template <typename T>
 static void copy_test(int len, struct ds_params *params) {
   struct darray* _arr1, *_arr2;
-  int i;
-  int arr[NUM_ITEMS];
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  T arr[TH_NUM_ITEMS];
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
-    _arr1 = darray_init(NULL, params);
+    _arr1 = darray_init(nullptr, params);
   }
-  CATCH_REQUIRE(NULL != _arr1);
+  CATCH_REQUIRE(nullptr != _arr1);
 
-  for (i = 0; i < len; i++) {
-    struct element e;
-    int value = rand() % (i+1);
-    e.value1 = value;
-    CATCH_REQUIRE(darray_insert(_arr1, &e, _arr1->current) == OK);
-    arr[i] = value;
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   }
 
 
-  if (!(params->flags & (DS_APP_DOMAIN_DATA | DS_APP_DOMAIN_HANDLE))) {
+  if (!(params->flags & (RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
     _arr2 = darray_copy(_arr1, params);
   } else {
-    _arr2 = darray_copy(_arr1, NULL);
+    _arr2 = darray_copy(_arr1, nullptr);
   }
 
-  CATCH_REQUIRE(NULL != _arr2);
+  CATCH_REQUIRE(nullptr != _arr2);
 
-  for (i = 0; i < len; i++) {
-    struct element e = {.value1 = arr[i], .value2 = 17};
-    CATCH_REQUIRE(darray_index_query(_arr1, &e) != -1);
-    CATCH_REQUIRE(darray_index_query(_arr2, &e) != -1);
+  for (int i = 0; i < len; i++) {
+    CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
+    CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) != -1);
   }
 
   darray_destroy(_arr1);
   darray_destroy(_arr2);
 } /* copy_test() */
 
+template <typename T>
 static void sort_test(int len, struct ds_params *params) {
   struct darray* _arr1;
-  int i;
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
-    _arr1 = darray_init(NULL, params);
+    _arr1 = darray_init(nullptr, params);
   }
 
-  CATCH_REQUIRE(NULL != _arr1);
+  CATCH_REQUIRE((nullptr != _arr1));
 
-  for (i = 0; i < len; i++) {
-    struct element e;
-    int value = rand() % (i+1);
-    e.value1 = value;
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    T e = g.next();
     CATCH_REQUIRE(darray_insert(_arr1, &e, _arr1->current) == OK);
   }
 
@@ -351,131 +296,233 @@ static void sort_test(int len, struct ds_params *params) {
   }
 
   /* validate sorting */
-  for (i = 0; i < len-1; i++) {
-    CATCH_REQUIRE(((struct element*)darray_data_get(_arr1, i))->value1 <=
-            ((struct element*)darray_data_get(_arr1, i+1))->value1);
+  for (int i = 0; i < len-1; i++) {
+    CATCH_REQUIRE(((T*)darray_data_get(_arr1, i))->value1 <=
+            ((T*)darray_data_get(_arr1, i+1))->value1);
   } /* for() */
 
   darray_destroy(_arr1);
 } /* sort_test() */
 
+template <typename T>
 static void binarysearch_test(int len, struct ds_params *params) {
   struct darray* _arr1;
-  int i;
-  int arr[NUM_ITEMS];
   struct darray my_arr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  T arr[TH_NUM_ITEMS];
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
-    _arr1 = darray_init(NULL, params);
+    _arr1 = darray_init(nullptr, params);
   }
 
-  CATCH_REQUIRE(NULL != _arr1);
+  CATCH_REQUIRE(nullptr != _arr1);
 
-  for (i = 0; i < len; i++) {
-    struct element e;
-    int value = rand() % (i+1) + 3;
-    e.value1 = value;
-    arr[i] = value;
-    CATCH_REQUIRE(darray_insert(_arr1, &e, _arr1->current) == OK);
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   } /* for() */
 
   darray_sort(_arr1, QSORT_ITER);
 
-  for (i = 0; i < len; i++) {
-    struct element e = {.value1 = arr[i], .value2 = 17};
-    CATCH_REQUIRE(darray_index_query(_arr1, &e) != -1);
+  for (int i = 0; i < len; i++) {
+    CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
   } /* for() */
 
   darray_destroy(_arr1);
 } /* binarysearch_test() */
 
+template <typename T>
 static void inject_test(int len, struct ds_params * params) {
   struct darray *arr;
   struct darray myarr;
-  int i;
-  int sum = 0;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
-    arr = darray_init(NULL, params);
+    arr = darray_init(nullptr, params);
   }
-  CATCH_REQUIRE(NULL != arr);
+  CATCH_REQUIRE(nullptr != arr);
 
-  for (i = 0; i < len; i++) {
-    struct element e = {.value1 = i, .value2 = 17};
-    sum +=i;
+  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+
+  int sum = 0;
+  for (int i = 0; i < len; i++) {
+    T e = g.next();
+    sum += i;
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-
   int total = 0;
-  CATCH_REQUIRE(darray_inject(arr, th_inject_func, &total) == OK);
+  CATCH_REQUIRE(darray_inject(arr, th_inject_func<T>, &total) == OK);
   CATCH_REQUIRE(total == sum);
 
   darray_destroy(arr);
 } /* inject_test() */
 
+template <typename T>
 static void iter_test(int len, struct ds_params * params) {
   struct darray *arr;
   struct darray myarr;
-  int i;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
-    arr = darray_init(NULL, params);
+    arr = darray_init(nullptr, params);
   }
-  CATCH_REQUIRE(NULL != arr);
+  CATCH_REQUIRE(nullptr != arr);
 
-  for (i = 0; i < len; i++) {
-    struct element e = {.value1 = i, .value2 = 17};
+  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  struct element * e;
-  struct ds_iterator * iter = ds_iter_init(DS_DARRAY, arr, th_iter_func);
-  CATCH_REQUIRE(NULL != iter);
-  while ((e = (element*)ds_iter_next(iter)) != NULL) {
+  T * e;
+  struct ds_iterator * iter = ds_iter_init(DS_DARRAY, arr, th_iter_func<T>);
+  CATCH_REQUIRE(nullptr != iter);
+
+  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
-  iter = ds_iter_init(DS_DARRAY, arr, NULL);
-  CATCH_REQUIRE(NULL != iter);
-  int count = 0;
-  while ((e = (element*)ds_iter_next(iter)) != NULL) {
-    CATCH_REQUIRE((int)e->value1 == count);
+  iter = ds_iter_init(DS_DARRAY, arr, nullptr);
+  CATCH_REQUIRE(nullptr != iter);
+
+  size_t count = 0;
+  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+    CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
     count++;
   }
-  CATCH_REQUIRE(count == arr->current);
+  CATCH_REQUIRE(count == darray_n_elts(arr));
 
   darray_destroy(arr);
 } /* iter_test() */
 
+template <typename T>
 static void map_test(int len, struct ds_params * params) {
   struct darray *arr;
   struct darray myarr;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
-    arr = darray_init(NULL, params);
+    arr = darray_init(nullptr, params);
   }
-  CATCH_REQUIRE(NULL != arr);
+  CATCH_REQUIRE(nullptr != arr);
+
+  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
-    struct element e = {.value1 = i, .value2 = 17};
+    T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  CATCH_REQUIRE(darray_map(arr, th_map_func) == OK);
+  CATCH_REQUIRE(darray_map(arr, th_map_func<T>) == OK);
   for (int i = 0; i < len; ++i) {
-    struct element e;
-    CATCH_REQUIRE(darray_index_serve(arr, &e, i) == OK);
+    T e;
+    CATCH_REQUIRE(darray_idx_serve(arr, &e, i) == OK);
     CATCH_REQUIRE(e.value1 == i - 1);
   } /* for(i..) */
 
-
   darray_destroy(arr);
 } /* map_test() */
+
+template <typename T>
+static void print_test(int len, struct ds_params *params) {
+  struct darray* _arr;
+  struct darray my_arr;
+
+  T arr[TH_NUM_ITEMS];
+
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+    _arr = darray_init(&my_arr, params);
+  } else {
+    _arr = darray_init(nullptr, params);
+  }
+
+  CATCH_REQUIRE(nullptr != _arr);
+
+  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+
+  for (int i = 0; i < len; i++) {
+    arr[i] = g.next();
+    CATCH_REQUIRE(darray_insert(_arr, &arr[i], _arr->current) == OK);
+  }
+
+  darray_print(nullptr);
+  darray_print(_arr);
+  darray_destroy(_arr);
+  darray_print(_arr);
+} /* print_test() */
+
+/*******************************************************************************
+ * Test Cases
+ ******************************************************************************/
+CATCH_TEST_CASE("Add/Remove Test", "[ds][darray]") {
+  run_test<element8>(addremove_test<element8>);
+  run_test<element4>(addremove_test<element4>);
+  run_test<element2>(addremove_test<element2>);
+  run_test<element1>(addremove_test<element1>);
+}
+CATCH_TEST_CASE("Delete Test", "[ds][darray]") {
+  run_test<element8>(delete_test<element8>);
+  run_test<element4>(delete_test<element4>);
+  run_test<element2>(delete_test<element2>);
+  run_test<element1>(delete_test<element1>);
+}
+CATCH_TEST_CASE("Contains Test", "[ds][darray]") {
+  run_test<element8>(contains_test<element8>);
+  run_test<element4>(contains_test<element4>);
+  run_test<element2>(contains_test<element2>);
+  run_test<element1>(contains_test<element1>);
+}
+CATCH_TEST_CASE("Filter Test", "[ds][darray]") {
+  run_test<element8>(filter_test<element8>);
+  run_test<element4>(filter_test<element4>);
+  run_test<element2>(filter_test<element2>);
+  run_test<element1>(filter_test<element1>);
+}
+CATCH_TEST_CASE("Copy Test", "[ds][darray]") {
+  run_test<element8>(copy_test<element8>);
+  run_test<element4>(copy_test<element4>);
+  run_test<element2>(copy_test<element2>);
+  run_test<element1>(copy_test<element1>);
+}
+CATCH_TEST_CASE("Sort Test", "[ds][darray]") {
+  run_test<element8>(sort_test<element8>);
+  run_test<element4>(sort_test<element4>);
+  run_test<element2>(sort_test<element2>);
+  run_test<element1>(sort_test<element1>);
+}
+CATCH_TEST_CASE("Binary Search Test", "[ds][darray]") {
+  run_test<element8>(binarysearch_test<element8>);
+  run_test<element4>(binarysearch_test<element4>);
+  run_test<element2>(binarysearch_test<element2>);
+  run_test<element1>(binarysearch_test<element1>);
+}
+CATCH_TEST_CASE("Inject Test", "[ds][darray]") {
+  run_test<element8>(inject_test<element8>);
+  run_test<element4>(inject_test<element4>);
+  run_test<element2>(inject_test<element2>);
+  run_test<element1>(inject_test<element1>);
+}
+CATCH_TEST_CASE("Iter Test", "[ds][darray]") {
+  run_test<element8>(iter_test<element8>);
+  run_test<element4>(iter_test<element4>);
+  run_test<element2>(iter_test<element2>);
+  run_test<element1>(iter_test<element1>);
+}
+CATCH_TEST_CASE("Map Test", "[ds][darray]") {
+  run_test<element8>(map_test<element8>);
+  run_test<element4>(map_test<element4>);
+  run_test<element2>(map_test<element2>);
+  run_test<element1>(map_test<element1>);
+}
+CATCH_TEST_CASE("Print Test", "[ds][darray]") {
+  run_test<element8>(print_test<element8>);
+}

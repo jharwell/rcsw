@@ -23,10 +23,10 @@ struct fifo* fifo_init(struct fifo* fifo_in,
             params != NULL,
             params->tag == DS_FIFO,
             params->max_elts > 0,
-            params->el_size > 0);
+            params->elt_size > 0);
 
   struct fifo* fifo = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(fifo_in);
     fifo = fifo_in;
   } else {
@@ -37,12 +37,12 @@ struct fifo* fifo_init(struct fifo* fifo_in,
 
   struct ds_params rb_params = {.printe = params->printe,
                                 .cmpe = params->cmpe,
-                                .el_size = params->el_size,
+                                .elt_size = params->elt_size,
                                 .max_elts = params->max_elts,
                                 .tag = DS_RBUFFER,
                                 .elements = params->elements,
                                 .flags = params->flags};
-  rb_params.flags |= (DS_APP_DOMAIN_HANDLE | DS_RBUFFER_AS_FIFO);
+  rb_params.flags |= (RCSW_DS_NOALLOC_HANDLE | RCSW_DS_RBUFFER_AS_FIFO);
   RCSW_CHECK(NULL != rbuffer_init(&fifo->rb, &rb_params));
   return fifo;
 
@@ -56,20 +56,20 @@ void fifo_destroy(struct fifo* const fifo) {
   RCSW_FPC_V(NULL != fifo);
 
   rbuffer_destroy(&fifo->rb);
-  if (!(fifo->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(fifo->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(fifo);
   }
 } /* fifo_destroy() */
 
-status_t fifo_enq(struct fifo* const fifo, const void* const e) {
+status_t fifo_add(struct fifo* const fifo, const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != fifo, NULL != e);
   return rbuffer_add(&fifo->rb, e);
-} /* fifo_enq() */
+} /* fifo_add() */
 
-status_t fifo_deq(struct fifo* const fifo, void* const e) {
+status_t fifo_remove(struct fifo* const fifo, void* const e) {
   RCSW_FPC_NV(ERROR, NULL != fifo, NULL != e);
   return rbuffer_remove(&fifo->rb, e);
-} /* fifo_deq() */
+} /* fifo_remove() */
 
 status_t fifo_clear(struct fifo* const fifo) {
   RCSW_FPC_NV(ERROR, NULL != fifo);

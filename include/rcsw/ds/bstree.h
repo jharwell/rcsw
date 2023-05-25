@@ -1,9 +1,6 @@
 /**
  * \file bstree.h
  * \ingroup ds
- * \brief Implementation of basic binary tree.
- *
- * Uses the approach outlined in Introduction to Algorithms.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -21,17 +18,25 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#define BSTREE_NODE_KEYSIZE sizeof(int32_t)
+#define RCSW_BSTREE_NODE_KEYSIZE sizeof(int32_t)
 
 /**
  * \brief The different traversal types the tree supports. Pretty
  * self-explanatory.
  */
 enum bstree_traversal_type {
-    BSTREE_TRAVERSE_PREORDER,
-    BSTREE_TRAVERSE_INORDER,
-    BSTREE_TRAVERSE_POSTORDER,
+  ekBSTREE_TRAVERSE_PREORDER,
+  ekBSTREE_TRAVERSE_INORDER,
+  ekBSTREE_TRAVERSE_POSTORDER,
 };
+
+/*******************************************************************************
+ * Macros
+ ******************************************************************************/
+/**
+ * Convenience macro for getting a reference to the root node in the tree.
+ */
+#define RCSW_BSTREE_ROOT(tree) ((tree)->root->left)
 
 /*******************************************************************************
  * Structure Definitions
@@ -50,162 +55,101 @@ enum bstree_traversal_type {
  * have everything work as desired.
  */
 struct bstree_node {
-    uint8_t key[BSTREE_NODE_KEYSIZE];
-    uint8_t *data;
-    struct bstree_node *left;
-    struct bstree_node *right;
-    struct bstree_node *parent;
+  uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
+  uint8_t *data;
+  struct bstree_node *left;
+  struct bstree_node *right;
+  struct bstree_node *parent;
 
-    /**
-     * If the tree is used as a red-black tree, then this field is used to
-     * indicate the color of the node. It is undefined for regular BSTs. If
-     * red is FALSE then the node is black.
-     */
-    bool_t red;
+  /**
+   * If the tree is used as a red-black tree, then this field is used to
+   * indicate the color of the node. It is undefined for regular BSTs. If
+   * red is FALSE then the node is black.
+   */
+  bool_t red;
+};
+
+struct bstree_space_mgmt {
+  /**
+   * Application-allocated space for elements. Only used if
+   * \ref RCSW_DS_NOALLOC_DATA passed during initialization.
+   */
+  uint8_t *datablocks;
+  struct allocm_entry* db_map;
+
+  /**
+   * Application-allocation space for nodes. Only used if
+   * \ref RCSW_DS_NOALLOC_NODES passed during initialization.
+   */
+  struct bstree_node* nodes;
+  struct allocm_entry* node_map;
 };
 
 /**
  * \brief The main binary search tree handle.
  *
- * A sentinel is used for root and for nil. root->left should always point to
- * the node which is the root of the tree. nil points to a node which should
- * always be black but has aribtrary children and parent. I use these so that
- * there are no special cases in the code/less checking for NULL pointers.
+ * Uses the approach outlined in Introduction to Algorithms.
  */
 struct bstree {
-    /** For comparing two elements. Cannot be NULL. */
-    int (*cmpe)(const void *const a, const void *const b);
-    /* For printing an element. Can be NULL */
-    void (*printe)(const void *const e);
+  /**
+   * For comparing the keys from two different elements. Cannot be NULL.
+   */
+  int (*cmpkey)(const void *const a, const void *const b);
 
-    size_t current;  /// number of nodes/elements currently in the tree.
-    size_t depth;    /// Current depth as traversal progresses.
-    uint32_t flags;  /// Run-time configuration flags.
-    int max_elts;    /// Max # of elements for tree. -1 indicates no limit.
-    size_t el_size;  /// Size of each element in bytes.
-    struct bstree_node *root;
-    struct bstree_node *nil;
+  /**
+   * For printing an element. Can be NULL.
+   */
+  void (*printe)(const void *const e);
 
-    /**
-     * Application-allocated space for elements. Only used if
-     * \ref DS_APP_DOMAIN_DATA passed during initialization.
-     */
-    uint8_t *elements;
+  /**
+   * Management of all node and element space for the tree.
+   */
+  struct bstree_space_mgmt space;
 
-    /**
-     * Application-allocation space for nodes. Only used if
-     * \ref DS_APP_DOMAIN_NODES passed during initialization.
-     */
-    uint8_t *nodes;
+  /**
+   * Number of nodes/elements currently in the tree.
+   */
+  size_t current;
+
+  /**
+   * Current depth as a traversal progresses.
+   */
+  size_t depth;
+
+  /**
+   * Run-time configuration flags.
+   */
+
+  uint32_t flags;
+
+  /**
+   * Max # of elements for tree. -1 indicates no limit.
+   */
+
+  int max_elts;
+
+  /**
+   * Size of each element in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Root of the tree (sentinel). root->left should always point to the node
+   * which is the root of the tree. Use this so that there are fewer special
+   * cases/less checking for NULL pointers.
+   */
+  struct bstree_node *root;
+
+  /**
+   * Sentinel.Points to a node which should always be black (for red-black
+   * trees) but has aribtrary children and parent. Use this so that there are no
+   * fewer special cases in the code/less checking for NULL pointers.
+   */
+  struct bstree_node *nil;
 };
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * \brief Determine if the BST is currently full
- *
- * \param bst The BST handle
- *
- * \return \ref bool_t
- */
-static inline bool_t bstree_isfull(const struct bstree* const bst) {
-    RCSW_FPC_NV(FALSE, NULL != bst);
-    return (bool_t)(bst->current == (size_t)bst->max_elts);
-}
-
-/**
- * \brief Determine if the BST is currently empty
- *
- * \param bst The BST handle
- *
- * \return \ref bool_t
- */
-static inline bool_t bstree_isempty(const struct bstree* const bst) {
-    RCSW_FPC_NV(FALSE, NULL != bst);
-    return (bool_t)(bst->current == 0);
-}
-
-/**
- * \brief Determine # elements currently in the bst
- *
- * \param bst The BST handle
- *
- * \return # elements in bst, or 0 on ERROR
- */
-
-static inline size_t bstree_n_elts(const struct bstree* const bst) {
-    RCSW_FPC_NV(0, NULL != bst);
-    return bst->current;
-}
-
-/**
- * \brief Calculate the # of bytes that the BST will require if \ref
- * DS_APP_DOMAIN_DATA is passed to manage a specified # of elements of a
- * specified size.
- *
- * The +2 is for the root and nil nodes.
- *
- * \param max_elts # of desired elements the BST will hold
- * \param el_size size of elements in bytes
- *
- * \return The total # of bytes the application would need to allocate
- */
-static inline size_t bstree_element_space(size_t max_elts, size_t el_size) {
-    return ds_calc_element_space2(max_elts+2, el_size);
-}
-
-/**
- * \brief Calculate the space needed for the nodes in the bst, given a
- * max # of elements
- *
- * Used in conjunction with \ref DS_APP_DOMAIN_NODES. The +2 is for the root and
- * nil nodes.
- *
- * \param max_elts # of desired elements the BST will hold
- *
- * \return The # of bytes required
- */
-static inline size_t bstree_node_space(size_t max_elts) {
-    return ds_calc_meta_space(max_elts+2) + sizeof(struct bstree_node) * \
-        (max_elts+2);
-}
-
-/*******************************************************************************
- * Macros
- ******************************************************************************/
-/** Convenience macro for getting a reference to the root node in the tree */
-#define BSTREE_ROOT(tree) ((tree)->root->left)
-
-/**
- * \brief Insert an item into a bst
- *
- * \param tree The BST handle
- * \param key The key for the data to insert
- * \param data The data to insert
- *
- * Derived data structures from bstree might have different size nodes,
- * so use a macro instead of derived structures that require identical functions
- * that only differ in the node sizes.
- */
-#define bstree_insert(tree, key, data)                                  \
-    bstree_insert_internal(tree, key, data, sizeof(struct bstree_node))
-
-/**
- * \brief Initialize a BST
- *
- * \param tree The BST handle
- * \param params Initialization parameters
- *
- * Derived data structures from bstree might have different size nodes,
- * so use a macro instead of derived structures that require identical functions
- * that only differ in the node sizes.
- */
-#define bstree_init(tree, params)                                       \
-    bstree_init_internal(tree, params, sizeof(struct bstree_node))
-
-/*******************************************************************************
- * Forward Declarations
+ * Forward Decls
  ******************************************************************************/
 BEGIN_C_DECLS
 /**
@@ -215,8 +159,10 @@ BEGIN_C_DECLS
  * This should NEVER be called by an application--for internal use only.
  *
  * \param tree_in The BST handle to be filled (can be NULL if
- * \ref DS_APP_DOMAIN_HANDLE not passed).
+ *                \ref RCSW_NO_ALLOC_HANDLE not passed).
+ *
  * \param params Initialization parameters
+ *
  * \param node_size The size of the nodes in the tree, in bytes
  *
  * \return The initialized tree, or NULL if an error occurred
@@ -267,13 +213,13 @@ status_t bstree_remove(struct bstree * tree, const void * key);
  * The algorithm from this function is from _Introduction_To_Algorithms_
  *
  * \param tree The BST handle
- * \param z The node to delete
- * \param e To be filled with the data of the deleted node if non-NULL
+ * \param victim The node to delete
+ * \param elt To be filled with the data of the deleted node if non-NULL
  *
  * \return \ref status_t
  */
-status_t bstree_delete(struct bstree* tree, struct bstree_node* z,
-                       void * e);
+status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
+                       void * elt);
 
 /**
  * \brief Query a BST for a specific node, starting the search at the specified
@@ -312,9 +258,12 @@ void *bstree_data_query(const struct bstree * tree, const void * key);
  * aborted.
  *
  * \param tree The BST handle
+ *
  * \param cb Callback called on each node in the tree, and passed the BST
- * handle. Cannot be used to modify the BST handle, but CAN modify the node.
+ *           handle. Cannot be used to modify the BST handle, but CAN modify the
+ *           node.
  * \param type The type of traversal to perform.
+ *
  * \return Return code of last callback that was non-zero, or 0 if callback
  * succeeded on all nodes
  */
@@ -331,3 +280,99 @@ int bstree_traverse(struct bstree * tree,
 void bstree_print(struct bstree * tree);
 
 END_C_DECLS
+
+/*******************************************************************************
+ * Inline Functions
+ ******************************************************************************/
+/**
+ * \brief Determine if the BST is currently full
+ *
+ * \param bst The BST handle
+ *
+ * \return \ref bool_t
+ */
+static inline bool_t bstree_isfull(const struct bstree* const bst) {
+  RCSW_FPC_NV(FALSE, NULL != bst);
+  return (bool_t)(bst->current == (size_t)bst->max_elts);
+}
+
+/**
+ * \brief Determine if the BST is currently empty
+ *
+ * \param bst The BST handle
+ *
+ * \return \ref bool_t
+ */
+static inline bool_t bstree_isempty(const struct bstree* const bst) {
+  RCSW_FPC_NV(FALSE, NULL != bst);
+  return (bool_t)(bst->current == 0);
+}
+
+/**
+ * \brief Determine # elements currently in the BST
+ *
+ * \param bst The BST handle
+ *
+ * \return # elements in bst, or 0 on ERROR
+ */
+
+static inline size_t bstree_n_elts(const struct bstree* const bst) {
+  RCSW_FPC_NV(0, NULL != bst);
+  return bst->current;
+}
+
+/**
+ * \brief Calculate the # of bytes that the BST will require if \ref
+ * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * specified size.
+ *
+ * The +2 is for the root and nil nodes.
+ *
+ * \param max_elts # of desired elements the BST will hold
+ * \param elt_size size of elements in bytes
+ *
+ * \return The total # of bytes the application would need to allocate
+ */
+static inline size_t bstree_element_space(size_t max_elts, size_t elt_size) {
+  return ds_elt_space_with_meta(max_elts+2, elt_size);
+}
+
+/**
+ * \brief Calculate the space needed for the nodes in the bst, given a
+ * max # of elements
+ *
+ * Used in conjunction with \ref RCSW_DS_NOALLOC_NODES. The +2 is for the root
+ * and nil nodes.
+ *
+ * \param max_elts # of desired elements the BST will hold
+ *
+ * \return The # of bytes required
+ */
+static inline size_t bstree_node_space(size_t max_elts) {
+  return ds_meta_space(max_elts+2) +
+      ds_elt_space_simple(max_elts+2, sizeof(struct bstree_node));
+}
+
+/**
+ * \brief Insert an item into a BST
+ *
+ * \param tree The BST handle
+ * \param key The key for the data to insert
+ * \param data The data to insert
+ */
+static inline status_t bstree_insert(struct bstree* tree,
+                                     void* const key,
+                                     void* const data) {
+  return bstree_insert_internal(tree, key, data, sizeof(struct bstree_node));
+}
+
+/**
+ * \brief Initialize a BST
+ *
+ * \param tree The BST handle
+ * \param params Initialization parameters
+ */
+static inline struct bstree* bstree_init(struct bstree* tree_in,
+                                         const struct ds_params* const params) {
+  return bstree_init_internal(tree_in, params, sizeof(struct bstree_node));
+}

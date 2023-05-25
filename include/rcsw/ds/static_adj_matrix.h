@@ -51,7 +51,7 @@ struct static_adj_matrix {
    * Size of elements in bytes (only used to make edge
    * queries a bit faster.)
   */
-  size_t el_size;
+  size_t elt_size;
   size_t n_vertices;             /// # vertices in the graph (this is static!).
   struct static_matrix  matrix;  /// Underlying matrix implementation handle.
   uint32_t flags;                /// Configuration flags.
@@ -110,7 +110,7 @@ static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* cons
     return (bool_t)(!isnan(*(double*)static_adj_matrix_access(matrix, u, v)));
   } else {
     return (bool_t)!ds_elt_zchk(static_adj_matrix_access(matrix, u, v),
-                                matrix->el_size);
+                                matrix->elt_size);
   }
 }
 
@@ -169,7 +169,7 @@ static inline status_t static_adj_matrix_transpose(struct static_adj_matrix* con
  * \brief Initialize an adjacency matrix.
  *
  * \param matrix_in The matrix handle to be filled (can be NULL if
- * \ref DS_APP_DOMAIN_HANDLE not passed).
+ * \ref RCSW_DS_NOALLOC_HANDLE not passed).
  * \param params Initialization parameters.
  *
  * \return The initialized adjacency matrix, or NULL if an error occurred.

@@ -17,7 +17,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
@@ -36,7 +36,7 @@ struct rawfifo {
     size_t to_i;        /// Element where we write next.
     size_t from_i;      /// Element where we read next.
     size_t max_elts;    /// Max # of elts = fifo elts + 1.
-    size_t el_size;     /// Size of element in bytes.
+    size_t elt_size;     /// Size of element in bytes.
 };
 
 /*******************************************************************************
@@ -97,12 +97,12 @@ BEGIN_C_DECLS
  * \param fifo The FIFO handle, to be filled.
  * \param buf The provided space for the FIFO elements.
  * \param max_elts The max # of elements in the FIFO.
- * \param el_size Size of elements in bytes.
+ * \param elt_size Size of elements in bytes.
  *
  * \return \ref status_t.
  */
 status_t rawfifo_init(struct rawfifo * fifo, uint8_t * buf,
-                      size_t max_elts, size_t el_size);
+                      size_t max_elts, size_t elt_size);
 
 /**
  * \brief Removes top N elements from the FIFO.

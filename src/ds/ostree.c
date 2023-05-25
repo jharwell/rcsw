@@ -24,8 +24,8 @@ BEGIN_C_DECLS
 void ostree_init_helper(struct bstree* const tree) {
   ((struct ostree_node*)tree->root)->count = 0;
   ((struct ostree_node*)tree->nil)->count = 0;
-  *(int*)tree->root->data = 0xCC;
-  *(int*)tree->nil->data = 0xCD;
+  *(char*)tree->root->data = 0xCC;
+  *(char*)tree->nil->data = 0xCD;
 } /* ostree_init_helper() */
 
 struct ostree_node* ostree_select(const struct bstree* const tree,

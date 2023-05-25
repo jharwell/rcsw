@@ -64,12 +64,12 @@ struct omp_radix_sorter* omp_radix_sorter_init(
   sorter->data = malloc(sizeof(size_t) * sorter->n_elts);
   RCSW_CHECK_PTR(sorter->data);
 
-  struct ds_params fifo_params = {.el_size = sizeof(size_t),
+  struct ds_params fifo_params = {.elt_size = sizeof(size_t),
                                   .max_elts = sorter->chunk_size,
                                   .tag = DS_FIFO,
                                   .nodes = NULL,
                                   .elements = NULL,
-                                  .flags = DS_APP_DOMAIN_HANDLE};
+                                  .flags = RCSW_DS_NOALLOC_HANDLE};
   for (size_t i = 0; i < sorter->n_threads; ++i) {
     for (size_t j = 0; j < sorter->base; ++j) {
       RCSW_CHECK(NULL !=
@@ -152,13 +152,12 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
     for (size_t i = 0; i < sorter->base; ++i) {
       fifo_clear(&sorter->bins[j * sorter->base + i]);
     } /* for(i..) */
-
   } /* for(j..) */
 
 /* Each worker sorts its own chunk of the data into bins (the FIFOs) */
 #pragma omp parallel for num_threads(sorter->n_threads) schedule(static)
   for (size_t i = 0; i < sorter->n_elts; ++i) {
-    fifo_enq(sorter->bins + (i / sorter->chunk_size) * sorter->base +
+    fifo_add(sorter->bins + (i / sorter->chunk_size) * sorter->base +
                  ((sorter->data[i] / digit) % sorter->base),
              sorter->data + i);
   } /* for(i..) */
@@ -196,9 +195,9 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
       struct fifo* f = &sorter->bins[j * sorter->base + i];
       size_t n_elts = 0;
       while (!fifo_isempty(f)) {
-        fifo_deq(f,
-                 &sorter->data[sorter->cum_prefix_sums[j * sorter->base + i] +
-                               n_elts++]);
+        fifo_remove(f,
+                    &sorter->data[sorter->cum_prefix_sums[j * sorter->base + i] +
+                                  n_elts++]);
       } /* while() */
     }   /* for(i..) */
   }     /* for(j..) */
@@ -211,7 +210,6 @@ static void omp_radix_sorter_first_touch_alloc(
   for (size_t i = 0; i < sorter->n_elts; ++i) {
     sorter->data[i] = 0;
   } /* for(i..) */
-
 } /* omp_radix_sorter_first_touch_alloc() */
 
 END_C_DECLS

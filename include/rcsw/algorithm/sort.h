@@ -16,7 +16,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -109,24 +109,26 @@ struct llist_node *mergesort_rec(struct llist_node *list,
  * \brief Sort an array using insertion sort
  *
  * \param arr The array to sort
- * \param n_elts # elements in the array
- * \param el_size Size of elements in the array in bytes
+ * \param n_elts # elements in the array (must be >=3)
+ * \param elt_size Size of elements in the array in bytes
  * \param cmpe Comparison function for elements
  */
-void insertion_sort(void *arr, size_t n_elts, size_t el_size,
+void insertion_sort(void *arr, size_t n_elts, size_t elt_size,
                     int (*cmpe)(const void *const e1, const void *const e2));
 
 /**
  * \brief Sort an array of non-negative integers using radix sort
  *
  * \param arr The array to sort
+ *
  * \param tmp Temporary array to hold elements as they are sorted. Must be at
- * least as large as the array to sort
+ *            least as large as the array to sort
+ *
  * \param n_elts # elements in array
+ *
  * \param base Base of numbers (10, 8, 16, etc.)
  */
-void radix_sort(size_t *arr, size_t *tmp, size_t n_elts,
-                size_t base);
+void radix_sort(size_t *arr, size_t *tmp, size_t n_elts, size_t base);
 
 /**
  * \brief Sort an array of non-negative ints via counting sort, as part of radix
@@ -134,8 +136,7 @@ void radix_sort(size_t *arr, size_t *tmp, size_t n_elts,
  *
  * \param arr The array to sort
  * \param tmp Temporary array to hold elements as they are sorted. Must be at
- * least as large as the array to sort
- * \param n_elts # elements in array
+ *            least as large as the array to sort
  * \param digit Current digit being processed
  * \param base The base of the #s to be sorted (10, 16, etc.)
  *

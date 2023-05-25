@@ -23,13 +23,13 @@ int bsearch_iter(const void* const a,
                  const void* const e,
                  int (*cmpe)(const void* const e1, const void* const e2),
                  size_t el_size,
-                 size_t high,
-                 size_t low) {
+                 int low,
+                 int high) {
   RCSW_FPC_NV(-1, NULL != a, NULL != e, NULL != cmpe);
 
   const uint8_t* const arr = a;
   while (low <= high) {
-    size_t index = (low + high) / 2;
+    int index = (low + high) / 2;
     if (cmpe(arr + (index * el_size), e) == 0) { /* found a match */
       return (int)index;
     } else if (cmpe(e, arr + (index * el_size)) < 0) { /* left half */
@@ -46,19 +46,24 @@ int bsearch_rec(const void* const in,
                 const void* const elt,
                 int (*cmpe)(const void* const e1, const void* const e2),
                 size_t el_size,
-                size_t low,
-                size_t high) {
+                int low,
+                int high) {
   RCSW_FPC_NV(-1, NULL != in, NULL != elt, NULL != cmpe);
-  /* printf("low: %zu, high: %zu\n", low,high); */
+
+  /*
+   * We want indices, BUT if we get handed an array with 0 elements, then low
+   * will be 0 and high will probably be n_elts - 1, and since n_elts=0, this
+   * will be a huge number in size_t.
+   */
   if (low > high) {
     return -1;
   }
-  size_t mid = (high + low) / 2;
+  int mid = (high + low) / 2;
   const uint8_t* const arr = in;
   int rval = cmpe(elt, arr + (el_size * mid));
 
   if (0 == rval) { /* found a match */
-    return (int)mid;
+    return mid;
   } else if (rval < 0) { /* lower half */
     if (low == mid) {
       return -1; /* no match */

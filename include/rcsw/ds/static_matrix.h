@@ -37,7 +37,7 @@ struct static_matrix {
   size_t n_cols;      /// # of columns in matrix.
   uint8_t* elements;  /// Matrix data.
   uint32_t flags;     /// Run-time configuration flags.
-  size_t el_size;     /// Size of matrix elements in bytes.
+  size_t elt_size;     /// Size of matrix elements in bytes.
   /** For printing an element. Can be NULL. */
   void (*printe)(const void *const e);
 };
@@ -60,8 +60,8 @@ static inline void* static_matrix_access(const struct static_matrix* const matri
                                          size_t u, size_t v) {
   RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_rows,
             v < matrix->n_cols);
-  return matrix->elements + (matrix->n_cols * matrix->el_size * u) +
-      (matrix->el_size * v);
+  return matrix->elements + (matrix->n_cols * matrix->elt_size * u) +
+      (matrix->elt_size * v);
 }
 
 /**
@@ -69,13 +69,13 @@ static inline void* static_matrix_access(const struct static_matrix* const matri
  *
  * \param n_rows Initial # rows.
  * \param n_cols Initial # columns.
- * \param el_size Size of the elements in bytes.
+ * \param elt_size Size of the elements in bytes.
  *
  * \return The # of bytes required.
  */
 static inline size_t static_matrix_space(size_t n_rows, size_t n_cols,
-                                         size_t el_size) {
-  return ds_calc_element_space1(n_rows * n_cols, el_size);
+                                         size_t elt_size) {
+  return ds_elt_space_simple(n_rows * n_cols, elt_size);
 }
 
 /**
@@ -90,7 +90,7 @@ static inline size_t static_matrix_space(size_t n_rows, size_t n_cols,
 static inline status_t static_matrix_clear(struct static_matrix* const matrix,
                                            size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
-  ds_elt_clear(static_matrix_access(matrix, u, v), matrix->el_size);
+  ds_elt_clear(static_matrix_access(matrix, u, v), matrix->elt_size);
   return OK;
 }
 
@@ -110,7 +110,7 @@ static inline status_t static_matrix_set(struct static_matrix* const matrix,
   RCSW_FPC_NV(ERROR, NULL != matrix, NULL != w, u < matrix->n_rows,
             v < matrix->n_cols);
 
-  ds_elt_copy(static_matrix_access(matrix, u, v), w, matrix->el_size);
+  ds_elt_copy(static_matrix_access(matrix, u, v), w, matrix->elt_size);
   return OK;
 } /* static_matrix_set() */
 
@@ -121,7 +121,7 @@ static inline status_t static_matrix_set(struct static_matrix* const matrix,
  * \brief Initialize a static matrix.
  *
  * \param matrix_in An application allocated handle for the static matrix. Can
- * be NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
+ * be NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized matrix, or NULL if an error occurred.

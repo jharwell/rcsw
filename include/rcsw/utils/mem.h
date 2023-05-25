@@ -13,7 +13,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/utils.h"
 

@@ -10,7 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mpool.h"
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -21,10 +21,10 @@ BEGIN_C_DECLS
 
 struct mpool* mpool_init(struct mpool* const pool_in,
                          const struct mpool_params* const params) {
-  RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->el_size > 0);
+  RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
 
   struct mpool* the_pool = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE ||
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE ||
       params->flags & MT_APP_DOMAIN_MEM) {
     RCSW_CHECK_PTR(pool_in);
     the_pool = pool_in;
@@ -33,15 +33,15 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     RCSW_CHECK_PTR(the_pool);
   }
   the_pool->flags = params->flags;
-  if (params->flags & DS_APP_DOMAIN_DATA || params->flags & MT_APP_DOMAIN_MEM) {
+  if (params->flags & RCSW_DS_NOALLOC_DATA || params->flags & MT_APP_DOMAIN_MEM) {
     RCSW_CHECK_PTR(params->elements);
     the_pool->elements = params->elements;
   } else {
-    the_pool->elements = calloc(params->max_elts, params->el_size);
+    the_pool->elements = calloc(params->max_elts, params->elt_size);
     RCSW_CHECK_PTR(the_pool->elements);
   }
 
-  if (params->flags & DS_APP_DOMAIN_NODES || params->flags & MT_APP_DOMAIN_MEM) {
+  if (params->flags & RCSW_DS_NOALLOC_NODES || params->flags & MT_APP_DOMAIN_MEM) {
     RCSW_CHECK_PTR(params->nodes);
     the_pool->nodes = params->nodes;
   } else {
@@ -51,19 +51,19 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   }
 
   the_pool->flags = params->flags;
-  the_pool->el_size = params->el_size;
+  the_pool->elt_size = params->elt_size;
   the_pool->n_free = params->max_elts;
   the_pool->max_elts = params->max_elts;
   the_pool->n_alloc = 0;
 
   struct ds_params llist_params = {
       .max_elts = (int)params->max_elts,
-      .el_size = params->el_size,
+      .elt_size = params->elt_size,
       .cmpe = NULL,
       .tag = DS_LLIST,
       .nodes = params->nodes,
-      .flags = DS_LLIST_NO_DB | DS_LLIST_PTR_CMP | DS_APP_DOMAIN_HANDLE |
-               (params->flags & DS_APP_DOMAIN_NODES),
+      .flags = RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP | RCSW_DS_NOALLOC_HANDLE |
+               (params->flags & RCSW_DS_NOALLOC_NODES),
   };
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
@@ -73,7 +73,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   size_t i;
   for (i = 0; i < params->max_elts; ++i) {
     RCSW_CHECK(OK == llist_append(&the_pool->free,
-                             the_pool->elements + i * the_pool->el_size));
+                             the_pool->elements + i * the_pool->elt_size));
   } /* for() */
 
   /* initialize reference counting */
@@ -99,16 +99,16 @@ void mpool_destroy(struct mpool* const the_pool) {
   llist_destroy(&the_pool->free);
   llist_destroy(&the_pool->alloc);
 
-  if (!(the_pool->flags & DS_APP_DOMAIN_DATA)) {
+  if (!(the_pool->flags & RCSW_DS_NOALLOC_DATA)) {
     free(the_pool->elements);
   }
-  if (!(the_pool->flags & DS_APP_DOMAIN_NODES)) {
+  if (!(the_pool->flags & RCSW_DS_NOALLOC_NODES)) {
     free(the_pool->nodes);
   }
   if (the_pool->refs) {
     free(the_pool->refs);
   }
-  if (!(the_pool->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(the_pool->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(the_pool);
   }
 } /* mpool_destroy() */
@@ -130,7 +130,7 @@ uint8_t* mpool_req(struct mpool* const the_pool) {
   the_pool->n_free--;
 
   /* One more person using this chunk */
-  the_pool->refs[(size_t)(ptr - the_pool->elements) / the_pool->el_size]++;
+  the_pool->refs[(size_t)(ptr - the_pool->elements) / the_pool->elt_size]++;
 
   mt_mutex_unlock(&the_pool->mutex);
   return ptr;
@@ -139,7 +139,7 @@ uint8_t* mpool_req(struct mpool* const the_pool) {
 status_t mpool_release(struct mpool* const the_pool, uint8_t* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
 
-  size_t index = (size_t)(ptr - the_pool->elements) / the_pool->el_size;
+  size_t index = (size_t)(ptr - the_pool->elements) / the_pool->elt_size;
   mt_mutex_lock(&the_pool->mutex);
 
   /*
@@ -203,7 +203,7 @@ int mpool_ref_query(struct mpool* const the_pool, const uint8_t* const ptr) {
    * yet been allocated.
    */
   RCSW_CHECK(NULL != llist_data_query(&the_pool->alloc, ptr));
-  return (int)((size_t)(ptr - the_pool->elements) / the_pool->el_size);
+  return (int)((size_t)(ptr - the_pool->elements) / the_pool->elt_size);
 
 error:
   return -1;

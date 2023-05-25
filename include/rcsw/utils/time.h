@@ -13,7 +13,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Function Prototypes
@@ -66,4 +66,3 @@ status_t time_ts_ref_conv(const struct timespec * __restrict__ in,
 double time_monotonic_sec(void);
 
 END_C_DECLS
-

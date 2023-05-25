@@ -42,7 +42,7 @@ status_t dbg_init(void) {
   struct ds_params params = {
       .cmpe = dbg_mod_cmp,
       .printe = NULL,
-      .el_size = sizeof(struct dbg_module),
+      .elt_size = sizeof(struct dbg_module),
       .max_elts = -1,
       .tag = DS_LLIST,
       .flags = 0,

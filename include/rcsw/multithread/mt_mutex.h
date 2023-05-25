@@ -14,7 +14,7 @@
  * Includes
  ******************************************************************************/
 #include <pthread.h>
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/multithread/mt.h"
 
 /*******************************************************************************

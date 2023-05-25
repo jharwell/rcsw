@@ -75,7 +75,6 @@ static uint32_t crc32_brown_table[] = {
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-
 uint8_t xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
   RCSW_FPC_NV(-1, buf != NULL);
 
@@ -139,18 +138,6 @@ uint8_t achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
   return chks8;
 } /* achks8() */
 
-uint16_t achks8_16(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
-  RCSW_FPC_NV(-1, buf != NULL);
-
-  uint16_t chks16 = seed;
-
-  for (size_t i = 0; i < n_bytes; ++i) {
-    chks16 += buf[i];
-  }
-
-  return chks16;
-} /* achks8_16() */
-
 uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   RCSW_FPC_NV(-1,
             buf != NULL,
@@ -163,19 +150,6 @@ uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   }
   return chks16;
 } /* achks16() */
-
-uint32_t achks16_32(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
-  RCSW_FPC_NV(-1,
-            buf != NULL,
-            RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
-            RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
-
-  uint32_t chks32 = seed;
-  for (size_t i = 0; i < (n_bytes / sizeof(uint16_t)); ++i) {
-    chks32 += buf[i];
-  }
-  return chks32;
-} /* achks16_32() */
 
 uint32_t achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   RCSW_FPC_NV(-1,

@@ -13,7 +13,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <sys/cdefs.h>
 #include "rcsw/common/types.h"
 #include "rcsw/common/compilers.h"
 
@@ -200,7 +199,7 @@
 
 /**
  * \def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
- * to an array) in bytes.
+ * to an array) in units (not bytes).
  */
 #define RCSW_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -480,7 +479,8 @@
  */
 #define RCSW_XGEN_STRS(...) RCSW_XFOR_EACH1(RCSW_XTABLE_STR, __VA_ARGS__)
 #define RCSW_XGEN_ENUMS(...) RCSW_XFOR_EACH1(RCSW_XTABLE_ENUM, __VA_ARGS__)
-#define RCSW_XGEN_MASKABLE_ENUMS(...) RCSW_XFOR_EACH1(RCSW_XTABLE_MASKABLE_ENUM, __VAR_ARGS__)
+#define RCSW_XGEN_MASKABLE_ENUMS(...) \
+  RCSW_XFOR_EACH1(RCSW_XTABLE_MASKABLE_ENUM, __VAR_ARGS__)
 
 /*******************************************************************************
  * General Macros
@@ -503,4 +503,3 @@
  */
 #define RCSW_STATIC_ASSERT(expr, msg)                                   \
     extern int(*assert_function__(void))[STATIC_ASSERT_HELPER(expr, msg)]
-

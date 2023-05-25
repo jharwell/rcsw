@@ -15,11 +15,12 @@
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/bstree_node.h"
 
-BEGIN_C_DECLS
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 void rbtree_insert_fixup(struct bstree* const tree, struct bstree_node* node) {
   /*
    * If the parent node is black we are all set, if it is red we have
@@ -27,22 +28,22 @@ void rbtree_insert_fixup(struct bstree* const tree, struct bstree_node* node) {
    * the rest of the tree to make sure none of the required properties
    * is violated.
    *
-   *	1. The uncle is red.  We repaint both the parent and uncle black
-   *     and repaint the grandparent node red.
+   *  1. The uncle is red. We repaint both the parent and uncle black and
+   *     repaint the grandparent node red.
    *
-   *  2. The uncle is black and the new node is the right child of its
-   *     parent, and the parent in turn is the left child of its parent.
-   *     We do a left rotation to switch the roles of the parent and
-   *     child, relying on further iterations to fixup the old parent.
+   *  2. The uncle is black and the new node is the right child of its parent,
+   *     and the parent in turn is the left child of its parent.  We do a left
+   *     rotation to switch the roles of the parent and child, relying on
+   *     further iterations to fixup the old parent.
    *
-   *  3. The uncle is black and the new node is the left child of its
-   *     parent, and the parent in turn is the left child of its parent.
-   *     We switch the colors of the parent and grandparent and perform
-   *     a right rotation around the grandparent.  This makes the former
-   *     parent the parent of the new node and the former grandparent.
+   *  3. The uncle is black and the new node is the left child of its parent,
+   *     and the parent in turn is the left child of its parent.  We switch the
+   *     colors of the parent and grandparent and perform a right rotation
+   *     around the grandparent.  This makes the former parent the parent of the
+   *     new node and the former grandparent.
    *
-   * Note that because we use a sentinel for the root node we never
-   * need to worry about replacing the root.
+   * Note that because we use a sentinel for the root node we never need to
+   * worry about replacing the root.
    */
   while (node->parent->red) {
     struct bstree_node* uncle;

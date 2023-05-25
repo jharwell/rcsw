@@ -46,7 +46,7 @@ struct static_adj_matrix* static_adj_matrix_init(
   RCSW_FPC_NV(NULL, NULL != params, params->tag == DS_ADJ_MATRIX);
   struct static_adj_matrix* matrix = NULL;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
     matrix = matrix_in;
   } else {
@@ -55,9 +55,9 @@ struct static_adj_matrix* static_adj_matrix_init(
   }
   matrix->flags = params->flags;
   if (params->type.adjm.is_weighted) {
-    matrix->el_size = sizeof(double);
+    matrix->elt_size = sizeof(double);
   } else {
-    matrix->el_size = sizeof(int);
+    matrix->elt_size = sizeof(int);
   }
   matrix->is_weighted = params->type.adjm.is_weighted;
   matrix->is_directed = params->type.adjm.is_directed;
@@ -68,8 +68,8 @@ struct static_adj_matrix* static_adj_matrix_init(
       .type = {.smat = {.n_rows = params->type.adjm.n_vertices,
                         .n_cols = params->type.adjm.n_vertices}},
       .elements = params->elements,
-      .el_size = matrix->el_size,
-      .flags = params->flags | DS_APP_DOMAIN_HANDLE,
+      .elt_size = matrix->elt_size,
+      .flags = params->flags | RCSW_DS_NOALLOC_HANDLE,
       .tag = DS_STATIC_MATRIX};
   if (matrix->is_weighted) {
     mat_params.printe = static_adj_matrix_printew;
@@ -100,7 +100,7 @@ error:
 void static_adj_matrix_destroy(struct static_adj_matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
   static_matrix_destroy(&matrix->matrix);
-  if (!(matrix->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* static_adj_matrix_destroy() */

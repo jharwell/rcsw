@@ -1,7 +1,7 @@
 /**
- * \file sstring.h
+ * \file string.h
  * \ingroup sstdio
- * \brief Implementation of stdio sstring routines.
+ * \brief Implementation of stdio string routines.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -14,19 +14,19 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Macros
  ******************************************************************************/
 /* these macros operate on single characters */
-#define sstring_isprint(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
-#define sstring_isspace(c) (((c) == ' ') ? 1 : 0)
-#define sstring_islower(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
-#define sstring_isupper(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
-#define sstring_isdigit(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
-#define sstring_isalpha(c)                                              \
-    ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
+#define STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
+#define STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
+#define STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
+#define STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
+#define STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
+#define STDIO_ISALPHA(c)                                            \
+  ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
 
 /*******************************************************************************
  * Function Prototypes
@@ -44,8 +44,8 @@ BEGIN_C_DECLS
  * \param n # of bytes to copy.
  * \return Memory pointed to by dest
  */
-void *sstring_memcpy(void * __restrict__ dest, const void * __restrict__ src,
-                     size_t n);
+void *stdio_memcpy(void * __restrict__ dest, const void * __restrict__ src,
+                   size_t n);
 
 /**
  * \brief Get the number of decimal digits for an integer
@@ -58,7 +58,7 @@ void *sstring_memcpy(void * __restrict__ dest, const void * __restrict__ src,
  *
  * \return The number of digits.
  */
-size_t sstring_num_digits(int a) RCSW_CONST;
+size_t stdio_num_digits(int a) RCSW_CONST;
 
 /**
  * \brief Convert a char to upper case.
@@ -67,7 +67,7 @@ size_t sstring_num_digits(int a) RCSW_CONST;
  *
  * \return The converted char.
  */
-int sstring_toupper(int c) RCSW_CONST;
+int stdio_toupper(int c) RCSW_CONST;
 
 /**
  * \brief Convert a char to lower case.
@@ -76,7 +76,7 @@ int sstring_toupper(int c) RCSW_CONST;
  *
  * \return The converted char.
  */
-int sstring_tolower(int c) RCSW_CONST;
+int stdio_tolower(int c) RCSW_CONST;
 
 /**
  * \brief Get the length of a string.
@@ -85,7 +85,19 @@ int sstring_tolower(int c) RCSW_CONST;
  *
  * \return The length of the string.
  */
-size_t sstring_strlen(const char * s) RCSW_PURE;
+size_t stdio_strlen(const char * s) RCSW_PURE;
+
+/**
+ * \brief Get the length of a string, limited by \p maxsize
+ *
+ * \param s The string
+ *
+ * \param maxsize The maximum string length to consider
+ *
+ * \return The length of the string.
+ */
+
+size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
 
 /**
  * \brief Reverse a string of known length.
@@ -97,7 +109,7 @@ size_t sstring_strlen(const char * s) RCSW_PURE;
  * \param s The string to reverse.
  * \param len Length of the string to reverse.
  */
-void sstring_strrev(char *s, size_t len);
+void stdio_strrev(char *s, size_t len);
 
 /**
  * \brief Search a string for another string.
@@ -115,8 +127,8 @@ void sstring_strrev(char *s, size_t len);
  * \return: The first occurence of the needle, or NULL if the substring was not
  *          found.
  */
-const char *sstring_strstr(const char * haystack,
-                           const char * needle) RCSW_PURE;
+const char *stdio_strstr(const char * haystack,
+                         const char * needle) RCSW_PURE;
 
 /**
  * \brief Search a string for a character.
@@ -133,7 +145,7 @@ const char *sstring_strstr(const char * haystack,
  * \return Pointer to the first occurence of the needle, or NULL if the
  *         char was not found.
  */
-const char *sstring_strchr(const char * haystack, char needle) RCSW_PURE;
+const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
 
 /**
  * \brief Copy one string over another.
@@ -149,9 +161,9 @@ const char *sstring_strchr(const char * haystack, char needle) RCSW_PURE;
  *
  * \return Pointer to dest.
  */
-char *sstring_strncpy(char * __restrict__ dest,
-                      const char * __restrict__ src,
-                      size_t n);
+char *stdio_strncpy(char * __restrict__ dest,
+                    const char * __restrict__ src,
+                    size_t n);
 
 /**
  * \brief Copy one string over another.
@@ -165,7 +177,7 @@ char *sstring_strncpy(char * __restrict__ dest,
  *
  * \return Pointer to dest.
  */
-char *sstring_strcpy(char * __restrict__ dest, const char * __restrict__ src);
+char *stdio_strcpy(char * __restrict__ dest, const char * __restrict__ src);
 
 /**
  * \brief Compare two strings for equality.
@@ -179,7 +191,7 @@ char *sstring_strcpy(char * __restrict__ dest, const char * __restrict__ src);
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-int sstring_strncmp(const char * s1, const char * s2, size_t len) RCSW_PURE;
+int stdio_strncmp(const char * s1, const char * s2, size_t len) RCSW_PURE;
 
 /**
  * \brief Compare two strings for equality.
@@ -192,7 +204,7 @@ int sstring_strncmp(const char * s1, const char * s2, size_t len) RCSW_PURE;
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-int sstring_strcmp(const char * s1, const char * s2) RCSW_PURE;
+int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
 
 /**
  * \brief Replace a occurrences of one substring within another string with
@@ -208,8 +220,8 @@ int sstring_strcmp(const char * s1, const char * s2) RCSW_PURE;
  *
  * \return The updated string.
  */
-char *sstring_strrep(const char * __restrict__ original,
-                     const char * __restrict__ pattern,
-                     const char * __restrict__ replacement,
-                     char * __restrict__ new_str);
+char *stdio_strrep(const char * __restrict__ original,
+                   const char * __restrict__ pattern,
+                   const char * __restrict__ replacement,
+                   char * __restrict__ new_str);
 END_C_DECLS

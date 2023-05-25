@@ -11,11 +11,11 @@
  ******************************************************************************/
 #include "rcsw/ds/ostree_node.h"
 
-BEGIN_C_DECLS
-
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 void ostree_node_update_count(struct ostree_node* const node) {
   /*
    * Need to make sure not to change the count of tree->nil, as select()

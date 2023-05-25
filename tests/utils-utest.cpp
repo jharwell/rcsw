@@ -20,13 +20,15 @@
 #include "rcsw/utils/hash.h"
 #include "rcsw/utils/mem.h"
 #include "rcsw/utils/time.h"
+#include "tests/ds_test.h"
+#include "tests/ds_test.hpp"
 
 /*******************************************************************************
  * Callbacks
  ******************************************************************************/
 static size_t arr32_permute_count = 0;
 
-void arr32_permute_cb(uint32_t*) {
+static void arr32_permute_cb(uint32_t*) {
   ++arr32_permute_count;
 } /* arr32_permute_cb() */
 
@@ -225,6 +227,31 @@ CATCH_TEST_CASE("time Test", "[utils]") {
 
   CATCH_REQUIRE(t3.tv_sec == 4);
   CATCH_REQUIRE(t3.tv_nsec == 700);
+
+  CATCH_REQUIRE(time_ts_ref_conv(&t1, &t2) == OK);
+
+  double m1 = time_monotonic_sec();
+  sleep(1);
+  double m2 = time_monotonic_sec();
+  CATCH_REQUIRE(m2 > m1);
+}
+
+CATCH_TEST_CASE("checksum Test", "[utils]") {
+  struct element_set<struct element1> data(100);
+  data.data_gen();
+
+  /*
+   * Not really tests, more just to get code coverage and uncover memory
+   * alignment issues on embedded platforms.
+   */
+  CATCH_REQUIRE(xchks8((uint8_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(xchks16((uint16_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(xchks32((uint32_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(achks8((uint8_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(achks16((uint16_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(achks32((uint32_t*)data.elts.data(), data.elts.size(), 0) > 0);
+  CATCH_REQUIRE(crc32_brown((uint8_t*)data.elts.data(), 0, data.elts.size()) > 0);
+  CATCH_REQUIRE(hash_djb(data.elts.data(), data.elts.size()) > 0);
 }
 
 CATCH_TEST_CASE("misc Test", "[utils]") {

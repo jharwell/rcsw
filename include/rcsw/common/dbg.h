@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
@@ -218,10 +218,10 @@
 #endif /* NDEBUG */
 
 /**
- * \brief Like \ref RCSW_CHECK(), but has an additional message that is printed on failure
- * if debugging is enabled for the module it resides in.
+ * \brief Like \ref RCSW_CHECK(), but has an additional message that is printed
+ * on failure if debugging is enabled for the module it resides in.
  */
-#define SOFT_ASSERT(cond, msg, ...)                             \
+#define RCSW_ER_CHECK(cond, msg, ...)                             \
   if (!(cond)) {                                                \
     DBGE(__FILE__ ":%s:%d " msg "\n", __func__, __LINE__,       \
          ##__VA_ARGS__);                                        \

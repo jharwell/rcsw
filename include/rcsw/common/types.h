@@ -48,6 +48,8 @@ extern uint32_t errno;
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
+#include <stdbool.h>
 
 #else
 #error UNKNOWN OS: __nos__, __linux__ suppored

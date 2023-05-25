@@ -24,7 +24,7 @@
  * \brief Producer-consumer queue initialization parameters.
  */
 struct mt_queue_params {
-    size_t el_size;     /// Size of each element in the queue.
+    size_t elt_size;     /// Size of each element in the queue.
     size_t max_elts;    /// # of elements the queue will hold.
     uint8_t *elements;  /// The elements the FIFO will manage. Can be NULL.
 
@@ -123,7 +123,7 @@ BEGIN_C_DECLS
  * \brief Initialize a producer-consumer queue.
  *
  * \param mt_queue_in An application allocated handle for the queue. Can be
- * NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
+ * NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized queue, or NULL if an error occurred.

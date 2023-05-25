@@ -10,7 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_csem.h"
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"

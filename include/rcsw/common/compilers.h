@@ -139,7 +139,7 @@
 #else
 
 /**
- * \def RCSW_ATTR(...) Shorthand for attaching a list of attributes to a
+ * \def RCSW_ATTR() for attaching a list of attributes to a
  * function/variable/etc.
  */
 #define RCSW_ATTR(...) __attribute__((__VA_ARGS__))
@@ -166,7 +166,7 @@
 /**
  * \def RCSW_EXPORT
  *
- * Shorthand for marked a function as publicly visible in a * shared library.
+ * Shorthand for marked a function as publicly visible in a shared library.
  */
 #define RCSW_EXPORT __attribute__((visibility("default")))
 
@@ -278,4 +278,3 @@
 #define END_C_DECLS
 
 #endif /* __cplusplus */
-

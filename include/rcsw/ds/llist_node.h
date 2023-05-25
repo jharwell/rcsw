@@ -87,4 +87,3 @@ void llist_node_datablock_dealloc(struct llist * list, uint8_t *datablock);
 END_C_DECLS
 
 /* \endcond */
-

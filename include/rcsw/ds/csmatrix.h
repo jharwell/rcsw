@@ -280,9 +280,10 @@ static inline double* csmatrix_values(
  * \brief Initialize a compressed, sparse matrix. It should be noted that once
  * initialized, the row/column dimensions of the matrix cannot be modified.
  *
- * \param matrix_in The matrix handle. Ignored unless \ref DS_APP_DOMAIN_DATA is
- * passed, in which it is used instead of the matrix allocated memory for its
- * own handle.
+ * \param matrix_in The matrix handle. Ignored unless \ref RCSW_DS_NOALLOC_DATA
+ *                  is passed, in which it is used instead of the matrix
+ *                  allocated memory for its own handle.
+ *
  * \param params The initialization parameters
  *
  * \return The initialized matrix, or NULL if an error occurred.

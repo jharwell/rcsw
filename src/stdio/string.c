@@ -1,5 +1,5 @@
 /**
- * \file sstring.c
+ * \file string.c
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,26 +12,26 @@
 #if !defined(__nos__)
 #include <stdlib.h>
 #endif
-#include "rcsw/stdio/sstring.h"
+#include "rcsw/stdio/string.h"
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
-char* sstring_strrep(const char* const __restrict__ original,
+char* stdio_strrep(const char* const __restrict__ original,
                      const char* const __restrict__ pattern,
                      const char* const __restrict__ replacement,
                      char* const __restrict__ new_str) {
-  size_t orilen = sstring_strlen(original);
-  size_t replen = sstring_strlen(replacement);
-  size_t patlen = sstring_strlen(pattern);
+  size_t orilen = stdio_strlen(original);
+  size_t replen = stdio_strlen(replacement);
+  size_t patlen = stdio_strlen(pattern);
   const char* oriptr;
   const char* patloc;
   size_t patcnt = 0;
 
   /* find how many times the pattern occurs in the original string */
-  for (oriptr = original; (patloc = sstring_strstr(oriptr, pattern));
+  for (oriptr = original; (patloc = stdio_strstr(oriptr, pattern));
        oriptr = patloc + patlen) {
     patcnt++;
   }
@@ -42,25 +42,25 @@ char* sstring_strrep(const char* const __restrict__ original,
 
   /* copy the original string, replacing all the instances of the pattern */
   char* retptr = new_str;
-  for (oriptr = original; (patloc = sstring_strstr(oriptr, pattern));
+  for (oriptr = original; (patloc = stdio_strstr(oriptr, pattern));
        oriptr = patloc + patlen) {
     size_t skiplen = (size_t)(patloc - oriptr);
 
     /* copy the section until the occurence of the pattern */
-    sstring_strncpy(retptr, oriptr, skiplen);
+    stdio_strncpy(retptr, oriptr, skiplen);
     retptr += skiplen;
 
     /* copy the replacement */
-    sstring_strncpy(retptr, replacement, replen);
+    stdio_strncpy(retptr, replacement, replen);
     retptr += replen;
   }
 
   /* copy the rest of the string */
-  sstring_strcpy(retptr, oriptr);
+  stdio_strcpy(retptr, oriptr);
   return new_str;
-} /* sstring_strrep() */
+} /* stdio_strrep() */
 
-void sstring_strrev(char* const s, size_t len) {
+void stdio_strrev(char* const s, size_t len) {
   int i = 0, j = len - 1; /* account for null byte */
 
   for (; i < j; i++, j--) {
@@ -69,17 +69,23 @@ void sstring_strrev(char* const s, size_t len) {
     s[j] ^= s[i];
     s[i] ^= s[j];
   }
-} /* sstring_strrev() */
+} /* stdio_strrev() */
 
-size_t sstring_strlen(const char* const s) {
-  char const* p = s;
-  for (; *p != '\0'; p++) {
-  }
+size_t stdio_strlen(const char* const s) {
+  char const* p;
+  for (p = s; *p ; p++) {}
 
   return (size_t)(p - s);
-} /* sstring_strlen() */
+} /* stdio_strlen() */
 
-const char* sstring_strchr(const char* haystack, char needle) {
+size_t stdio_strnlen(const char* const s, size_t maxsize) {
+  char const* p;
+  for (p = s; *p && maxsize--; p++) {}
+
+  return (size_t)(p - s);
+} /* stdio_strlen() */
+
+const char* stdio_strchr(const char* haystack, char needle) {
   while (haystack != NULL && *haystack) {
     if (*haystack == needle) {
       return (const char*)haystack;
@@ -87,9 +93,9 @@ const char* sstring_strchr(const char* haystack, char needle) {
     haystack++;
   }
   return NULL;
-} /* sstring_strchr() */
+} /* stdio_strchr() */
 
-const char* sstring_strstr(const char* const __restrict__ haystack,
+const char* stdio_strstr(const char* const __restrict__ haystack,
                            const char* const __restrict__ needle) {
   const char* p1 = (const char*)haystack;
   if (!*needle) { /* null string */
@@ -111,9 +117,9 @@ const char* sstring_strstr(const char* const __restrict__ haystack,
     p1 = p1_curr + 1; /* move starting position forward */
   }
   return NULL;
-} /* sstring_strstr() */
+} /* stdio_strstr() */
 
-char* sstring_strncpy(char* const __restrict__ dest,
+char* stdio_strncpy(char* const __restrict__ dest,
                       const char* const __restrict__ src,
                       size_t n) {
   size_t i;
@@ -127,9 +133,9 @@ char* sstring_strncpy(char* const __restrict__ dest,
     dest[i] = '\0';
   }
   return dest;
-} /* sstring_strncpy() */
+} /* stdio_strncpy() */
 
-char* sstring_strcpy(char* __restrict__ dest,
+char* stdio_strcpy(char* __restrict__ dest,
                      const char* const __restrict__ src) {
   size_t i;
   /* copy up to null terminator */
@@ -139,9 +145,9 @@ char* sstring_strcpy(char* __restrict__ dest,
 
   dest[i] = '\0';
   return (char*)dest;
-} /* sstring_strcpy() */
+} /* stdio_strcpy() */
 
-int sstring_strcmp(const char* const s1, const char* const s2) {
+int stdio_strcmp(const char* const s1, const char* const s2) {
   const char* t1 = (const char*)s1;
   const char* t2 = (const char*)s2;
   while (*t1 == *t2) {
@@ -152,9 +158,9 @@ int sstring_strcmp(const char* const s1, const char* const s2) {
     t2++;
   }
   return (*s1 - *s2);
-} /* sstring_strcmp() */
+} /* stdio_strcmp() */
 
-int sstring_strncmp(const char* const s1, const char* const s2, size_t len) {
+int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
   size_t i = 0;
   const char* t1 = (const char*)s1;
   const char* t2 = (const char*)s2;
@@ -177,9 +183,9 @@ int sstring_strncmp(const char* const s1, const char* const s2, size_t len) {
     t2++;
   }
   return (*s1 - *s2);
-} /* sstring_strncmp() */
+} /* stdio_strncmp() */
 
-size_t sstring_num_digits(int a) {
+size_t stdio_num_digits(int a) {
   if (a == 0) {
     return 1;
   }
@@ -195,23 +201,23 @@ size_t sstring_num_digits(int a) {
   }
 
   return count;
-} /* sstring_num_digits */
+} /* stdio_num_digits */
 
-int sstring_tolower(int c) {
+int stdio_tolower(int c) {
   if (c >= 'A' && c <= 'Z') {
     c += ('a' - 'A');
   }
   return c;
-} /* sstring_tolower() */
+} /* stdio_tolower() */
 
-int sstring_toupper(int c) {
+int stdio_toupper(int c) {
   if (c >= 'a' && c <= 'z') {
     c += ('A' - 'a');
   }
   return c;
-} /* sstring_toupper() */
+} /* stdio_toupper() */
 
-void* sstring_memcpy(void* const __restrict__ dest,
+void* stdio_memcpy(void* const __restrict__ dest,
                      const void* const __restrict__ src,
                      size_t n) {
   char* d = dest;
@@ -220,6 +226,6 @@ void* sstring_memcpy(void* const __restrict__ dest,
     d[i] = s[i];
   }
   return dest;
-} /* sstring_memcpy() */
+} /* stdio_memcpy() */
 
 END_C_DECLS

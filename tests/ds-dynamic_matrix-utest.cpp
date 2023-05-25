@@ -11,7 +11,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <stdlib.h>
 #include <limits.h>
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
@@ -43,9 +42,9 @@ void test_runner(void (*test)(struct ds_params *params)) {
 
   struct ds_params params;
   params.tag = DS_DYNAMIC_MATRIX;
-  params.el_size = sizeof(struct element);
-  params.type.smat.n_cols = NUM_ITEMS;
-  params.type.smat.n_rows = NUM_ITEMS;
+  params.elt_size = sizeof(struct element8);
+  params.type.smat.n_cols = TH_NUM_ITEMS;
+  params.type.smat.n_rows = TH_NUM_ITEMS;
   params.printe = printe;
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
@@ -55,7 +54,7 @@ void test_runner(void (*test)(struct ds_params *params)) {
       params.type.dmat.n_rows = j;
       params.flags = 0;
       test(&params);
-      params.flags = DS_APP_DOMAIN_DATA;
+      params.flags = RCSW_DS_NOALLOC_DATA;
       test(&params);
     } /* for(j..) */
   } /* for(i..) */
@@ -63,7 +62,7 @@ void test_runner(void (*test)(struct ds_params *params)) {
 } /* test_runner() */
 
 static void printe(const void *const e) {
-  struct element* f = (element*)e;
+  struct element8* f = (element8*)e;
   printf("%d",f->value1);
 }
 /*******************************************************************************
@@ -81,13 +80,13 @@ static void addremove_test(struct ds_params* params) {
   CATCH_REQUIRE(NULL != matrix);
   for (size_t i = 0; i < params->type.smat.n_rows*4; ++i) {
     for (size_t j = 0; j < params->type.smat.n_cols*4; ++j) {
-      struct element val = { rand(), rand() };
+      struct element8 val = { rand(), rand() };
       CATCH_REQUIRE(OK == dynamic_matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, dynamic_matrix_access(matrix, i, j),
-                                sizeof(struct element)));
+                                sizeof(struct element8)));
       CATCH_REQUIRE(OK == dynamic_matrix_clear(matrix, i, j));
       CATCH_REQUIRE(TRUE == ds_elt_zchk(dynamic_matrix_access(matrix, i, j),
-                                        sizeof(struct element)));
+                                        sizeof(struct element8)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -112,13 +111,13 @@ static void transpose_test(struct ds_params* params) {
 
   for (size_t i = 0; i < params->type.smat.n_rows; ++i) {
     for (size_t j = 0; j < params->type.smat.n_cols; ++j) {
-      struct element val = { (int)i, (int)j };
+      struct element8 val = { (int)i, (int)j };
       CATCH_REQUIRE(OK == dynamic_matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, dynamic_matrix_access(matrix, i, j),
-                                sizeof(struct element)));
+                                sizeof(struct element8)));
       CATCH_REQUIRE(OK == dynamic_matrix_clear(matrix, i, j));
       CATCH_REQUIRE(TRUE == ds_elt_zchk(dynamic_matrix_access(matrix, i, j),
-                                        sizeof(struct element)));
+                                        sizeof(struct element8)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -126,8 +125,8 @@ static void transpose_test(struct ds_params* params) {
 
   for (size_t i = 0; i < params->type.smat.n_rows; ++i) {
     for (size_t j = 0; j < params->type.smat.n_cols; ++j) {
-      struct element* e1 = (element*)dynamic_matrix_access(matrix, i, j);
-      struct element* e2 = (element*)dynamic_matrix_access(matrix, j, i);
+      struct element8* e1 = (element8*)dynamic_matrix_access(matrix, i, j);
+      struct element8* e2 = (element8*)dynamic_matrix_access(matrix, j, i);
 
       CATCH_REQUIRE(e1->value1 == e2->value2);
       CATCH_REQUIRE(e2->value1 == e1->value2);

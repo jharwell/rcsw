@@ -15,7 +15,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -43,15 +43,21 @@ BEGIN_C_DECLS
  * \param e The element to search for
  * \param cmpe Callback to compare two elements
  * \param el_size Size of elements in bytes
- * \param high Highest index in the array to consider when searching. This should usually be max
- * index of the array.
- * \param low Lowest index in the array to consider when searching. This should usually be 0.
+ *
+ * \param low Lowest index in the array to consider when searching. This should
+ *            usually be 0.
+ *
+ * \param high Highest index in the array to consider when searching. This
+ *             should usually be max index of the array.
  *
  * \return The index, or -1 if not found or an ERROR occurred
  */
-int bsearch_iter(const void * a, const void * e,
+int bsearch_iter(const void * a,
+                 const void * e,
                  int (*cmpe)(const void * e1, const void * e2),
-                 size_t el_size, size_t high, size_t low);
+                 size_t el_size,
+                 int low,
+                 int high);
 
 /**
  * \brief Search a sorted array of data using binary search, recursive version
@@ -61,11 +67,11 @@ int bsearch_iter(const void * a, const void * e,
  * \param cmpe Callback to compare two elements
  * \param el_size Size of elements in bytes
  *
- * \param high Highest index in the array to consider when searching. This
- *             should usually be max index of the array.
- *
  * \param low Lowest index in the array to consider when searching. This should
  *            usually be 0.
+ *
+ * \param high Highest index in the array to consider when searching. This
+ *             should usually be max index of the array.
  *
  * \return The index, or -1 if not found/an error occurred.
  *
@@ -74,7 +80,6 @@ int bsearch_rec(const void * arr,
                 const void * e,
                 int (*cmpe)(const void * e1, const void * e2),
                 size_t el_size,
-                size_t low,
-                size_t high);
+                int low,
+                int high);
 END_C_DECLS
-

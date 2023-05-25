@@ -45,7 +45,7 @@ static status_t darray_extend(struct darray* arr, size_t size);
  * darray would become size 0, the underlying array is NOT free()ed, and the
  * darray's size is set to 0.
  *
- * This function will always fail if \ref DS_APP_DOMAIN_DATA was passed during
+ * This function will always fail if \ref RCSW_DS_NOALLOC_DATA was passed during
  * initialization.
  *
  * \param arr The darray handle
@@ -63,12 +63,12 @@ struct darray* darray_init(struct darray* arr_in,
   RCSW_FPC_NV(NULL,
             params != NULL,
             params->tag == DS_DARRAY,
-            params->el_size > 0,
+            params->elt_size > 0,
             params->max_elts != 0);
 
   struct darray* arr = NULL;
 
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     arr = arr_in;
   } else {
     arr = malloc(sizeof(struct darray));
@@ -77,14 +77,14 @@ struct darray* darray_init(struct darray* arr_in,
   arr->flags = params->flags;
   arr->elements = NULL;
 
-  if (params->flags & DS_APP_DOMAIN_DATA) {
+  if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     RCSW_CHECK(params->max_elts > 0);
     arr->elements = params->elements;
     arr->capacity = params->max_elts;
   } else {
     arr->capacity = params->type.da.init_size;
-    arr->elements = calloc(params->type.da.init_size, params->el_size);
+    arr->elements = calloc(params->type.da.init_size, params->elt_size);
     RCSW_CHECK_PTR(arr->elements);
   }
   arr->max_elts = params->max_elts;
@@ -93,22 +93,22 @@ struct darray* darray_init(struct darray* arr_in,
    * If they do not pass anything as cmpe(), then they cannot pass the
    * KEEP_SORTED flag, for obvious reasons.
    */
-  if (params->flags & DS_KEEP_SORTED) {
+  if (params->flags & RCSW_DS_SORTED) {
     RCSW_CHECK_PTR(params->cmpe);
   }
 
-  arr->el_size = params->el_size;
+  arr->elt_size = params->elt_size;
   arr->current = 0;
 
   arr->cmpe = params->cmpe;
   arr->printe = params->printe;
   arr->sorted = FALSE;
 
-  DBGD("Capacity=%zu init_size=%zu max_elts=%d el_size=%zu flags=0x%08x\n",
+  DBGD("Capacity=%zu init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x\n",
        arr->capacity,
        params->type.da.init_size,
        arr->max_elts,
-       arr->el_size,
+       arr->elt_size,
        arr->flags);
   return arr;
 
@@ -121,11 +121,16 @@ error:
 void darray_destroy(struct darray* arr) {
   RCSW_FPC_V(NULL != arr);
 
-  if (arr->elements && !(arr->flags & DS_APP_DOMAIN_DATA)) {
+  /*
+   * Make it so the array shows as empty if you try to access it again (which
+   * is undefined, but, you know, defensive programming...)
+   */
+  arr->current = 0;
+  if (arr->elements && !(arr->flags & RCSW_DS_NOALLOC_DATA)) {
     free(arr->elements);
     arr->elements = NULL;
   }
-  if (!(arr->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(arr->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(arr);
   }
 } /* darray_destroy() */
@@ -141,7 +146,7 @@ status_t darray_clear(struct darray* const arr) {
 status_t darray_data_clear(struct darray* const arr) {
   RCSW_FPC_NV(ERROR, arr != NULL);
 
-  memset(arr->elements, 0, arr->current * arr->el_size);
+  memset(arr->elements, 0, arr->current * arr->elt_size);
   return OK;
 } /* darray_clear() */
 
@@ -163,25 +168,25 @@ status_t darray_insert(struct darray* const arr,
    * If the list is sorted, or if you want to preserve the relative ordering
    * of items, you need to shift items over when inserting.
    */
-  if (arr->flags & DS_MAINTAIN_ORDER) {
+  if (arr->flags & RCSW_DS_ORDERED) {
     /* shift all elements between index and end of list over by one */
     for (size_t i = arr->current; i > index; --i) {
       ds_elt_copy(darray_data_get(arr, i),
                   darray_data_get(arr, i - 1),
-                  arr->el_size);
+                  arr->elt_size);
     }      /* for() */
   } else { /* if not, just move element at index to end of array */
     memmove(darray_data_get(arr, arr->current),
             darray_data_get(arr, index),
-            arr->el_size);
+            arr->elt_size);
   }
 
-  ds_elt_copy(darray_data_get(arr, index), e, arr->el_size);
+  ds_elt_copy(darray_data_get(arr, index), e, arr->elt_size);
 
   arr->current++;
 
   /* re-sort the array if configured to */
-  if (arr->flags & DS_KEEP_SORTED) {
+  if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = FALSE;
     darray_sort(arr, QSORT_ITER);
   }
@@ -192,20 +197,30 @@ error:
 } /* darray_insert() */
 
 status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, (index <= arr->current));
+  RCSW_FPC_NV(ERROR, arr != NULL, index <= darray_n_elts(arr));
 
   if (e != NULL) {
-    darray_index_serve(arr, e, index);
+    darray_idx_serve(arr, e, index);
   }
 
-  if (arr->flags & DS_KEEP_SORTED) { /* shift all items AFTER index down by one */
+  if (darray_n_elts(arr) == 1) {
+    memset(darray_data_get(arr, index), 0xFFFFFFFF, arr->elt_size);
+    arr->current--;
+    return OK;
+  }
+
+  /*
+   * If array is sorted, shift all items AFTER index down by one, otherwise,
+   * overwrite removed idx with last item in array (MUCH faster)
+   */
+  if (arr->flags & RCSW_DS_SORTED) {
     memmove(darray_data_get(arr, index),
             darray_data_get(arr, index + 1),
-            (arr->current - 1 - index) * arr->el_size);
-  } else { /* overwrite index with last item in array (MUCH faster) */
+            (arr->current - 1 - index) * arr->elt_size);
+  } else {
     memmove(darray_data_get(arr, index),
             darray_data_get(arr, arr->current - 1),
-            arr->el_size);
+            arr->elt_size);
   }
   arr->current--;
 
@@ -214,7 +229,7 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
    * accordance with O(1) amortized deletions from the array.
    */
   if (arr->current / (float)arr->capacity <= 0.25) {
-    if (!(arr->flags & DS_APP_DOMAIN_DATA)) {
+    if (!(arr->flags & RCSW_DS_NOALLOC_DATA)) {
       RCSW_CHECK(OK == darray_shrink(arr, arr->capacity / 2));
     }
   }
@@ -224,23 +239,27 @@ error:
   return ERROR;
 } /* darray_remove() */
 
-status_t darray_index_serve(const struct darray* const arr,
+status_t darray_idx_serve(const struct darray* const arr,
                             void* const e,
                             size_t index) {
   RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index <= arr->current);
-  memmove(e, darray_data_get(arr, index), arr->el_size);
+  memmove(e, darray_data_get(arr, index), arr->elt_size);
   return OK;
 } /* darray_index_serve() */
 
-int darray_index_query(const struct darray* const arr, const void* const e) {
+int darray_idx_query(const struct darray* const arr, const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != e, NULL != arr->cmpe);
 
   int rval = -1;
 
   if (arr->sorted) {
     DBGD("Currently sorted: performing binary search\n");
-    rval = bsearch_rec(
-        arr->elements, e, arr->cmpe, arr->el_size, 0, (arr->current - 1));
+    rval = bsearch_rec(arr->elements,
+                       e,
+                       arr->cmpe,
+                       arr->elt_size,
+                       0,
+                       arr->current - 1);
   } else {
     for (size_t i = 0; i < arr->current; ++i) {
       if (arr->cmpe(e, darray_data_get(arr, i)) == 0) {
@@ -250,31 +269,19 @@ int darray_index_query(const struct darray* const arr, const void* const e) {
   }
 
   return rval;
-} /* darray_index_query() */
+} /* darray_idx_query() */
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
-  return (arr->elements + (index * arr->el_size));
+  return (arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 
 status_t darray_data_set(const struct darray* const arr,
                          size_t index,
                          const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != e);
-  return ds_elt_copy(arr->elements + index * arr->el_size, e, arr->el_size);
+  return ds_elt_copy(arr->elements + index * arr->elt_size, e, arr->elt_size);
 } /* darray_data_set() */
-
-status_t darray_data_copy(const struct darray* const arr1,
-                          const struct darray* const arr2) {
-  RCSW_FPC_NV(ERROR,
-            NULL != arr1,
-            NULL != arr2,
-            arr1->el_size == arr2->el_size,
-            arr1->capacity >= arr2->capacity);
-
-  memcpy(arr1->elements, arr2->elements, arr2->current * arr2->el_size);
-  return OK;
-} /* darray_data_copy() */
 
 status_t darray_resize(struct darray* const arr, size_t size) {
   RCSW_FPC_NV(ERROR, NULL != arr);
@@ -289,15 +296,15 @@ status_t darray_resize(struct darray* const arr, size_t size) {
 
 void darray_print(const struct darray* const arr) {
   if (arr == NULL) {
-    DPRINTF("DARARY: < NULL dynamic array >\n");
+    DPRINTF("DARRAY: < NULL dynamic array >\n");
     return;
   }
   if (arr->current == 0) {
-    DPRINTF("DARARY: < Empty dynamic array >\n");
+    DPRINTF("DARRAY: < Empty dynamic array >\n");
     return;
   }
   if (arr->printe == NULL) {
-    DPRINTF("DARARY: < No print function >\n");
+    DPRINTF("DARRAY: < No print function >\n");
     return;
   }
 
@@ -318,9 +325,9 @@ status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
     DBGD("Already sorted: nothing to do\n");
   } else {
     if (type == QSORT_REC) {
-      qsort_rec(arr->elements, 0, arr->current - 1, arr->el_size, arr->cmpe);
+      qsort_rec(arr->elements, 0, arr->current - 1, arr->elt_size, arr->cmpe);
     } else if (type == QSORT_ITER) {
-      qsort_iter(arr->elements, arr->current - 1, arr->el_size, arr->cmpe);
+      qsort_iter(arr->elements, arr->current - 1, arr->elt_size, arr->cmpe);
     } else {
       return ERROR; /* bad sort type */
     }
@@ -338,7 +345,7 @@ struct darray* darray_filter(struct darray* const arr,
   struct ds_params params = {.type = {.da = {.init_size = 0}},
                              .cmpe = arr->cmpe,
                              .printe = arr->printe,
-                             .el_size = arr->el_size,
+                             .elt_size = arr->elt_size,
                              .max_elts = arr->max_elts,
                              .tag = DS_DARRAY,
                              .flags = (fparams == NULL) ? 0 : fparams->flags,
@@ -370,7 +377,7 @@ struct darray* darray_filter(struct darray* const arr,
       "%zu %zu-byte elements filtered out into new list. %zu elements remain "
       "in original list.\n",
       n_removed,
-      arr->el_size,
+      arr->elt_size,
       arr->current);
   return farr;
 
@@ -389,7 +396,7 @@ struct darray* darray_copy(const struct darray* const arr,
                                           }},
                              .cmpe = arr->cmpe,
                              .printe = arr->printe,
-                             .el_size = arr->el_size,
+                             .elt_size = arr->elt_size,
                              .max_elts = arr->max_elts,
                              .tag = DS_DARRAY,
                              .flags = (cparams == NULL) ? 0 : cparams->flags,
@@ -406,9 +413,9 @@ struct darray* darray_copy(const struct darray* const arr,
    * if the source list is empty.
    *
    */
-  memcpy(carr->elements, arr->elements, arr->current * arr->el_size);
+  memcpy(carr->elements, arr->elements, arr->current * arr->elt_size);
 
-  DBGD("%zu %zu-byte elements\n", arr->current, arr->el_size);
+  DBGD("%zu %zu-byte elements\n", arr->current, arr->elt_size);
   return carr;
 
 error:
@@ -442,8 +449,8 @@ status_t darray_inject(const struct darray* const arr,
  * Static Functions
  ******************************************************************************/
 static status_t darray_extend(struct darray* const arr, size_t size) {
-  if (arr->flags & DS_APP_DOMAIN_DATA) {
-    DBGE("ERROR: Cannot extend list: APP_DOMAIN_DATA was passed\n");
+  if (arr->flags & RCSW_DS_NOALLOC_DATA) {
+    DBGE("ERROR: Cannot extend array: RCSW_DS_NOALLOC_DATA\n");
     errno = EAGAIN;
     return ERROR;
   }
@@ -453,7 +460,7 @@ static status_t darray_extend(struct darray* const arr, size_t size) {
 
   /* use tmp var to preserve orignal list in case of failure */
   void* tmp = NULL;
-  tmp = realloc(arr->elements, arr->capacity * arr->el_size);
+  tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
 
   RCSW_CHECK_PTR(tmp);
   arr->elements = tmp;
@@ -471,12 +478,16 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
 
   size_t old_size = arr->capacity;
   arr->capacity = size;
+
   if (arr->capacity > 0) {
-    void* tmp = realloc(arr->elements, arr->capacity * arr->el_size);
+    RCSW_ER_CHECK(!(arr->flags & RCSW_DS_NOALLOC_DATA),
+                  "ERROR: Cannot shrink array: RCSW_DS_NOALLOC_DATA");
+    void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
     RCSW_CHECK_PTR(tmp);
     arr->elements = tmp;
-  } else { /* the list has become empty--don't free() the array */
-    arr->capacity = 0;
+    arr->current = RCSW_MIN(arr->capacity - 1, arr->current);
+  } else { /* the array has become empty--don't free() the array */
+    arr->current = 0;
   }
 
   return OK;

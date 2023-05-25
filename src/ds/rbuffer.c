@@ -21,8 +21,8 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#define RBUFFER_TYPE(rb) \
-  (((rb)->flags & DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
+#define RCSW_DS_RBUFFER_TYPE(rb) \
+  (((rb)->flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
 
 /*******************************************************************************
  * API Functions
@@ -35,10 +35,10 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
             params != NULL,
             params->tag == DS_RBUFFER,
             params->max_elts > 0,
-            params->el_size > 0);
+            params->elt_size > 0);
 
   struct rbuffer* rb = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(rb_in);
     rb = rb_in;
   } else {
@@ -47,25 +47,25 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
   }
   rb->flags = params->flags;
 
-  if (params->flags & DS_APP_DOMAIN_DATA) {
+  if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     rb->elements = params->elements;
   } else {
-    rb->elements = calloc(params->max_elts, params->el_size);
+    rb->elements = calloc(params->max_elts, params->elt_size);
     RCSW_CHECK_PTR(rb->elements);
   }
 
-  rb->el_size = params->el_size;
+  rb->elt_size = params->elt_size;
   rb->printe = params->printe;
   rb->cmpe = params->cmpe;
   rb->start = 0;
   rb->current = 0;
   rb->max_elts = params->max_elts;
 
-  DBGD("type: %s max_elts=%zu el_size=%zu flags=0x%08x\n",
-       RBUFFER_TYPE(rb),
+  DBGD("type: %s max_elts=%zu elt_size=%zu flags=0x%08x\n",
+       RCSW_DS_RBUFFER_TYPE(rb),
        rb->max_elts,
-       rb->el_size,
+       rb->elt_size,
        rb->flags);
   return rb;
 
@@ -77,14 +77,14 @@ error:
 void rbuffer_destroy(struct rbuffer* rb) {
   RCSW_FPC_V(NULL != rb);
 
-  if (!(rb->flags & DS_APP_DOMAIN_DATA)) {
+  if (!(rb->flags & RCSW_DS_NOALLOC_DATA)) {
     if (rb->elements) {
       free(rb->elements);
       rb->elements = NULL;
     }
   }
 
-  if (!(rb->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(rb->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(rb);
   }
 } /* rbuffer_destroy() */
@@ -93,7 +93,7 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, e != NULL);
 
   /* do not add if acting as FIFO and currently full */
-  if ((rb->flags & DS_RBUFFER_AS_FIFO) && rbuffer_isfull(rb)) {
+  if ((rb->flags & RCSW_DS_RBUFFER_AS_FIFO) && rbuffer_isfull(rb)) {
     DBGW("WARNING: Not adding new element: FIFO full\n");
     errno = ENOSPC;
     return ERROR;
@@ -102,7 +102,7 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
   /* add element */
   ds_elt_copy(rbuffer_data_get(rb, (rb->start + rb->current) % rb->max_elts),
               e,
-              rb->el_size);
+              rb->elt_size);
 
   /* start wrapped around to end--overwrite */
   if (rbuffer_isfull(rb)) {
@@ -117,12 +117,12 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
 void* rbuffer_data_get(const struct rbuffer* const rb, size_t key) {
   RCSW_FPC_NV(NULL, rb != NULL, key < rb->max_elts);
 
-  return rb->elements + (key * rb->el_size);
+  return rb->elements + (key * rb->elt_size);
 } /* rbuffer_data_get() */
 
 status_t rbuffer_serve_front(const struct rbuffer* const rb, void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, e != NULL, !rbuffer_isempty(rb));
-  ds_elt_copy(e, rbuffer_data_get(rb, rb->start), rb->el_size);
+  ds_elt_copy(e, rbuffer_data_get(rb, rb->start), rb->elt_size);
   return OK;
 } /* rbuffer_serve_front() */
 
@@ -171,7 +171,7 @@ int rbuffer_index_query(struct rbuffer* const rb, const void* const e) {
 status_t rbuffer_clear(struct rbuffer* const rb) {
   RCSW_FPC_NV(ERROR, rb != NULL);
 
-  memset(rb->elements, 0, rb->current * rb->el_size);
+  memset(rb->elements, 0, rb->current * rb->elt_size);
   rb->current = 0;
   rb->start = 0;
 
@@ -190,7 +190,7 @@ status_t rbuffer_map(struct rbuffer* const rb, void (*f)(void* e)) {
 } /* rbuffer_map() */
 
 status_t rbuffer_inject(struct rbuffer* const rb,
-                        void (*f)(void* e, void* res),
+                        void (*f)(void* elt, void* res),
                         void* result) {
   RCSW_FPC_NV(ERROR, rb != NULL, f != NULL, result != NULL);
 

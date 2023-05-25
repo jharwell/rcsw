@@ -30,18 +30,6 @@ size_t alg_arr_largest_num(const size_t* const array, size_t n_elts) {
   return largest;
 } /* largest_num() */
 
-int alg_arr_largest_num2(const int* const array, size_t n_elts) {
-  RCSW_FPC_NV(-1, NULL != array);
-  int largest = 0;
-
-  for (size_t i = 0; i < n_elts; i++) {
-    if (array[i] > largest) {
-      largest = array[i];
-    }
-  } /* for(i..) */
-  return largest;
-} /* largest_num() */
-
 bool_t str_is_parenthesizable(const char* const x,
                               char* const r,
                               char el,

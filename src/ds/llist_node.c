@@ -26,8 +26,7 @@ BEGIN_C_DECLS
 
 struct llist_node* llist_node_alloc(struct llist* const list) {
   struct llist_node* node = NULL;
-
-  if (list->flags & DS_APP_DOMAIN_NODES) {
+  if (list->flags & RCSW_DS_NOALLOC_NODES) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the
@@ -35,11 +34,15 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
      */
 
     size_t index = list->current;
-    node = ds_meta_probe(
-        list->nodes, sizeof(struct llist_node), (size_t)list->max_elts, &index);
-    RCSW_CHECK_PTR(node);
+    int alloc_idx = allocm_probe(list->space.node_map,
+                                 (size_t)list->max_elts,
+                                 list->current);
+    RCSW_CHECK(-1 != alloc_idx);
+    node = list->space.nodes + alloc_idx;
 
-    ((int*)(list->nodes))[index] = 0; /* mark node as in use */
+    /* mark node as in use */
+    allocm_mark_inuse(list->space.node_map + alloc_idx);
+
     DBGV("Allocated llist_node %zu/%d\n", index + 1, list->max_elts);
   } else {
     node = calloc(1, sizeof(struct llist_node));
@@ -53,13 +56,11 @@ error:
 } /* llist_node_alloc() */
 
 void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
-  if (list->flags & DS_APP_DOMAIN_NODES) {
-    struct llist_node* nodes_start =
-        (struct llist_node*)(list->nodes +
-                             ds_calc_meta_space((size_t)list->max_elts));
-    int index = node - nodes_start;
+  if (list->flags & RCSW_DS_NOALLOC_NODES) {
+    int index = node - list->space.nodes;
 
-    ((int*)(list->nodes))[index] = -1; /* mark node as available */
+    allocm_mark_free(list->space.node_map + index);
+
     DBGV("Deallocated llist_node %d/%d\n", index + 1, list->max_elts);
   } else {
     free(node);
@@ -82,10 +83,10 @@ struct llist_node* llist_node_create(struct llist* const list,
 
   /* get space for the datablock and copy the data, unless
    * DS_LLIST_NO_DB or DS_LLIST_NO_DATA was passed */
-  if (!(list->flags & (DS_LLIST_NO_DB | DS_LLIST_PTR_CMP))) {
+  if (!(list->flags & (RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP))) {
     node->data = llist_node_datablock_alloc(list);
     RCSW_CHECK_PTR(node->data);
-    ds_elt_copy(node->data, data_in, list->el_size);
+    ds_elt_copy(node->data, data_in, list->elt_size);
   } else {
     node->data = data_in;
   }
@@ -107,16 +108,17 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
   }
 
   /* don't deallocate: we never allocated! */
-  if (list->flags & (DS_LLIST_NO_DB | DS_LLIST_PTR_CMP)) {
+  if (list->flags & (RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP)) {
     return;
   }
-  if (list->flags & DS_APP_DOMAIN_DATA) {
-    uint8_t* data_start = (uint8_t*)((int*)list->elements + list->max_elts);
-    size_t block_index = (size_t)(datablock - data_start) / list->el_size;
-    ((int*)(list->elements))[block_index] =
-        -1; /* mark data block as available */
 
-    DBGV("Dellocated data block %zu/%d\n", block_index + 1, list->max_elts);
+  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+    size_t block_idx = (datablock - list->space.datablocks) / list->elt_size;
+
+    /* mark data block as available */
+    allocm_mark_free(list->space.db_map + block_idx);
+
+    DBGV("Dellocated data block %zu/%d\n", block_idx, list->max_elts);
   } else {
     free(datablock);
   }
@@ -125,21 +127,24 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
 void* llist_node_datablock_alloc(struct llist* const list) {
   void* datablock = NULL;
 
-  if (list->flags & DS_APP_DOMAIN_DATA) {
+  if (list->flags & RCSW_DS_NOALLOC_DATA) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-    size_t index = list->current;
-    datablock = ds_meta_probe(
-        list->elements, list->el_size, (size_t)list->max_elts, &index);
-    RCSW_CHECK_PTR(datablock);
+    int alloc_idx = allocm_probe(list->space.db_map,
+                                 (size_t)list->max_elts,
+                                 list->current);
+    RCSW_CHECK(-1 != alloc_idx);
+    datablock = list->space.datablocks + alloc_idx * list->elt_size;
 
-    ((int*)(list->elements))[index] = 0; /* mark data block as in use */
-    DBGV("Allocated data block %zu/%d\n", index + 1, list->max_elts);
+    /* mark data block as inuse */
+    allocm_mark_inuse(list->space.db_map + alloc_idx);
+
+    DBGV("Allocated data block %d/%d\n", alloc_idx, list->max_elts);
   } else {
-    datablock = malloc(list->el_size);
+    datablock = malloc(list->elt_size);
     RCSW_CHECK_PTR(datablock);
   }
 

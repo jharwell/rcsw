@@ -32,7 +32,7 @@
  * mpool_ref_query(), and \ref mpool_ref_add()/\ref mpool_ref_remove() cannot be
  * used.
  */
-#define MPOOL_REF_COUNT_EN DS_EXT_FLAGS
+#define MPOOL_REF_COUNT_EN RCSW_DS_FLAGS_EXT
 
 /*******************************************************************************
  * Structure Definitions
@@ -41,15 +41,15 @@
  * \brief Memory pool queue initialization parameters
  */
 struct mpool_params {
-    size_t el_size;     /// Size of each element in bytes.
+    size_t elt_size;     /// Size of each element in bytes.
     size_t max_elts;    /// # of elements the pool will hold.
     uint8_t *nodes;     /// Space for linked list nodes.
     uint8_t *elements;  /// Space for the actual elements.
 
     /**
      * Initialization flags. You can pass any of the following  DS flags:
-     * \ref DS_APP_DOMAIN_DATA, \ref DS_APP_DOMAIN_NODES, \ref
-     * DS_APP_DOMAIN_DATA, individually or in combination, or you can pass \ref
+     * \ref RCSW_DS_NOALLOC_DATA, \ref RCSW_DS_NOALLOC_NODES, \ref
+     * RCSW_DS_NOALLOC_DATA, individually or in combination, or you can pass \ref
      * MT_APP_DOMAIN_MEM which is equivalent to all 3.
      */
     uint32_t flags;
@@ -68,7 +68,7 @@ struct mpool {
     int *refs;         /// Pointer to array for reference counting
     size_t n_free;     /// # elements in the pool currently free.
     size_t n_alloc;    /// # elements in the pool currently allocated.
-    size_t el_size;    /// Size of elements in the pool in bytes.
+    size_t elt_size;    /// Size of elements in the pool in bytes.
     size_t max_elts;   /// Max # of elements in the pool.
     mt_csem_t sem;     /// Semaphore used for waiting on free slots in pool.
     mt_mutex_t mutex;  /// Mutex used to protect mpool integrity.
@@ -94,12 +94,12 @@ static inline size_t  mpool_node_space(size_t max_elts) {
  * \brief Get # of bytes needed for space for the mpool data.
  *
  * \param max_elts # of desired elements in pool.
- * \param el_size Size of elements in bytes.
+ * \param elt_size Size of elements in bytes.
  *
  * \return The # of bytes the application would need to allocate.
  */
-static inline size_t  mpool_element_space(size_t max_elts, size_t el_size) {
-    return ds_calc_element_space2(max_elts, el_size);
+static inline size_t  mpool_element_space(size_t max_elts, size_t elt_size) {
+    return ds_elt_space_with_meta(max_elts, elt_size);
 }
 
 
@@ -148,7 +148,7 @@ BEGIN_C_DECLS
  * \brief Initialize a memory pool.
  *
  * \param pool_in An application allocated handle for the memory pool. Can be
- * NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
+ * NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized pool, or NULL if an error occurred.

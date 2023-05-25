@@ -106,7 +106,7 @@ static inline void* fifo_front(const struct fifo* const fifo) {
 
 /**
  * \brief Calculate the # of bytes that the FIFO will require if \ref
- * DS_APP_DOMAIN_DATA is passed to manage a specified # of elements of a
+ * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size
  *
  * \param max_elts # of desired elements the FIFO will hold
@@ -125,7 +125,7 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
  * \brief Initialize a FIFO.
  *
  * \param fifo_in An application allocated handle for the FIFO. Can be NULL,
- * depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
+ * depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized FIFO, or NULL if an error occurred.
@@ -150,7 +150,7 @@ void fifo_destroy(struct fifo *fifo);
  *
  * \return \ref status_t.
  */
-status_t fifo_enq(struct fifo * fifo, const void * e);
+status_t fifo_add(struct fifo * fifo, const void * e);
 
 /**
  * \brief Dequeue an element from the FIFO.
@@ -160,7 +160,7 @@ status_t fifo_enq(struct fifo * fifo, const void * e);
  *
  * \return \ref status_t.
  */
-status_t fifo_deq(struct fifo * fifo, void * e);
+status_t fifo_remove(struct fifo * fifo, void * e);
 
 /**
  * \brief Clear a FIFO.

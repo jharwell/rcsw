@@ -19,31 +19,6 @@
  * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
-void* ds_meta_probe(uint8_t* mem_p,
-                    size_t ent_size,
-                    size_t max_elts,
-                    size_t* index) {
-  uint8_t* ent = NULL;
-  uint8_t* ent_start = mem_p + ds_calc_meta_space(max_elts);
-  bool_t wrap = FALSE;
-  size_t i = *index;
-  while (!wrap || (i != *index)) {
-    if (((int*)(mem_p))[i] == -1) {
-      ent = ent_start + i * ent_size;
-      break;
-    }
-    /* wrapped around to index 0 */
-    if (i + 1 == max_elts) {
-      wrap = TRUE;
-      i = 0;
-    } else {
-      i++;
-    }
-  } /* while() */
-
-  *index = i;
-  return ent;
-} /* ds_meta_probe() */
 
 #ifndef __SIZEOF_FLOAT__
 #warning "__SIZEOF_FLOAT__ not defined--strange behavior may occur..."

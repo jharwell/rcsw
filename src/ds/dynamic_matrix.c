@@ -33,7 +33,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
             params->type.dmat.n_rows > 0,
             params->type.dmat.n_cols > 0)
   struct dynamic_matrix* matrix = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
     matrix = matrix_in;
   } else {
@@ -41,7 +41,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
     RCSW_CHECK_PTR(matrix);
   }
   matrix->flags = params->flags;
-  matrix->el_size = params->el_size;
+  matrix->elt_size = params->elt_size;
   matrix->printe = params->printe;
   matrix->n_rows = params->type.dmat.n_rows;
   matrix->n_cols = params->type.dmat.n_cols;
@@ -52,7 +52,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
                                     .nodes = NULL,
                                     .elements = NULL,
                                     .tag = DS_DARRAY,
-                                    .el_size = sizeof(struct darray),
+                                    .elt_size = sizeof(struct darray),
                                     .max_elts = -1,
                                     .flags = 0};
   matrix->rows = darray_init(NULL, &handle_params);
@@ -64,9 +64,9 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
                                  .nodes = NULL,
                                  .elements = NULL,
                                  .tag = DS_DARRAY,
-                                 .el_size = matrix->el_size,
+                                 .elt_size = matrix->elt_size,
                                  .max_elts = -1,
-                                 .flags = DS_APP_DOMAIN_HANDLE};
+                                 .flags = RCSW_DS_NOALLOC_HANDLE};
 
   for (size_t i = 0; i < matrix->n_rows; ++i) {
     RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
@@ -87,7 +87,7 @@ void dynamic_matrix_destroy(struct dynamic_matrix* const matrix) {
   } /* for(i..) */
   darray_destroy(matrix->rows);
 
-  if (!(matrix->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* dynamic_matrix_destroy() */
@@ -100,7 +100,7 @@ status_t dynamic_matrix_set(struct dynamic_matrix* const matrix,
   if (u >= matrix->n_rows || v >= matrix->n_cols) {
     RCSW_CHECK(OK == dynamic_matrix_resize(matrix, u + 1, v + 1));
   }
-  ds_elt_copy(dynamic_matrix_access(matrix, u, v), w, matrix->el_size);
+  ds_elt_copy(dynamic_matrix_access(matrix, u, v), w, matrix->elt_size);
   return OK;
 
 error:
@@ -124,9 +124,9 @@ status_t dynamic_matrix_resize(struct dynamic_matrix* const matrix,
                                    .nodes = NULL,
                                    .elements = NULL,
                                    .tag = DS_DARRAY,
-                                   .el_size = matrix->el_size,
+                                   .elt_size = matrix->elt_size,
                                    .max_elts = -1,
-                                   .flags = DS_APP_DOMAIN_HANDLE};
+                                   .flags = RCSW_DS_NOALLOC_HANDLE};
 
     for (size_t i = matrix->n_rows; i < u; ++i) {
       RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
@@ -157,7 +157,7 @@ status_t dynamic_matrix_transpose(struct dynamic_matrix* const matrix) {
     for (size_t j = 0; j < i; ++j) {
       ds_elt_swap(dynamic_matrix_access(matrix, i, j),
                   dynamic_matrix_access(matrix, j, i),
-                  matrix->el_size);
+                  matrix->elt_size);
     } /* for(j..) */
   }   /* for(i..) */
   return OK;

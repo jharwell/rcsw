@@ -13,10 +13,11 @@
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Static Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -38,16 +39,57 @@ BEGIN_C_DECLS
  * \param a The array to partition
  * \param min_index Starting index
  * \param max_index Ending index
- * \param el_size Size of elements in bytes
+ * \param elt_size Size of elements in bytes
  * \param cmpe Function to compare 2 elements
  *
  * \return The partition index
  */
-static size_t partition(void* a,
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_VLA()
+static size_t partition(void* const a,
                         int min_index,
                         int max_index,
-                        size_t el_size,
-                        int (*cmpe)(const void* const e1, const void* const e2));
+                        size_t elt_size,
+                        int (*cmpe)(const void* const e1, const void* const e2)) {
+  int left;  /* index starts at min_index and increases */
+  int right; /* index starts and max_index and decreases */
+
+  uint8_t* const arr = a;
+
+  /* chose pivot element */
+  uint8_t* const pivot = arr + (min_index * elt_size);
+
+  uint8_t tmp[elt_size];
+  left = min_index;
+  right = max_index;
+
+  while (left < right) {
+    while (cmpe(arr + (left * elt_size), pivot) <= 0 && left < max_index) {
+      left++;
+    }
+
+    /* move right while item > pivot */
+    while (cmpe(arr + (right * elt_size), pivot) > 0 && right > 0) {
+      right--;
+    }
+    /* at this point arr[left] must be > pivot and arr[right]
+     * must be < pivot, so swap them if the position pointers have not
+     * crossed */
+    if (left < right) {
+      memmove(&tmp, arr + (left * elt_size), elt_size);
+      memmove(arr + (left * elt_size), arr + (right * elt_size), elt_size);
+      memmove(arr + (right * elt_size), &tmp, elt_size);
+    }
+  } /* while() */
+
+  /* arr[right] is <= pivot and in the upper half so swap it and the
+   * item in the first position */
+  memmove(&tmp, pivot, elt_size);
+  memmove(arr + (min_index * elt_size), arr + (right * elt_size), elt_size);
+  memmove(arr + (right * elt_size), &tmp, elt_size);
+  return right;
+} /* partition() */
+RCSW_WARNING_DISABLE_POP()
 
 /*******************************************************************************
  * API Functions
@@ -55,12 +97,12 @@ static size_t partition(void* a,
 void qsort_rec(void* const a,
                int min_index,
                int max_index,
-               size_t el_size,
+               size_t elt_size,
                int (*cmpe)(const void* const e1, const void* const e2)) {
   if (max_index > min_index) {
-    int pivot = partition(a, min_index, max_index, el_size, cmpe);
-    qsort_rec(a, min_index, pivot - 1, el_size, cmpe);
-    qsort_rec(a, pivot + 1, max_index, el_size, cmpe);
+    int pivot = partition(a, min_index, max_index, elt_size, cmpe);
+    qsort_rec(a, min_index, pivot - 1, elt_size, cmpe);
+    qsort_rec(a, pivot + 1, max_index, elt_size, cmpe);
   }
 } /* qsort_recursive() */
 
@@ -68,7 +110,7 @@ RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_VLA()
 void qsort_iter(void* const a,
                 int max_index,
-                size_t el_size,
+                size_t elt_size,
                 int (*cmpe)(const void* const e1, const void* const e2)) {
   int min_index = 0;
 
@@ -96,11 +138,12 @@ void qsort_iter(void* const a,
     min_index = stack[top--];
 
     /* get pivot position */
-    int p = partition(a, min_index, max_index, el_size, cmpe);
+    int p = partition(a, min_index, max_index, elt_size, cmpe);
 
-    /* If there are elements on left side of pivot, then push left */
-    /* sub-array onto stack to be sorted (this is the equivalent of a recursive
-     * call) */
+    /*
+     * If there are elements on left side of pivot, then push left sub-array
+     * onto stack to be sorted (this is the equivalent of a recursive call)
+     */
     if (p - 1 > min_index) {
       stack[++top] = min_index; /* new min_index */
       stack[++top] = p - 1;     /* new max_index */
@@ -293,32 +336,45 @@ struct llist_node* mergesort_iter(
   } /* while(1) (end of pass) */
 } /* mergesort_iter() */
 
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_VLA()
 void insertion_sort(void* arr,
                     size_t n_elts,
-                    size_t el_size,
+                    size_t elt_size,
                     int (*cmpe)(const void* const e1, const void* const e2)) {
+  RCSW_FPC_V(n_elts > 0, elt_size > 0);
+
   /*
    * The element at j is the element you are currently comparing with/the
    * temporary element. Start at index j-1, move downward through the array,
    * until you find an element that is NOT > the element at j, and swap j
    * into that position.
    */
-  for (size_t j = 1; j < n_elts - 1; ++j) {
-    size_t i = j - 1;
-    while (i != 0 && cmpe((uint8_t*)arr + (i * el_size),
-                          (uint8_t*)arr + (j * el_size)) > 0) {
-      memmove((uint8_t*)arr + ((i + 1) * el_size),
-              (uint8_t*)arr + (i * el_size),
-              el_size);
-      --i;
+  uint8_t key[elt_size];
+
+  int i, j;
+  for (i = 1; i < (int)n_elts; ++i) {
+    memcpy(key,
+           (uint8_t*)arr + (i * elt_size),
+           elt_size);
+    j = i - 1;
+    while (j >= 0 && cmpe((uint8_t*)arr + (j * elt_size), key) > 0) {
+      memmove((uint8_t*)arr + ((j + 1) * elt_size),
+              (uint8_t*)arr + (j * elt_size),
+              elt_size);
+      --j;
     } /* while() */
-    memmove((uint8_t*)arr + ((i + 1) * el_size),
-            (uint8_t*)arr + (j * el_size),
-            el_size);
+    memcpy((uint8_t*)arr + ((j+1) * elt_size),
+           key,
+           elt_size);
   } /* for(j..) */
 } /* insertion_sort() */
+RCSW_WARNING_DISABLE_POP()
 
-void radix_sort(size_t* const arr, size_t* const tmp, size_t n_elts, size_t base) {
+void radix_sort(size_t* const arr,
+                size_t* const tmp,
+                size_t n_elts,
+                size_t base) {
   /* get largest # in array to get total # of digits */
   size_t m = alg_arr_largest_num(arr, n_elts);
 
@@ -380,56 +436,6 @@ status_t radix_counting_sort(size_t* const arr,
 
   return OK;
 } /* counting_sort() */
-RCSW_WARNING_DISABLE_POP()
-
-/*******************************************************************************
- * Static Functions
- ******************************************************************************/
-RCSW_WARNING_DISABLE_PUSH()
-RCSW_WARNING_DISABLE_VLA()
-static size_t partition(void* const a,
-                        int min_index,
-                        int max_index,
-                        size_t el_size,
-                        int (*cmpe)(const void* const e1, const void* const e2)) {
-  int left;  /* index starts at min_index and increases */
-  int right; /* index starts and max_index and decreases */
-
-  uint8_t* const arr = a;
-
-  /* chose pivot element */
-  uint8_t* const pivot = arr + (min_index * el_size);
-
-  uint8_t tmp[el_size];
-  left = min_index;
-  right = max_index;
-
-  while (left < right) {
-    while (cmpe(arr + (left * el_size), pivot) <= 0 && left < max_index) {
-      left++;
-    }
-
-    /* move right while item > pivot */
-    while (cmpe(arr + (right * el_size), pivot) > 0 && right > 0) {
-      right--;
-    }
-    /* at this point arr[left] must be > pivot and arr[right]
-     * must be < pivot, so swap them if the position pointers have not
-     * crossed */
-    if (left < right) {
-      memmove(&tmp, arr + (left * el_size), el_size);
-      memmove(arr + (left * el_size), arr + (right * el_size), el_size);
-      memmove(arr + (right * el_size), &tmp, el_size);
-    }
-  } /* while() */
-
-  /* arr[right] is <= pivot and in the upper half so swap it and the
-   * item in the first position */
-  memmove(&tmp, pivot, el_size);
-  memmove(arr + (min_index * el_size), arr + (right * el_size), el_size);
-  memmove(arr + (right * el_size), &tmp, el_size);
-  return right;
-} /* partition() */
 RCSW_WARNING_DISABLE_POP()
 
 END_C_DECLS

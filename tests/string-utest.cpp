@@ -18,15 +18,14 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
 
-#include "rcsw/stdio/sstdio.h"
-#include "rcsw/stdio/sstring.h"
+#include "rcsw/stdio/stdio.h"
+#include "rcsw/stdio/string.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/utils/utils.h"
 
 /******************************************************************************
  * Constant Definitions
  *****************************************************************************/
-#define NUM_TESTS        7
 #define MAX_STRING_SIZE 100
 
 /*******************************************************************************
@@ -60,7 +59,7 @@ static void strlen_test(void) {
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     string_gen(s, i);
 
-    len1 = sstring_strlen(s);
+    len1 = stdio_strlen(s);
     len2 = strlen(s);
     CATCH_REQUIRE(len1 == i -1);
     CATCH_REQUIRE(len1 == len2);
@@ -74,7 +73,7 @@ static void strrev_test(void) {
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     string_gen(s1, i);
     memcpy(s2, s1, i);
-    sstring_strrev(s1, i);
+    stdio_strrev(s1, i);
     for (j = 0; j < i; j++) {
       CATCH_REQUIRE(s1[j] == s2[i - j -1]);
     }
@@ -92,7 +91,7 @@ static void strchr_test(void) {
     for (j = 0; j < i; j++) {
       int c = rand() % (126 - 33 + 1) + 33;
       rval1 = strchr(s1, c);
-      rval2 = sstring_strchr(s1, c);
+      rval2 = stdio_strchr(s1, c);
 
       CATCH_REQUIRE(rval1 == rval2);
     }
@@ -107,7 +106,7 @@ static void strcpy_test(void) {
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     string_gen(s1, i);
     memset(s2, 0, MAX_STRING_SIZE);
-    sstring_strcpy(s2, s1);
+    stdio_strcpy(s2, s1);
     CATCH_REQUIRE(strncmp(s1, s2, i) == 0);
   }
 } /* strcpy_test() */
@@ -121,7 +120,7 @@ static void strncpy_test(void) {
     string_gen(s1, i);
     for (j = 0; j < i; j++) {
       memset(s2, 0, MAX_STRING_SIZE);
-      sstring_strncpy(s2, s1, j);
+      stdio_strncpy(s2, s1, j);
       CATCH_REQUIRE(strncmp(s1, s2, j) == 0);
     } /* for(j..) */
   } /* for(i..) */
@@ -137,7 +136,7 @@ static void strcmp_test(void) {
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     string_gen(s1, i);
     string_gen(s2, i);
-    rval1 = sstring_strcmp(s1, s2);
+    rval1 = stdio_strcmp(s1, s2);
     rval2 = strcmp(s1, s2);
     CATCH_REQUIRE(!(((rval1 < 0) && (rval2 >= 0))||
                     ((rval1 > 0) && (rval2 <= 0)) ||
@@ -149,7 +148,7 @@ static void strcmp_test(void) {
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     string_gen(s1, i);
     memcpy(s2, s1, i);
-    CATCH_REQUIRE(sstring_strcmp(s1, s2) == 0);
+    CATCH_REQUIRE(stdio_strcmp(s1, s2) == 0);
   }
 } /* strcmp_test() */
 
@@ -164,7 +163,7 @@ static void strncmp_test(void) {
     string_gen(s1, i);
     string_gen(s2, i);
     for (j = 0; j < i; j++) {
-      rval1 = sstring_strncmp(s1, s2, j);
+      rval1 = stdio_strncmp(s1, s2, j);
       rval2 = strncmp(s1, s2, j);
       CATCH_REQUIRE(!(((rval1 < 0) && (rval2 >= 0)) &&
                       ((rval1 > 0) && (rval2 <= 0)) &&
@@ -178,7 +177,7 @@ static void strncmp_test(void) {
     string_gen(s1, i);
     for (j = 0; j < i; j++) {
       memcpy(s2, s1, i);
-      CATCH_REQUIRE(sstring_strncmp(s1, s2, j) == 0);
+      CATCH_REQUIRE(stdio_strncmp(s1, s2, j) == 0);
     }
   }
 } /* strncmp_test() */
@@ -230,7 +229,7 @@ static void strrep_test(void) {
       /* replace the all occurrences of pattern in original with replacement */
       /* printf("original: %s pattern: %s replacement: %s\n", original, pattern, replacement); */
       /* printf("new: %s\n",new); */
-      sstring_strrep(original, pattern, replacement, new_str);
+      stdio_strrep(original, pattern, replacement, new_str);
       CATCH_REQUIRE(strlen(original) + pat_count * strlen(replacement) -
                     pat_count * strlen(pattern) == strlen(new_str));
       rep_len++;

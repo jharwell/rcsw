@@ -16,7 +16,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
@@ -257,4 +257,3 @@ status_t string_gen(char * buf, size_t len);
 uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
 END_C_DECLS
-

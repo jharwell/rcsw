@@ -1,5 +1,5 @@
 /**
- * \file int_tree_node.h
+ * \file inttree_node.h
  * \cond INTERNAL
  * \ingroup ds
  * \brief Functions related to interval tree nodes.
@@ -14,10 +14,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/int_tree.h"
+#include "rcsw/ds/inttree.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -29,8 +29,8 @@ BEGIN_C_DECLS
  *
  * \param node The node to update.
  */
-void int_tree_node_update_max(struct int_tree_node* node);
+void inttree_node_update_max(struct inttree_node* node);
 
 /* \endcond */
-END_C_DECLS
 
+END_C_DECLS

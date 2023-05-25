@@ -13,7 +13,7 @@
 #include "rcsw/multithread/threadm.h"
 #include <pthread.h>
 #include <sched.h>
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Forward Declarations

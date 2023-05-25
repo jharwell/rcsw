@@ -15,87 +15,43 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
-#include "rcsw/common/test_frmwk.h"
 #include "rcsw/common/dbg.h"
+
+#include "tests/element.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#define NUM_ITEMS       10
+#define TH_NUM_ITEMS    16
+#define TH_NUM_BUCKETS  10
 #define NUM_MERGE_ITEMS 10
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-/* Test data element for all data structures */
-struct element {
-  int value1;
-  int value2;
+enum gen_elt_type {
+  ekINC_VALS,
+  ekDEC_VALS,
+  ekRAND_VALS
 };
 
 /*******************************************************************************
- * Global Variables
+ * Type Definitions
  ******************************************************************************/
-BEGIN_C_DECLS
-extern struct test_frmwk *tests;
+typedef void (*ds_test_t)(int len, struct ds_params *params);
+typedef void (*ds_test2_t)(int len1, int len2, struct ds_params *params);
+
+typedef void (*hashmap_test_t)(struct ds_params *params);
 
 /*******************************************************************************
  * Function Prototypes
  ******************************************************************************/
-
-
-/**
- * \brief Classify an element for iteration
- *
- * RETURN:
- *     int - 1 if should be returned, 0 if not
- */
-bool_t th_iter_func(void * e) RCSW_PURE;
-
-/**
- * \brief Map an element (i.e. do something to it)
- */
-void th_map_func(void * e);
-
-/**
- * \brief Iterate with a cumulative SOMETHING
- */
-void th_inject_func(void* e, void * res);
-
-/**
- * \brief Compare the data of two hashnodes
- */
-int th_data_cmp(const void *a, const void *b) RCSW_PURE;
+BEGIN_C_DECLS
 
 /**
  * \brief Print a hashnode
  */
 void th_printn(const void * node);
-
-/**
- * \brief Compare two elements (any data structure)
- *
- * \return  < 0 if e1 < e2, 0 if e1 == e2, > 0 if e2 > e1
- */
-int th_cmpe(const void* const e1, const void* const e2) RCSW_PURE;
-
-/**
- * \brief Print an element (any data structure)
- */
-void th_printe(const void* const e1);
-
-/**
- * \brief Compare the keys of two nodes (linked list or BSTREE)
- */
-int th_key_cmp(const void* const e1, const void* const e2) RCSW_PURE;
-
-/**
- * \brief Simple filtering function for testing filter() and filter2()
- *
- * \return 0 if element does not fulfill the filter requirements, non-zero
- *         otherwise
- */
-bool_t th_filter_func(const void* const e) RCSW_PURE;
 
 /**
  * \brief Check for leaked memory within application allocated node memory
@@ -130,6 +86,11 @@ status_t th_ds_init(struct ds_params *const params);
  * \brief Shutdown the test harness
  */
 void th_ds_shutdown(const struct ds_params *const params);
+
+/**
+ * \brief Compare the keys of two nodes (BSTREE, hashmap)
+ */
+int th_key_cmp(const void *a, const void *b);
 
 END_C_DECLS
 

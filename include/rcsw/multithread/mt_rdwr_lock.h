@@ -16,7 +16,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_csem.h"
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Type Definitions

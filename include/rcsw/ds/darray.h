@@ -1,10 +1,7 @@
 /**
  * \file darray.h
  * \ingroup ds
- * \brief Implementation of dynamic array (i.e. std::vector). It follows the
- * dynamic table resizing algorithm from _Introduction_to_Algorithms, in order
- * to provide O(1) amortized insertions and deletions. You can also resize the
- * darray to whatever size you want at any time.
+ * \brief Implementation of dynamic array (i.e., std::vector).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -24,7 +21,12 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief Dynamic array data structure
+ * \brief Dynamic array data structure.
+ *
+ * It follows the dynamic table resizing algorithm from
+ * _Introduction_to_Algorithms, in order to provide O(1) amortized insertions
+ * and deletions. You can also resize the darray to whatever size you want at
+ * any time.
  */
 struct darray {
     /** The array that holds the actual data */
@@ -35,23 +37,33 @@ struct darray {
 
     /**
      * Next item in the darray will be inserted here (also # of elements in
-     * darray)
+     * darray).
      */
     size_t current;
 
-    /** current capacity of array in # slots */
+    /**
+     * Current capacity of array in # slots
+     */
     size_t capacity;
 
-    /** size in bytes of an element */
-    size_t el_size;
+    /**
+     * Size in bytes of an element
+     **/
+    size_t elt_size;
 
-    /** Flag indicating if the array is currently sorted */
+    /**
+     * Is the array is currently sorted?
+     */
     bool_t sorted;
 
-    /** Maximum number of elements allowed in the array (-1 for no limit) */
+    /**
+     * Maximum number of elements allowed in the array (-1 for no limit)
+     */
     int max_elts;
 
-    /** Runtime configuration flags */
+    /**
+     * Runtime configuration flags
+     */
     uint32_t flags;
 
     /**
@@ -136,12 +148,12 @@ static inline status_t darray_set_n_elts(struct darray* const arr,
  * elements and the element size.
  *
  * \param max_elts # of desired elements the dynamic array will hold.
- * \param el_size size of elements in bytes.
+ * \param elt_size size of elements in bytes.
  *
  * \return The total # of bytes the application would need to allocate.
  */
-static inline size_t darray_element_space(size_t max_elts, size_t el_size) {
-    return ds_calc_element_space1(max_elts, el_size);
+static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
+    return ds_elt_space_simple(max_elts, elt_size);
 }
 
 /*******************************************************************************
@@ -155,7 +167,7 @@ BEGIN_C_DECLS
  * It is valid to initialize the darray with an initial size of 0.
  *
  * \param arr_in The darray handle to be filled (can be NULL if
- * \ref DS_APP_DOMAIN_HANDLE not passed).
+ * \ref RCSW_DS_NOALLOC_HANDLE not passed).
  * \param params Initialization parameters
  *
  * \return The initialized list, or NULL if an ERROR occurred
@@ -247,7 +259,7 @@ status_t darray_remove(struct darray * arr, void * e, size_t index);
  *
  * \return \ref status_t
  */
-status_t darray_index_serve(const struct darray * arr, void * e,
+status_t darray_idx_serve(const struct darray * arr, void * e,
                             size_t index);
 
 /**
@@ -263,7 +275,7 @@ status_t darray_index_serve(const struct darray * arr, void * e,
  *
  * \return The index, or -1 if not found
  */
-int darray_index_query(const struct darray * arr, const void * e);
+int darray_idx_query(const struct darray * arr, const void * e);
 
 /**
  * \brief Retrieve an item from an darray

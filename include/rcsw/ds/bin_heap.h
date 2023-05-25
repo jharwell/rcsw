@@ -1,7 +1,7 @@
 /**
  * \file bin_heap.h
  * \ingroup ds
- * \brief Implementation of binary heap using a dynamic array.
+ * \brief Implementation of binary heap using a dynamic array (\ref darray).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -21,9 +21,9 @@
 /*******************************************************************************
  * Macro Definitions
  ******************************************************************************/
-#define BIN_HEAP_LCHILD(i) (2*(i))
-#define BIN_HEAP_RCHILD(i) (2*(i)+1)
-#define BIN_HEAP_PARENT(i) ((i)/2)
+#define RCSW_BIN_HEAP_LCHILD(i) (2*(i))
+#define RCSW_BIN_HEAP_RCHILD(i) (2*(i)+1)
+#define RCSW_BIN_HEAP_PARENT(i) ((i)/2)
 
 /*******************************************************************************
  * Structure Definitions
@@ -31,11 +31,22 @@
 /**
  * \brief Binary heap structure.
  *
- * Implemented using a raw array/binary tree.
+ * A heap in which the smallest/largest element is guaranteed to always be on
+ * the top of the heap; other elements can be in any order.
+ *
+ * Implemented using a binary tree inside a \ref darray.
  */
 struct bin_heap {
-    struct darray arr;  /// The underlying array with the actual data.
-    uint32_t flags;     /// Configuration flags.
+  /**
+   * The underlying array with the actual data.
+   *
+   */
+  struct darray arr;
+
+  /**
+   * Configuration flags.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************
@@ -90,16 +101,17 @@ static inline size_t bin_heap_n_free(struct bin_heap * heap) {
 
 /**
  * \brief Calculate the # of bytes that the heap will require if \ref
- * DS_APP_DOMAIN_DATA is passed to manage a specified # of elements of a
+ * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param max_elts # of desired elements the heap will hold
- * \param el_size size of elements in bytes
+ * \param elt_size size of elements in bytes
  *
  * \return The total # of bytes the application would need to allocate
  */
-static inline size_t bin_heap_element_space(size_t max_elts, size_t el_size) {
-    return darray_element_space(max_elts, el_size);
+static inline size_t bin_heap_element_space(size_t max_elts, size_t elt_size) {
+  /* +1 is for the tmp element at index 0 */
+  return darray_element_space(max_elts, elt_size) + elt_size;
 }
 
 /**
@@ -138,7 +150,8 @@ BEGIN_C_DECLS
  * \brief Initialize a heap.
  *
  * \param bin_heap_in The heap handle to be filled (can be NULL if
- * \ref DS_APP_DOMAIN_HANDLE not passed).
+ *                    \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *
  * \param params Initialization parameters.
  *
  * \return The initialized heap, or NULL if an error occurred.
@@ -196,14 +209,18 @@ status_t bin_heap_extract(struct bin_heap * heap, void * e);
  * \brief Delete the key at index i on the heap.
  *
  * \param heap The heap handle.
+ *
  * \param index The index to delete.
- * \param min_val The minimum value of whatever data type the heap is managing
- *                (i.e. for a min heap of ints it would be INT_MIN).
+ *
+ * \param minmax The minimum/maximum value of whatever data type the heap is
+ *               managing (i.e. for a min heap of ints it would be
+ *               INT_INT). Will be a sentinel data in the allocated array for
+ *               the heap.
  *
  * \return \ref status_t.
  */
 status_t bin_heap_delete_key(struct bin_heap* heap, size_t index,
-                             const void* min_val);
+                             const void* minmax);
 
 /**
  * \brief Update the value of key at index i (presumably a decrease, but it
@@ -226,4 +243,3 @@ status_t bin_heap_update_key(struct bin_heap* heap, size_t index,
 void bin_heap_print(const struct bin_heap * heap);
 
 END_C_DECLS
-

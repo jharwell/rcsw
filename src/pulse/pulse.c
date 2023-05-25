@@ -75,15 +75,15 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
 
   uint32_t flags = 0;
   if (!(pulse->flags & PULSE_APP_DOMAIN_POOLS)) {
-    flags = DS_APP_DOMAIN_DATA | DS_APP_DOMAIN_NODES;
+    flags = RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_NODES;
   }
 
   for (i = 0; i < pulse->n_pools; i++) {
-    struct mpool_params mpool_params = {.el_size = params->pools[i].buf_size,
+    struct mpool_params mpool_params = {.elt_size = params->pools[i].buf_size,
                                         .max_elts = params->pools[i].n_bufs,
                                         .nodes = params->pools[i].nodes,
                                         .elements = params->pools[i].elements,
-                                        .flags = flags | DS_APP_DOMAIN_HANDLE |
+                                        .flags = flags | RCSW_DS_NOALLOC_HANDLE |
                                                  MPOOL_REF_COUNT_EN};
     RCSW_CHECK_PTR(mt_mutex_init(&pulse->buffer_pools[i].mutex, MT_APP_DOMAIN_MEM));
     RCSW_CHECK(NULL != mpool_init(&pulse->buffer_pools[i].pool, &mpool_params));
@@ -99,10 +99,10 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
 
   /* initialize subscriber list */
   struct ds_params llist_params = {.max_elts = (int)pulse->max_subs,
-                                   .el_size = sizeof(struct pulse_sub_ent),
+                                   .elt_size = sizeof(struct pulse_sub_ent),
                                    .cmpe = pulse_sub_ent_cmp,
                                    .tag = DS_LLIST,
-                                   .flags = DS_KEEP_SORTED};
+                                   .flags = RCSW_DS_SORTED};
   pulse->sub_list = llist_init(NULL, &llist_params);
   RCSW_CHECK_PTR(pulse->sub_list);
 
@@ -154,7 +154,7 @@ status_t pulse_publish(struct pulse_inst* pulse,
   memcpy(reservation, pkt, pkt_size);
 
   /* release the allocated buffer (i.e. push to receive queues) */
-  SOFT_ASSERT(
+  RCSW_ER_CHECK(
       OK == pulse_publish_release(pulse, pid, bp_ent, reservation, pkt_size),
       "ERROR: Could not release allocated buffer");
   return OK;
@@ -229,16 +229,16 @@ struct mt_queue* pulse_rxq_init(struct pulse_inst* pulse,
   mt_mutex_lock(&(pulse->mutex));
 
   /* If max number rxqs has not been reached then allocate one */
-  SOFT_ASSERT(pulse->n_rxqs < pulse->max_rxqs,
+  RCSW_ER_CHECK(pulse->n_rxqs < pulse->max_rxqs,
               "ERROR: Cannot allocate receive queue (no space)\n");
   struct mt_queue* rxq = pulse->rx_queues + pulse->n_rxqs;
 
   /* create FIFO */
-  struct mt_queue_params params = {.el_size = sizeof(struct pulse_rxq_ent),
+  struct mt_queue_params params = {.elt_size = sizeof(struct pulse_rxq_ent),
                                    .max_elts = n_entries,
                                    .elements = buf_p,
-                                   .flags = DS_APP_DOMAIN_HANDLE};
-  params.flags |= (buf_p != NULL) ? DS_APP_DOMAIN_DATA : 0;
+                                   .flags = RCSW_DS_NOALLOC_HANDLE};
+  params.flags |= (buf_p != NULL) ? RCSW_DS_NOALLOC_DATA : 0;
   RCSW_CHECK(NULL != mt_queue_init(rxq, &params));
 
   pulse->n_rxqs++;
@@ -256,12 +256,12 @@ status_t pulse_subscribe(struct pulse_inst* pulse,
   RCSW_FPC_NV(ERROR, pulse != NULL, queue != NULL);
 
   mt_mutex_lock(&pulse->mutex);
-  SOFT_ASSERT(llist_n_elts(pulse->sub_list) < pulse->max_subs,
+  RCSW_ER_CHECK(llist_n_elts(pulse->sub_list) < pulse->max_subs,
               "ERROR: Cannot subscribe--all subscribers allocated\n");
 
   /* find index for insertion of new subscription */
   struct pulse_sub_ent sub = {.pid = pid, .subscriber = queue};
-  SOFT_ASSERT(
+  RCSW_ER_CHECK(
       NULL == llist_data_query(pulse->sub_list, &sub),
       "ERROR: Cannot subscribe RXQ %zu to PID 0x%08x: duplicate subscription\n",
       queue - pulse->rx_queues,
@@ -288,7 +288,7 @@ status_t pulse_unsubscribe(struct pulse_inst* pulse,
   /* find index for insertion of new subscription */
   struct pulse_sub_ent sub = {.pid = pid, .subscriber = queue};
   struct llist_node* node = llist_node_query(pulse->sub_list, &sub);
-  SOFT_ASSERT(NULL != node,
+  RCSW_ER_CHECK(NULL != node,
               "ERROR: Could not unsubscribe RXQ %zu from PID "
               "0x%08X: PID no such subscription\n",
               queue - pulse->rx_queues,
@@ -357,12 +357,12 @@ static void* pulse_publish_reserve(struct pulse_inst* pulse,
     struct mpool* pool_p = &pulse->buffer_pools[i].pool;
 
     /* can't use this buffer pool--buffers are too small or pool is full */
-    if (pool_p->el_size < pkt_size || mpool_isfull(pool_p)) {
+    if (pool_p->elt_size < pkt_size || mpool_isfull(pool_p)) {
       DBGV(
           "Skipping buffer pool %zu in reservation search: buf_size=%zu, "
           "pkt_size=%zu, full=%d\n",
           i,
-          pool_p->el_size,
+          pool_p->elt_size,
           pkt_size,
           mpool_isfull(pool_p));
     } else {

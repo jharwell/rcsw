@@ -77,7 +77,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   RCSW_FPC_NV(NULL, NULL != params);
 
   struct csmatrix* matrix = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     matrix = matrix_in;
   } else {
     matrix = calloc(1, sizeof(struct csmatrix));
@@ -96,9 +96,9 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
-      .el_size = sizeof(int),
+      .elt_size = sizeof(int),
       .tag = DS_DARRAY,
-      .flags = DS_APP_DOMAIN_HANDLE | DS_MAINTAIN_ORDER};
+      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->inner_indices, &inner_params));
   struct ds_params count_params = {
       .type = {.da =
@@ -108,9 +108,9 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_rows + 1,
-      .el_size = sizeof(int),
+      .elt_size = sizeof(int),
       .tag = DS_DARRAY,
-      .flags = DS_APP_DOMAIN_HANDLE | DS_MAINTAIN_ORDER};
+      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->outer_starts, &count_params));
   RCSW_CHECK(OK == darray_set_n_elts(&matrix->outer_starts, params->n_rows + 1));
   struct ds_params coeff_params = {
@@ -121,9 +121,9 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
-      .el_size = csmatrix_type_size(matrix),
+      .elt_size = csmatrix_type_size(matrix),
       .tag = DS_DARRAY,
-      .flags = DS_APP_DOMAIN_HANDLE | DS_MAINTAIN_ORDER};
+      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
 
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
   DBGD("n_rows=%zu n_nz_elts=%zu flags=0x%08x\n",
@@ -144,9 +144,9 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   struct ds_params llist_params = {.cmpe = csmatrix_col_cmpe,
                                    .printe = NULL,
                                    .max_elts = -1,
-                                   .el_size = sizeof(struct col_pair),
+                                   .elt_size = sizeof(struct col_pair),
                                    .tag = DS_LLIST,
-                                   .flags = DS_APP_DOMAIN_HANDLE};
+                                   .flags = RCSW_DS_NOALLOC_HANDLE};
   matrix->cols = calloc(matrix->n_cols, sizeof(struct llist));
   for (size_t i = 0; i < matrix->n_cols; ++i) {
     /* llist_params.nodes = matrix->nodes + i* llist_node_space(n_elts); */
@@ -182,7 +182,7 @@ void csmatrix_destroy(struct csmatrix* const matrix) {
   /* if (matrix->elts) { */
   /*     free(matrix->elts); */
   /* } */
-  if (!(matrix->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* csmatrix_destroy() */

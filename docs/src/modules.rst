@@ -108,7 +108,7 @@ is in utils. Includes:
 
 - 8, 16 32 bit additive and XOR checksums
 - Common hashing functions
-- Memory manipulation (i.e. read-modify-write with verify)
+- Memory manipulation (e.g., read-modify-write with verify)
 - Timespec comparison/addition/etc.
 - Random other things :-P
 

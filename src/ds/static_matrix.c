@@ -33,7 +33,7 @@ struct static_matrix* static_matrix_init(struct static_matrix* const matrix_in,
             params->type.smat.n_rows > 0,
             params->type.smat.n_cols > 0)
   struct static_matrix* matrix = NULL;
-  if (params->flags & DS_APP_DOMAIN_HANDLE) {
+  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
     matrix = matrix_in;
   } else {
@@ -41,15 +41,15 @@ struct static_matrix* static_matrix_init(struct static_matrix* const matrix_in,
     RCSW_CHECK_PTR(matrix);
   }
   matrix->flags = params->flags;
-  matrix->el_size = params->el_size;
+  matrix->elt_size = params->elt_size;
   matrix->printe = params->printe;
   matrix->n_rows = params->type.smat.n_rows;
   matrix->n_cols = params->type.smat.n_cols;
 
-  if (matrix->flags & DS_APP_DOMAIN_DATA) {
+  if (matrix->flags & RCSW_DS_NOALLOC_DATA) {
     matrix->elements = params->elements;
   } else {
-    matrix->elements = calloc(matrix->n_rows * matrix->n_cols, matrix->el_size);
+    matrix->elements = calloc(matrix->n_rows * matrix->n_cols, matrix->elt_size);
   }
   RCSW_CHECK_PTR(matrix->elements);
   return matrix;
@@ -61,10 +61,10 @@ error:
 
 void static_matrix_destroy(struct static_matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
-  if (!(matrix->flags & DS_APP_DOMAIN_DATA)) {
+  if (!(matrix->flags & RCSW_DS_NOALLOC_DATA)) {
     free(matrix->elements);
   }
-  if (!(matrix->flags & DS_APP_DOMAIN_HANDLE)) {
+  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* static_matrix_destroy() */
@@ -81,7 +81,7 @@ status_t static_matrix_transpose(struct static_matrix* const matrix) {
     for (size_t j = 0; j < i; ++j) {
       ds_elt_swap(static_matrix_access(matrix, i, j),
                   static_matrix_access(matrix, j, i),
-                  matrix->el_size);
+                  matrix->elt_size);
     } /* for(j..) */
   }   /* for(i..) */
   return OK;

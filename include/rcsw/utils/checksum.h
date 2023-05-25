@@ -13,7 +13,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Function Prototypes
@@ -106,23 +106,10 @@ uint32_t achks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
 uint16_t achks8_16(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
 
 /**
- * \brief Compute a 32-bit checksum (add-ignore-carry) over 16-bit values
- *
- * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
- *
- * \param buf Buffer to compute over
- * \param n_bytes # bytes in buffer
- * \param seed Starting value for checksum
- *
- * \return computed 32-bit checksum
- */
-uint32_t achks16_32(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
-
-/**
  * \brief Compute a 32-bit CRC using the work of Gary S. Brown
  *
  *  COPYRIGHT (C) 1986 Gary S. Brown.  You may use this program, or
- *  code or tables extracted from it, as desired without __restrict__ion.
+ *  code or tables extracted from it, as desired without restriction.
  *
  *  First, the polynomial itself and its table of feedback terms.  The
  *  polynomial is

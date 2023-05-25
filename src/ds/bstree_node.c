@@ -11,18 +11,14 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/common/dbg.h"
-#include "rcsw/ds/int_tree.h"
-#include "rcsw/ds/int_tree_node.h"
+#include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/utils/hash.h"
 
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * Functions
+ * API Functions
  ******************************************************************************/
 struct bstree_node* bstree_node_create(const struct bstree* const tree,
                                        struct bstree_node* const parent,
@@ -41,7 +37,7 @@ struct bstree_node* bstree_node_create(const struct bstree* const tree,
    * Data may be NULL if creating the dummy root node
    */
   if (NULL != data_in) {
-    ds_elt_copy(node->data, data_in, tree->el_size);
+    ds_elt_copy(node->data, data_in, tree->elt_size);
   }
 
   /*
@@ -49,7 +45,7 @@ struct bstree_node* bstree_node_create(const struct bstree* const tree,
    */
   if (NULL != key_in) {
     /* copy the key */
-    memcpy(&node->key, key_in, BSTREE_NODE_KEYSIZE);
+    memcpy(&node->key, key_in, RCSW_BSTREE_NODE_KEYSIZE);
   }
 
   /* create linkage */
@@ -83,11 +79,11 @@ void bstree_node_datablock_dealloc(
   if (datablock == NULL) {
     return;
   }
-  if (tree->flags & DS_APP_DOMAIN_DATA) {
-    uint8_t* db_start =
-        tree->elements + ds_calc_meta_space((size_t)tree->max_elts + 2);
-    size_t index = (size_t)(datablock - db_start) / tree->el_size;
-    ((int*)(tree->elements))[index] = -1; /* mark data block as available */
+  if (tree->flags & RCSW_DS_NOALLOC_DATA) {
+    size_t idx = (datablock - tree->space.datablocks) / tree->elt_size;
+
+    /* mark data block as available */
+    allocm_mark_free(tree->space.db_map + idx);
   } else {
     free(datablock);
   }
@@ -96,7 +92,7 @@ void bstree_node_datablock_dealloc(
 void* bstree_node_datablock_alloc(const struct bstree* const tree) {
   void* datablock = NULL;
 
-  if (tree->flags & DS_APP_DOMAIN_DATA) {
+  if (tree->flags & RCSW_DS_NOALLOC_DATA) {
     /*
      * Try to find an available data block. Use hashing/linearing probing
      * instead of linear scanning. This reduces startup times if
@@ -108,18 +104,22 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
                    (uint32_t)((random() & 0xff) << 16) |
                    (uint32_t)((random() & 0xff) << 24);
 
-    size_t index = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
+    size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    datablock = ds_meta_probe(
-        tree->elements, tree->el_size, (size_t)tree->max_elts + 2, &index);
-    RCSW_CHECK_PTR(datablock);
+    int alloc_idx = allocm_probe(tree->space.db_map,
+                                 (size_t)tree->max_elts + 2,
+                                 search_idx);
+    RCSW_CHECK(-1 != alloc_idx);
 
-    ((int*)(tree->elements))[index] = 0; /* mark data block as in use */
+    /* mark data block as in use */
+    allocm_mark_inuse(tree->space.db_map + alloc_idx);
+
+    datablock = tree->space.datablocks + (alloc_idx * tree->elt_size);
   } else {
-    datablock = malloc(tree->el_size);
+    datablock = malloc(tree->elt_size);
     RCSW_CHECK_PTR(datablock);
   }
 
@@ -133,7 +133,7 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
                                       size_t node_size) {
   struct bstree_node* node = NULL;
 
-  if (tree->flags & DS_APP_DOMAIN_NODES) {
+  if (tree->flags & RCSW_DS_NOALLOC_NODES) {
     /*
      * Try to find an available data block. Use hashing/linearing probing
      * instead of linear scanning. This reduces startup times if
@@ -146,17 +146,19 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
                    (uint32_t)((random() & 0xff) << 16) |
                    (uint32_t)((random() & 0xff) << 24);
 
-    size_t index = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
+    size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    node = ds_meta_probe(
-        tree->nodes, node_size, (size_t)tree->max_elts + 2, &index);
+    int alloc_idx = allocm_probe(tree->space.node_map,
+                                 (size_t)tree->max_elts + 2,
+                                 search_idx);
+    RCSW_CHECK(-1 != alloc_idx);
 
-    RCSW_CHECK_PTR(node);
-
-    ((int*)(tree->nodes))[index] = 0; /* mark node as in use */
+    /* mark node as in use */
+    allocm_mark_inuse(tree->space.node_map + alloc_idx);
+    node = tree->space.nodes + alloc_idx;
   }
   /* MY DOMAIN MWAHAHAHA! */
   else {
@@ -171,13 +173,11 @@ error:
 
 void bstree_node_dealloc(const struct bstree* const tree,
                          struct bstree_node* node) {
-  if (tree->flags & DS_APP_DOMAIN_NODES) {
-    struct bstree_node* nodes_start =
-        (struct bstree_node*)(tree->nodes +
-                              ds_calc_meta_space((size_t)tree->max_elts + 2));
-    ptrdiff_t index = node - nodes_start;
+  if (tree->flags & RCSW_DS_NOALLOC_NODES) {
+    ptrdiff_t idx = node - tree->space.nodes;
 
-    ((int*)(tree->nodes))[index] = -1; /* mark node as available */
+    /* mark node as available */
+    allocm_mark_free(tree->space.node_map + idx);
   } else {
     free(node);
   }
@@ -283,10 +283,10 @@ void bstree_node_rotate_left(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & DS_BSTREE_INTERVAL) {
-    int_tree_node_update_max((struct int_tree_node*)node);
-    int_tree_node_update_max((struct int_tree_node*)child);
-  } else if (tree->flags & DS_BSTREE_OS) {
+  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+    inttree_node_update_max((struct inttree_node*)node);
+    inttree_node_update_max((struct inttree_node*)child);
+  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
     ostree_node_update_count((struct ostree_node*)node);
     ostree_node_update_count((struct ostree_node*)child);
   }
@@ -322,10 +322,10 @@ void bstree_node_rotate_right(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & DS_BSTREE_INTERVAL) {
-    int_tree_node_update_max((struct int_tree_node*)node);
-    int_tree_node_update_max((struct int_tree_node*)child);
-  } else if (tree->flags & DS_BSTREE_OS) {
+  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+    inttree_node_update_max((struct inttree_node*)node);
+    inttree_node_update_max((struct inttree_node*)child);
+  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
     ostree_node_update_count((struct ostree_node*)node);
     ostree_node_update_count((struct ostree_node*)child);
   }

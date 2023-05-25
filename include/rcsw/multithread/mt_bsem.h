@@ -14,7 +14,7 @@
  * Includes
  ******************************************************************************/
 #include <time.h>
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/multithread/mt.h"
 #include "rcsw/multithread/mt_cond.h"
 #include "rcsw/multithread/mt_mutex.h"

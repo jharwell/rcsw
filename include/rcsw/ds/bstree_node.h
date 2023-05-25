@@ -17,7 +17,7 @@
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -88,11 +88,7 @@ void bstree_node_dealloc(const struct bstree * tree,
 void *bstree_node_datablock_alloc(const struct bstree * tree);
 
 /**
- * bstree_node_datablock_dealloc() - Deallocate a datablock
- *
- * RETURN:
- *     N/A
- *
+ * \brief Deallocate a datablock
  **/
 void bstree_node_datablock_dealloc(const struct bstree * tree,
                                    uint8_t *datablock);
@@ -215,4 +211,3 @@ struct bstree_node* bstree_node_successor(const struct bstree* tree,
 END_C_DECLS
 
 /* \endcond */
-

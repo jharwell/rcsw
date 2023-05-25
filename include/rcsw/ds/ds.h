@@ -15,7 +15,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
+#include "rcsw/ds/allocm.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -41,17 +42,23 @@ enum ds_tag {
  * Keep the data structure sorted after insertions/deletions. Also implies
  * maintaining the relative ordering of elements.
  *
- * Applies to darray, llist, hashmap
+ * Applies to:
+ *
+ * - \ref darray
+ * - \ref llist
+ * - \ref hashmap
  */
-#define DS_KEEP_SORTED 0x1
+#define RCSW_DS_SORTED 0x1
 
 /**
  * \brief Maintain the relative ordering between elements as they are inserted,
  * but not sort the elements.
  *
- * Applies to darray.
+ * Applies to:
+ *
+ * - \ref darray
  */
-#define DS_MAINTAIN_ORDER 0x2
+#define RCSW_DS_ORDERED 0x2
 
 /**
  * \brief Declare that space for the data structure handle is
@@ -60,7 +67,7 @@ enum ds_tag {
  * The _in parameter is ignored if you do not pass this flag (even if it is
  * non-NULL). Applies to all data structures.
  */
-#define DS_APP_DOMAIN_HANDLE 0x4
+#define RCSW_DS_NOALLOC_HANDLE 0x4
 
 /**
  * \brief Declare that the space for datablocks/data the data structure will
@@ -74,7 +81,9 @@ enum ds_tag {
  * maximum number of elements for the data structure MUST be capped/set
  * (a -1 will cause an error):
  *
- * darray, llist, bstree
+ * - \ref darray
+ * - \ref llist
+ * - \ref bstree
  *
  * The application is responsible for calculating/specifying an appropriate cap
  * value.
@@ -85,7 +94,7 @@ enum ds_tag {
  * data structures require a more specialized macro which can be found in their
  * respective header file.
  */
-#define DS_APP_DOMAIN_DATA 0x8
+#define RCSW_DS_NOALLOC_DATA 0x8
 
 /**
  * \brief Declare that space for the nodes/metadata of the data
@@ -96,13 +105,18 @@ enum ds_tag {
  * malloc()ing for the space.
  *
  * Applies to:
- * darray, llist, bstree, hashmap
+ *
+ * - \ref darray
+ * - \ref llist
+ * - \ref bstree
+ * - \ref hashmap
  *
  * If this flag is passed to the following data structure init() functions,the
  * maximum number of elements for the data structure MUST be capped (a -1 will
  * cause an error):
  *
- * darray, llist, bstree
+ * - \ref llist
+ * - \ref bstree
  *
  * The application is responsible for calculating/specifying an appropriate cap
  * value.
@@ -112,26 +126,26 @@ enum ds_tag {
  * for the data structure. (i.e. \ref bstree_node_space() for the binary search
  * tree).
  */
-#define DS_APP_DOMAIN_NODES 0x10
+#define RCSW_DS_NOALLOC_NODES 0x10
 
 /**
- * \brief Indicate that the hashmap should perform linear probing if the bucket that an item
- * hashes into is currently full.
+ * \brief Indicate that the \ref hashmap should perform linear probing if the
+ * bucket that an item hashes into is currently full.
  *
  * Results in greater hashmap utilization, but possibly longer
  * insert/remove/lookup times.
  */
-#define DS_HASHMAP_LINEAR_PROBING 0x20
+#define RCSW_DS_HASHMAP_LINPROB 0x20
 
 /**
- * \brief Indicate that a ringbuffer should act as a FIFO (i.e., items are never
- * overrwritten/only added to ringbuffer when the ringbuffer is not currently
- * full.
+ * \brief Indicate that a \ref rbuffer should act as a FIFO (i.e., items are
+ * never overrwritten/only added to ringbuffer when the ringbuffer is not
+ * currently full.
  */
-#define DS_RBUFFER_AS_FIFO 0x40
+#define RCSW_DS_RBUFFER_AS_FIFO 0x40
 
 /**
- * \brief Indicate that a linked list should NOT to allocate/deallocate a
+ * \brief Indicate that a \ref llist should NOT to allocate/deallocate a
  * datablock for a llist_node when the llist_node is allocated/deallocated. This
  * is useful when you are pointing to valid datablocks that are managed by
  * another data structure. An example use case would be an LRU list pointing to
@@ -143,57 +157,58 @@ enum ds_tag {
  *    deallocated, but the datablocks for those llist_nodes will still be
  *    allocated, and (possibly) irretrievable.
  *
- * 2. \ref llist_filter() works the same as \ref llist_copy2() (a conditional copy)
+ * 2. \ref llist_filter() works the same as \ref llist_copy2() (a conditional
+ *    copy)
  *
  */
-#define DS_LLIST_NO_DB 0x80
+#define RCSW_DS_LLIST_NO_DB 0x80
 
 /**
- * \brief Indicate that a linked list should NOT use compare function when
+ * \brief Indicate that a \ref llist should NOT use compare function when
  * checking for equality/searching the linked list. Instead, the pointers for
  * llist_node->data are compared. This is useful when you have a pair of linked
  * lists as free/alloc lists which don't point to actual data, but only carve up
  * a chunk of memory.
  *
- * This flag implies \ref DS_LLIST_NO_DB.
+ * This flag implies \ref RCSW_DS_LLIST_NO_DB.
  */
-#define DS_LLIST_PTR_CMP 0x100
+#define RCSW_DS_LLIST_PTR_CMP 0x100
 
 /**
- * \brief Indicate that a binary search tree should function as a red-black tree
- * and rebalance itself after insertions and deletions.
+ * \brief Indicate that a \ref bstree should function as a red-black tree and
+ * rebalance itself after insertions and deletions.
  */
-#define DS_BSTREE_REDBLACK 0x200
+#define RCSW_DS_BSTREE_RB 0x200
 
 /**
- * \brief Indicate that a binary search tree should function as an interval tree.
+ * \brief Indicate that a \ref bstree should function as an interval tree.
  * tree.
  *
- * It has no effect unless the \ref DS_BSTREE_REDBLACK flag is also passed. You
+ * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed. You
  * must also specify the correct element size for an interval during
  * initialization (this is not done automatically).
  */
-#define DS_BSTREE_INTERVAL 0x400
+#define RCSW_DS_BSTREE_INTERVAL 0x400
 
 /**
- * \brief Indicate that a binary search tree should function as an Order Statistics
- * Tree.
+ * \brief Indicate that a \ref bstree should function as an Order
+ * Statistics Tree.
  *
- * It has no effect unless the \ref DS_BSTREE_REDBLACK flag is also passed.
+ * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed.
  */
-#define DS_BSTREE_OS 0x800
+#define RCSW_DS_BSTREE_OS 0x800
 
 /**
- * \brief Indicate that a heap should function as a min heap. If you do not pass
- * this flag, all heaps will function as max heaps.
+ * \brief Indicate that a \ref bin_heap should function as a min heap. If you do
+ * not pass this flag, all heaps will function as max heaps.
  */
-#define DS_RCSW_MIN_HEAP 0x1000
+#define RCSW_DS_BINHEAP_MIN 0x1000
 
 /**
  * \brief If you want to define additional flags for derived data structures,
  * start with this one to ensure no conflicts.
  */
-#define DS_EXT_FLAGS 0x2000
+#define RCSW_DS_FLAGS_EXT 0x2000
 
 /*******************************************************************************
  * Structure Definitions
@@ -204,7 +219,7 @@ enum ds_tag {
 struct da_params {
   /**
    * Initial size of the array (must be < max_elts). Ignored if \ref
-   * DS_APP_DOMAIN_DATA is passed.
+   * RCSW_DS_NOALLOC_DATA is passed.
    */
   size_t init_size;
 };
@@ -219,7 +234,7 @@ struct hm_params {
   /** Hashing function to use. Must be non-NULL. */
   uint32_t (*hash)(const void *const key, size_t len);
 
-  size_t bsize;  /// Initial size of hash buckets (buckets can grow)
+  size_t bsize;  /// Initial size of hash buckets
   size_t n_buckets;  /// Fixed number of buckets for hashmap
 
   /**
@@ -240,7 +255,6 @@ struct bhp_params {
 
 /**
  * \brief Static matrix initialization parameters.
- *
  */
 struct static_matrix_params {
   size_t n_rows;  /// # rows in matrix.
@@ -249,7 +263,6 @@ struct static_matrix_params {
 
 /**
  * \brief Dynamic matrix initialization parameters.
- *
  */
 struct dynamic_matrix_params {
   size_t n_rows;  /// # rows in matrix.
@@ -260,7 +273,6 @@ struct dynamic_matrix_params {
 
 /**
  * \brief Adjacency matrix initialization parameters.
- *
  */
 struct adj_matrix_params {
   /**
@@ -277,7 +289,6 @@ struct adj_matrix_params {
 
 /**
  * \brief Adjacency list initialization parameters.
- *
  */
 struct adj_list_params {
   /**
@@ -291,9 +302,10 @@ struct adj_list_params {
 };
 
 /**
- * A single initialization parameters structure for all general purpose data
- * structures. Some data structures require additional parameters which are
- * captured in the union.
+ * \ref A single parameters structure for all general purpose data structures.
+ *
+ * Some data structures require additional parameters which are captured in the
+ * union.
  */
 struct ds_params {
   union {
@@ -308,12 +320,24 @@ struct ds_params {
   /**
    * For comparing elements.
    *
-   * Can be NULL for dynamic array, linked list, ringbuffer, fifo, hashmap.
+   * Cannot  be NULL for:
    *
-   * Cannot be NULL for binary search tree (and data structures derived from
-   * binary search tree), binary heap.
+   * \ref bin_heap
+   *
+   * For data structures for which this callback is optional, if NULL, some
+   * operations such as sorting will be disabled.
    */
   int (*cmpe)(const void *const e1, const void *const e2);
+
+  /**
+   * For comparing keys associated with elements.
+   *
+   * Cannot be NULL for:
+   *
+   * - \ref bstree (and data structures derived from binary search tree)
+   * - \ref bin_heap
+   */
+  int (*cmpkey)(const void *const e1, const void *const e2);
 
   /**
    * For printing an element. Can be NULL for any data structure; only used
@@ -327,7 +351,7 @@ struct ds_params {
    * structure is taking care of. For example, if a linked list is used, then
    * this is a pointer to a block of memory that the linked list data
    * structure will use to store its nodes in, instead of malloc()ing for
-   * them. Ignored unless \ref DS_APP_DOMAIN_NODES is passed.
+   * them. Ignored unless \ref RCSW_DS_NOALLOC_NODES is passed.
    *
    * Used by linked list, binary search tree (and derived structures), hashmap.
    */
@@ -337,7 +361,7 @@ struct ds_params {
    * Pointer to space the application has allocated for storing the actual
    * data that the data structure will be managing. This is NOT the same
    * as the space for the data structure itself. Ignored unless \ref
-   * DS_APP_DOMAIN_DATA is passed.
+   * RCSW_DS_APP_NOALLOC_DATA is passed.
    *
    * Used by all data structures.
    */
@@ -350,7 +374,11 @@ struct ds_params {
    * they are initializing is the one they intended.
    */
   enum ds_tag tag;
-  size_t el_size;   /// size of elements in bytes.
+
+  /**
+   * size of elements in bytes.
+   */
+  size_t elt_size;
 
   /**
    * Maximum # of elements allowed. -1 = no upper limit.
@@ -358,7 +386,11 @@ struct ds_params {
    * Used by all data structures except hashmap.
    */
   int max_elts;
-  uint32_t flags;  /// Initialization flags
+
+  /**
+   * Initialization flags
+   */
+  uint32_t flags;
 };
 
 /**
@@ -391,34 +423,38 @@ BEGIN_C_DECLS
  * \brief Calculate how large the chunk of memory for the metadata for a data
  * structure needs to be, given a max # of elements.
  *
- * Used in conjunction with \ref DS_APP_DOMAIN_DATA and/or \ref DS_APP_DOMAIN_NODES for
- * data structures requiring metadata.
+ * Used in conjunction with \ref RCSW_DS_NOALLOC_DATA and/or \ref
+ * RCSW_DS_NOALLOC_NODES for data structures requiring metadata.
+ *
+ * You really shouldn't use this function.
  *
  * \param max_elts Max # elements the structure will manage.
  *
  * \return Total # of bytes required.
  */
-static inline size_t ds_calc_meta_space(size_t max_elts) {
-  return sizeof(int) * max_elts;
+static inline size_t ds_meta_space(size_t max_elts) {
+  return sizeof(struct allocm_entry) * max_elts;
 }
 
 /**
- * \brief Calculate how large the chunk of memory for the elements that a data
+ * \brief Calculate how large the chunk of memory for some "element" that a data
  * structure will manage needs to be, given a max # of elements and element
- * size.
+ * size. "Element" can refer to the nodes needed by some data structures, or the
+ * actual elements the data structure will manage.
  *
  * For data structures that do NOT require metadata (FIFOs, ringbuffers, etc.).
+ *
  * You really shouldn't use this function--use the specific calculation
  * functions for each data structure found in their respective header
- * files. Used in conjunction with \ref DS_APP_DOMAIN_DATA.
+ * files. Used in conjunction with \ref RCSW_DS_NOALLOC_DATA.
  *
  * \param max_elts Max # elements the structure will manage
- * \param el_size Size of each element in bytes
+ * \param elt_size Size of each element in bytes
  *
  * \return Total # of bytes required
  */
-static inline size_t ds_calc_element_space1(size_t max_elts, size_t el_size) {
-  return max_elts * el_size;
+static inline size_t ds_elt_space_simple(size_t max_elts, size_t elt_size) {
+  return max_elts * elt_size;
 }
 
 /**
@@ -427,18 +463,18 @@ static inline size_t ds_calc_element_space1(size_t max_elts, size_t el_size) {
  * size.
  *
  * For data structures that DO require metadata (trees, linked lists, etc.).
+ *
  * You really shouldn't use this function--use the specific calculation
  * functions for each data structure found in their respective header
- * files. Used in conjunction with \ref DS_APP_DOMAIN_DATA.
+ * files. Used in conjunction with \ref RCSW_DS_NOALLOC_DATA.
  *
  * \param max_elts Max # elements the structure will manage
- * \param el_size Size of each element in bytes
+ * \param elt_size Size of each element in bytes
  *
  * \return Total # of bytes required
  */
-static inline size_t ds_calc_element_space2(size_t max_elts, size_t el_size) {
-  return ds_calc_meta_space(max_elts) +
-      ds_calc_element_space1(max_elts, el_size);
+static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
+  return ds_meta_space(max_elts) + ds_elt_space_simple(max_elts, elt_size);
 }
 
 /*******************************************************************************
@@ -453,19 +489,7 @@ static inline size_t ds_calc_element_space2(size_t max_elts, size_t el_size) {
  */
 void *ds_iter_next(struct ds_iterator *iter);
 
-/**
- * \brief Search a metadata area for a free datablock/node
- *
- * \param mem_p Pointer to the start of elements/nodes metadata block
- * \param ent_size Size of the entities managed by the metadata section
- * \param max_elts Max # of elements for the data structure (i.e. the size of
- * the metadata area)
- * \param index Index to start probing at. Filled with the found index
- *
- * \return Pointer to free entity, or NULL if none found
- **/
-void *ds_meta_probe(uint8_t *mem_p, size_t ent_size, size_t max_elts,
-                    size_t *index);
+
 /**
  * \brief Initialize an iterator
  *
@@ -490,11 +514,11 @@ struct ds_iterator * ds_iter_init(enum ds_tag tag, void *ds,
  *
  * \param elt1 Destination.
  * \param elt2 Source.
- * \param el_size Size of elements in bytes.
+ * \param elt_size Size of elements in bytes.
  *
  * \return \ref status_t
  */
-status_t ds_elt_copy(void *elt1, const void *elt2, size_t el_size);
+status_t ds_elt_copy(void *elt1, const void *elt2, size_t elt_size);
 
 /**
  * \brief Utility function to clear an element.
@@ -503,11 +527,11 @@ status_t ds_elt_copy(void *elt1, const void *elt2, size_t el_size);
  * size of a double, pointers are used.
  *
  * \param elt Element to clear.
- * \param el_size Size of element in bytes.
+ * \param elt_size Size of element in bytes.
  *
  * \return \ref status_t
  */
-status_t ds_elt_clear(void *elt, size_t el_size);
+status_t ds_elt_clear(void *elt, size_t elt_size);
 
 /**
  * \brief Utility function to check if an element is 0.
@@ -516,11 +540,11 @@ status_t ds_elt_clear(void *elt, size_t el_size);
  * pointers are used.
  *
  * \param elt Element to check.
- * \param el_size Size of element in bytes.
+ * \param elt_size Size of element in bytes.
  *
  * \return \ref bool_t
  */
-bool_t ds_elt_zchk(void *elt, size_t el_size);
+bool_t ds_elt_zchk(void *elt, size_t elt_size);
 
 /**
  * \brief Utility function to swap two elements.
@@ -530,10 +554,10 @@ bool_t ds_elt_zchk(void *elt, size_t el_size);
  *
  * \param elt1 Element #1.
  * \param elt2 Element #2.
- * \param el_size Size of elements in bytes.
+ * \param elt_size Size of elements in bytes.
  *
  * \return \ref status_t
  */
-status_t ds_elt_swap(void *elt1, void *elt2, size_t el_size);
+status_t ds_elt_swap(void *elt1, void *elt2, size_t elt_size);
 
 END_C_DECLS

@@ -47,7 +47,7 @@ struct dynamic_matrix {
   size_t n_rows;        /// # of rows in matrix.
   size_t n_cols;        /// # of columns in matrix.
   uint32_t flags;       /// Run-time configuration flags.
-  size_t el_size;       /// Size of matrix elements in bytes.
+  size_t elt_size;       /// Size of matrix elements in bytes.
 
   /** For printing an element. Can be NULL. */
   void (*printe)(const void *const e);
@@ -81,13 +81,13 @@ static inline void* dynamic_matrix_access(const struct dynamic_matrix* const mat
  *
  * \param n_rows Initial # rows.
  * \param n_cols Initial # columns.
- * \param el_size Size of the elements in bytes.
+ * \param elt_size Size of the elements in bytes.
  *
  * \return The # of bytes required.
  */
 static inline size_t dynamic_matrix_space(size_t n_rows, size_t n_cols,
-                                         size_t el_size) {
-  return darray_element_space(n_cols, el_size) * n_rows +
+                                         size_t elt_size) {
+  return darray_element_space(n_cols, elt_size) * n_rows +
       darray_element_space(n_rows, sizeof(struct darray));
 }
 
@@ -103,7 +103,7 @@ static inline size_t dynamic_matrix_space(size_t n_rows, size_t n_cols,
 static inline status_t dynamic_matrix_clear(struct dynamic_matrix* const matrix,
                                            size_t u, size_t v) {
     RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
-    ds_elt_clear(dynamic_matrix_access(matrix, u, v), matrix->el_size);
+    ds_elt_clear(dynamic_matrix_access(matrix, u, v), matrix->elt_size);
     return OK;
 }
 
@@ -114,7 +114,7 @@ static inline status_t dynamic_matrix_clear(struct dynamic_matrix* const matrix,
  * \brief Initialize a dynamic matrix.
  *
  * \param matrix_in An application allocated handle for the dynamic matrix. Can
- * be NULL, depending on if \ref DS_APP_DOMAIN_HANDLE is passed or not.
+ * be NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized matrix, or NULL if an error occurred.

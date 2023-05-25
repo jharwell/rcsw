@@ -17,6 +17,14 @@ libra_configure_version(
   rcsw_components_SRC
   )
 
+if (NOT RCSW_STDIO_PRINTF_BUFSIZE)
+  set(RCSW_STDIO_PRINTF_BUFSIZE 256)
+endif()
+
+if (NOT RCSW_STDIO_PRINTF_ADD_CR)
+  set(RCSW_STDIO_PRINTF_ADD_CR YES)
+endif()
+
 ################################################################################
 # Components
 ################################################################################
@@ -140,6 +148,18 @@ set_target_properties(${rcsw_LIBRARY}
   )
 
 ########################################
+# Compile Definitions
+########################################
+add_compile_definitions(${rcsw_LIBRARY}
+  PRIVATE
+  RCSW_STDIO_PUTCHAR=myputchar
+)
+# add_compile_definitions(${rcsw_LIBRARY}
+#   PRIVATE
+#   RCSW_STDIO_GETCHAR=mygetchar
+# )
+
+########################################
 # Include directories
 ########################################
 target_include_directories(
@@ -203,6 +223,5 @@ message("-----------------------------------------------------------------------
 message("")
 
 message(STATUS "Version                               : rcsw_VERSION=${rcsw_VERSION}")
-
 message("")
 message("--------------------------------------------------------------------------------")

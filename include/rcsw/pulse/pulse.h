@@ -19,7 +19,7 @@
 #include "rcsw/multithread/mt_cvm.h"
 #include "rcsw/multithread/mt_mutex.h"
 #include "rcsw/multithread/mt_queue.h"
-#include "rcsw/common/common.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/multithread/mpool.h"
 #include "rcsw/ds/rbuffer.h"
 
@@ -191,8 +191,8 @@ static inline uint8_t * pulse_get_top(struct pulse_inst* const pulse,
 /*******************************************************************************
  * Inline Functions
  ******************************************************************************/
-static inline size_t pulse_pool_space(size_t el_size, size_t max_elts) {
-    return mpool_element_space(el_size, max_elts);
+static inline size_t pulse_pool_space(size_t elt_size, size_t max_elts) {
+    return mpool_element_space(elt_size, max_elts);
 }
 
 static inline size_t pulse_node_space(size_t max_elts) {
