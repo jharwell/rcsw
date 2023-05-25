@@ -37,10 +37,24 @@ Reusable C Software (RCSW)
 
 
 RCSW is a collection of reusable (but not necessarily generic) C software
-modules, in the style of the C++ STL.
+modules, in the style of the C++ STL. Briefly, it contains:
 
-Project documentation is here: `<https://jharwell.github.io/rcsw>`_.
+- Data structures: ringbuffer, linked list, FIFIO, dynamic array, binary search
+  tree, red-black tree, order statistics tree, hashmap, binary heap, etc.
 
+- Algorithms: binary search, quirksort, mergesort, insertion sort, radix sort,
+  etc.
+
+- Multithreading: memory pool, binary semaphore, mutex, producer-consumer queue,
+  reader/writer lock, etc.
+
+- Simple I/O: re-implementation of the libc routines needed to make printf()
+  work; very useful in base-metal environments (e.g., bootstraps)
+
+- Utils: XOR checksums, hashing functions, bit masking, memory manipulation
+  (e.g., read-modify-write with verify)
+
+Full project documentation is here: `<https://jharwell.github.io/rcsw>`_.
 
 License
 =======

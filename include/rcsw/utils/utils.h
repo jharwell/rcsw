@@ -45,6 +45,26 @@
  * Bit Manipulation Macros
  ******************************************************************************/
 /**
+ * \def RCSW_MASK32_U16(v) - Get the upper 16 bits of a 32 bit integer.
+ */
+#define RCSW_MASK32_U16(v) ((v) & 0xFFFF0000)
+
+/**
+ * \def RCSW_MASK32_U16(v) - Get the lower 16 bits of a 32 bit integer.
+ */
+#define RCSW_MASK32_L16(v) ((v) & 0x0000FFFF)
+
+/**
+ * \def RCSW_MASK64_U32(v) - Get the upper 32 bits of a 64 bit integer.
+ */
+#define RCSW_MASK64_U32(v) ((v) & 0xFFFFFFFF00000000)
+
+/**
+ * \def RCSW_MASK64_U32(v) - Get the lower 32 bits of a 64 bit integer.
+ */
+#define RCSW_MASK64_L32(v) ((v) & 0x00000000FFFFFFFF)
+
+/**
  * Reversal macros (MSB becomes LSB and vice versa) This is NOT the same as
  * endianness swapping.
  */
@@ -179,34 +199,36 @@ extern const uint8_t util_revtable[];
  ******************************************************************************/
 
 /**
- * \brief Reverse the bytes in a byte array.
+ * \brief Reverse the bytes an array.
  *
  * \param arr The byte array to reverse.
+ *
  * \param size # of bytes in array.
  *
  */
-void reverse_byte_array(void * arr, size_t size);
+void arr8_reverse(void* arr, size_t size);
 
 /**
- * \brief Generate permutations from elements within an array from
- * element "start" to element "size" 1.
+ * \brief Generate permutations from elements within an array.
+ *
+ * From element "start" to element "size" - 1.
  *
  * \param arr The array of integers to permute.
  * \param size # elements in array.
- * \param start Start position of array to permute
+ * \param start Start position in array to permute
  * \param fp A callback which each permutation is handed to in turn.
  */
-void arr_permute(uint32_t *arr, size_t size, size_t start,
-                 void (*fp)(uint32_t * arr));
+void arr32_permute(uint32_t *arr, size_t size, size_t start,
+                   void (*fp)(uint32_t * elt));
 
 /**
- * \brief Swap two elements in an array
+ * \brief Swap two 32-bit elements in an array.
  *
  * \param v The array
  * \param i Index #1
  * \param j Index #2
  */
-void arr_el_swap(uint32_t * v, size_t i, size_t j);
+void arr32_el_swap(uint32_t * v, size_t i, size_t j);
 
 /**
  * \brief Generate a random alpha-numeric string of known length.
@@ -223,15 +245,17 @@ status_t string_gen(char * buf, size_t len);
 
 /**
  *
- * \brief Reflect N bits about the center position. I'm not sure how this would
- * every be useful, but here it is.
+ * \brief Reflect N bits about the center position.
+ *
+ * Starting from the LSB up to \p n_bits, reflect around the dividing line
+ * between bits 14-15.
  *
  * \param data The data to reflect.
  * \param n_bits # of bits to reflect.
  *
  * \return The reflected data.
  */
-uint32_t reflect(uint32_t data, size_t n_bits) RCSW_CONST;
+uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
 END_C_DECLS
 

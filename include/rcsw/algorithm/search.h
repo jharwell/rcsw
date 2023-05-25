@@ -57,20 +57,26 @@ int bsearch_iter(const void * a, const void * e,
 /**
  * \brief Search a sorted array of data using binary search, recursive version
  *
- * \param a The array to search
- * \param e The element to search for
+ * \param in The array to search
+ * \param elt The element to search for
  * \param cmpe Callback to compare two elements
  * \param el_size Size of elements in bytes
- * \param high Highest index in the array to consider when searching. This should usually be max
- * index of the array.
- * \param low Lowest index in the array to consider when searching. This should usually be 0.
  *
- * \return The index, or -1 if not found or an ERROR occurred
+ * \param high Highest index in the array to consider when searching. This
+ *             should usually be max index of the array.
+ *
+ * \param low Lowest index in the array to consider when searching. This should
+ *            usually be 0.
+ *
+ * \return The index, or -1 if not found/an error occurred.
  *
  */
-int bsearch_rec(const void * a, const void * e,
+int bsearch_rec(const void * arr,
+                const void * e,
                 int (*cmpe)(const void * e1, const void * e2),
-                size_t el_size, size_t low, size_t high);
+                size_t el_size,
+                size_t low,
+                size_t high);
 END_C_DECLS
 
 #endif /* INCLUDE_RCSW_ALGORITHM_SEARCH_H_  */

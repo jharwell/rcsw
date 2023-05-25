@@ -97,7 +97,7 @@ A re-implementation of the libc routines needed to make printf() work
 
 I originally did this as a programming exercise, but have found it very useful
 for debugging in bare metal/embedded environments when libc is not available
-(i.e. bootstraps).
+(e.g., bootstraps).
 
 Utils
 =====

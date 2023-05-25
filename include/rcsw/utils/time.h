@@ -1,5 +1,5 @@
 /**
- * \file time_utils.h
+ * \file time.h
  * \ingroup utils
  * \brief Collection of timespec/time manipulation functions.
  *
@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_TIME_UTILS_H_
-#define INCLUDE_RCSW_UTILS_TIME_UTILS_H_
+#ifndef INCLUDE_RCSW_UTILS_TIME_H_
+#define INCLUDE_RCSW_UTILS_TIME_H_
 
 /*******************************************************************************
  * Includes
@@ -68,4 +68,4 @@ double time_monotonic_sec(void);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_TIME_UTILS_H_ */
+#endif /* INCLUDE_RCSW_UTILS_TIME_H_ */

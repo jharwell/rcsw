@@ -13,7 +13,7 @@
 #include "rcsw/common/common.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
-#include "rcsw/utils/time_utils.h"
+#include "rcsw/utils/time.h"
 
 /*******************************************************************************
  * API Functions

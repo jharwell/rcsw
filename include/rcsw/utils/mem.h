@@ -183,12 +183,13 @@ status_t mem_dump16v(const void * buf, size_t n_bytes);
 void mem_dump8v(const void * buf, size_t n_bytes);
 
 /**
- * \brief Byte swap memory in 1 byte chunks (upper 8/lower 8)
+ * \brief Byte swap memory in 1 byte chunks (upper 8/lower 8) in place.
  *
  * \param buf Memory to swap. Must be 16-bit aligned or no action is
- * performed.
+ *            performed.
+ *
  * \param n_bytes # bytes to swap. Must be 16-bit aligned or no action is
- * performed.
+ *                performed.
  *
  * \return \ref status_t
  *
@@ -196,12 +197,13 @@ void mem_dump8v(const void * buf, size_t n_bytes);
 status_t mem_bswap16(uint16_t * buf, size_t n_bytes);
 
 /**
- * \brief Byte swap memory in 2 byte chunks (upper 16/lower 16)
+ * \brief Byte swap memory in 2 byte chunks (upper 16/lower 16) in place.
  *
  * \param buf Memory to swap. Must be 32-bit aligned or no action is
- * performed.
+ *            performed.
+ *
  * \param n_bytes # bytes to swap. Must be 32-bit aligned or no action is
- * performed.
+ *                performed.
  *
  * \return \ref status_t
  *

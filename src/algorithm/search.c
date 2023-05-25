@@ -42,27 +42,36 @@ int bsearch_iter(const void* const a,
   return -1;
 } /* bsearch_iter() */
 
-int bsearch_rec(const void* const a,
-                const void* const e,
+int bsearch_rec(const void* const in,
+                const void* const elt,
                 int (*cmpe)(const void* const e1, const void* const e2),
                 size_t el_size,
                 size_t low,
                 size_t high) {
-  RCSW_FPC_NV(-1, NULL != a, NULL != e, NULL != cmpe);
-
+  RCSW_FPC_NV(-1, NULL != in, NULL != elt, NULL != cmpe);
+  /* printf("low: %zu, high: %zu\n", low,high); */
   if (low > high) {
     return -1;
   }
   size_t mid = (high + low) / 2;
-  const uint8_t* const arr = a;
-  int rval = cmpe(e, arr + (el_size * mid));
+  const uint8_t* const arr = in;
+  int rval = cmpe(elt, arr + (el_size * mid));
 
   if (0 == rval) { /* found a match */
     return (int)mid;
   } else if (rval < 0) { /* lower half */
-    return bsearch_rec(arr, e, cmpe, el_size, low, mid - 1);
+    if (low == mid) {
+      return -1; /* no match */
+    } else {
+      return bsearch_rec(arr, elt, cmpe, el_size, low, mid - 1);
+    }
+
   } else { /* upper half */
-    return bsearch_rec(arr, e, cmpe, el_size, mid + 1, high);
+    if (high == mid) {
+      return -1; /* no match */
+    } else {
+      return bsearch_rec(arr, elt, cmpe, el_size, mid + 1, high);
+    }
   }
 } /* bsearch_rec() */
 

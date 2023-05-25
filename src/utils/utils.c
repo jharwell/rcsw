@@ -63,12 +63,11 @@ status_t string_gen(char* const buf, size_t len) {
   return OK;
 } /* string_gen() */
 
-uint32_t reflect(uint32_t data, size_t n_bits) {
+uint32_t reflect32(uint32_t data, size_t n_bits) {
   uint32_t reflection = 0x00000000;
-  uint8_t bit;
 
   /* reflect the data about the center bit */
-  for (bit = 0; bit < n_bits; ++bit) {
+  for (uint8_t bit = 0; bit < n_bits; ++bit) {
     /* if the LSB bit is set, set the reflection of it */
     if (data & 0x01) {
       reflection |= (1 << ((n_bits - 1) - bit));
@@ -76,45 +75,47 @@ uint32_t reflect(uint32_t data, size_t n_bits) {
     data = (data >> 1);
   }
   return reflection;
-} /* reflect() */
+} /* reflect32() */
 
-void reverse_byte_array(void* const arr, size_t size) {
+void arr8_reverse(void* const arr, size_t size) {
   for (size_t i = 0, j = size - 1; i < j; i++, j--) {
-    char tmp = ((char*)arr)[i];
-    ((char*)arr)[i] = ((char*)arr)[j];
-    ((char*)arr)[j] = tmp;
+    uint8_t tmp = ((uint8_t*)arr)[i];
+    ((uint8_t*)arr)[i] = ((uint8_t*)arr)[j];
+    ((uint8_t*)arr)[j] = tmp;
   } /* for() */
-} /* reverse_byte_array() */
+} /* arr8_reverse() */
 
-void arr_permute(uint32_t* arr,
+void arr32_permute(uint32_t* arr,
                  size_t size,
                  size_t start,
-                 void (*fp)(uint32_t* const arr)) {
-  /* if we are at the end of the array, we have one permutation we
-   * can use */
+                 void (*fp)(uint32_t* const elt)) {
+  /*
+   * If we are at the end of the array, we have one permutation we can use
+   */
   if (start == size) {
     fp(arr);
   } else {
-    /* recursively explore the permutations starting
-     * at index start going through index size1
+    /*
+     * recursively explore the permutations starting
+     * at index start going through index size - 1
      */
     for (size_t j = start; j < size; ++j) {
       /* try the array with start and j switched */
-      arr_el_swap(arr, start, j);
-      arr_permute(arr, size, start + 1, fp);
+      arr32_el_swap(arr, start, j);
+      arr32_permute(arr, size, start + 1, fp);
 
       /* swap them back the way they were */
-      arr_el_swap(arr, start, j);
+      arr32_el_swap(arr, start, j);
     }
   }
 } /* arr_permute() */
 
-void arr_el_swap(uint32_t* const v, size_t i, size_t j) {
+void arr32_el_swap(uint32_t* const v, size_t i, size_t j) {
   uint32_t t;
 
   t = v[i];
   v[i] = v[j];
   v[j] = t;
-} /* arr_el_swap() */
+} /* arr_el32_swap() */
 
 END_C_DECLS

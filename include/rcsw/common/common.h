@@ -148,15 +148,37 @@
 #define RCSW_IS_EVEN(n) (!RCSW_IS_ODD((n)))
 
 /**
- * \def RCSW_IS_BETWEEN(n, low, high)
+ * \def RCSW_IS_BETWEENC(n, low, high)
  *
  * Readability macro for determining if something is between an upper and lower
- * bound (inclusive).
+ * bound (closed=inclusive).
  *
  * You can obviously do this without a macro, but this is (1) more self
  * documenting, and (2) less error prone.
  */
-#define RCSW_IS_BETWEEN(n, low, high) ((n) >= (low) && (n) <= (high))
+#define RCSW_IS_BETWEENC(n, low, high) ((n) >= (low) && (n) <= (high))
+
+/**
+ * \def RCSW_IS_BETWEENO(n, low, high)
+ *
+ * Readability macro for determining if something is between an upper and lower
+ * bound (open=exclusive).
+ *
+ * You can obviously do this without a macro, but this is (1) more self
+ * documenting, and (2) less error prone.
+ */
+#define RCSW_IS_BETWEENO(n, low, high) ((n) > (low) && (n) < (high))
+
+/**
+ * \def RCSW_IS_BETWEENHO(n, low, high)
+ *
+ * Readability macro for determining if something is between an upper and lower
+ * bound (half open=includes lb but not ub).
+ *
+ * You can obviously do this without a macro, but this is (1) more self
+ * documenting, and (2) less error prone.
+ */
+#define RCSW_IS_BETWEENHO(n, low, high) ((n) >= (low) && (n) < (high))
 
 /*******************************************************************************
  * Other Macros

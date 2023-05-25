@@ -165,8 +165,7 @@ status_t darray_insert(struct darray* const arr,
    */
   if (arr->flags & DS_MAINTAIN_ORDER) {
     /* shift all elements between index and end of list over by one */
-    size_t i;
-    for (i = arr->current; i > index; --i) {
+    for (size_t i = arr->current; i > index; --i) {
       ds_elt_copy(darray_data_get(arr, i),
                   darray_data_get(arr, i - 1),
                   arr->el_size);
@@ -237,13 +236,13 @@ int darray_index_query(const struct darray* const arr, const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != e, NULL != arr->cmpe);
 
   int rval = -1;
+
   if (arr->sorted) {
     DBGD("Currently sorted: performing binary search\n");
     rval = bsearch_rec(
         arr->elements, e, arr->cmpe, arr->el_size, 0, (arr->current - 1));
   } else {
-    size_t i;
-    for (i = 0; i < arr->current; ++i) {
+    for (size_t i = 0; i < arr->current; ++i) {
       if (arr->cmpe(e, darray_data_get(arr, i)) == 0) {
         rval = (int)i;
       }
@@ -349,7 +348,6 @@ struct darray* darray_filter(struct darray* const arr,
   struct darray* farr = darray_init(NULL, &params);
   RCSW_CHECK_PTR(farr);
 
-  size_t i;
   size_t n_removed = 0;
 
   /*
@@ -358,12 +356,13 @@ struct darray* darray_filter(struct darray* const arr,
    * elements, because the size of the original list is changing as we iterate
    * over it.
    */
-  for (i = 0; i < arr->current + n_removed; ++i) {
+  for (size_t i = 0; i < arr->current + n_removed; ++i) {
     if (pred(darray_data_get(arr, i - n_removed))) {
       RCSW_CHECK(darray_insert(farr,
-                          darray_data_get(arr, i - n_removed),
-                          farr->current) == OK);
-      RCSW_CHECK(darray_remove(arr, NULL, i - n_removed++) == OK);
+                               darray_data_get(arr, i - n_removed),
+                               farr->current) == OK);
+      RCSW_CHECK(darray_remove(arr, NULL, i - n_removed) == OK);
+      ++n_removed;
     }
   } /* for() */
 
@@ -420,8 +419,7 @@ error:
 status_t darray_map(struct darray* arr, void (*f)(void* e)) {
   RCSW_FPC_NV(ERROR, arr != NULL, f != NULL);
 
-  size_t i;
-  for (i = 0; i < arr->current; ++i) {
+  for (size_t i = 0; i < arr->current; ++i) {
     f(darray_data_get(arr, i));
   }
 
@@ -433,8 +431,7 @@ status_t darray_inject(const struct darray* const arr,
                        void* result) {
   RCSW_FPC_NV(ERROR, arr != NULL, f != NULL, result != NULL);
 
-  size_t i;
-  for (i = 0; i < arr->current; ++i) {
+  for (size_t i = 0; i < arr->current; ++i) {
     f(darray_data_get(arr, i), result);
   }
 
