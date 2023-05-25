@@ -251,5 +251,3 @@ struct darray *hashmap_query(
     uint32_t * hash_out);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_HASHMAP_H_  */

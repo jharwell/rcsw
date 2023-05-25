@@ -331,5 +331,3 @@ int bstree_traverse(struct bstree * tree,
 void bstree_print(struct bstree * tree);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_BSTREE_H_  */

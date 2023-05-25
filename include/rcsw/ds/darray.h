@@ -406,5 +406,3 @@ struct darray *darray_copy(const struct darray * arr,
 void darray_print(const struct darray * arr);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_DARRAY_H_  */

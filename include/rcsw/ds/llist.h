@@ -425,5 +425,3 @@ status_t llist_inject(struct llist * list, void (*f)(void *e, void *res),
 size_t llist_heap_footprint(const struct llist * list);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_LLIST_H_  */

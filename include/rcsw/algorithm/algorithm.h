@@ -58,5 +58,3 @@ size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
 int alg_arr_largest_num2(const int * array, size_t n_elts);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_ALGORITHM_ALGORITHM_H_  */

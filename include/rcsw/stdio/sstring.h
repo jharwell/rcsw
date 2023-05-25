@@ -213,5 +213,3 @@ char *sstring_strrep(const char * __restrict__ original,
                      const char * __restrict__ replacement,
                      char * __restrict__ new_str);
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_STDIO_SSTRING_H_  */

@@ -204,5 +204,3 @@ status_t fifo_inject(struct fifo * fifo,
 void fifo_print(struct fifo * fifo);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_FIFO_H_  */

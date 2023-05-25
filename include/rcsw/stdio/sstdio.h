@@ -239,5 +239,3 @@ char *sstdio_itoax(int i, char *s);
 char *sstdio_dtoa(double n, bool_t force_exp, char *s);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_STDIO_SSTDIO_H_  */

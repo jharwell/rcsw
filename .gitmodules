@@ -1,6 +1,7 @@
 [submodule "ext/stb"]
 	path = ext/stb
-	url = https://github.com/nothings/stb.git
+	url = https://github.com/nothings/stb
+	branch = master
 [submodule "libra"]
 	path = libra
 	url = https://github.com/jharwell/libra.git

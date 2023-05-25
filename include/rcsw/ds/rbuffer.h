@@ -244,5 +244,3 @@ status_t rbuffer_inject(struct rbuffer * rb, void (*f)(void *e, void *res),
 void rbuffer_print(struct rbuffer * rb);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_RBUFFER_H_  */

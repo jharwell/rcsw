@@ -537,5 +537,3 @@ bool_t ds_elt_zchk(void *elt, size_t el_size);
 status_t ds_elt_swap(void *elt1, void *elt2, size_t el_size);
 
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_DS_DS_H_  */

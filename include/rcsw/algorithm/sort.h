@@ -148,5 +148,3 @@ status_t radix_sort_prefix_sum(const size_t* arr, size_t n_elts,
                                size_t base, size_t digit,
                                size_t* prefix_sums);
 END_C_DECLS
-
-#endif /*  INCLUDE_RCSW_ALGORITHM_SORT_H_  */
