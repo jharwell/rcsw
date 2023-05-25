@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_ALGORITHM_SEARCH_H_
-#define INCLUDE_RCSW_ALGORITHM_SEARCH_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -79,4 +78,3 @@ int bsearch_rec(const void * arr,
                 size_t high);
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_ALGORITHM_SEARCH_H_  */

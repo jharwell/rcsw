@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_RBTREE_H_
-#define INCLUDE_RCSW_DS_RBTREE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -55,4 +54,3 @@ int rbtree_node_black_height(const struct bstree_node *node) RCSW_PURE;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_RBTREE_H_ */

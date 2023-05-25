@@ -9,8 +9,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_ADAPTER_SIMPLE_IMAGE_H_
-#define INCLUDE_RCSW_ADAPTER_SIMPLE_IMAGE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -102,4 +101,3 @@ void simple_image_free(simple_image_t * im);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_ADAPTER_SIMPLE_IMAGE_H_ */

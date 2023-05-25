@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_HASH_H_
-#define INCLUDE_RCSW_UTILS_HASH_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -61,4 +60,3 @@ uint32_t hash_djb(const void * data, size_t len) RCSW_PURE;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_HASH_H_ */

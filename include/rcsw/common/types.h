@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_COMMON_TYPES_H_
-#define INCLUDE_RCSW_COMMON_TYPES_H_
+#pragma once
 
 /*******************************************************************************
  * Basic Type Definitions
@@ -84,4 +83,3 @@ typedef enum {
     TRUE  = 1
 } bool_t;
 
-#endif /* INCLUDE_RCSW_COMMON_TYPES_H_ */

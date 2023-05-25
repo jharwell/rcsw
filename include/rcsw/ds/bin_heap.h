@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_BIN_HEAP_H_
-#define INCLUDE_RCSW_DS_BIN_HEAP_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -228,4 +227,3 @@ void bin_heap_print(const struct bin_heap * heap);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_BIN_HEAP_H_ */

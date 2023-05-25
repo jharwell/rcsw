@@ -7,8 +7,7 @@
  *
  */
 
-#ifndef INCLUDE_RCSW_COMMON_COMPILERS_H_
-#define INCLUDE_RCSW_COMMON_COMPILERS_H_
+#pragma once
 
 /*******************************************************************************
  * Warning Disable Macros
@@ -280,4 +279,3 @@
 
 #endif /* __cplusplus */
 
-#endif /* INCLUDE_RCSW_COMMON_COMPILERS_H_ */

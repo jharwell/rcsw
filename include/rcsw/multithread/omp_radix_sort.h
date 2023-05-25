@@ -9,8 +9,7 @@
  */
 
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_OMP_RADIX_SORT_H_
-#define INCLUDE_RCSW_MULTITHREAD_OMP_RADIX_SORT_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -81,4 +80,3 @@ status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_OMP_RADIX_SORT_H_ */

@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_CSMATRIX_H_
-#define INCLUDE_RCSW_DS_CSMATRIX_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -453,4 +452,3 @@ void csmatrix_print(const struct csmatrix* matrix);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_CSMATRIX_H_ */

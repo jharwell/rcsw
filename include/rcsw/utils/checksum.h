@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_CHECKSUM_H_
-#define INCLUDE_RCSW_UTILS_CHECKSUM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -208,4 +207,3 @@ uint32_t crc32_eth(const uint8_t * buf, size_t n_bytes) RCSW_PURE;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_CHECKSUM_H_ */

@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_ADJ_LIST_H_
-#define INCLUDE_RCSW_DS_ADJ_LIST_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -50,4 +49,3 @@ bool_t adj_list_edge_query(struct adj_list* const list,
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_ADJ_LIST_H_ */

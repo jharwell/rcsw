@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTIPROCESS_MPI_RADIX_SORT_H_
-#define INCLUDE_RCSW_MULTIPROCESS_MPI_RADIX_SORT_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -89,4 +88,3 @@ status_t mpi_radix_sorter_exec(struct mpi_radix_sorter* const sorter);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTIPROCESS_MPI_RADIX_SORT_H_ */

@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_PULSE_PULSE_H_
-#define INCLUDE_RCSW_PULSE_PULSE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -338,4 +337,3 @@ status_t pulse_pop_front(struct mt_queue * queue);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_PULSE_PULSE_H_ */

@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_BSTREE_H_
-#define INCLUDE_RCSW_DS_BSTREE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

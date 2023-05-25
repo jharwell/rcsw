@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_ALGORITHM_ALGORITHM_H_
-#define INCLUDE_RCSW_ALGORITHM_ALGORITHM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

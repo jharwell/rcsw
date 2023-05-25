@@ -23,8 +23,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_DYNAMIC_MATRIX_H_
-#define INCLUDE_RCSW_DS_DYNAMIC_MATRIX_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -179,4 +178,3 @@ status_t dynamic_matrix_set(struct dynamic_matrix* matrix, size_t u,
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_DYNAMIC_MATRIX_H_ */

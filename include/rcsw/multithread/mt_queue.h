@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_MT_QUEUE_H_
-#define INCLUDE_RCSW_MULTITHREAD_MT_QUEUE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -190,4 +189,3 @@ void* mt_queue_peek(struct mt_queue * mt_queue);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_MT_QUEUE_H_  */

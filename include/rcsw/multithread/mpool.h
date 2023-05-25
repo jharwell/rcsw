@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_MPOOL_H_
-#define INCLUDE_RCSW_MULTITHREAD_MPOOL_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -224,4 +223,3 @@ int mpool_ref_query(struct mpool * the_pool, const uint8_t* ptr);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_MPOOL_H_  */

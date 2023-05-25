@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_TIME_H_
-#define INCLUDE_RCSW_UTILS_TIME_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -68,4 +67,3 @@ double time_monotonic_sec(void);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_TIME_H_ */

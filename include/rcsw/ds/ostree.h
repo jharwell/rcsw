@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_OSTREE_H_
-#define INCLUDE_RCSW_DS_OSTREE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -109,4 +108,3 @@ void ostree_init_helper(struct bstree* tree);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_OSTREE_H_ */

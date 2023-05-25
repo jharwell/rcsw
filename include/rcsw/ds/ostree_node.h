@@ -9,8 +9,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_OSTREE_NODE_H_
-#define INCLUDE_RCSW_DS_OSTREE_NODE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -60,4 +59,3 @@ END_C_DECLS
 
 /* \endcond */
 
-#endif /* INCLUDE_RCSW_DS_OSTREE_NODE_H_ */

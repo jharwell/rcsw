@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_THREADM_H_
-#define INCLUDE_RCSW_MULTITHREAD_THREADM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -33,4 +32,3 @@ status_t threadm_core_lock(pthread_t thread, size_t core);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_THREADM_H_ */

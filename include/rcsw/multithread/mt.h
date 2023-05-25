@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_MT_H_
-#define INCLUDE_RCSW_MULTITHREAD_MT_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -25,4 +24,3 @@
  */
 #define MT_APP_DOMAIN_MEM 0x1
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_MT_H_ */

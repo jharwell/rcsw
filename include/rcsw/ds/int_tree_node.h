@@ -9,8 +9,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_INT_TREE_NODE_H_
-#define INCLUDE_RCSW_DS_INT_TREE_NODE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -35,4 +34,3 @@ void int_tree_node_update_max(struct int_tree_node* node);
 /* \endcond */
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_INT_TREE_NODE_H_ */

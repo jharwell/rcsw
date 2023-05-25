@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_OMP_KERNEL2D_H_
-#define INCLUDE_RCSW_MULTITHREAD_OMP_KERNEL2D_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -38,4 +37,3 @@ status_t omp_kernel2d_convolve1(float const * const __restrict__ input,
                                 float * const __restrict__ output);
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_OMP_KERNEL2D_H_ */

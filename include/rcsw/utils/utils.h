@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_UTILS_H_
-#define INCLUDE_RCSW_UTILS_UTILS_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -259,4 +258,3 @@ uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_UTILS_H_ */

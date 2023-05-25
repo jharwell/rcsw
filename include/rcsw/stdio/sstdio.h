@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_STDIO_SSTDIO_H_
-#define INCLUDE_RCSW_STDIO_SSTDIO_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

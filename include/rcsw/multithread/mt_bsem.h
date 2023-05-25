@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTITHREAD_MT_BSEM_H_
-#define INCLUDE_RCSW_MULTITHREAD_MT_BSEM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -102,4 +101,3 @@ status_t mt_bsem_wait(mt_bsem_t * sem_p);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTITHREAD_MT_BSEM_H_ */

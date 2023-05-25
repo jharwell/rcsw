@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTIPROCESS_PROCM_H_
-#define INCLUDE_RCSW_MULTIPROCESS_PROCM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -46,4 +45,3 @@ pid_t procm_fork_exec(char** const cmd, const char* new_wd,
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTIPROCESS_PROCM_H_ */

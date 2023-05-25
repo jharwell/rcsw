@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_COMMON_EXCEPTION_H_
-#define INCLUDE_RCSW_COMMON_EXCEPTION_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -59,4 +58,3 @@ default:
  */
 #define THROW(x) longjmp(ex_buf__, x)
 
-#endif /* INCLUDE_RCSW_COMMON_EXCEPTION_H_ */

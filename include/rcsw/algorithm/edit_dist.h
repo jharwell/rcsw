@@ -7,8 +7,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#ifndef INCLUDE_RCSW_ALGORITHM_EDIT_DIST_H_
-#define INCLUDE_RCSW_ALGORITHM_EDIT_DIST_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -90,4 +89,3 @@ int edit_dist_find(struct edit_dist_finder * finder,
                    enum edit_dist_exec_type type);
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_ALGORITHM_EDIT_DIST_H_ */

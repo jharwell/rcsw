@@ -11,8 +11,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_FIFO_H_
-#define INCLUDE_RCSW_DS_FIFO_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

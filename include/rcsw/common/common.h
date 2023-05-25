@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_COMMON_COMMON_H_
-#define INCLUDE_RCSW_COMMON_COMMON_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -505,4 +504,3 @@
 #define RCSW_STATIC_ASSERT(expr, msg)                                   \
     extern int(*assert_function__(void))[STATIC_ASSERT_HELPER(expr, msg)]
 
-#endif /* INCLUDE_RCSW_COMMON_COMMON_H_ */

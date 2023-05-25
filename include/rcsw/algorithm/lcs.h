@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_ALGORITHM_LCS_H_
-#define INCLUDE_RCSW_ALGORITHM_LCS_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -81,4 +80,3 @@ int lcs_iter(struct lcs_calculator * lcs);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_ALGORITHM_LCS_H_ */

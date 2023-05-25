@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_INT_TREE_H_
-#define INCLUDE_RCSW_DS_INT_TREE_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -208,4 +207,3 @@ int int_tree_cmp_key(const void * a, const void * b) RCSW_PURE;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_INT_TREE_H_ */

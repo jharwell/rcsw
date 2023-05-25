@@ -15,8 +15,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_COMMON_FPC_H_
-#define INCLUDE_RCSW_COMMON_FPC_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -159,4 +158,3 @@
 #define RCSW_FPC_V(...)
 #endif /* RCSW_FPC_TYPE */
 
-#endif /* INCLUDE_RCSW_COMMON_FPC_H_ */

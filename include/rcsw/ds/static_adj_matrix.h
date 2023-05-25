@@ -6,8 +6,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_STATIC_ADJ_MATRIX_H_
-#define INCLUDE_RCSW_DS_STATIC_ADJ_MATRIX_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -233,4 +232,3 @@ status_t static_adj_matrix_edge_remove(struct static_adj_matrix* matrix,
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_STATIC_ADJ_MATRIX_H_ */

@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_UTILS_MEM_H_
-#define INCLUDE_RCSW_UTILS_MEM_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -212,4 +211,3 @@ status_t mem_bswap32(uint32_t * buf, size_t n_bytes);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_UTILS_MEM_H_ */

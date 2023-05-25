@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_MULTIPROCESS_MPI_SPMV_MULT_H_
-#define INCLUDE_RCSW_MULTIPROCESS_MPI_SPMV_MULT_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -181,4 +180,3 @@ struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_MULTIPROCESS_MPI_SPMV_MULT_H_ */

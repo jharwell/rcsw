@@ -12,8 +12,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_COMMON_DBG_H_
-#define INCLUDE_RCSW_COMMON_DBG_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -415,4 +414,3 @@ int64_t dbg_mod_id_get(const char* name) RCSW_PURE;
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_COMMON_DBG_H_ */

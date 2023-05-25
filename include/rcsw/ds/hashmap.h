@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_HASHMAP_H_
-#define INCLUDE_RCSW_DS_HASHMAP_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

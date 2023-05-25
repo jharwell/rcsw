@@ -9,8 +9,7 @@
  */
 
 
-#ifndef INCLUDE_RCSW_STDIO_SSTRING_H_
-#define INCLUDE_RCSW_STDIO_SSTRING_H_
+#pragma once
 
 /*******************************************************************************
  * Includes

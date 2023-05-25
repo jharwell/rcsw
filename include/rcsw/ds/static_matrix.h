@@ -16,8 +16,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_STATIC_MATRIX_H_
-#define INCLUDE_RCSW_DS_STATIC_MATRIX_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -158,4 +157,3 @@ void static_matrix_print(const struct static_matrix* matrix);
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_STATIC_MATRIX_H_ */

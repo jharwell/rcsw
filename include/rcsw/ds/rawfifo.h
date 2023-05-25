@@ -12,8 +12,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INCLUDE_RCSW_DS_RAWFIFO_H_
-#define INCLUDE_RCSW_DS_RAWFIFO_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -129,4 +128,3 @@ size_t rawfifo_enq(struct rawfifo * fifo, const void * elts,
 
 END_C_DECLS
 
-#endif /* INCLUDE_RCSW_DS_RAWFIFO_H_ */
