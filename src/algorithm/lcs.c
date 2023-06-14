@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/lcs.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -89,10 +90,10 @@ int lcs_iter(struct lcs_calculator* lcs) {
       } else {
         lcs->results[i * lcs->len_x + j] =
             RCSW_MAX(lcs->results[(i - 1) * lcs->len_x + j],
-                lcs->results[i * lcs->len_x + j - 1]);
+                     lcs->results[i * lcs->len_x + j - 1]);
       }
     } /* for(i=0...) */
-  }   /* for(j=0...) */
+  } /* for(j=0...) */
   lcs->size = (size_t)lcs->results[lcs->len_x * lcs->len_x + lcs->len_y];
 
   lcs->sequence = malloc((lcs->size + 1) * sizeof(char));
@@ -165,7 +166,7 @@ static int lcs_rec_sub(const char* x,
       c[i * length + j] = lcs_rec_sub(x, y, c, i + 1, j + 1, length) + 1;
     } else {
       c[i * length + j] = RCSW_MAX(lcs_rec_sub(x, y, c, i + 1, j, length),
-                              lcs_rec_sub(x, y, c, i, j + 1, length));
+                                   lcs_rec_sub(x, y, c, i, j + 1, length));
     }
   }
   return c[i * length + j];

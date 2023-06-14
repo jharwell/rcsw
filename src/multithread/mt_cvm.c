@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_cvm.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
@@ -67,7 +68,7 @@ error:
 
 status_t cvm_timedwait(mt_cvm_t* const cvm, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cvm, NULL != to);
-  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+  struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
 
   RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
   RCSW_CHECK(0 == mt_cond_timedwait(&cvm->cv, &cvm->mutex, &ts));

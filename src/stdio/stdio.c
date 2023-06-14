@@ -8,9 +8,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/stdio/stdio.h"
-#include "rcsw/stdio/string.h"
 
 #include "rcsw/stdio/math.h"
+#include "rcsw/stdio/string.h"
 
 /*******************************************************************************
  * API Functions
@@ -135,7 +135,7 @@ int stdio_atoi(const char* s, int base) {
   int result = 0;
 
   while (*s == ' ') {
-    ++s;  /* advance past any spaces */
+    ++s; /* advance past any spaces */
   }
 
   int neg = (*s == '-') ? 1 : 0;

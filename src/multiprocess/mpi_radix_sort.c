@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multiprocess/mpi_radix_sort.h"
+
 #include <mpi.h>
+
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/dbg.h"
@@ -42,8 +44,8 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-struct mpi_radix_sorter* mpi_radix_sorter_init(
-    const struct mpi_radix_sorter_params* const params) {
+struct mpi_radix_sorter*
+mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, NULL != params->data);
 
   /* All MPI processes perform the same basic initialization */
@@ -140,13 +142,13 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
 
   /* Send data to all processes */
   RCSW_CHECK(MPI_SUCCESS == MPI_Scatter(sorter->cum_data,
-                                   sorter->chunk_size,
-                                   MPI_INT,
-                                   sorter->data,
-                                   sorter->chunk_size,
-                                   MPI_INT,
-                                   0,
-                                   MPI_COMM_WORLD));
+                                        sorter->chunk_size,
+                                        MPI_INT,
+                                        sorter->data,
+                                        sorter->chunk_size,
+                                        MPI_INT,
+                                        0,
+                                        MPI_COMM_WORLD));
   DBGV("Rank %d: All data received (%zu bytes)\n",
        sorter->mpi_rank,
        sorter->n_elts);
@@ -181,14 +183,14 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
   size_t prev_total = 0;
   for (size_t i = 0; i < sorter->base; ++i) {
     RCSW_CHECK(MPI_SUCCESS == MPI_Gatherv(sorter->prefix_sums + i,
-                                     2,
-                                     MPI_INT,
-                                     sorter->cum_prefix_sums,
-                                     prefix_recv_counts,
-                                     prefix_disp_counts,
-                                     MPI_INT,
-                                     0,
-                                     MPI_COMM_WORLD));
+                                          2,
+                                          MPI_INT,
+                                          sorter->cum_prefix_sums,
+                                          prefix_recv_counts,
+                                          prefix_disp_counts,
+                                          MPI_INT,
+                                          0,
+                                          MPI_COMM_WORLD));
     DBGV("Rank %d: Received prefixes for value %zu at master\n",
          sorter->mpi_rank,
          i);
@@ -215,15 +217,15 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
       } /* for(j..) */
     }
     RCSW_CHECK(MPI_SUCCESS ==
-          MPI_Gatherv(sorter->data + sorter->prefix_sums[i],
-                      sorter->prefix_sums[i + 1] - sorter->prefix_sums[i],
-                      MPI_INT,
-                      sorter->cum_data,
-                      data_recv_counts,
-                      data_disp_counts,
-                      MPI_INT,
-                      0,
-                      MPI_COMM_WORLD));
+               MPI_Gatherv(sorter->data + sorter->prefix_sums[i],
+                           sorter->prefix_sums[i + 1] - sorter->prefix_sums[i],
+                           MPI_INT,
+                           sorter->cum_data,
+                           data_recv_counts,
+                           data_disp_counts,
+                           MPI_INT,
+                           0,
+                           MPI_COMM_WORLD));
     DBGV("Rank %d: Received data for value %zu to master\n", sorter->mpi_rank, i);
     prev_total = total;
   } /* for(i..) */

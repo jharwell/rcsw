@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/inttree.h"
+
 #include <limits.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/bstree_node.h"
@@ -49,17 +51,17 @@ int inttree_cmp_key(const void* a, const void* b) {
 } /* inttree_cmp_key() */
 
 void inttree_init_helper(const struct bstree* tree) {
-  struct interval_data nil_data = {.low = INT_MIN, .high = INT_MIN};
+  struct interval_data nil_data = { .low = INT_MIN, .high = INT_MIN };
   ds_elt_copy(tree->nil->data, &nil_data, tree->elt_size);
   ds_elt_copy(tree->root->data, &nil_data, tree->elt_size);
   ((struct inttree_node*)tree->nil)->max_high = INT_MIN;
   ((struct inttree_node*)tree->root)->max_high = INT_MIN;
 } /* inttree_init_helper() */
 
-struct inttree_node* inttree_overlap_search(
-    const struct bstree* tree,
-    struct inttree_node* root,
-    const struct interval_data* interval) {
+struct inttree_node*
+inttree_overlap_search(const struct bstree* tree,
+                       struct inttree_node* root,
+                       const struct interval_data* interval) {
   RCSW_FPC_NV(NULL, NULL != tree, NULL != root, NULL != interval);
 
   /*
@@ -95,6 +97,5 @@ void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
     node = node->parent;
   } /* while() */
 } /* inttree_high_fixup() */
-
 
 END_C_DECLS

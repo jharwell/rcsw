@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/llist.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/ds/llist_node.h"
 #include "rcsw/utils/utils.h"
@@ -27,10 +28,10 @@ BEGIN_C_DECLS
 struct llist* llist_init(struct llist* list_in,
                          const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_LLIST,
-            params->max_elts != 0,
-            params->elt_size > 0);
+              params != NULL,
+              params->tag == DS_LLIST,
+              params->max_elts != 0,
+              params->elt_size > 0);
 
   struct llist* list = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -46,21 +47,22 @@ struct llist* llist_init(struct llist* list_in,
 
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    RCSW_ER_CHECK(
-        params->max_elts != -1,
-        "ERROR: Cannot have uncapped list length with RCSW_DS_NOALLOC_NODES");
+    RCSW_ER_CHECK(params->max_elts != -1,
+                  "ERROR: Cannot have uncapped list length with "
+                  "RCSW_DS_NOALLOC_NODES");
 
     /* initialize free list of llist_nodes */
     list->space.node_map = (struct allocm_entry*)params->nodes;
-    list->space.nodes = (struct llist_node*)(list->space.node_map + params->max_elts);
+    list->space.nodes =
+        (struct llist_node*)(list->space.node_map + params->max_elts);
     allocm_init(list->space.node_map, params->max_elts);
   }
 
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    RCSW_ER_CHECK(
-        params->max_elts != -1,
-        "ERROR: Cannot have uncapped list length with RCSW_DS_NOALLOC_DATA");
+    RCSW_ER_CHECK(params->max_elts != -1,
+                  "ERROR: Cannot have uncapped list length with "
+                  "RCSW_DS_NOALLOC_DATA");
 
     /* initialize free list of data elements */
     list->space.db_map = (struct allocm_entry*)params->elements;
@@ -69,9 +71,8 @@ struct llist* llist_init(struct llist* list_in,
   }
 
   if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_PTR_CMP)) {
-    DBGW(
-        "WARNING: No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
-        "passed\n");
+    DBGW("WARNING: No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
+         "passed\n");
   }
 
   list->first = NULL;
@@ -146,9 +147,8 @@ status_t llist_remove(struct llist* const list, const void* const e) {
   return llist_delete(list, node, NULL);
 } /* llist_remove() */
 
-status_t llist_delete(struct llist* const list,
-                      struct llist_node* victim,
-                      void* const e) {
+status_t
+llist_delete(struct llist* const list, struct llist_node* victim, void* const e) {
   /* only one node in list */
   if (list->first == victim && list->last == victim) {
     list->first = NULL;
@@ -342,15 +342,16 @@ struct llist* llist_copy(struct llist* const list,
                          const struct ds_params* const cparams) {
   RCSW_FPC_NV(NULL, list != NULL);
 
-  struct ds_params params = {.cmpe = list->cmpe,
-                             .printe = list->printe,
-                             .elt_size = list->elt_size,
-                             .max_elts = list->max_elts,
-                             .tag = DS_LLIST,
-                             .flags = (cparams == NULL) ? 0 : cparams->flags,
-                             .elements =
-                                 (cparams == NULL) ? NULL : cparams->elements,
-                             .nodes = (cparams == NULL) ? NULL : cparams->nodes};
+  struct ds_params params = {
+    .cmpe = list->cmpe,
+    .printe = list->printe,
+    .elt_size = list->elt_size,
+    .max_elts = list->max_elts,
+    .tag = DS_LLIST,
+    .flags = (cparams == NULL) ? 0 : cparams->flags,
+    .elements = (cparams == NULL) ? NULL : cparams->elements,
+    .nodes = (cparams == NULL) ? NULL : cparams->nodes
+  };
 
   struct llist* clist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(clist);
@@ -367,15 +368,16 @@ struct llist* llist_copy2(struct llist* const list,
                           const struct ds_params* const cparams) {
   RCSW_FPC_NV(NULL, list != NULL, pred != NULL);
 
-  struct ds_params params = {.cmpe = list->cmpe,
-                             .printe = list->printe,
-                             .elt_size = list->elt_size,
-                             .max_elts = list->max_elts,
-                             .tag = DS_LLIST,
-                             .flags = (cparams == NULL) ? 0 : cparams->flags,
-                             .elements =
-                                 (cparams == NULL) ? NULL : cparams->elements,
-                             .nodes = (cparams == NULL) ? NULL : cparams->nodes};
+  struct ds_params params = {
+    .cmpe = list->cmpe,
+    .printe = list->printe,
+    .elt_size = list->elt_size,
+    .max_elts = list->max_elts,
+    .tag = DS_LLIST,
+    .flags = (cparams == NULL) ? 0 : cparams->flags,
+    .elements = (cparams == NULL) ? NULL : cparams->elements,
+    .nodes = (cparams == NULL) ? NULL : cparams->nodes
+  };
 
   struct llist* clist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(clist);
@@ -399,15 +401,16 @@ struct llist* llist_filter(struct llist* list,
                            const struct ds_params* const fparams) {
   RCSW_FPC_NV(NULL, list != NULL, pred != NULL);
 
-  struct ds_params params = {.cmpe = list->cmpe,
-                             .printe = list->printe,
-                             .elt_size = list->elt_size,
-                             .max_elts = list->max_elts,
-                             .tag = DS_LLIST,
-                             .flags = (fparams == NULL) ? 0 : fparams->flags,
-                             .elements =
-                                 (fparams == NULL) ? NULL : fparams->elements,
-                             .nodes = (fparams == NULL) ? NULL : fparams->nodes};
+  struct ds_params params = {
+    .cmpe = list->cmpe,
+    .printe = list->printe,
+    .elt_size = list->elt_size,
+    .max_elts = list->max_elts,
+    .tag = DS_LLIST,
+    .flags = (fparams == NULL) ? 0 : fparams->flags,
+    .elements = (fparams == NULL) ? NULL : fparams->elements,
+    .nodes = (fparams == NULL) ? NULL : fparams->nodes
+  };
 
   struct llist* flist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(flist);
@@ -435,12 +438,11 @@ struct llist* llist_filter(struct llist* list,
     match = NULL;
   }
 
-  DBGD(
-      "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-      "remain.\n",
-      flist->current,
-      flist->elt_size,
-      list->current);
+  DBGD("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
+       "remain.\n",
+       flist->current,
+       flist->elt_size,
+       list->current);
 
 error:
   return flist;
@@ -460,7 +462,7 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
     if (match != NULL) {
       count++;
       RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
-                  "ERROR: Llist_Node remove failed");
+                    "ERROR: Llist_Node remove failed");
       match = NULL;
     }
     if (pred(curr->data)) {
@@ -471,16 +473,15 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
   /* catch corner case where last item in list matched */
   if (match != NULL) {
     RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
-                "ERROR: Llist_Node remove failed");
+                  "ERROR: Llist_Node remove failed");
   }
 
   rval = OK;
-  DBGD(
-      "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-      "remain.\n",
-      count,
-      list->elt_size,
-      list->current);
+  DBGD("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
+       "remain.\n",
+       count,
+       list->elt_size,
+       list->current);
 
 error:
   return rval;

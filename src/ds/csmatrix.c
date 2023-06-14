@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/csmatrix.h"
+
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
@@ -54,9 +55,8 @@ static double csmatrix_entry_mult(const struct csmatrix* matrix,
  *
  * \return The result.
  */
-static double csmatrix_entry_div(const struct csmatrix* matrix,
-                                 const void* e1,
-                                 const void* e2);
+static double
+csmatrix_entry_div(const struct csmatrix* matrix, const void* e1, const void* e2);
 
 /**
  * \brief Print a matrix entry
@@ -141,12 +141,12 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
    * col_pair))); */
   /* RCSW_CHECK_PTR(matrix->nodes); */
   /* RCSW_CHECK_PTR(matrix->elts); */
-  struct ds_params llist_params = {.cmpe = csmatrix_col_cmpe,
-                                   .printe = NULL,
-                                   .max_elts = -1,
-                                   .elt_size = sizeof(struct col_pair),
-                                   .tag = DS_LLIST,
-                                   .flags = RCSW_DS_NOALLOC_HANDLE};
+  struct ds_params llist_params = { .cmpe = csmatrix_col_cmpe,
+                                    .printe = NULL,
+                                    .max_elts = -1,
+                                    .elt_size = sizeof(struct col_pair),
+                                    .tag = DS_LLIST,
+                                    .flags = RCSW_DS_NOALLOC_HANDLE };
   matrix->cols = calloc(matrix->n_cols, sizeof(struct llist));
   for (size_t i = 0; i < matrix->n_cols; ++i) {
     /* llist_params.nodes = matrix->nodes + i* llist_node_space(n_elts); */
@@ -244,7 +244,7 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
     }
   }
   matrix->n_eff_cols = RCSW_MAX(col, matrix->n_eff_cols);
-  struct col_pair pair = {.row = row, .inner_index = row_start[0] + j};
+  struct col_pair pair = { .row = row, .inner_index = row_start[0] + j };
   RCSW_CHECK(OK == llist_append(&matrix->cols[col], &pair));
 
   matrix->csizes[col]++;
@@ -280,9 +280,9 @@ status_t csmatrix_entry_set(struct csmatrix* const matrix,
                             size_t col,
                             const void* const e) {
   RCSW_FPC_NV(ERROR,
-            NULL != matrix,
-            NULL != e,
-            row < darray_n_elts(&matrix->outer_starts));
+              NULL != matrix,
+              NULL != e,
+              row < darray_n_elts(&matrix->outer_starts));
 
   int i = csmatrix_inner_index_get(matrix, row, col);
   RCSW_CHECK(-1 != i);
@@ -307,9 +307,8 @@ error:
   return NULL;
 } /* csmatrix_entry_get() */
 
-status_t csmatrix_resize(struct csmatrix* const matrix,
-                         size_t n_rows,
-                         size_t n_nz_elts) {
+status_t
+csmatrix_resize(struct csmatrix* const matrix, size_t n_rows, size_t n_nz_elts) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
 
   /* RCSW_CHECK(OK == darray_resize(&matrix->outer_starts, n_rows+1)); */
@@ -332,11 +331,11 @@ status_t csmatrix_calc_clists(struct csmatrix* const matrix) {
     int* links = csmatrix_row(matrix, i);
     size_t rsize = csmatrix_rsize(matrix, i);
     for (size_t j = 0; j < rsize; ++j) {
-      struct col_pair pair = {.row = i, .inner_index = links[0] + j};
+      struct col_pair pair = { .row = i, .inner_index = links[0] + j };
 
       RCSW_CHECK(OK == llist_append(&matrix->cols[links[j]], &pair));
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
 
   return OK;
 
@@ -359,9 +358,8 @@ status_t csmatrix_vmult(const struct csmatrix* const matrix,
     int* cols = csmatrix_row(matrix, i);
     double* vals = csmatrix_values(matrix) + i;
     for (int j = 0; j < row_end - row_start; ++j) {
-      res += csmatrix_entry_mult(matrix,
-                                 vals + j,
-                                 darray_data_get(vector_in, cols[j]));
+      res += csmatrix_entry_mult(
+          matrix, vals + j, darray_data_get(vector_in, cols[j]));
       DBGV("Multiply in[(%zu, %d) -> %zu]=%f * vector[%d]=%f = %f\n",
            i,
            cols[j],
@@ -401,9 +399,8 @@ status_t csmatrix_cols_normalize(struct csmatrix* const matrix) {
 
     LLIST_FOREACH(matrix->cols + i, next, col) {
       struct col_pair* pair = (struct col_pair*)col->data;
-      double res = csmatrix_entry_div(matrix,
-                                      csmatrix_entry_get(matrix, pair->row, i),
-                                      &total);
+      double res = csmatrix_entry_div(
+          matrix, csmatrix_entry_get(matrix, pair->row, i), &total);
 
       csmatrix_values(matrix)[pair->inner_index] = res;
     }
@@ -415,11 +412,11 @@ status_t csmatrix_cols_normalize(struct csmatrix* const matrix) {
 struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
   RCSW_FPC_NV(NULL, NULL != matrix);
 
-  struct csmatrix_params params = {.n_rows = csmatrix_n_cols(matrix),
-                                   .n_nz_elts = csmatrix_n_elts(matrix),
-                                   .n_cols = csmatrix_n_rows(matrix),
-                                   .type = matrix->type,
-                                   .flags = 0};
+  struct csmatrix_params params = { .n_rows = csmatrix_n_cols(matrix),
+                                    .n_nz_elts = csmatrix_n_elts(matrix),
+                                    .n_cols = csmatrix_n_rows(matrix),
+                                    .type = matrix->type,
+                                    .flags = 0 };
   struct csmatrix* new = csmatrix_init(NULL, &params);
   RCSW_CHECK_PTR(new);
 

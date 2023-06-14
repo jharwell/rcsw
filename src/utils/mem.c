@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/utils/mem.h"
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -24,9 +25,9 @@ void* mem_cpy32(void* const __restrict__ dest,
                 const void* const __restrict__ src,
                 size_t n_bytes) {
   RCSW_FPC_NV(dest,
-            RCSW_IS_MEM_ALIGNED(dest, sizeof(uint32_t)),
-            RCSW_IS_MEM_ALIGNED(src, sizeof(uint32_t)),
-            RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
+              RCSW_IS_MEM_ALIGNED(dest, sizeof(uint32_t)),
+              RCSW_IS_MEM_ALIGNED(src, sizeof(uint32_t)),
+              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
   size_t i;
   for (i = 0; i < n_bytes / sizeof(uint32_t); ++i) {
     ((volatile uint32_t*)dest)[i] = ((const volatile uint32_t*)src)[i];
@@ -136,8 +137,8 @@ void mem_dump8v(RCSW_UNUSED const void* const buf, size_t n_bytes) {
 
 status_t mem_bswap16(uint16_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR,
-            RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
-            RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
+              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
+              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
 
   for (size_t i = 0; i < n_bytes / sizeof(uint16_t); ++i) {
     buf[i] = (uint16_t)RCSW_BSWAP16(buf[i]);
@@ -148,8 +149,8 @@ status_t mem_bswap16(uint16_t* const buf, size_t n_bytes) {
 
 status_t mem_bswap32(uint32_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR,
-            RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
-            RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
+              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
+              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
 
   uint32_t i;
   for (i = 0; i < n_bytes / sizeof(uint32_t); ++i) {

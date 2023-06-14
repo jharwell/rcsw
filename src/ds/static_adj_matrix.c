@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/static_adj_matrix.h"
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -40,9 +41,9 @@ static void static_adj_matrix_printew(const void* e);
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-struct static_adj_matrix* static_adj_matrix_init(
-    struct static_adj_matrix* const matrix_in,
-    const struct ds_params* const params) {
+struct static_adj_matrix*
+static_adj_matrix_init(struct static_adj_matrix* const matrix_in,
+                       const struct ds_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->tag == DS_ADJ_MATRIX);
   struct static_adj_matrix* matrix = NULL;
 
@@ -65,12 +66,13 @@ struct static_adj_matrix* static_adj_matrix_init(
   matrix->n_edges = 0;
 
   struct ds_params mat_params = {
-      .type = {.smat = {.n_rows = params->type.adjm.n_vertices,
-                        .n_cols = params->type.adjm.n_vertices}},
-      .elements = params->elements,
-      .elt_size = matrix->elt_size,
-      .flags = params->flags | RCSW_DS_NOALLOC_HANDLE,
-      .tag = DS_STATIC_MATRIX};
+    .type = { .smat = { .n_rows = params->type.adjm.n_vertices,
+                        .n_cols = params->type.adjm.n_vertices } },
+    .elements = params->elements,
+    .elt_size = matrix->elt_size,
+    .flags = params->flags | RCSW_DS_NOALLOC_HANDLE,
+    .tag = DS_STATIC_MATRIX
+  };
   if (matrix->is_weighted) {
     mat_params.printe = static_adj_matrix_printew;
   } else {
@@ -87,7 +89,7 @@ struct static_adj_matrix* static_adj_matrix_init(
       for (size_t j = 0; j < matrix->n_vertices; ++j) {
         *(double*)static_matrix_access(&matrix->matrix, i, j) = NAN;
       } /* for(j..) */
-    }   /* for(i..) */
+    } /* for(i..) */
   }
 
   return matrix;
@@ -109,10 +111,10 @@ status_t static_adj_matrix_edge_addu(struct static_adj_matrix* const matrix,
                                      size_t u,
                                      size_t v) {
   RCSW_FPC_NV(ERROR,
-            NULL != matrix,
-            !matrix->is_directed,
-            u < matrix->n_vertices,
-            v < matrix->n_vertices);
+              NULL != matrix,
+              !matrix->is_directed,
+              u < matrix->n_vertices,
+              v < matrix->n_vertices);
 
   int val = 1;
   DBGV("Add undirected edges: (%zu, %zu), (%zu, %zu)\n", u, v, v, u);
@@ -133,10 +135,10 @@ status_t static_adj_matrix_edge_addd(struct static_adj_matrix* const matrix,
                                      size_t v,
                                      const double* const w) {
   RCSW_FPC_NV(ERROR,
-            NULL != matrix,
-            matrix->is_directed,
-            u < matrix->n_vertices,
-            v < matrix->n_vertices);
+              NULL != matrix,
+              matrix->is_directed,
+              u < matrix->n_vertices,
+              v < matrix->n_vertices);
 
   DBGV("Add directed edge: (%zu, %zu) = %f\n", u, v, w ? *w : 1.0);
   if (matrix->is_weighted) {

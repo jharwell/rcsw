@@ -10,9 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_csem.h"
-#include "rcsw/rcsw.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/rcsw.h"
 #include "rcsw/utils/time.h"
 
 /*******************************************************************************
@@ -69,7 +70,7 @@ error:
 status_t mt_csem_timedwait(mt_csem_t* const sem,
                            const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
-  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+  struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
   RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
   RCSW_CHECK(0 == sem_timedwait(&sem->sem, &ts));
 

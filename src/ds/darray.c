@@ -10,9 +10,11 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/darray.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/dbg.h"
@@ -61,10 +63,10 @@ static status_t darray_shrink(struct darray* arr, size_t size);
 struct darray* darray_init(struct darray* arr_in,
                            const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_DARRAY,
-            params->elt_size > 0,
-            params->max_elts != 0);
+              params != NULL,
+              params->tag == DS_DARRAY,
+              params->elt_size > 0,
+              params->max_elts != 0);
 
   struct darray* arr = NULL;
 
@@ -150,9 +152,8 @@ status_t darray_data_clear(struct darray* const arr) {
   return OK;
 } /* darray_clear() */
 
-status_t darray_insert(struct darray* const arr,
-                       const void* const e,
-                       size_t index) {
+status_t
+darray_insert(struct darray* const arr, const void* const e, size_t index) {
   RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, (index <= arr->current));
 
   /* cannot insert--no space left */
@@ -171,10 +172,9 @@ status_t darray_insert(struct darray* const arr,
   if (arr->flags & RCSW_DS_ORDERED) {
     /* shift all elements between index and end of list over by one */
     for (size_t i = arr->current; i > index; --i) {
-      ds_elt_copy(darray_data_get(arr, i),
-                  darray_data_get(arr, i - 1),
-                  arr->elt_size);
-    }      /* for() */
+      ds_elt_copy(
+          darray_data_get(arr, i), darray_data_get(arr, i - 1), arr->elt_size);
+    } /* for() */
   } else { /* if not, just move element at index to end of array */
     memmove(darray_data_get(arr, arr->current),
             darray_data_get(arr, index),
@@ -239,9 +239,8 @@ error:
   return ERROR;
 } /* darray_remove() */
 
-status_t darray_idx_serve(const struct darray* const arr,
-                            void* const e,
-                            size_t index) {
+status_t
+darray_idx_serve(const struct darray* const arr, void* const e, size_t index) {
   RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index <= arr->current);
   memmove(e, darray_data_get(arr, index), arr->elt_size);
   return OK;
@@ -254,12 +253,8 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
   if (arr->sorted) {
     DBGD("Currently sorted: performing binary search\n");
-    rval = bsearch_rec(arr->elements,
-                       e,
-                       arr->cmpe,
-                       arr->elt_size,
-                       0,
-                       arr->current - 1);
+    rval = bsearch_rec(
+        arr->elements, e, arr->cmpe, arr->elt_size, 0, arr->current - 1);
   } else {
     for (size_t i = 0; i < arr->current; ++i) {
       if (arr->cmpe(e, darray_data_get(arr, i)) == 0) {
@@ -342,15 +337,15 @@ struct darray* darray_filter(struct darray* const arr,
                              const struct ds_params* const fparams) {
   RCSW_FPC_NV(NULL, NULL != arr, NULL != pred);
 
-  struct ds_params params = {.type = {.da = {.init_size = 0}},
-                             .cmpe = arr->cmpe,
-                             .printe = arr->printe,
-                             .elt_size = arr->elt_size,
-                             .max_elts = arr->max_elts,
-                             .tag = DS_DARRAY,
-                             .flags = (fparams == NULL) ? 0 : fparams->flags,
-                             .elements =
-                                 (fparams == NULL) ? NULL : fparams->elements};
+  struct ds_params params = { .type = { .da = { .init_size = 0 } },
+                              .cmpe = arr->cmpe,
+                              .printe = arr->printe,
+                              .elt_size = arr->elt_size,
+                              .max_elts = arr->max_elts,
+                              .tag = DS_DARRAY,
+                              .flags = (fparams == NULL) ? 0 : fparams->flags,
+                              .elements = (fparams == NULL) ? NULL
+                                                            : fparams->elements };
 
   struct darray* farr = darray_init(NULL, &params);
   RCSW_CHECK_PTR(farr);
@@ -373,12 +368,11 @@ struct darray* darray_filter(struct darray* const arr,
     }
   } /* for() */
 
-  DBGD(
-      "%zu %zu-byte elements filtered out into new list. %zu elements remain "
-      "in original list.\n",
-      n_removed,
-      arr->elt_size,
-      arr->current);
+  DBGD("%zu %zu-byte elements filtered out into new list. %zu elements remain "
+       "in original list.\n",
+       n_removed,
+       arr->elt_size,
+       arr->current);
   return farr;
 
 error:

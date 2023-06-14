@@ -10,10 +10,12 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/rawfifo.h"
+
 #include <string.h>
-#include "rcsw/rcsw.h"
+
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/ds.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * API Functions
@@ -51,9 +53,8 @@ size_t rawfifo_deq(struct rawfifo* fifo, void* e, size_t n_elts) {
   return n_elts;
 } /* rawfifo_deq() */
 
-size_t rawfifo_enq(struct rawfifo* const fifo,
-                   const void* const elts,
-                   size_t n_elts) {
+size_t
+rawfifo_enq(struct rawfifo* const fifo, const void* const elts, size_t n_elts) {
   RCSW_FPC_NV(0, NULL != fifo, NULL != elts);
   n_elts = RCSW_MAX(rawfifo_n_free(fifo), n_elts);
   size_t i;

@@ -20,9 +20,9 @@
 BEGIN_C_DECLS
 
 char* stdio_strrep(const char* const __restrict__ original,
-                     const char* const __restrict__ pattern,
-                     const char* const __restrict__ replacement,
-                     char* const __restrict__ new_str) {
+                   const char* const __restrict__ pattern,
+                   const char* const __restrict__ replacement,
+                   char* const __restrict__ new_str) {
   size_t orilen = stdio_strlen(original);
   size_t replen = stdio_strlen(replacement);
   size_t patlen = stdio_strlen(pattern);
@@ -73,14 +73,16 @@ void stdio_strrev(char* const s, size_t len) {
 
 size_t stdio_strlen(const char* const s) {
   char const* p;
-  for (p = s; *p ; p++) {}
+  for (p = s; *p; p++) {
+  }
 
   return (size_t)(p - s);
 } /* stdio_strlen() */
 
 size_t stdio_strnlen(const char* const s, size_t maxsize) {
   char const* p;
-  for (p = s; *p && maxsize--; p++) {}
+  for (p = s; *p && maxsize--; p++) {
+  }
 
   return (size_t)(p - s);
 } /* stdio_strlen() */
@@ -96,7 +98,7 @@ const char* stdio_strchr(const char* haystack, char needle) {
 } /* stdio_strchr() */
 
 const char* stdio_strstr(const char* const __restrict__ haystack,
-                           const char* const __restrict__ needle) {
+                         const char* const __restrict__ needle) {
   const char* p1 = (const char*)haystack;
   if (!*needle) { /* null string */
     return p1;
@@ -120,8 +122,8 @@ const char* stdio_strstr(const char* const __restrict__ haystack,
 } /* stdio_strstr() */
 
 char* stdio_strncpy(char* const __restrict__ dest,
-                      const char* const __restrict__ src,
-                      size_t n) {
+                    const char* const __restrict__ src,
+                    size_t n) {
   size_t i;
   /* copy up to null terminator, or n chars, whichever comes first */
   for (i = 0; i < n && src[i] != '\0'; i++) {
@@ -135,8 +137,7 @@ char* stdio_strncpy(char* const __restrict__ dest,
   return dest;
 } /* stdio_strncpy() */
 
-char* stdio_strcpy(char* __restrict__ dest,
-                     const char* const __restrict__ src) {
+char* stdio_strcpy(char* __restrict__ dest, const char* const __restrict__ src) {
   size_t i;
   /* copy up to null terminator */
   for (i = 0; src[i] != '\0'; i++) {
@@ -218,8 +219,8 @@ int stdio_toupper(int c) {
 } /* stdio_toupper() */
 
 void* stdio_memcpy(void* const __restrict__ dest,
-                     const void* const __restrict__ src,
-                     size_t n) {
+                   const void* const __restrict__ src,
+                   size_t n) {
   char* d = dest;
   const char* s = src;
   for (size_t i = 0; i < n; i++) {

@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/omp_kernel2d.h"
+
 #include "rcsw/adapter/simple_image.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
@@ -49,11 +50,11 @@ status_t omp_kernel2d_convolve1(float const* const __restrict__ input,
 
             v += kernel[is][js] * input[g_j + (g_i * width)];
           } /* for(js..) */
-        }   /* for(is..) */
+        } /* for(is..) */
 
         output[j + (i * width)] = v;
       } /* for(j..) */
-    }   /* for(i..) */
-  }     /* parallel.. */
+    } /* for(i..) */
+  } /* parallel.. */
   return OK;
 } /* omp_kernel2d_convolve1() */

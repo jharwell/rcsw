@@ -10,8 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/bstree.h"
+
 #include <limits.h>
 #include <stdlib.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
@@ -36,10 +38,10 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
                                     const struct ds_params* const params,
                                     size_t node_size) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_BSTREE,
-            params->cmpkey != NULL,
-            params->elt_size > 0);
+              params != NULL,
+              params->tag == DS_BSTREE,
+              params->cmpkey != NULL,
+              params->elt_size > 0);
 
   struct bstree* tree = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -55,9 +57,9 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
 
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    RCSW_ER_CHECK(
-        params->max_elts != -1,
-        "ERROR: Cannot have uncapped tree size with RCSW_DS_NOALLOC_NODES");
+    RCSW_ER_CHECK(params->max_elts != -1,
+                  "ERROR: Cannot have uncapped tree size with "
+                  "RCSW_DS_NOALLOC_NODES");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
@@ -65,14 +67,15 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
      */
     tree->space.node_map = (struct allocm_entry*)params->nodes;
     allocm_init(tree->space.node_map, params->max_elts + 2);
-    tree->space.nodes = (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
+    tree->space.nodes =
+        (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
   }
 
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    RCSW_ER_CHECK(
-        params->max_elts != -1,
-        "ERROR: Cannot have uncapped tree size with RCSW_DS_NOALLOC_DATA");
+    RCSW_ER_CHECK(params->max_elts != -1,
+                  "ERROR: Cannot have uncapped tree size with "
+                  "RCSW_DS_NOALLOC_DATA");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
@@ -80,7 +83,8 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
      */
     tree->space.db_map = (struct allocm_entry*)params->elements;
     allocm_init(tree->space.db_map, params->max_elts + 2);
-    tree->space.datablocks = (uint8_t*)(tree->space.db_map + params->max_elts + 2);
+    tree->space.datablocks =
+        (uint8_t*)(tree->space.db_map + params->max_elts + 2);
   }
 
   tree->cmpkey = params->cmpkey;
@@ -230,8 +234,8 @@ status_t bstree_insert_internal(struct bstree* const tree,
     RCSW_FPC_NV(ERROR, !tree->root->red);
     RCSW_FPC_NV(ERROR, !tree->nil->red);
     RCSW_FPC_NV(ERROR,
-              rbtree_node_black_height(tree->root->left->left) ==
-                  rbtree_node_black_height(tree->root->left->right));
+                rbtree_node_black_height(tree->root->left->left) ==
+                    rbtree_node_black_height(tree->root->left->right));
   }
   tree->current++;
 
@@ -321,8 +325,8 @@ status_t bstree_delete(struct bstree* const tree,
     RCSW_FPC_NV(ERROR, !tree->root->red);
     RCSW_FPC_NV(ERROR, !tree->nil->red);
     RCSW_FPC_NV(ERROR,
-              rbtree_node_black_height(tree->root->left->left) ==
-                  rbtree_node_black_height(tree->root->left->right));
+                rbtree_node_black_height(tree->root->left->left) ==
+                    rbtree_node_black_height(tree->root->left->right));
   }
   if (NULL != elt) {
     ds_elt_copy(elt, victim->data, tree->elt_size);

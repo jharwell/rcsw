@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/sort.h"
+
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
@@ -51,7 +52,7 @@ static size_t partition(void* const a,
                         int max_index,
                         size_t elt_size,
                         int (*cmpe)(const void* const e1, const void* const e2)) {
-  int left;  /* index starts at min_index and increases */
+  int left; /* index starts at min_index and increases */
   int right; /* index starts and max_index and decreases */
 
   uint8_t* const arr = a;
@@ -146,7 +147,7 @@ void qsort_iter(void* const a,
      */
     if (p - 1 > min_index) {
       stack[++top] = min_index; /* new min_index */
-      stack[++top] = p - 1;     /* new max_index */
+      stack[++top] = p - 1; /* new max_index */
     }
 
     /*
@@ -154,7 +155,7 @@ void qsort_iter(void* const a,
      * onto stack to be sorted (this is the equivalent of a recursive call)
      */
     if (p + 1 < max_index) {
-      stack[++top] = p + 1;     /* new min_index */
+      stack[++top] = p + 1; /* new min_index */
       stack[++top] = max_index; /* new max_index */
     }
   } /* while (top >= 0) */
@@ -170,11 +171,11 @@ struct llist_node* mergesort_rec(struct llist_node* list,
     return list;
   }
 
-  struct llist_node* right =
-      list; /* points to start of upper/2nd half of the current list */
-  struct llist_node* temp = list;   /* used to find the middle of the list */
-  struct llist_node* last = list;   /* used as a placeholder to indicate the
-                                     * boundary   between the two sublists */
+  struct llist_node* right = list; /* points to start of upper/2nd half of the
+                                      current list */
+  struct llist_node* temp = list; /* used to find the middle of the list */
+  struct llist_node* last = list; /* used as a placeholder to indicate the
+                                   * boundary   between the two sublists */
   struct llist_node* result = NULL; /* points to start of sorted list */
 
   /* these two pointers are used in list merging */
@@ -193,7 +194,7 @@ struct llist_node* mergesort_rec(struct llist_node* list,
   last->next = 0;
 
   /* recurse on the two sublists */
-  list = mergesort_rec(list, cmpe, isdouble);   /* lower/1st half */
+  list = mergesort_rec(list, cmpe, isdouble); /* lower/1st half */
   right = mergesort_rec(right, cmpe, isdouble); /* upper/2nd half */
 
   /* merge sublists */
@@ -224,18 +225,18 @@ struct llist_node* mergesort_rec(struct llist_node* list,
   return result;
 } /* mergesort_rec */
 
-struct llist_node* mergesort_iter(
-    struct llist_node* list,          /* list to sort */
-    int (*cmpe)(const void* const e1, /* compare function */
-                const void* const e2),
-    bool_t isdouble) {
+struct llist_node* mergesort_iter(struct llist_node* list, /* list to sort */
+                                  int (*cmpe)(const void* const e1, /* compare
+                                                                       function */
+                                              const void* const e2),
+                                  bool_t isdouble) {
   struct llist_node* p1; /* temporary pointer that starts at the head of the
                             list */
   struct llist_node* p2; /* secondary pointer advanced along always in front of
                             p */
   struct llist_node* next_el; /* next element to be added to sorted list */
-  struct llist_node* head;    /* the unsorted list */
-  struct llist_node* tail;    /* the sorted list, built from the end forward (is
+  struct llist_node* head; /* the unsorted list */
+  struct llist_node* tail; /* the sorted list, built from the end forward (is
                                  remade each pass) */
 
   int merge_size; /* size of sub-lists to merge */
@@ -318,7 +319,7 @@ struct llist_node* mergesort_iter(
           next_el->prev = tail;
         }
         tail = next_el; /* advance the tail to the inserted element */
-      }                 /* while() (end of merge iteration) */
+      } /* while() (end of merge iteration) */
 
       p1 = p2;
     } /* while(p) (end of merge) */
@@ -354,9 +355,7 @@ void insertion_sort(void* arr,
 
   int i, j;
   for (i = 1; i < (int)n_elts; ++i) {
-    memcpy(key,
-           (uint8_t*)arr + (i * elt_size),
-           elt_size);
+    memcpy(key, (uint8_t*)arr + (i * elt_size), elt_size);
     j = i - 1;
     while (j >= 0 && cmpe((uint8_t*)arr + (j * elt_size), key) > 0) {
       memmove((uint8_t*)arr + ((j + 1) * elt_size),
@@ -364,17 +363,12 @@ void insertion_sort(void* arr,
               elt_size);
       --j;
     } /* while() */
-    memcpy((uint8_t*)arr + ((j+1) * elt_size),
-           key,
-           elt_size);
+    memcpy((uint8_t*)arr + ((j + 1) * elt_size), key, elt_size);
   } /* for(j..) */
 } /* insertion_sort() */
 RCSW_WARNING_DISABLE_POP()
 
-void radix_sort(size_t* const arr,
-                size_t* const tmp,
-                size_t n_elts,
-                size_t base) {
+void radix_sort(size_t* const arr, size_t* const tmp, size_t n_elts, size_t base) {
   /* get largest # in array to get total # of digits */
   size_t m = alg_arr_largest_num(arr, n_elts);
 

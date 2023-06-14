@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/utils/hash.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 

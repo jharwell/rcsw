@@ -11,10 +11,12 @@
  ******************************************************************************/
 #define _GNU_SOURCE
 #include "rcsw/multiprocess/procm.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <sched.h>
 #include <unistd.h>
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -43,8 +45,7 @@ status_t procm_socket_lock(int socket) {
   n_sockets = atoi(line);
   cores_per_socket = n_cpus / n_sockets;
 
-  for (int64_t i = socket * cores_per_socket;
-       i < (socket + 1) * cores_per_socket;
+  for (int64_t i = socket * cores_per_socket; i < (socket + 1) * cores_per_socket;
        ++i) {
     CPU_SET(i, &cpuset);
   } /* for(i..) */

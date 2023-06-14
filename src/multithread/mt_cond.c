@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_cond.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
@@ -68,7 +69,7 @@ status_t mt_cond_timedwait(mt_cond_t* const cv,
                            mt_mutex_t* const mutex,
                            const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cv, NULL != to);
-  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+  struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
 
   /* Get current time */
   RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));

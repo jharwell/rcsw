@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ostree.h"
+
 #include <limits.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/bstree_node.h"

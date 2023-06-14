@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
@@ -73,9 +74,10 @@ int bstree_node_destroy(const struct bstree* const tree,
   return 0;
 } /* bstree_node_destroy() */
 
-void bstree_node_datablock_dealloc(
-    const struct bstree* const tree, /* parent tree */
-    uint8_t* datablock) {            /* datablock to deallocate */
+void bstree_node_datablock_dealloc(const struct bstree* const tree, /* parent tree
+                                                                     */
+                                   uint8_t* datablock) { /* datablock to
+                                                            deallocate */
   if (datablock == NULL) {
     return;
   }
@@ -99,19 +101,17 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
      * initializing/building a tree with a large number of items.
      */
     /* make sure that we have 32 bits of randomness */
-    uint32_t val = (uint32_t)(random() & 0xff) |
-                   (uint32_t)((random() & 0xff) << 8) |
-                   (uint32_t)((random() & 0xff) << 16) |
-                   (uint32_t)((random() & 0xff) << 24);
+    uint32_t val =
+        (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
+        (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
 
     size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    int alloc_idx = allocm_probe(tree->space.db_map,
-                                 (size_t)tree->max_elts + 2,
-                                 search_idx);
+    int alloc_idx =
+        allocm_probe(tree->space.db_map, (size_t)tree->max_elts + 2, search_idx);
     RCSW_CHECK(-1 != alloc_idx);
 
     /* mark data block as in use */
@@ -141,19 +141,17 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
      */
 
     /* make sure that we have 32 bits of randomness */
-    uint32_t val = (uint32_t)(random() & 0xff) |
-                   (uint32_t)((random() & 0xff) << 8) |
-                   (uint32_t)((random() & 0xff) << 16) |
-                   (uint32_t)((random() & 0xff) << 24);
+    uint32_t val =
+        (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
+        (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
 
     size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    int alloc_idx = allocm_probe(tree->space.node_map,
-                                 (size_t)tree->max_elts + 2,
-                                 search_idx);
+    int alloc_idx = allocm_probe(
+        tree->space.node_map, (size_t)tree->max_elts + 2, search_idx);
     RCSW_CHECK(-1 != alloc_idx);
 
     /* mark node as in use */
@@ -258,7 +256,7 @@ void bstree_node_rotate_left(struct bstree* const tree,
                              struct bstree_node* node) {
   struct bstree_node* child;
 
-  child = node->right;       /* hold reference to node's right child */
+  child = node->right; /* hold reference to node's right child */
   node->right = child->left; /* hold reference to node's left child */
 
   /* if left child exists, reset parent to node */

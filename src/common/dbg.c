@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/common/dbg.h"
+
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
@@ -40,12 +41,12 @@ status_t dbg_init(void) {
     return OK;
   }
   struct ds_params params = {
-      .cmpe = dbg_mod_cmp,
-      .printe = NULL,
-      .elt_size = sizeof(struct dbg_module),
-      .max_elts = -1,
-      .tag = DS_LLIST,
-      .flags = 0,
+    .cmpe = dbg_mod_cmp,
+    .printe = NULL,
+    .elt_size = sizeof(struct dbg_module),
+    .max_elts = -1,
+    .tag = DS_LLIST,
+    .flags = 0,
   };
   dbg_g.modules_ = llist_init(NULL, &params);
   RCSW_CHECK_PTR(dbg_g.modules_);

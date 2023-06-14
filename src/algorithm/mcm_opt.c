@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/mcm_opt.h"
+
 #include <limits.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -33,10 +35,8 @@ BEGIN_C_DECLS
  * \param length The length of the matrix chain
  *
  */
-static void mcm_opt_print_parens(const size_t* arr,
-                                 size_t i,
-                                 size_t j,
-                                 size_t length);
+static void
+mcm_opt_print_parens(const size_t* arr, size_t i, size_t j, size_t length);
 
 /**
  * \brief Report optimal parenthesization
@@ -63,9 +63,8 @@ static void mcm_opt_report_parens(const size_t* arr,
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-status_t mcm_opt_init(struct mcm_optimizer* mcm,
-                      const size_t* matrices,
-                      size_t size) {
+status_t
+mcm_opt_init(struct mcm_optimizer* mcm, const size_t* matrices, size_t size) {
   RCSW_FPC_NV(ERROR, NULL != mcm, NULL != matrices, size >= 2);
   mcm->matrices = matrices;
   mcm->size = size;
@@ -143,8 +142,8 @@ status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
           mcm->route[j + mcm->size * k] = q;
         }
       } /* for(q=j)... */
-    }   /* for(j=1)... */
-  }     /* for(i=2)... */
+    } /* for(j=1)... */
+  } /* for(i=2)... */
   mcm->min_mults = mcm->results[1 + mcm->size * (mcm->size - 1)];
   return OK;
 } /* mcm_opt_optimize() */
@@ -169,10 +168,8 @@ status_t mcm_opt_print(const struct mcm_optimizer* mcm) {
 /*******************************************************************************
  * Static Functions
  ******************************************************************************/
-static void mcm_opt_print_parens(const size_t* arr,
-                                 size_t i,
-                                 size_t j,
-                                 size_t length) {
+static void
+mcm_opt_print_parens(const size_t* arr, size_t i, size_t j, size_t length) {
   if (i == j) {
     printf("A%zu", i);
   } else {

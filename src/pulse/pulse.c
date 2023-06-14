@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/pulse/pulse.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -79,13 +80,14 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
   }
 
   for (i = 0; i < pulse->n_pools; i++) {
-    struct mpool_params mpool_params = {.elt_size = params->pools[i].buf_size,
-                                        .max_elts = params->pools[i].n_bufs,
-                                        .nodes = params->pools[i].nodes,
-                                        .elements = params->pools[i].elements,
-                                        .flags = flags | RCSW_DS_NOALLOC_HANDLE |
-                                                 MPOOL_REF_COUNT_EN};
-    RCSW_CHECK_PTR(mt_mutex_init(&pulse->buffer_pools[i].mutex, MT_APP_DOMAIN_MEM));
+    struct mpool_params mpool_params = { .elt_size = params->pools[i].buf_size,
+                                         .max_elts = params->pools[i].n_bufs,
+                                         .nodes = params->pools[i].nodes,
+                                         .elements = params->pools[i].elements,
+                                         .flags = flags | RCSW_DS_NOALLOC_HANDLE |
+                                                  MPOOL_REF_COUNT_EN };
+    RCSW_CHECK_PTR(
+        mt_mutex_init(&pulse->buffer_pools[i].mutex, MT_APP_DOMAIN_MEM));
     RCSW_CHECK(NULL != mpool_init(&pulse->buffer_pools[i].pool, &mpool_params));
   } /* for() */
 
@@ -98,11 +100,11 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
   RCSW_CHECK_PTR(pulse->rx_queues);
 
   /* initialize subscriber list */
-  struct ds_params llist_params = {.max_elts = (int)pulse->max_subs,
-                                   .elt_size = sizeof(struct pulse_sub_ent),
-                                   .cmpe = pulse_sub_ent_cmp,
-                                   .tag = DS_LLIST,
-                                   .flags = RCSW_DS_SORTED};
+  struct ds_params llist_params = { .max_elts = (int)pulse->max_subs,
+                                    .elt_size = sizeof(struct pulse_sub_ent),
+                                    .cmpe = pulse_sub_ent_cmp,
+                                    .tag = DS_LLIST,
+                                    .flags = RCSW_DS_SORTED };
   pulse->sub_list = llist_init(NULL, &llist_params);
   RCSW_CHECK_PTR(pulse->sub_list);
 
@@ -220,9 +222,8 @@ error:
   return rstat;
 } /* pulse_publish_release() */
 
-struct mt_queue* pulse_rxq_init(struct pulse_inst* pulse,
-                                void* buf_p,
-                                uint32_t n_entries) {
+struct mt_queue*
+pulse_rxq_init(struct pulse_inst* pulse, void* buf_p, uint32_t n_entries) {
   RCSW_FPC_NV(NULL, pulse != NULL);
 
   DBGD("Initializing new receive queue\n");
@@ -230,14 +231,14 @@ struct mt_queue* pulse_rxq_init(struct pulse_inst* pulse,
 
   /* If max number rxqs has not been reached then allocate one */
   RCSW_ER_CHECK(pulse->n_rxqs < pulse->max_rxqs,
-              "ERROR: Cannot allocate receive queue (no space)\n");
+                "ERROR: Cannot allocate receive queue (no space)\n");
   struct mt_queue* rxq = pulse->rx_queues + pulse->n_rxqs;
 
   /* create FIFO */
-  struct mt_queue_params params = {.elt_size = sizeof(struct pulse_rxq_ent),
-                                   .max_elts = n_entries,
-                                   .elements = buf_p,
-                                   .flags = RCSW_DS_NOALLOC_HANDLE};
+  struct mt_queue_params params = { .elt_size = sizeof(struct pulse_rxq_ent),
+                                    .max_elts = n_entries,
+                                    .elements = buf_p,
+                                    .flags = RCSW_DS_NOALLOC_HANDLE };
   params.flags |= (buf_p != NULL) ? RCSW_DS_NOALLOC_DATA : 0;
   RCSW_CHECK(NULL != mt_queue_init(rxq, &params));
 
@@ -250,26 +251,24 @@ error:
   return NULL;
 } /* pulse_rxq_init() */
 
-status_t pulse_subscribe(struct pulse_inst* pulse,
-                         struct mt_queue* queue,
-                         uint32_t pid) {
+status_t
+pulse_subscribe(struct pulse_inst* pulse, struct mt_queue* queue, uint32_t pid) {
   RCSW_FPC_NV(ERROR, pulse != NULL, queue != NULL);
 
   mt_mutex_lock(&pulse->mutex);
   RCSW_ER_CHECK(llist_n_elts(pulse->sub_list) < pulse->max_subs,
-              "ERROR: Cannot subscribe--all subscribers allocated\n");
+                "ERROR: Cannot subscribe--all subscribers allocated\n");
 
   /* find index for insertion of new subscription */
-  struct pulse_sub_ent sub = {.pid = pid, .subscriber = queue};
-  RCSW_ER_CHECK(
-      NULL == llist_data_query(pulse->sub_list, &sub),
-      "ERROR: Cannot subscribe RXQ %zu to PID 0x%08x: duplicate subscription\n",
-      queue - pulse->rx_queues,
-      pid);
+  struct pulse_sub_ent sub = { .pid = pid, .subscriber = queue };
+  RCSW_ER_CHECK(NULL == llist_data_query(pulse->sub_list, &sub),
+                "ERROR: Cannot subscribe RXQ %zu to PID 0x%08x: duplicate "
+                "subscription\n",
+                queue - pulse->rx_queues,
+                pid);
   RCSW_CHECK(OK == llist_append(pulse->sub_list, &sub));
-  DBGD("Subscribed RXQ %zu to PID 0x%08x on bus\n",
-       queue - pulse->rx_queues,
-       pid);
+  DBGD(
+      "Subscribed RXQ %zu to PID 0x%08x on bus\n", queue - pulse->rx_queues, pid);
   mt_mutex_unlock(&pulse->mutex);
   return OK;
 
@@ -286,13 +285,13 @@ status_t pulse_unsubscribe(struct pulse_inst* pulse,
   mt_mutex_lock(&pulse->mutex);
 
   /* find index for insertion of new subscription */
-  struct pulse_sub_ent sub = {.pid = pid, .subscriber = queue};
+  struct pulse_sub_ent sub = { .pid = pid, .subscriber = queue };
   struct llist_node* node = llist_node_query(pulse->sub_list, &sub);
   RCSW_ER_CHECK(NULL != node,
-              "ERROR: Could not unsubscribe RXQ %zu from PID "
-              "0x%08X: PID no such subscription\n",
-              queue - pulse->rx_queues,
-              pid);
+                "ERROR: Could not unsubscribe RXQ %zu from PID "
+                "0x%08X: PID no such subscription\n",
+                queue - pulse->rx_queues,
+                pid);
   RCSW_CHECK(OK == llist_delete(pulse->sub_list, node, NULL));
   rstat = OK;
 
@@ -358,13 +357,12 @@ static void* pulse_publish_reserve(struct pulse_inst* pulse,
 
     /* can't use this buffer pool--buffers are too small or pool is full */
     if (pool_p->elt_size < pkt_size || mpool_isfull(pool_p)) {
-      DBGV(
-          "Skipping buffer pool %zu in reservation search: buf_size=%zu, "
-          "pkt_size=%zu, full=%d\n",
-          i,
-          pool_p->elt_size,
-          pkt_size,
-          mpool_isfull(pool_p));
+      DBGV("Skipping buffer pool %zu in reservation search: buf_size=%zu, "
+           "pkt_size=%zu, full=%d\n",
+           i,
+           pool_p->elt_size,
+           pkt_size,
+           mpool_isfull(pool_p));
     } else {
       void* ret = mpool_req(pool_p);
       RCSW_CHECK_PTR(ret);
@@ -383,10 +381,10 @@ status_t pulse_subscriber_notify(struct pulse_bp_ent* bp_ent,
                                  const struct pulse_sub_ent* sub,
                                  struct pulse_rxq_ent* rxq_ent) {
   RCSW_FPC_NV(ERROR,
-            NULL != bp_ent,
-            NULL != sub,
-            NULL != sub->subscriber,
-            NULL != rxq_ent);
+              NULL != bp_ent,
+              NULL != sub,
+              NULL != sub->subscriber,
+              NULL != rxq_ent);
   status_t rstat = ERROR;
 
   /* add entry to subscriber rx queue and signal */

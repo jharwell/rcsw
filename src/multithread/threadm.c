@@ -11,8 +11,10 @@
  ******************************************************************************/
 #define _GNU_SOURCE
 #include "rcsw/multithread/threadm.h"
+
 #include <pthread.h>
 #include <sched.h>
+
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************

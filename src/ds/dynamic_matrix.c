@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/dynamic_matrix.h"
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -28,10 +29,10 @@ BEGIN_C_DECLS
 struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_in,
                                            const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            NULL != params,
-            params->tag == DS_DYNAMIC_MATRIX,
-            params->type.dmat.n_rows > 0,
-            params->type.dmat.n_cols > 0)
+              NULL != params,
+              params->tag == DS_DYNAMIC_MATRIX,
+              params->type.dmat.n_rows > 0,
+              params->type.dmat.n_cols > 0)
   struct dynamic_matrix* matrix = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
@@ -46,27 +47,29 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
   matrix->n_rows = params->type.dmat.n_rows;
   matrix->n_cols = params->type.dmat.n_cols;
 
-  struct ds_params handle_params = {.type = {.da = {.init_size = matrix->n_rows}},
-                                    .cmpe = NULL,
-                                    .printe = NULL,
-                                    .nodes = NULL,
-                                    .elements = NULL,
-                                    .tag = DS_DARRAY,
-                                    .elt_size = sizeof(struct darray),
-                                    .max_elts = -1,
-                                    .flags = 0};
+  struct ds_params handle_params = { .type = { .da = { .init_size =
+                                                           matrix->n_rows } },
+                                     .cmpe = NULL,
+                                     .printe = NULL,
+                                     .nodes = NULL,
+                                     .elements = NULL,
+                                     .tag = DS_DARRAY,
+                                     .elt_size = sizeof(struct darray),
+                                     .max_elts = -1,
+                                     .flags = 0 };
   matrix->rows = darray_init(NULL, &handle_params);
   RCSW_CHECK_PTR(matrix->rows);
 
-  struct ds_params row_params = {.type = {.da = {.init_size = matrix->n_cols}},
-                                 .cmpe = NULL,
-                                 .printe = NULL,
-                                 .nodes = NULL,
-                                 .elements = NULL,
-                                 .tag = DS_DARRAY,
-                                 .elt_size = matrix->elt_size,
-                                 .max_elts = -1,
-                                 .flags = RCSW_DS_NOALLOC_HANDLE};
+  struct ds_params row_params = { .type = { .da = { .init_size =
+                                                        matrix->n_cols } },
+                                  .cmpe = NULL,
+                                  .printe = NULL,
+                                  .nodes = NULL,
+                                  .elements = NULL,
+                                  .tag = DS_DARRAY,
+                                  .elt_size = matrix->elt_size,
+                                  .max_elts = -1,
+                                  .flags = RCSW_DS_NOALLOC_HANDLE };
 
   for (size_t i = 0; i < matrix->n_rows; ++i) {
     RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
@@ -107,9 +110,8 @@ error:
   return ERROR;
 } /* dynamic_matrix_set() */
 
-status_t dynamic_matrix_resize(struct dynamic_matrix* const matrix,
-                               size_t u,
-                               size_t v) {
+status_t
+dynamic_matrix_resize(struct dynamic_matrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
   DBGD("Resizing matrix [%zu x %zu] -> [%zu x %zu]\n",
        matrix->n_rows,
@@ -118,15 +120,16 @@ status_t dynamic_matrix_resize(struct dynamic_matrix* const matrix,
        RCSW_MAX(matrix->n_cols, v));
   if (u >= matrix->n_rows) {
     RCSW_CHECK(OK == darray_resize(matrix->rows, u));
-    struct ds_params row_params = {.type = {.da = {.init_size = matrix->n_cols}},
-                                   .cmpe = NULL,
-                                   .printe = NULL,
-                                   .nodes = NULL,
-                                   .elements = NULL,
-                                   .tag = DS_DARRAY,
-                                   .elt_size = matrix->elt_size,
-                                   .max_elts = -1,
-                                   .flags = RCSW_DS_NOALLOC_HANDLE};
+    struct ds_params row_params = { .type = { .da = { .init_size =
+                                                          matrix->n_cols } },
+                                    .cmpe = NULL,
+                                    .printe = NULL,
+                                    .nodes = NULL,
+                                    .elements = NULL,
+                                    .tag = DS_DARRAY,
+                                    .elt_size = matrix->elt_size,
+                                    .max_elts = -1,
+                                    .flags = RCSW_DS_NOALLOC_HANDLE };
 
     for (size_t i = matrix->n_rows; i < u; ++i) {
       RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
@@ -159,7 +162,7 @@ status_t dynamic_matrix_transpose(struct dynamic_matrix* const matrix) {
                   dynamic_matrix_access(matrix, j, i),
                   matrix->elt_size);
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
   return OK;
 } /* dynamic_matrix_transpose() */
 

@@ -10,9 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_rdwr_lock.h"
-#include "rcsw/rcsw.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Functions

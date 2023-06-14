@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/static_matrix.h"
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -28,10 +29,10 @@ BEGIN_C_DECLS
 struct static_matrix* static_matrix_init(struct static_matrix* const matrix_in,
                                          const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            NULL != params,
-            params->tag == DS_STATIC_MATRIX,
-            params->type.smat.n_rows > 0,
-            params->type.smat.n_cols > 0)
+              NULL != params,
+              params->tag == DS_STATIC_MATRIX,
+              params->type.smat.n_rows > 0,
+              params->type.smat.n_cols > 0)
   struct static_matrix* matrix = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
@@ -83,7 +84,7 @@ status_t static_matrix_transpose(struct static_matrix* const matrix) {
                   static_matrix_access(matrix, j, i),
                   matrix->elt_size);
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
   return OK;
 } /* static_matrix_transpose() */
 

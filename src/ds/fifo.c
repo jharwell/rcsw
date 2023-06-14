@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/fifo.h"
+
 #include "rcsw/common/dbg.h"
 
 /*******************************************************************************
@@ -20,10 +21,10 @@ BEGIN_C_DECLS
 struct fifo* fifo_init(struct fifo* fifo_in,
                        const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_FIFO,
-            params->max_elts > 0,
-            params->elt_size > 0);
+              params != NULL,
+              params->tag == DS_FIFO,
+              params->max_elts > 0,
+              params->elt_size > 0);
 
   struct fifo* fifo = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -35,13 +36,13 @@ struct fifo* fifo_init(struct fifo* fifo_in,
   }
   fifo->flags = params->flags;
 
-  struct ds_params rb_params = {.printe = params->printe,
-                                .cmpe = params->cmpe,
-                                .elt_size = params->elt_size,
-                                .max_elts = params->max_elts,
-                                .tag = DS_RBUFFER,
-                                .elements = params->elements,
-                                .flags = params->flags};
+  struct ds_params rb_params = { .printe = params->printe,
+                                 .cmpe = params->cmpe,
+                                 .elt_size = params->elt_size,
+                                 .max_elts = params->max_elts,
+                                 .tag = DS_RBUFFER,
+                                 .elements = params->elements,
+                                 .flags = params->flags };
   rb_params.flags |= (RCSW_DS_NOALLOC_HANDLE | RCSW_DS_RBUFFER_AS_FIFO);
   RCSW_CHECK(NULL != rbuffer_init(&fifo->rb, &rb_params));
   return fifo;

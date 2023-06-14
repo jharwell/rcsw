@@ -10,9 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mpool.h"
-#include "rcsw/rcsw.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * API Functions
@@ -41,7 +42,8 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     RCSW_CHECK_PTR(the_pool->elements);
   }
 
-  if (params->flags & RCSW_DS_NOALLOC_NODES || params->flags & MT_APP_DOMAIN_MEM) {
+  if (params->flags & RCSW_DS_NOALLOC_NODES ||
+      params->flags & MT_APP_DOMAIN_MEM) {
     RCSW_CHECK_PTR(params->nodes);
     the_pool->nodes = params->nodes;
   } else {
@@ -57,13 +59,13 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   the_pool->n_alloc = 0;
 
   struct ds_params llist_params = {
-      .max_elts = (int)params->max_elts,
-      .elt_size = params->elt_size,
-      .cmpe = NULL,
-      .tag = DS_LLIST,
-      .nodes = params->nodes,
-      .flags = RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP | RCSW_DS_NOALLOC_HANDLE |
-               (params->flags & RCSW_DS_NOALLOC_NODES),
+    .max_elts = (int)params->max_elts,
+    .elt_size = params->elt_size,
+    .cmpe = NULL,
+    .tag = DS_LLIST,
+    .nodes = params->nodes,
+    .flags = RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP |
+             RCSW_DS_NOALLOC_HANDLE | (params->flags & RCSW_DS_NOALLOC_NODES),
   };
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
@@ -73,7 +75,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   size_t i;
   for (i = 0; i < params->max_elts; ++i) {
     RCSW_CHECK(OK == llist_append(&the_pool->free,
-                             the_pool->elements + i * the_pool->elt_size));
+                                  the_pool->elements + i * the_pool->elt_size));
   } /* for() */
 
   /* initialize reference counting */
@@ -81,8 +83,8 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   RCSW_CHECK_PTR(the_pool->refs);
 
   /* initialize locks */
-  RCSW_CHECK_PTR(mt_csem_init(
-      &the_pool->sem, FALSE, the_pool->max_elts, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK_PTR(
+      mt_csem_init(&the_pool->sem, FALSE, the_pool->max_elts, MT_APP_DOMAIN_MEM));
   RCSW_CHECK_PTR(mt_mutex_init(&the_pool->mutex, MT_APP_DOMAIN_MEM));
 
   return the_pool;

@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/algorithm.h"
+
 #include <stdio.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/utils.h"
@@ -48,7 +50,7 @@ bool_t str_is_parenthesizable(const char* const x,
     r[len * i + i] = x[i];
   } /* for(i..) */
 
-  for (size_t i = 1; i <= len; i++) {       /* starting subsequence index */
+  for (size_t i = 1; i <= len; i++) { /* starting subsequence index */
     for (size_t j = 0; j <= len - i; j++) { /* subsequence length */
       size_t k = j + i - 1;
       for (int q = (int)j; q <= (int)k - 1; q++) {
@@ -57,7 +59,7 @@ bool_t str_is_parenthesizable(const char* const x,
           r[j + len * k] = el;
         }
       } /* for(q=j)... */
-    }   /* for(j=1)... */
-  }     /* for(i=1)... */
+    } /* for(j=1)... */
+  } /* for(i=1)... */
   return (bool_t)(r[0 * len + len] == el);
 } /* str_is_parenthesizable() */

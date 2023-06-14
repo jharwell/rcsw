@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/edit_dist.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -90,12 +91,12 @@ status_t edit_dist_init(struct edit_dist_finder* finder,
                         bool_t (*cmpe)(const void* e1, const void* e2),
                         size_t (*seq_len)(const void* seq)) {
   RCSW_FPC_NV(ERROR,
-            NULL != finder,
-            NULL != a,
-            NULL != b,
-            el_size > 0,
-            NULL != cmpe,
-            NULL != seq_len);
+              NULL != finder,
+              NULL != a,
+              NULL != b,
+              el_size > 0,
+              NULL != cmpe,
+              NULL != seq_len);
   finder->a_ = a;
   finder->b_ = b;
   finder->el_size_ = el_size;
@@ -178,11 +179,11 @@ static int edit_dist_iter(const void* a,
         c[i * m + j] = c[(i - 1) * m + j - 1];
       } else {
         c[i * m + j] = 1 + RCSW_MIN3(c[(i - 1) * m + j - 1], /* substitute */
-                                c[(i - 1) * m + j],     /* delete */
-                                c[(i)*m + j - 1]);      /* insert */
+                                     c[(i - 1) * m + j], /* delete */
+                                     c[(i)*m + j - 1]); /* insert */
       }
     } /* for(j..) */
-  }   /* for(i..) */
+  } /* for(i..) */
 
   return c[m * m + n];
 } /* edit_dist_iter() */
@@ -222,12 +223,13 @@ static int edit_dist_rec_sub(const char* a,
   } else {
     c[i * length + j] =
         1 +
-        RCSW_MIN3(edit_dist_rec_sub(
-                 a, b, c, i - 1, j - 1, length, cmpe, el_size), /* substitute */
-             edit_dist_rec_sub(
-                 a, b, c, i - 1, j, length, cmpe, el_size), /* delete */
-             edit_dist_rec_sub(
-                 a, b, c, i, j - 1, length, cmpe, el_size)); /* insert */
+        RCSW_MIN3(
+            edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, el_size), /* substitute
+                                                                              */
+            edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, el_size), /* delete
+                                                                          */
+            edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, el_size)); /* insert
+                                                                           */
     return c[i * length + j];
   }
 } /* edit_dist_rec_sub() */

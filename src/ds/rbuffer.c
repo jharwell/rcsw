@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/rbuffer.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/ds/ds.h"
 
@@ -32,10 +33,10 @@ BEGIN_C_DECLS
 struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
                              const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_RBUFFER,
-            params->max_elts > 0,
-            params->elt_size > 0);
+              params != NULL,
+              params->tag == DS_RBUFFER,
+              params->max_elts > 0,
+              params->elt_size > 0);
 
   struct rbuffer* rb = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {

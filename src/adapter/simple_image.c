@@ -11,10 +11,11 @@
  ******************************************************************************/
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "rcsw/adapter/simple_image.h"
+
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 
-#include "rcsw/adapter/simple_image.h"
 #include "rcsw/common/dbg.h"
 #include "rcsw/utils/utils.h"
 

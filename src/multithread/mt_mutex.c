@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_mutex.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 

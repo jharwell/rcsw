@@ -10,7 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/search.h"
+
 #include <math.h>
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 

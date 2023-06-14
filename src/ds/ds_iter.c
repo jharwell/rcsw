@@ -23,9 +23,8 @@ BEGIN_C_DECLS
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-struct ds_iterator* ds_iter_init(enum ds_tag tag,
-                                 void* const ds,
-                                 bool_t (*f)(void* e)) {
+struct ds_iterator*
+ds_iter_init(enum ds_tag tag, void* const ds, bool_t (*f)(void* e)) {
   RCSW_FPC_NV(NULL, tag != DS_HASHMAP, tag != DS_BSTREE, ds != NULL);
 
   struct llist* list = NULL;

@@ -10,9 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_bsem.h"
-#include "rcsw/rcsw.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * API Functions

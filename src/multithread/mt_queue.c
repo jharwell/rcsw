@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mt_queue.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -34,12 +35,12 @@ struct mt_queue* mt_queue_init(struct mt_queue* queue_in,
   queue->flags = params->flags;
 
   /* create FIFO */
-  struct ds_params fifo_params = {.max_elts = params->max_elts,
-                                  .printe = NULL,
-                                  .elt_size = params->elt_size,
-                                  .tag = DS_FIFO,
-                                  .elements = params->elements,
-                                  .flags = params->flags};
+  struct ds_params fifo_params = { .max_elts = params->max_elts,
+                                   .printe = NULL,
+                                   .elt_size = params->elt_size,
+                                   .tag = DS_FIFO,
+                                   .elements = params->elements,
+                                   .flags = params->flags };
   fifo_params.flags |= RCSW_DS_NOALLOC_HANDLE;
 
   RCSW_CHECK(NULL != fifo_init(&queue->fifo, &fifo_params));

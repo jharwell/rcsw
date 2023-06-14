@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/llist_node.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/hash.h"
@@ -34,9 +35,8 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
      */
 
     size_t index = list->current;
-    int alloc_idx = allocm_probe(list->space.node_map,
-                                 (size_t)list->max_elts,
-                                 list->current);
+    int alloc_idx =
+        allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
     node = list->space.nodes + alloc_idx;
 
@@ -133,9 +133,8 @@ void* llist_node_datablock_alloc(struct llist* const list) {
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-    int alloc_idx = allocm_probe(list->space.db_map,
-                                 (size_t)list->max_elts,
-                                 list->current);
+    int alloc_idx =
+        allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
     datablock = list->space.datablocks + alloc_idx * list->elt_size;
 

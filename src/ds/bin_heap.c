@@ -10,6 +10,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/bin_heap.h"
+
 #include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 
@@ -55,11 +56,11 @@ static void bin_heap_swap(struct bin_heap* heap, size_t i1, size_t i2);
 struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
                                const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
-            params != NULL,
-            params->tag == DS_BIN_HEAP,
-            params->max_elts > 0,
-            params->elt_size > 0,
-            params->cmpe != NULL);
+              params != NULL,
+              params->tag == DS_BIN_HEAP,
+              params->max_elts > 0,
+              params->elt_size > 0,
+              params->cmpe != NULL);
 
   struct bin_heap* heap = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -133,8 +134,8 @@ status_t bin_heap_make(struct bin_heap* const heap,
   DBGD("Making heap from %zu %zu-byte elements\n", n_elts, heap->arr.elt_size);
   for (size_t i = 0; i < n_elts; ++i) {
     RCSW_CHECK(OK == darray_insert(&heap->arr,
-                              (const uint8_t*)data + heap->arr.elt_size * i,
-                              i + 1));
+                                   (const uint8_t*)data + heap->arr.elt_size * i,
+                                   i + 1));
   } /* for(i..) */
   RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, n_elts + 1));
   /* Find median element, (n / 2) */
@@ -160,8 +161,8 @@ status_t bin_heap_extract(struct bin_heap* const heap, void* const e) {
 
   /* Copy last element to tmp position, and sift down to correct position */
   RCSW_CHECK(OK == darray_remove(&heap->arr,
-                            darray_data_get(&heap->arr, 1),
-                            darray_n_elts(&heap->arr) - 1));
+                                 darray_data_get(&heap->arr, 1),
+                                 darray_n_elts(&heap->arr) - 1));
   bin_heap_sift_down(heap, 1);
 
   return OK;
