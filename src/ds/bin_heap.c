@@ -57,7 +57,7 @@ struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
                                const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == DS_BIN_HEAP,
+              params->tag == ekRCSW_DS_BIN_HEAP,
               params->max_elts > 0,
               params->elt_size > 0,
               params->cmpe != NULL);
@@ -83,7 +83,7 @@ struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
       .cmpe = params->cmpe,
       .elt_size = params->elt_size,
       .max_elts = params->max_elts,
-      .tag = DS_DARRAY,
+      .tag = ekRCSW_DS_DARRAY,
       .elements = params->elements,
       .flags = (params->flags & ~RCSW_DS_NOALLOC_HANDLE)};
   darray_params.flags |= RCSW_DS_NOALLOC_HANDLE;

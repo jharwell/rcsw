@@ -1,22 +1,10 @@
 /**
  * \file printf.c
  *
- * @author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+ * \author (c) Eyal Rozenberg <eyalroz1@gmx.com>
  *             2021-2022, Haifa, Palestine/Israel
- * @author (c) Marco Paland (info@paland.com)
+ * \author (c) Marco Paland (info@paland.com)
  *             2014-2019, PALANDesign Hannover, Germany
- *
- * @note Others have made smaller contributions to this file: see the
- * contributors page at https://github.com/eyalroz/printf/graphs/contributors
- * or ask one of the authors. The original code for exponential specifiers was
- * contributed by Martijn Jasperse <m.jasperse@gmail.com>.
- *
- * @brief Small stand-alone implementation of the printf family of functions
- * (`(v)printf`, `(v)s(n)printf` etc., geared towards use on embedded systems with
- * a very limited resources.
- *
- * @note the implementations are thread-safe; re-entrant; use no functions from
- * the standard library; and do not dynamically allocate any memory.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -32,7 +20,7 @@
 /*******************************************************************************
  * Misc. Configuration
  ******************************************************************************/
-#if PRINTF_CHECK_FOR_NUL_IN_FORMAT_SPECIFIER
+#if RCSW_STDIO_PRINTF_CHECK_NULL
 #define ADVANCE_IN_FORMAT_STRING(cptr_) \
   do {                                  \
     (cptr_)++;                          \
@@ -96,7 +84,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
   while (*format) {
     if (*format != '%') {
       // A regular content character
-      putchar_via_gadget(output, *format);
+      gadget_putchar(output, *format);
       format++;
       continue;
     }
@@ -210,7 +198,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           // A signed specifier: d, i or possibly I + bit size if enabled
 
           if (flags & FLAGS_LONG_LONG) {
-#if PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
             const long long value = va_arg(args, long long);
             print_integer(output,
                           ABS_FOR_PRINTING(value),
@@ -253,7 +241,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           flags &= ~(FLAGS_PLUS | FLAGS_SPACE);
 
           if (flags & FLAGS_LONG_LONG) {
-#if PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
             print_integer(output,
                           (printf_unsigned_value_t)va_arg(args,
                                                           unsigned long long),
@@ -288,7 +276,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         }
         break;
       }
-#if PRINTF_SUPPORT_DECIMAL_SPECIFIERS
+#if RCSW_STDIO_PRINTF_SUPPORT_DEC
       case 'f':
       case 'F':
         if (*format == 'F')
@@ -302,7 +290,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         format++;
         break;
 #endif
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if RCSW_STDIO_PRINTF_SUPPORT_EXP
       case 'e':
       case 'E':
       case 'g':
@@ -319,21 +307,21 @@ static inline void format_string_loop(struct printf_output_gadget* output,
                              PRINTF_PREFER_EXPONENTIAL);
         format++;
         break;
-#endif // PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#endif
       case 'c': {
         printf_size_t l = 1U;
         // pre padding
         if (!(flags & FLAGS_LEFT)) {
           while (l++ < width) {
-            putchar_via_gadget(output, ' ');
+            gadget_putchar(output, ' ');
           }
         }
         // char output
-        putchar_via_gadget(output, (char)va_arg(args, int));
+        gadget_putchar(output, (char)va_arg(args, int));
         // post padding
         if (flags & FLAGS_LEFT) {
           while (l++ < width) {
-            putchar_via_gadget(output, ' ');
+            gadget_putchar(output, ' ');
           }
         }
         format++;
@@ -346,25 +334,25 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           out_rev_(output, ")llun(", 6, width, flags);
         } else {
           printf_size_t l = stdio_strnlen(
-              p, precision ? precision : PRINTF_MAX_POSSIBLE_BUFFER_SIZE);
+              p, precision ? precision : PRINTF_MAX_BUF_SIZE);
           // pre padding
           if (flags & FLAGS_PRECISION) {
             l = (l < precision ? l : precision);
           }
           if (!(flags & FLAGS_LEFT)) {
             while (l++ < width) {
-              putchar_via_gadget(output, ' ');
+              gadget_putchar(output, ' ');
             }
           }
           // string output
           while ((*p != 0) && (!(flags & FLAGS_PRECISION) || precision)) {
-            putchar_via_gadget(output, *(p++));
+            gadget_putchar(output, *(p++));
             --precision;
           }
           // post padding
           if (flags & FLAGS_LEFT) {
             while (l++ < width) {
-              putchar_via_gadget(output, ' ');
+              gadget_putchar(output, ' ');
             }
           }
         }
@@ -389,14 +377,14 @@ static inline void format_string_loop(struct printf_output_gadget* output,
       }
 
       case '%':
-        putchar_via_gadget(output, '%');
+        gadget_putchar(output, '%');
         format++;
         break;
 
         // Many people prefer to disable support for %n, as it lets the caller
         // engineer a write to an arbitrary location, of a value the caller
         // effectively controls - which could be a security concern in some cases.
-#if PRINTF_SUPPORT_WRITEBACK_SPECIFIER
+#if RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
       case 'n': {
         if (flags & FLAGS_CHAR)
           *(va_arg(args, char*)) = (char)output->pos;
@@ -404,19 +392,19 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           *(va_arg(args, short*)) = (short)output->pos;
         else if (flags & FLAGS_LONG)
           *(va_arg(args, long*)) = (long)output->pos;
-#if PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
         else if (flags & FLAGS_LONG_LONG)
           *(va_arg(args, long long*)) = (long long int)output->pos;
-#endif // PRINTF_SUPPORT_LONG_LONG
+#endif
         else
           *(va_arg(args, int*)) = (int)output->pos;
         format++;
         break;
       }
-#endif // PRINTF_SUPPORT_WRITEBACK_SPECIFIER
+#endif
 
       default:
-        putchar_via_gadget(output, *format);
+        gadget_putchar(output, *format);
         format++;
         break;
     }
@@ -433,7 +421,7 @@ static int vsnprintf_impl(struct printf_output_gadget* output,
   format_string_loop(output, format, args);
 
   // termination
-  append_termination_with_gadget(output);
+  gadget_append_termination(output);
 
   // return written chars without terminating \0
   return (int)output->pos;
@@ -443,24 +431,24 @@ static int vsnprintf_impl(struct printf_output_gadget* output,
  * API Functions
  ******************************************************************************/
 int stdio_vprintf(const char* format, va_list arg) {
-  struct printf_output_gadget gadget = extern_putchar_gadget();
+  struct printf_output_gadget gadget = gadget_putchar_extern();
   return vsnprintf_impl(&gadget, format, arg);
 }
 
 int stdio_vsnprintf(char* s, size_t n, const char* format, va_list arg) {
-  struct printf_output_gadget gadget = buffer_gadget(s, n);
+  struct printf_output_gadget gadget = gadget_init_with_buf(s, n);
   return vsnprintf_impl(&gadget, format, arg);
 }
 
 int stdio_vsprintf(char* s, const char* format, va_list arg) {
-  return stdio_vsnprintf(s, PRINTF_MAX_POSSIBLE_BUFFER_SIZE, format, arg);
+  return stdio_vsnprintf(s, PRINTF_MAX_BUF_SIZE, format, arg);
 }
 
 int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
                      void* extra_arg,
                      const char* format,
                      va_list arg) {
-  struct printf_output_gadget gadget = function_gadget(out, extra_arg);
+  struct printf_output_gadget gadget = gadget_init_with_cb(out, extra_arg);
   return vsnprintf_impl(&gadget, format, arg);
 }
 

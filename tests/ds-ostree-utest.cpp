@@ -32,7 +32,7 @@ int n_elements; /* global var for # elements in RBTREE */
  ******************************************************************************/
 static void run_test(ds_test_t test) {
   struct ds_params params;
-  params.tag = DS_BSTREE;
+  params.tag = ekRCSW_DS_BSTREE;
   params.flags = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
   params.elt_size = sizeof(struct element8);
   params.max_elts = TH_NUM_ITEMS;

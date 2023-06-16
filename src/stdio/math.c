@@ -1,7 +1,10 @@
 /**
  * \file math.c
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+ *             2021-2022, Haifa, Palestine/Israel
+ * \author (c) Marco Paland (info@paland.com)
+ *             2014-2019, PALANDesign Hannover, Germany
  *
  * SPDX-License Identifier:
  */
@@ -18,8 +21,6 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-// Computes the base-10 logarithm of the input number - which must be an actual
-// positive number (not infinity or NaN, nor a sub-normal)
 double stdio_log10(double positive_number) {
   // The implementation follows David Gay (https://www.ampl.com/netlib/fp/dtoa.c).
   //
@@ -40,12 +41,12 @@ double stdio_log10(double positive_number) {
       // Taylor expansion around 1.5:
       0.1760912590556812420 // Expansion term 0: ln(1.5)            / ln(10)
       + z * 0.2895296546021678851 // Expansion term 1: (M - 1.5)   * 2/3  / ln(10)
-#if PRINTF_LOG10_TAYLOR_TERMS > 2
+#if RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS > 2
       - z * z * 0.0965098848673892950 // Expansion term 2: (M - 1.5)^2 * 2/9  /
-                                      // ln(10)
-#if PRINTF_LOG10_TAYLOR_TERMS > 3
+  // ln(10)
+#if RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS > 3
       + z * z * z * 0.0428932821632841311 // Expansion term 2: (M - 1.5)^3 * 8/81
-                                          // / ln(10)
+  // / ln(10)
 #endif
 #endif
       // exact log_2 of the exponent x, with logarithm base change
@@ -58,7 +59,11 @@ int stdio_floor(double x) {
     return (int)x;
   }
   int n = (int)x;
+
+  RCSW_WARNING_DISABLE_PUSH()
+  RCSW_WARNING_DISABLE_FLOAT_EQUAL()
   return (((double)n) == x) ? n : n - 1;
+  RCSW_WARNING_DISABLE_POP()
 }
 
 double stdio_pow10(int floored_exp10) {

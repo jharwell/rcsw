@@ -186,24 +186,6 @@ int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
   return (*s1 - *s2);
 } /* stdio_strncmp() */
 
-size_t stdio_num_digits(int a) {
-  if (a == 0) {
-    return 1;
-  }
-
-  if (a < 0) {
-    a = -a;
-  }
-
-  int count = 0;
-  while (a) {
-    a /= 10;
-    count++;
-  }
-
-  return count;
-} /* stdio_num_digits */
-
 int stdio_tolower(int c) {
   if (c >= 'A' && c <= 'Z') {
     c += ('a' - 'A');

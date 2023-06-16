@@ -33,7 +33,7 @@ static void run_test(void (*test)(enum gen_elt_type, struct ds_params *params),
   /* dbg_mod_lvl_set(M_DS_BIN_HEAP, DBG_V); */
   /* dbg_mod_lvl_set(M_DS_DARRAY, DBG_V); */
   struct ds_params params;
-  params.tag = DS_BIN_HEAP;
+  params.tag = ekRCSW_DS_BIN_HEAP;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;

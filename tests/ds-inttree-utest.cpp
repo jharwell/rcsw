@@ -34,7 +34,7 @@ int n_elements; /* global var for # elements in RBTREE */
  ******************************************************************************/
 static void run_test(ds_test_t test) {
   struct ds_params params;
-  params.tag = DS_BSTREE;
+  params.tag = ekRCSW_DS_BSTREE;
   params.flags = 0;
   params.elt_size = sizeof(struct interval_data);
   params.max_elts = TH_NUM_ITEMS;

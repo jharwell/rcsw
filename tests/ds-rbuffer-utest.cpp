@@ -28,7 +28,7 @@ static void run_test(ds_test_t test) {
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
   struct ds_params params;
-  params.tag = DS_RBUFFER;
+  params.tag = ekRCSW_DS_RBUFFER;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
@@ -112,7 +112,9 @@ static void overwrite_test(int len, struct ds_params *  params) {
     }
     count = 0;
     T * ep = nullptr;
-    struct ds_iterator *iter = ds_iter_init(DS_RBUFFER, rb, nullptr);
+    struct ds_iterator *iter = ds_iter_init(rb,
+                                            ekRCSW_DS_RBUFFER,
+                                            ekRCSW_DS_ITER_FORWARD);
     while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
       CATCH_REQUIRE(memcmp(ep,
                            &arr[tail+count+rb->start],
@@ -243,26 +245,43 @@ static void iter_test(int len, struct ds_params * params) {
 
   /* test iteration of without overwriting */
   T* e;
-  struct ds_iterator * iter = ds_iter_init(DS_RBUFFER,
-                                           rb,
-                                           th_iter_func<T>);
+  struct ds_iterator * iter = ds_filter_init(rb,
+                                             ekRCSW_DS_RBUFFER,
+                                             th_iter_func<T>);
   CATCH_REQUIRE(iter != nullptr);
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   } /* while() */
 
-  iter = ds_iter_init(DS_RBUFFER, rb, nullptr);
+  /*
+   * Forward iteration
+   */
+  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_FORWARD);
   CATCH_REQUIRE(iter);
-  unsigned count = 0;
+  size_t count = 0;
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE((size_t)e->value1 == count);
     count++;
   } /* while() */
   CATCH_REQUIRE(count == rbuffer_n_elts(rb));
 
-  /* test iteration with overwriting */
+  /*
+   * Backward iteration
+   */
+  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_BACKWARD);
+  CATCH_REQUIRE(nullptr != iter);
+  count = 0;
+  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+    CATCH_REQUIRE((size_t)e->value1 == len - count - 1);
+    count++;
+  } /* while() */
+  CATCH_REQUIRE(count == rbuffer_n_elts(rb));
+
+  /*
+   * Iteration with overwriting
+   */
   CATCH_REQUIRE(rbuffer_clear(rb) == OK);
-  unsigned tail = 0;
+  size_t tail = 0;
 
   g.reset();
   for (int i = 0; i < len * len; i++) {
@@ -272,10 +291,11 @@ static void iter_test(int len, struct ds_params * params) {
     if (i >= len) {
       tail++;
     }
+
     /* verify iteration */
     count = 0;
     T* ep = nullptr;
-    iter = ds_iter_init(DS_RBUFFER, rb, nullptr);
+    iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_FORWARD);
     while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
       CATCH_REQUIRE(ep->value1 == arr[tail+count+rb->start]);
       count++;

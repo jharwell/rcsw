@@ -36,7 +36,7 @@ static void run_test(uint32_t extra_flags,
                      ds_bstree_test_t test,
                      bst_verify_cb verify_cb) {
   struct ds_params params;
-  params.tag = DS_BSTREE;
+  params.tag = ekRCSW_DS_BSTREE;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th_printe<T>;
@@ -67,7 +67,7 @@ static void run_test_remove(uint32_t extra_flags,
                             ds_bstree_rm_test_t test,
                             bst_verify_cb verify_cb) {
   struct ds_params params;
-  params.tag = DS_BSTREE;
+  params.tag = ekRCSW_DS_BSTREE;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th_printe<T>;

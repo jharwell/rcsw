@@ -26,16 +26,16 @@
  * use the same initialization structure.
  */
 enum ds_tag {
-  DS_DARRAY,
-  DS_LLIST,
-  DS_HASHMAP,
-  DS_BSTREE,
-  DS_RBUFFER,
-  DS_BIN_HEAP,
-  DS_FIFO,
-  DS_STATIC_MATRIX,
-  DS_DYNAMIC_MATRIX,
-  DS_ADJ_MATRIX
+  ekRCSW_DS_DARRAY,
+  ekRCSW_DS_LLIST,
+  ekRCSW_DS_HASHMAP,
+  ekRCSW_DS_BSTREE,
+  ekRCSW_DS_RBUFFER,
+  ekRCSW_DS_BIN_HEAP,
+  ekRCSW_DS_FIFO,
+  ekRCSW_DS_STATIC_MATRIX,
+  ekRCSW_DS_DYNAMIC_MATRIX,
+  ekRCSW_DS_ADJ_MATRIX
 };
 
 /**
@@ -318,6 +318,15 @@ struct ds_params {
   } type;
 
   /**
+   * Key for which member of union is valid. For data structures that do not
+   * require additional parameters, and have no entry in the union above, it
+   * serves as a sanity check for programmers to make sure the data structure
+   * they are initializing is the one they intended.
+   */
+  enum ds_tag tag;
+
+
+  /**
    * For comparing elements.
    *
    * Cannot  be NULL for:
@@ -368,14 +377,6 @@ struct ds_params {
   uint8_t *elements;
 
   /**
-   * Key for which member of union is valid. For data structures that do not
-   * require additional parameters, and have no entry in the union above, it
-   * serves as a sanity check for programmers to make sure the data structure
-   * they are initializing is the one they intended.
-   */
-  enum ds_tag tag;
-
-  /**
    * size of elements in bytes.
    */
   size_t elt_size;
@@ -391,27 +392,6 @@ struct ds_params {
    * Initialization flags
    */
   uint32_t flags;
-};
-
-/**
- * \brief Data structure iterator.
- *
- * Used to provide a uniform interface for iterating through data
- * structures. Not implemented on all data structures in library.
- */
-struct ds_iterator {
-  struct darray *arr;
-  struct rbuffer *rb;
-  struct llist *list;
-  struct llist_node *curr;
-  size_t index;
-  enum ds_tag tag;
-
-  /**
-   * Classification function. Used to determine which elements are returned
-   * during iteration.
-   */
-  bool_t (*classify)(void *e);
 };
 
 /*******************************************************************************
@@ -480,32 +460,6 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
 /*******************************************************************************
  * Function Prototypes
  ******************************************************************************/
-/**
- * \brief - Get the next element that matches the iteration conditions
- *
- * \param iter The iterator
- *
- * \return The next element, or NULL if no more
- */
-void *ds_iter_next(struct ds_iterator *iter);
-
-
-/**
- * \brief Initialize an iterator
- *
- * Initialize an iterator to iterate of some/all of the elements of a
- * data structure. Not implemented for all data structures yet...
- *
- * \param tag What type of data structure to initialize for
- * \param ds The data structure to iterate over
- * \param f The function to determine if an element will be returned by the iterator
- * or not. If NULL, all elements will be returned in order.
- *
- * \return The initialized iterator, or NULL if an ERROR occurred
- */
-struct ds_iterator * ds_iter_init(enum ds_tag tag, void *ds,
-                                  bool_t (*f)(void *e));
-
 /**
  * \brief Utility function to copy elt2 into elt1, overwriting.
  *

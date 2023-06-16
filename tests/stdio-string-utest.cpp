@@ -1,5 +1,5 @@
 /**
- * \file string-test.cpp
+ * \file stdio-string-test.cpp
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -9,11 +9,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#if !defined(__nos__)
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#endif
+
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
@@ -227,8 +226,6 @@ static void strrep_test(void) {
       string_gen(replacement, rep_len);
 
       /* replace the all occurrences of pattern in original with replacement */
-      /* printf("original: %s pattern: %s replacement: %s\n", original, pattern, replacement); */
-      /* printf("new: %s\n",new); */
       stdio_strrep(original, pattern, replacement, new_str);
       CATCH_REQUIRE(strlen(original) + pat_count * strlen(replacement) -
                     pat_count * strlen(pattern) == strlen(new_str));

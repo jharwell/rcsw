@@ -1,7 +1,10 @@
 /**
  * \file printf_float.c
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+ *             2021-2022, Haifa, Palestine/Israel
+ * \author (c) Marco Paland (info@paland.com)
+ *             2014-2019, PALANDesign Hannover, Germany
  *
  * SPDX-License Identifier:
  */
@@ -21,7 +24,7 @@
 // The following will convert the number-of-digits into an exponential-notation
 // literal
 #define PRINTF_FLOAT_NOTATION_THRESHOLD \
-  RCSW_JOIN(1e, PRINTF_MAX_INTEGRAL_DIGITS_FOR_DECIMAL)
+  RCSW_JOIN(1e, RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH)
 
 #define NUM_DECIMAL_DIGITS_IN_INT64_T 18
 #define PRINTF_MAX_PRECOMPUTED_POWER_OF_10 NUM_DECIMAL_DIGITS_IN_INT64_T
@@ -51,6 +54,8 @@ static const double powers_of_10[NUM_DECIMAL_DIGITS_IN_INT64_T] = {
 /*******************************************************************************
  * Misc. Private Functions
  ******************************************************************************/
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_FLOAT_EQUAL()
 /**
  * \brief Break up a double number - which is known to be a finite non-negative
  * number - into its base-10 parts: integral - before the decimal point, and
@@ -123,7 +128,7 @@ static void print_broken_up_decimal(struct double_components number_,
 
     if (number_.fractional > 0 || !(flags & FLAGS_ADAPT_EXP) ||
         (flags & FLAGS_HASH)) {
-      while (len < PRINTF_DECIMAL_BUFFER_SIZE) {
+      while (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
         --count;
         buf[len++] = (char)('0' + number_.fractional % 10U);
         if (!(number_.fractional /= 10U)) {
@@ -131,23 +136,23 @@ static void print_broken_up_decimal(struct double_components number_,
         }
       }
       // add extra 0s
-      while ((len < PRINTF_DECIMAL_BUFFER_SIZE) && (count > 0U)) {
+      while ((len < RCSW_STDIO_PRINTF_BUFFER_SIZE) && (count > 0U)) {
         buf[len++] = '0';
         --count;
       }
-      if (len < PRINTF_DECIMAL_BUFFER_SIZE) {
+      if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
         buf[len++] = '.';
       }
     }
   } else {
-    if ((flags & FLAGS_HASH) && (len < PRINTF_DECIMAL_BUFFER_SIZE)) {
+    if ((flags & FLAGS_HASH) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = '.';
     }
   }
 
   // Write the integer part of the number (it comes after the fractional
   // since the character order is reversed)
-  while (len < PRINTF_DECIMAL_BUFFER_SIZE) {
+  while (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
     buf[len++] = (char)('0' + (number_.integral % 10));
     if (!(number_.integral /= 10)) {
       break;
@@ -159,12 +164,12 @@ static void print_broken_up_decimal(struct double_components number_,
     if (width && (number_.is_negative || (flags & (FLAGS_PLUS | FLAGS_SPACE)))) {
       width--;
     }
-    while ((len < width) && (len < PRINTF_DECIMAL_BUFFER_SIZE)) {
+    while ((len < width) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = '0';
     }
   }
 
-  if (len < PRINTF_DECIMAL_BUFFER_SIZE) {
+  if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
     if (number_.is_negative) {
       buf[len++] = '-';
     } else if (flags & FLAGS_PLUS) {
@@ -192,7 +197,7 @@ static void print_decimal_number(struct printf_output_gadget* output,
 /*******************************************************************************
  * Exponential Support
  ******************************************************************************/
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if RCSW_STDIO_PRINTF_SUPPORT_EXP
 struct scaling_factor {
   double raw_factor;
   bool_t multiply; // if true, need to multiply by raw_factor; otherwise need to
@@ -343,9 +348,9 @@ static void print_exponential_number(struct printf_output_gadget* output,
     int precision_ = fall_back_to_decimal_only_mode
                          ? (int)precision - 1 - floored_exp10
                          : (int)precision - 1; // the presence of the exponent
-                                               // ensures only one significant
-                                               // digit comes before the decimal
-                                               // point
+    // ensures only one significant
+    // digit comes before the decimal
+    // point
     precision = (precision_ > 0 ? (unsigned)precision_ : 0U);
     flags |= FLAGS_PRECISION; // make sure print_broken_up_decimal respects our
                               // choice above
@@ -381,9 +386,9 @@ static void print_exponential_number(struct printf_output_gadget* output,
     }
   }
 
-  // the floored_exp10 format is "E%+03d" and largest possible floored_exp10 value
-  // for a 64-bit double is "307" (for 2^1023), so we set aside 4-5 characters
-  // overall
+  // the floored_exp10 format is "E%+03d" and largest possible floored_exp10
+  // value for a 64-bit double is "307" (for 2^1023), so we set aside 4-5
+  // characters overall
   printf_size_t exp10_part_width = fall_back_to_decimal_only_mode      ? 0U
                                    : (PRINTF_ABS(floored_exp10) < 100) ? 4U
                                                                        : 5U;
@@ -401,13 +406,13 @@ static void print_exponential_number(struct printf_output_gadget* output,
           // fit within our overall width?
           ((width > exp10_part_width) ?
                                       // Yes, so we limit our decimal part's
-                                      // width. (Note this is trivially valid even
-                                      // if we've fallen back to "%f" mode)
+               // width. (Note this is trivially valid even
+               // if we've fallen back to "%f" mode)
                width - exp10_part_width
                                       :
                                       // No; we just give up on any restriction on
-                                      // the decimal part and use as many
-                                      // characters as we need
+               // the decimal part and use as many
+               // characters as we need
                0U);
 
   const printf_size_t printed_exponential_start_pos = output->pos;
@@ -420,7 +425,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
                           len);
 
   if (!fall_back_to_decimal_only_mode) {
-    putchar_via_gadget(output, (flags & FLAGS_UPPERCASE) ? 'E' : 'e');
+    gadget_putchar(output, (flags & FLAGS_UPPERCASE) ? 'E' : 'e');
     print_integer(output,
                   ABS_FOR_PRINTING(floored_exp10),
                   floored_exp10 < 0,
@@ -431,7 +436,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
     if (flags & FLAGS_LEFT) {
       // We need to right-pad with spaces to meet the width requirement
       while (output->pos - printed_exponential_start_pos < width) {
-        putchar_via_gadget(output, ' ');
+        gadget_putchar(output, ' ');
       }
     }
   }
@@ -447,10 +452,10 @@ void print_floating_point(struct printf_output_gadget* output,
                           printf_size_t width,
                           printf_flags_t flags,
                           bool_t prefer_exponential) {
-  char buf[PRINTF_DECIMAL_BUFFER_SIZE];
+  char buf[RCSW_STDIO_PRINTF_BUFFER_SIZE];
   printf_size_t len = 0U;
 
-  // test for special values
+  /* test for special values */
   if (value != value) {
     out_rev_(output, "nan", 3, width, flags);
     return;
@@ -473,7 +478,7 @@ void print_floating_point(struct printf_output_gadget* output,
     // The required behavior of standard printf is to print _every_ integral-part
     // digit -- which could mean printing hundreds of characters, overflowing any
     // fixed internal buffer and necessitating a more complicated implementation.
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if RCSW_STDIO_PRINTF_SUPPORT_EXP
     print_exponential_number(output, value, precision, width, flags, buf, len);
 #endif
     return;
@@ -481,22 +486,23 @@ void print_floating_point(struct printf_output_gadget* output,
 
   // set default precision, if not set explicitly
   if (!(flags & FLAGS_PRECISION)) {
-    precision = PRINTF_DEFAULT_FLOAT_PRECISION;
+    precision = RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC;
   }
 
   // limit precision so that our integer holding the fractional part does not
   // overflow
-  while ((len < PRINTF_DECIMAL_BUFFER_SIZE) &&
+  while ((len < RCSW_STDIO_PRINTF_BUFFER_SIZE) &&
          (precision > PRINTF_MAX_SUPPORTED_PRECISION)) {
     buf[len++] = '0'; // This respects the precision in terms of result length
                       // only
     precision--;
   }
 
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if RCSW_STDIO_PRINTF_SUPPORT_EXP
   if (prefer_exponential)
     print_exponential_number(output, value, precision, width, flags, buf, len);
   else
 #endif
     print_decimal_number(output, value, precision, width, flags, buf, len);
 }
+RCSW_WARNING_DISABLE_POP()

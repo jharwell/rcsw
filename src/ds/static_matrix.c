@@ -30,7 +30,7 @@ struct static_matrix* static_matrix_init(struct static_matrix* const matrix_in,
                                          const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               NULL != params,
-              params->tag == DS_STATIC_MATRIX,
+              params->tag == ekRCSW_DS_STATIC_MATRIX,
               params->type.smat.n_rows > 0,
               params->type.smat.n_cols > 0)
   struct static_matrix* matrix = NULL;

@@ -44,7 +44,7 @@ static void static_adj_matrix_printew(const void* e);
 struct static_adj_matrix*
 static_adj_matrix_init(struct static_adj_matrix* const matrix_in,
                        const struct ds_params* const params) {
-  RCSW_FPC_NV(NULL, NULL != params, params->tag == DS_ADJ_MATRIX);
+  RCSW_FPC_NV(NULL, NULL != params, params->tag == ekRCSW_DS_ADJ_MATRIX);
   struct static_adj_matrix* matrix = NULL;
 
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -71,7 +71,7 @@ static_adj_matrix_init(struct static_adj_matrix* const matrix_in,
     .elements = params->elements,
     .elt_size = matrix->elt_size,
     .flags = params->flags | RCSW_DS_NOALLOC_HANDLE,
-    .tag = DS_STATIC_MATRIX
+    .tag = ekRCSW_DS_STATIC_MATRIX
   };
   if (matrix->is_weighted) {
     mat_params.printe = static_adj_matrix_printew;

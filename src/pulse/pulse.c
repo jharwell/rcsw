@@ -103,7 +103,7 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
   struct ds_params llist_params = { .max_elts = (int)pulse->max_subs,
                                     .elt_size = sizeof(struct pulse_sub_ent),
                                     .cmpe = pulse_sub_ent_cmp,
-                                    .tag = DS_LLIST,
+                                    .tag = ekRCSW_DS_LLIST,
                                     .flags = RCSW_DS_SORTED };
   pulse->sub_list = llist_init(NULL, &llist_params);
   RCSW_CHECK_PTR(pulse->sub_list);

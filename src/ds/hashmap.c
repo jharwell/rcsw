@@ -147,7 +147,7 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
       .printe = NULL,
       .max_elts = (int)params->type.hm.bsize,
       .elt_size = sizeof(struct hashnode),
-      .tag = DS_DARRAY,
+      .tag = ekRCSW_DS_DARRAY,
       .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_NOALLOC_DATA};
   if (params->flags & RCSW_DS_SORTED) {
     da_params.flags |= RCSW_DS_SORTED;

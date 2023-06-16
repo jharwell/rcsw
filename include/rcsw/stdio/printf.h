@@ -46,14 +46,12 @@ BEGIN_C_DECLS
  * \return The number of characters written into \p s, not counting the
  * terminating null character
  */
-int stdio_printf(const char* format, ...) RCSW_ATTR(format(gnu_printf, 1, 2));
+int stdio_printf(const char* format, ...) RCSW_ATTR_PRINTF(1, 2);
 
 /**
  * \brief Same as \ref stdio_printf(), but you pass a va_list directly.
  */
-int stdio_vprintf(const char* format,
-                   va_list arg) RCSW_ATTR(format(gnu_printf, 1, 0));
-
+int stdio_vprintf(const char* format, va_list arg) RCSW_ATTR_PRINTF(1, 0);
 
 /**
  * An implementation of the C standard's sprintf()
@@ -73,16 +71,14 @@ int stdio_vprintf(const char* format,
  * \return The number of characters written into \p s, not counting the
  * terminating null character
  */
-int stdio_sprintf(char* s,
-                   const char* format,
-                   ...) RCSW_ATTR(format(gnu_printf, 2, 3));
+int stdio_sprintf(char* s, const char* format, ...) RCSW_ATTR_PRINTF(2, 3);
 
 /**
  * \brief Same as \ref stdio_sprintf(), but you pass a va_list directly.
  */
 int stdio_vsprintf(char* s,
-              const char* format,
-              va_list arg) RCSW_ATTR(format(gnu_printf, 2, 0));
+                   const char* format,
+                   va_list arg) RCSW_ATTR_PRINTF(2, 0);
 
 /**
  * An implementation of the C standard's snprintf()
@@ -110,7 +106,7 @@ int stdio_vsprintf(char* s,
 int  stdio_snprintf(char* s,
                     size_t count,
                     const char* format,
-                    ...) RCSW_ATTR(format(gnu_printf, 3, 4));
+                    ...) RCSW_ATTR_PRINTF(3, 4);
 
 /**
  * \brief Same as \ref stdio_snprintf(), but you pass a va_list directly.
@@ -118,7 +114,7 @@ int  stdio_snprintf(char* s,
 int stdio_vsnprintf(char* s,
                     size_t count,
                     const char* format,
-                    va_list arg) RCSW_ATTR(format(gnu_printf, 3, 0));
+                    va_list arg) RCSW_ATTR_PRINTF(3, 0);
 
 /**
  * printf/vprintf with user-specified output function
@@ -144,7 +140,7 @@ int stdio_vsnprintf(char* s,
 int stdio_usfprintf(void (*out)(char c, void* extra_arg),
                     void* extra_arg,
                     const char* format,
-                    ...) RCSW_ATTR(format(gnu_printf, 3, 4));
+                    ...) RCSW_ATTR_PRINTF(3, 4);
 
 /**
  * \brief Same as \ref stdio_usfprintf(), but you pass a va_list directly.
@@ -152,6 +148,6 @@ int stdio_usfprintf(void (*out)(char c, void* extra_arg),
 int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
                      void* extra_arg,
                      const char* format,
-                     va_list arg) RCSW_ATTR(format(gnu_printf, 3, 0));
+                     va_list arg) RCSW_ATTR_PRINTF(3, 0);
 
 END_C_DECLS

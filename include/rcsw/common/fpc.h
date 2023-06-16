@@ -39,6 +39,10 @@
  */
 #define RCSW_FPC_RETURN 1
 
+#ifndef RCSW_FPC_TYPE
+#define RCSW_FPC_TYPE RCSW_FPC_ABORT
+#endif
+
 /*******************************************************************************
  * Function Precondition Checking Macros
  ******************************************************************************/

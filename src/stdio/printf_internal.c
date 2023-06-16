@@ -1,7 +1,10 @@
 /**
  * \file printf_internal.c
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+ *             2021-2022, Haifa, Palestine/Israel
+ * \author (c) Marco Paland (info@paland.com)
+ *             2014-2019, PALANDesign Hannover, Germany
  *
  * SPDX-License Identifier:
  */
@@ -14,7 +17,6 @@
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-// output the specified string in reverse, taking care of any zero-padding
 void out_rev_(struct printf_output_gadget* output,
               const char* buf,
               printf_size_t len,
@@ -25,24 +27,23 @@ void out_rev_(struct printf_output_gadget* output,
   // pad spaces up to given width
   if (!(flags & FLAGS_LEFT) && !(flags & FLAGS_ZEROPAD)) {
     for (printf_size_t i = len; i < width; i++) {
-      putchar_via_gadget(output, ' ');
+      gadget_putchar(output, ' ');
     }
   }
 
   // reverse string
   while (len) {
-    putchar_via_gadget(output, buf[--len]);
+    gadget_putchar(output, buf[--len]);
   }
 
   // append pad spaces up to given width
   if (flags & FLAGS_LEFT) {
     while (output->pos - start_pos < width) {
-      putchar_via_gadget(output, ' ');
+      gadget_putchar(output, ' ');
     }
   }
 }
 
-// An internal itoa-like function
 void print_integer(struct printf_output_gadget* output,
                    printf_unsigned_value_t value,
                    bool_t negative,
@@ -50,7 +51,7 @@ void print_integer(struct printf_output_gadget* output,
                    printf_size_t precision,
                    printf_size_t width,
                    printf_flags_t flags) {
-  char buf[PRINTF_INTEGER_BUFFER_SIZE];
+  char buf[RCSW_STDIO_PRINTF_BUFFER_SIZE];
   printf_size_t len = 0U;
 
   if (!value) {
@@ -72,16 +73,14 @@ void print_integer(struct printf_output_gadget* output,
           (char)(digit < 10 ? '0' + digit
                             : (flags & FLAGS_UPPERCASE ? 'A' : 'a') + digit - 10);
       value /= base;
-    } while (value && (len < PRINTF_INTEGER_BUFFER_SIZE));
+    } while (value && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE));
   }
 
   print_integer_finalization(
       output, buf, len, negative, base, precision, width, flags);
 }
 
-// Invoked by print_integer after the actual number has been printed, performing
-// necessary work on the number's prefix (as the number is initially printed in
-// reverse order)
+
 void print_integer_finalization(struct printf_output_gadget* output,
                                 char* buf,
                                 printf_size_t len,
@@ -100,12 +99,12 @@ void print_integer_finalization(struct printf_output_gadget* output,
         width--;
       }
       while ((flags & FLAGS_ZEROPAD) && (len < width) &&
-             (len < PRINTF_INTEGER_BUFFER_SIZE)) {
+             (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
         buf[len++] = '0';
       }
     }
 
-    while ((len < precision) && (len < PRINTF_INTEGER_BUFFER_SIZE)) {
+    while ((len < precision) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = '0';
     }
 
@@ -131,20 +130,20 @@ void print_integer_finalization(struct printf_output_gadget* output,
       }
     }
     if ((base == BASE_HEX) && !(flags & FLAGS_UPPERCASE) &&
-        (len < PRINTF_INTEGER_BUFFER_SIZE)) {
+        (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = 'x';
     } else if ((base == BASE_HEX) && (flags & FLAGS_UPPERCASE) &&
-               (len < PRINTF_INTEGER_BUFFER_SIZE)) {
+               (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = 'X';
-    } else if ((base == BASE_BINARY) && (len < PRINTF_INTEGER_BUFFER_SIZE)) {
+    } else if ((base == BASE_BINARY) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
       buf[len++] = 'b';
     }
-    if (len < PRINTF_INTEGER_BUFFER_SIZE) {
+    if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
       buf[len++] = '0';
     }
   }
 
-  if (len < PRINTF_INTEGER_BUFFER_SIZE) {
+  if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
     if (negative) {
       buf[len++] = '-';
     } else if (flags & FLAGS_PLUS) {

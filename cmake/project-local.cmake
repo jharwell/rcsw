@@ -17,13 +17,80 @@ libra_configure_version(
   rcsw_components_SRC
   )
 
-if (NOT RCSW_STDIO_PRINTF_BUFSIZE)
-  set(RCSW_STDIO_PRINTF_BUFSIZE 256)
+# 'ntoa' conversion buffer size, this must be big enough to hold one
+# converted numeric number including padded zeros (dynamically created
+# on stack)
+if (NOT RCSW_STDIO_PRINTF_BUFFER_SIZE)
+  set(RCSW_STDIO_PRINTF_BUFFER_SIZE 32)
 endif()
 
-if (NOT RCSW_STDIO_PRINTF_ADD_CR)
-  set(RCSW_STDIO_PRINTF_ADD_CR YES)
+# Support for the decimal notation floating point conversion specifiers (%f,
+# %F)
+if (NOT RCSW_STDIO_PRINTF_SUPPORT_DEC)
+  set(RCSW_STDIO_PRINTF_SUPPORT_DEC YES)
 endif()
+
+# Support for the exponential notation floating point conversion specifiers
+# (%e, %g, %E, %G)
+if (NOT RCSW_STDIO_PRINTF_SUPPORT_EXP)
+  set(RCSW_STDIO_PRINTF_SUPPORT_EXP YES)
+endif()
+
+ # Support for the length write-back specifier (%n)
+if (NOT RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK)
+  set(RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK YES)
+endif()
+
+# Default precision for the floating point conversion specifiers (the C
+# standard sets this at 6)
+if (NOT RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC)
+  set(RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC 6)
+endif()
+
+# According to the C languages standard, printf() and related
+# functions must be able to print any integral number in
+# floating-point notation, regardless of length, when using the %f
+# specifier - possibly hundreds of characters, potentially overflowing
+# your buffers. In this implementation, all values beyond this
+# threshold are switched to exponential notation.
+if (NOT RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH)
+  set(RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH 9)
+endif()
+
+# Support for the long long integral types (with the ll, z and t
+# length modifiers for specifiers %d,%i,%o,%x,%X,%u, and with the %p
+# specifier). Note: 'L' (long double) is not supported.
+if (NOT RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG)
+  set(RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG YES)
+endif()
+
+# The number of terms in a Taylor series expansion of log_10(x) to
+# use for approximation - including the power-zero term (i.e. the
+# value at the point of expansion).
+if (NOT RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS)
+  set(RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS 4)
+endif()
+
+# Be extra-safe, and don't assume format specifiers are completed correctly
+# before the format string end.
+if (NOT RCSW_STDIO_PRINTF_CHECK_NULL)
+  set(RCSW_STDIO_PRINTF_CHECK_NULL YES)
+endif()
+
+
+set (RCSW_STDIO_ONOFF_CONFIG
+  RCSW_STDIO_PRINTF_SUPPORT_DEC
+  RCSW_STDIO_PRINTF_SUPPORT_EXP
+  RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
+  RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+  RCSW_STDIO_PRINTF_CHECK_NULL
+)
+set (RCSW_STDIO_VALUE_CONFIG
+  RCSW_STDIO_PRINTF_BUFFER_SIZE
+  RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC
+  RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH
+  RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS
+)
 
 ################################################################################
 # Components
@@ -154,10 +221,30 @@ add_compile_definitions(${rcsw_LIBRARY}
   PRIVATE
   RCSW_STDIO_PUTCHAR=myputchar
 )
+
 # add_compile_definitions(${rcsw_LIBRARY}
 #   PRIVATE
 #   RCSW_STDIO_GETCHAR=mygetchar
 # )
+
+foreach(config ${RCSW_STDIO_ONOFF_CONFIG})
+  if(${config})
+      add_compile_definitions(${rcsw_LIBRARY}
+        PRIVATE
+        ${config}
+      )
+    endif()
+endforeach()
+
+foreach(config ${RCSW_STDIO_VALUE_CONFIG})
+  if(${config})
+      add_compile_definitions(${rcsw_LIBRARY}
+        PRIVATE
+        ${config}=${${config}}
+      )
+    endif()
+endforeach()
+
 
 ########################################
 # Include directories
@@ -222,6 +309,22 @@ message("                           RCSW Configuration Summary")
 message("--------------------------------------------------------------------------------")
 message("")
 
-message(STATUS "Version                               : rcsw_VERSION=${rcsw_VERSION}")
+message(STATUS "Version                                       : rcsw_VERSION=${rcsw_VERSION}")
+message(STATUS "stdio getchar() function                      : RCSW_STDIO_GETCHAR=${RCSW_STDIO_GETCHAR}")
+message(STATUS "stdio putchar() function                      : RCSW_STDIO_PUTCHAR=${RCSW_STDIO_PUTCHAR}")
+message(STATUS "stdio math taylor expansion terms             : RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS=${RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS}")
+message(STATUS "stdio printf() buffer size                    : RCSW_STDIO_PRINTF_BUFFER_SIZE=${RCSW_STDIO_PRINTF_BUFFER_SIZE}")
+message(STATUS "stdio printf() support for decimals           : RCSW_STDIO_PRINTF_SUPPORT_DEC=${RCSW_STDIO_PRINTF_SUPPORT_DEC}")
+message(STATUS "stdio printf() support for exponentials       : RCSW_STDIO_PRINTF_SUPPORT_EXP=${RCSW_STDIO_PRINTF_SUPPORT_EXP}")
+message(STATUS "stdio printf() support for writeback          : RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK=${RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK}")
+message(STATUS "stdio printf() default float precision        : RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC=${RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC}")
+message(STATUS "stdio printf() decimal -> exp digit threshold : RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH=${RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH}")
+message(STATUS "stdio printf() support for long long          : RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG=${RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG}")
+message(STATUS "stdio printf() safety check in fmt strings    : RCSW_STDIO_PRINTF_CHECK_NULL=${RCSW_STDIO_PRINTF_CHECK_NULL}")
+
+# add_compile_definitions(${rcsw_LIBRARY}
+#   PRIVATE
+#   RCSW_STDIO_GETCHAR=mygetchar
+# )
 message("")
 message("--------------------------------------------------------------------------------")

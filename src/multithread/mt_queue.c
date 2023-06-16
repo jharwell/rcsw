@@ -38,7 +38,7 @@ struct mt_queue* mt_queue_init(struct mt_queue* queue_in,
   struct ds_params fifo_params = { .max_elts = params->max_elts,
                                    .printe = NULL,
                                    .elt_size = params->elt_size,
-                                   .tag = DS_FIFO,
+                                   .tag = ekRCSW_DS_FIFO,
                                    .elements = params->elements,
                                    .flags = params->flags };
   fifo_params.flags |= RCSW_DS_NOALLOC_HANDLE;

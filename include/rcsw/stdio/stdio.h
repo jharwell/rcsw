@@ -24,14 +24,12 @@
 BEGIN_C_DECLS
 
 #ifndef RCSW_STDIO_PUTCHAR
-#warning "RCSW_STDIO_PUTCHAR not defined"
 #define RCSW_STDIO_PUTCHAR_UNDEF
 #else
 void RCSW_STDIO_PUTCHAR(char);
 #endif
 
 #ifndef RCSW_STDIO_GETCHAR
-#warning "RCSW_STDIO_GETCHAR not defined"
 #define RCSW_STDIO_GETCHAR_UNDEF
 #else
 int RCSW_STDIO_GETCHAR(void);
@@ -66,6 +64,8 @@ size_t stdio_puts(const char *const s);
 static inline void stdio_putchar(char c) {
   RCSW_STDIO_PUTCHAR(c);
 }
+#else
+static inline void stdio_putchar(char c) {}
 #endif
 
 /**
@@ -104,21 +104,22 @@ int stdio_atoi(const char *s, int base) RCSW_PURE;
  *
  * This routine converts an integer into a decimal string representing the value
  * of the original integer. Negative numbers are supported. For uniformity, a
- * '+' sign is prepended to the string of all converted positive numbers.
+ * '+' sign is prepended to the string of all converted positive numbers. Only
+ * supports 32-bit integers.
  *
  * \param n The number to convert
  * \param s The string to fill.
  *
  * \return The converted string.
  */
-char *stdio_itoad(int n, char *s);
+char *stdio_itoad(int32_t n, char *s);
 
 /**
  * \brief Convert an integer into a hexadecimal string.
  *
  * This routine converts an integer into a hexadecimal string representing the
  * value of the original integer. If i is negative, it will be treated as
- * size_t.
+ * size_t. Only supports 32-bit integers.
  *
  * \param i The number to convert.
  * \param s The string to fill.
@@ -126,27 +127,6 @@ char *stdio_itoad(int n, char *s);
  *
  * \return The converted string.
  */
-char *stdio_itoax(int i, char *s, bool_t add_0x);
-
-/**
- * \brief Convert a double into a string.
- *
- * This routine converts a double into a string representing the value
- * of the original double. Negative numbers are supported.
- *
- * If -10 < n < 10 and n is a whole number, and scientific notation is forced,
- * then the result will be something like 1 -> 1e+0 or -2 -> -2e+0. The lack of
- * a decimal point is due to the algorithm used, and I can't figure out how to
- * make this corner case work without screwing up the general case.
- *
- * \param n The number to convert.
- * \param force_exp If TRUE, scientific notation will always be used.
- * \param s The string to fill.
- *
- * RETURN:
- *     char* - The converted string.
- */
-char *stdio_dtoa(double n, bool_t force_exp, char *s);
-
+char *stdio_itoax(uint32_t i, char *s, bool_t add_0x);
 
 END_C_DECLS

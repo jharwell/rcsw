@@ -47,7 +47,7 @@ void test_runner(void (*test)(struct ds_params *params)) {
   dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix");
   dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V);
   struct ds_params params;
-  params.tag = DS_ADJ_MATRIX;
+  params.tag = ekRCSW_DS_ADJ_MATRIX;
   params.flags = 0;
   params.elt_size = sizeof(struct element8);
 

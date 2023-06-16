@@ -1,7 +1,10 @@
 /**
  * \file math.h
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \author (c) Eyal Rozenberg <eyalroz@\gmx.com>
+ *             2021-2022, Haifa, Palestine/Israel
+ * \author (c) Marco Paland (info@paland.com)
+ *             2014-2019, PALANDesign Hannover, Germany
  *
  * SPDX-License Identifier: MIT
  */
@@ -11,13 +14,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <float.h>
+#include <limits.h>
+
 #include "rcsw/common/common.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#include <float.h>
-#include <limits.h>
 
 #if FLT_RADIX != 2
 #error "Non-binary-radix floating-point types are unsupported."
@@ -86,7 +90,10 @@ static inline int stdio_exp2(double_with_bit_access x)
   return (int)((x.U >> DOUBLE_STORED_MANTISSA_BITS ) & DOUBLE_EXPONENT_MASK) - DOUBLE_BASE_EXPONENT;
 }
 
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_FLOAT_EQUAL()
 static inline bool stdio_isnan(double value) { return value != value; }
+RCSW_WARNING_DISABLE_POP()
 
 static inline bool stdio_isinf(double value) { return value < -DBL_MAX || value > DBL_MAX; }
 
@@ -94,6 +101,10 @@ static inline bool stdio_isinf(double value) { return value < -DBL_MAX || value 
 // floor value is representable by an int.
 int stdio_floor(double x);
 
+/**
+ * Computes the base-10 logarithm of the input number - which must be an actual
+ * positive number (not infinity or NaN, nor a sub-normal).
+ */
 double stdio_log10(double positive_number);
 
 double stdio_pow10(int floored_exp10);

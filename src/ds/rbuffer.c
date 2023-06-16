@@ -34,7 +34,7 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
                              const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == DS_RBUFFER,
+              params->tag == ekRCSW_DS_RBUFFER,
               params->max_elts > 0,
               params->elt_size > 0);
 
@@ -115,10 +115,10 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
   return OK;
 } /* rbuffer_add() */
 
-void* rbuffer_data_get(const struct rbuffer* const rb, size_t key) {
-  RCSW_FPC_NV(NULL, rb != NULL, key < rb->max_elts);
+void* rbuffer_data_get(const struct rbuffer* const rb, size_t idx) {
+  RCSW_FPC_NV(NULL, rb != NULL, idx < rb->max_elts);
 
-  return rb->elements + (key * rb->elt_size);
+  return rb->elements + (idx * rb->elt_size);
 } /* rbuffer_data_get() */
 
 status_t rbuffer_serve_front(const struct rbuffer* const rb, void* const e) {

@@ -30,7 +30,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
                                            const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               NULL != params,
-              params->tag == DS_DYNAMIC_MATRIX,
+              params->tag == ekRCSW_DS_DYNAMIC_MATRIX,
               params->type.dmat.n_rows > 0,
               params->type.dmat.n_cols > 0)
   struct dynamic_matrix* matrix = NULL;
@@ -53,7 +53,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
                                      .printe = NULL,
                                      .nodes = NULL,
                                      .elements = NULL,
-                                     .tag = DS_DARRAY,
+                                     .tag = ekRCSW_DS_DARRAY,
                                      .elt_size = sizeof(struct darray),
                                      .max_elts = -1,
                                      .flags = 0 };
@@ -66,7 +66,7 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
                                   .printe = NULL,
                                   .nodes = NULL,
                                   .elements = NULL,
-                                  .tag = DS_DARRAY,
+                                  .tag = ekRCSW_DS_DARRAY,
                                   .elt_size = matrix->elt_size,
                                   .max_elts = -1,
                                   .flags = RCSW_DS_NOALLOC_HANDLE };
@@ -126,7 +126,7 @@ dynamic_matrix_resize(struct dynamic_matrix* const matrix, size_t u, size_t v) {
                                     .printe = NULL,
                                     .nodes = NULL,
                                     .elements = NULL,
-                                    .tag = DS_DARRAY,
+                                    .tag = ekRCSW_DS_DARRAY,
                                     .elt_size = matrix->elt_size,
                                     .max_elts = -1,
                                     .flags = RCSW_DS_NOALLOC_HANDLE };

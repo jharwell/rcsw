@@ -29,7 +29,7 @@ static void run_test(hashmap_test_t test) {
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
   struct ds_params params;
-  params.tag = DS_HASHMAP;
+  params.tag = ekRCSW_DS_HASHMAP;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.type.hm.key_cmp = th_key_cmp;

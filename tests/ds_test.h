@@ -15,6 +15,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/common/dbg.h"
 
 #include "tests/element.h"

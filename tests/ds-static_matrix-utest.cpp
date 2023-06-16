@@ -37,7 +37,7 @@ static void test_runner(void (*test)(struct ds_params *params)) {
   dbg_mod_lvl_set(M_DS_STATIC_MATRIX, DBG_V);
 
   struct ds_params params;
-  params.tag = DS_STATIC_MATRIX;
+  params.tag = ekRCSW_DS_STATIC_MATRIX;
   params.elt_size = sizeof(struct element8);
   params.type.smat.n_cols = TH_NUM_ITEMS;
   params.type.smat.n_rows = TH_NUM_ITEMS;

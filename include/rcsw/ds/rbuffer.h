@@ -14,6 +14,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
@@ -35,9 +36,6 @@ struct rbuffer {
    */
   int (*cmpe)(const void *const e1, const void *const e2);
 
-  /**
-   * Iterator for elements.
-   */
   struct ds_iterator iter;
 
   /**
@@ -200,10 +198,10 @@ status_t rbuffer_remove(struct rbuffer * rb, void * e);
  * The ringbuffer is not modified.
  *
  * \param rb The ringbuffer handle.
- * \param key The index.
+ * \param idx The index.
  * \return The element, or NULL if an error occurred.
  */
-void* rbuffer_data_get(const struct rbuffer * rb, size_t key);
+void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
 
 /**
  * \brief  Get the index of an element in the ringbuffer.
@@ -246,6 +244,8 @@ void* rbuffer_front(const struct rbuffer * rb);
 
 /**
  * \brief Clear a rbuffer, but do not deallocate its memory.
+ *
+ * This resets the head/tail pointers, and zeros the managed memory.
  *
  * \param rb The ringbuffer handle.
  *

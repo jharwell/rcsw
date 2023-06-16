@@ -64,7 +64,7 @@ struct darray* darray_init(struct darray* arr_in,
                            const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == DS_DARRAY,
+              params->tag == ekRCSW_DS_DARRAY,
               params->elt_size > 0,
               params->max_elts != 0);
 
@@ -342,7 +342,7 @@ struct darray* darray_filter(struct darray* const arr,
                               .printe = arr->printe,
                               .elt_size = arr->elt_size,
                               .max_elts = arr->max_elts,
-                              .tag = DS_DARRAY,
+                              .tag = ekRCSW_DS_DARRAY,
                               .flags = (fparams == NULL) ? 0 : fparams->flags,
                               .elements = (fparams == NULL) ? NULL
                                                             : fparams->elements };
@@ -392,7 +392,7 @@ struct darray* darray_copy(const struct darray* const arr,
                              .printe = arr->printe,
                              .elt_size = arr->elt_size,
                              .max_elts = arr->max_elts,
-                             .tag = DS_DARRAY,
+                             .tag = ekRCSW_DS_DARRAY,
                              .flags = (cparams == NULL) ? 0 : cparams->flags,
                              .elements =
                                  (cparams == NULL) ? NULL : cparams->elements};

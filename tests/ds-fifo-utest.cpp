@@ -28,7 +28,7 @@ static void run_test(ds_test_t test) {
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
   struct ds_params params;
-  params.tag = DS_FIFO;
+  params.tag = ekRCSW_DS_FIFO;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<element8>;

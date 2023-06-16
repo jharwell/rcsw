@@ -1,7 +1,10 @@
 /**
  * \file printf_float.h
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \author (c) Eyal Rozenberg <eyalroz1@gmx.com>
+ *             2021-2022, Haifa, Palestine/Israel
+ * \author (c) Marco Paland (info@paland.com)
+ *             2014-2019, PALANDesign Hannover, Germany
  *
  * SPDX-License Identifier: MIT
  */
@@ -12,8 +15,8 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/stdio/math.h"
-
 #include "rcsw/stdio/printf_gadget.h"
+
 /*******************************************************************************
  * Macros
  ******************************************************************************/

@@ -256,6 +256,21 @@
 
 #endif /* __clang__ || __GNUC__ */
 
+#if defined(RCSW_ATTR_PRINTF)
+#error "RCSW_ATTR_PRINTF" define!d
+#endif
+
+#if defined(__clang__)
+#define RCSW_ATTR_PRINTF(...) RCSW_ATTR(format(printf, __VA_ARGS__))
+
+#elif defined(__GNUC__)
+#define RCSW_ATTR_PRINTF(...) RCSW_ATTR(format(gnu_printf, __VA_ARGS__))
+
+#endif /* __clang__ */
+
+/*******************************************************************************
+ * C++ Definitions
+ ******************************************************************************/
 #ifdef __cplusplus
 
 #ifndef BEGIN_C_DECLS

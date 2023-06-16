@@ -97,7 +97,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
       .elt_size = sizeof(int),
-      .tag = DS_DARRAY,
+      .tag = ekRCSW_DS_DARRAY,
       .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->inner_indices, &inner_params));
   struct ds_params count_params = {
@@ -109,7 +109,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .printe = NULL,
       .max_elts = params->n_rows + 1,
       .elt_size = sizeof(int),
-      .tag = DS_DARRAY,
+      .tag = ekRCSW_DS_DARRAY,
       .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->outer_starts, &count_params));
   RCSW_CHECK(OK == darray_set_n_elts(&matrix->outer_starts, params->n_rows + 1));
@@ -122,7 +122,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
       .elt_size = csmatrix_type_size(matrix),
-      .tag = DS_DARRAY,
+      .tag = ekRCSW_DS_DARRAY,
       .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
 
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
@@ -145,7 +145,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
                                     .printe = NULL,
                                     .max_elts = -1,
                                     .elt_size = sizeof(struct col_pair),
-                                    .tag = DS_LLIST,
+                                    .tag = ekRCSW_DS_LLIST,
                                     .flags = RCSW_DS_NOALLOC_HANDLE };
   matrix->cols = calloc(matrix->n_cols, sizeof(struct llist));
   for (size_t i = 0; i < matrix->n_cols; ++i) {

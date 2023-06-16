@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-static void myputchar(char) {}
+void myputchar(char) {}
 
 /*******************************************************************************
  * Test Cases
@@ -68,12 +68,29 @@ CATCH_TEST_CASE("Char Test", "[stdio]") {
   CATCH_REQUIRE(STDIO_ISDIGIT('1') == 1);
   CATCH_REQUIRE(STDIO_ISDIGIT('%') == 0);
   CATCH_REQUIRE(STDIO_ISDIGIT('e') == 0);
+
+  CATCH_REQUIRE(stdio_puts("this is a test") == 14);
+
+  for (int i = 0; i < 26; ++i) {
+    CATCH_REQUIRE(stdio_toupper('a' + i) == 'A' + i);
+    CATCH_REQUIRE(stdio_tolower('A' + i) == 'a' + i);
+  } /* for(i..) */
 } /* char_test() */
+
+CATCH_TEST_CASE("Memory Test", "[stdio]") {
+  int data[10] = {0, 1, 2, 4, 10000, -12345, 17, 0x56789, ONEE9, -23};
+  int dest[10];
+
+  memset(dest, 0, sizeof(dest));
+  CATCH_REQUIRE(stdio_memcpy(dest, data, sizeof(data)) == dest);
+  CATCH_REQUIRE(memcmp(data, dest, sizeof(data)) == 0);
+}
 
 CATCH_TEST_CASE("Convert Test", "[stdio]") {
   CATCH_REQUIRE(stdio_atoi("0", 10) == 0);
   CATCH_REQUIRE(stdio_atoi("0x0", 16) == 0);
   CATCH_REQUIRE(stdio_atoi("0x100", 16) == 256);
+  CATCH_REQUIRE(stdio_atoi("0xABCDEF", 16) == 0xABCDEF);
   CATCH_REQUIRE(stdio_atoi("1", 10) == 1);
   CATCH_REQUIRE(stdio_atoi("0x1", 16) == 1);
   CATCH_REQUIRE(stdio_atoi("1234", 10) == 1234);
@@ -93,6 +110,11 @@ CATCH_TEST_CASE("Convert Test", "[stdio]") {
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, FALSE), "64") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, FALSE), "fe87") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, FALSE), "234") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x10000000, buf, FALSE), "10000000") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFFF, buf, FALSE), "fffffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFF, buf, FALSE), "ffffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFF, buf, FALSE), "fffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFF, buf, FALSE), "ffff") == 0);
 
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, TRUE),"0x0") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, TRUE), "0x1") == 0);

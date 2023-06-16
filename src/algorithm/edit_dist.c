@@ -224,8 +224,9 @@ static int edit_dist_rec_sub(const char* a,
     c[i * length + j] =
         1 +
         RCSW_MIN3(
-            edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, el_size), /* substitute
-                                                                              */
+            edit_dist_rec_sub(
+                a, b, c, i - 1, j - 1, length, cmpe, el_size), /* substitute
+                                                                */
             edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, el_size), /* delete
                                                                           */
             edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, el_size)); /* insert

@@ -22,7 +22,7 @@ struct fifo* fifo_init(struct fifo* fifo_in,
                        const struct ds_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == DS_FIFO,
+              params->tag == ekRCSW_DS_FIFO,
               params->max_elts > 0,
               params->elt_size > 0);
 
@@ -40,7 +40,7 @@ struct fifo* fifo_init(struct fifo* fifo_in,
                                  .cmpe = params->cmpe,
                                  .elt_size = params->elt_size,
                                  .max_elts = params->max_elts,
-                                 .tag = DS_RBUFFER,
+                                 .tag = ekRCSW_DS_RBUFFER,
                                  .elements = params->elements,
                                  .flags = params->flags };
   rb_params.flags |= (RCSW_DS_NOALLOC_HANDLE | RCSW_DS_RBUFFER_AS_FIFO);

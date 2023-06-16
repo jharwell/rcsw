@@ -44,21 +44,9 @@ BEGIN_C_DECLS
  * \param n # of bytes to copy.
  * \return Memory pointed to by dest
  */
-void *stdio_memcpy(void * __restrict__ dest, const void * __restrict__ src,
+void* stdio_memcpy(void* __restrict__ dest,
+                   const void* __restrict__ src,
                    size_t n);
-
-/**
- * \brief Get the number of decimal digits for an integer
- *
- * This function returns the number of decimal digits that will be present if
- * its argument is rendered as a string. Works for both positive and negative
- * numbers.
- *
- * \param a The integer to process.
- *
- * \return The number of digits.
- */
-size_t stdio_num_digits(int a) RCSW_CONST;
 
 /**
  * \brief Convert a char to upper case.

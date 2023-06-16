@@ -14,6 +14,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/algorithm/sort.h"
 

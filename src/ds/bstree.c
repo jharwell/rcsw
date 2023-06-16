@@ -39,7 +39,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
                                     size_t node_size) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == DS_BSTREE,
+              params->tag == ekRCSW_DS_BSTREE,
               params->cmpkey != NULL,
               params->elt_size > 0);
 

@@ -68,7 +68,7 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
 
   struct ds_params fifo_params = { .elt_size = sizeof(size_t),
                                    .max_elts = sorter->chunk_size,
-                                   .tag = DS_FIFO,
+                                   .tag = ekRCSW_DS_FIFO,
                                    .nodes = NULL,
                                    .elements = NULL,
                                    .flags = RCSW_DS_NOALLOC_HANDLE };

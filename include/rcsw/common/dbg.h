@@ -232,7 +232,7 @@
  * \brief Mark a place in the code as being universally bad. If execution ever
  * reaches this spot, print a message and error out.
  */
-#define SENTINEL(msg, ...)                      \
+#define RCSW_ER_SENTINEL(msg, ...)              \
   {                                             \
     DBGE(msg "\n", ##__VA_ARGS__);              \
     goto error;                                 \

@@ -33,7 +33,7 @@ static void run_test(void (*test)(int len, struct ds_params *params)) {
   /* dbg_insmod(M_DS_DARRAY,"DARRAY"); */
 
   struct ds_params params;
-  params.tag = DS_DARRAY;
+  params.tag = ekRCSW_DS_DARRAY;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
@@ -383,19 +383,31 @@ static void iter_test(int len, struct ds_params * params) {
   }
 
   T * e;
-  struct ds_iterator * iter = ds_iter_init(DS_DARRAY, arr, th_iter_func<T>);
+  struct ds_iterator * iter = ds_filter_init(arr,
+                                             ekRCSW_DS_DARRAY,
+                                             th_iter_func<T>);
   CATCH_REQUIRE(nullptr != iter);
 
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
-  iter = ds_iter_init(DS_DARRAY, arr, nullptr);
+  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekRCSW_DS_ITER_FORWARD);
   CATCH_REQUIRE(nullptr != iter);
 
   size_t count = 0;
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
+    count++;
+  }
+  CATCH_REQUIRE(count == darray_n_elts(arr));
+
+  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekRCSW_DS_ITER_BACKWARD);
+  CATCH_REQUIRE(nullptr != iter);
+
+  count = 0;
+  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+    CATCH_REQUIRE(e->value1 == len - (decltype(T::value1))count - 1);
     count++;
   }
   CATCH_REQUIRE(count == darray_n_elts(arr));

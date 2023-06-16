@@ -14,6 +14,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
 
@@ -32,7 +33,6 @@ struct darray {
     /** The array that holds the actual data */
     uint8_t *elements;
 
-    /** Iterator, for a uniform interface for iterating over data structures */
     struct ds_iterator iter;
 
     /**

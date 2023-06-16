@@ -483,23 +483,23 @@
   RCSW_XFOR_EACH1(RCSW_XTABLE_MASKABLE_ENUM, __VAR_ARGS__)
 
 /*******************************************************************************
- * General Macros
+ * Other Macros
  ******************************************************************************/
-/* \cond INTERNAL */
-#define STATIC_ASSERT_HELPER(expr, msg)                                 \
-    (!!sizeof(struct { size_t int STATIC_ASSERTION__##msg : (expr) ? 1 : -1; }))
-/* \endcond */
+#ifndef __cplusplus
+
+
+#if __STDC_VERSION__ >= 201112L
 
 /**
- * \brief Compile time asserts for size, alignment, etc.
- *
- * Note that the message can't have spaces (i.e. this will fail):
- *
- * `STATIC_ASSERT(foo != 0,A failure message);`
- *
- * Proper usage:
- *
- * STATIC_ASSERT(foo != 0, A_failure_message);`
+ * \def RCSW_STATIC_ASSERT Compile time asserts for size, alignment, etc.
  */
+#define RCSW_STATIC_ASSERT(...) _Static_assert(__VA_ARGS__)
+#else
+
 #define RCSW_STATIC_ASSERT(expr, msg)                                   \
-    extern int(*assert_function__(void))[STATIC_ASSERT_HELPER(expr, msg)]
+  enum { RCSW_XSTR(RCSW_STATIC_ASSERT, __LINE__) = 1 / (msg && (expr)) }
+        /* extern int (*assert_function__(void)) [RCSW_STATIC_ASSERT_HELPER(expr, msg)] */
+
+#endif /* __STDC_VERSION__ */
+
+#endif /* __cplusplus */

@@ -45,7 +45,7 @@ status_t dbg_init(void) {
     .printe = NULL,
     .elt_size = sizeof(struct dbg_module),
     .max_elts = -1,
-    .tag = DS_LLIST,
+    .tag = ekRCSW_DS_LLIST,
     .flags = 0,
   };
   dbg_g.modules_ = llist_init(NULL, &params);

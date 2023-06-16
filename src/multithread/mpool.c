@@ -62,7 +62,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     .max_elts = (int)params->max_elts,
     .elt_size = params->elt_size,
     .cmpe = NULL,
-    .tag = DS_LLIST,
+    .tag = ekRCSW_DS_LLIST,
     .nodes = params->nodes,
     .flags = RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP |
              RCSW_DS_NOALLOC_HANDLE | (params->flags & RCSW_DS_NOALLOC_NODES),
