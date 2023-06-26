@@ -19,6 +19,7 @@
 #include "tests/ds_test.hpp"
 #include "rcsw/algorithm/search.h"
 #include "rcsw/utils/mem.h"
+#include "rcsw/algorithm/sort.h"
 
 /*******************************************************************************
  * Test Functions

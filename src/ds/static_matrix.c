@@ -11,12 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/static_matrix.h"
 
-#include "rcsw/common/dbg.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_STATIC_MATRIX
+#define RCSW_ER_MODNAME "rcsw.ds.static_mat"
+#define RCSW_ER_MODID M_DS_STATIC_MATRIX
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -33,6 +30,7 @@ struct static_matrix* static_matrix_init(struct static_matrix* const matrix_in,
               params->tag == ekRCSW_DS_STATIC_MATRIX,
               params->type.smat.n_rows > 0,
               params->type.smat.n_cols > 0)
+      RCSW_ER_MODULE_INIT();
   struct static_matrix* matrix = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
@@ -77,7 +75,7 @@ status_t static_matrix_transpose(struct static_matrix* const matrix) {
    * Assuming matrix is square, the simple algorithm can be used. First and
    * last entries in matrix/array don't move, hence starting at 1.
    */
-  DBGD("Transpose %zu x %zu matrix\n", matrix->n_rows, matrix->n_cols);
+  ER_DEBUG("Transpose %zu x %zu matrix", matrix->n_rows, matrix->n_cols);
   for (size_t i = 1; i < matrix->n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
       ds_elt_swap(static_matrix_access(matrix, i, j),

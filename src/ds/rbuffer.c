@@ -11,13 +11,10 @@
  ******************************************************************************/
 #include "rcsw/ds/rbuffer.h"
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODID M_DS_RBUFFER
+#define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
+#include "rcsw/er/client.h"
 #include "rcsw/ds/ds.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_RBUFFER
 
 /*******************************************************************************
  * Macros
@@ -37,6 +34,7 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
               params->tag == ekRCSW_DS_RBUFFER,
               params->max_elts > 0,
               params->elt_size > 0);
+  RCSW_ER_MODULE_INIT();
 
   struct rbuffer* rb = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -63,11 +61,11 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
   rb->current = 0;
   rb->max_elts = params->max_elts;
 
-  DBGD("type: %s max_elts=%zu elt_size=%zu flags=0x%08x\n",
-       RCSW_DS_RBUFFER_TYPE(rb),
-       rb->max_elts,
-       rb->elt_size,
-       rb->flags);
+  ER_DEBUG("type=%s,max_elts=%zu,elt_size=%zu,flags=0x%08x",
+           RCSW_DS_RBUFFER_TYPE(rb),
+           rb->max_elts,
+           rb->elt_size,
+           rb->flags);
   return rb;
 
 error:
@@ -95,7 +93,7 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
 
   /* do not add if acting as FIFO and currently full */
   if ((rb->flags & RCSW_DS_RBUFFER_AS_FIFO) && rbuffer_isfull(rb)) {
-    DBGW("WARNING: Not adding new element: FIFO full\n");
+    ER_WARN("Not adding new element: FIFO full");
     errno = ENOSPC;
     return ERROR;
   }
@@ -205,20 +203,19 @@ status_t rbuffer_inject(struct rbuffer* const rb,
 
 void rbuffer_print(struct rbuffer* const rb) {
   if (rb == NULL) {
-    DPRINTF("Ringbuffer: < NULL ringbuffer >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   if (rbuffer_isempty(rb)) {
-    DPRINTF("Ringbuffer: < Empty Ringbuffer >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < Empty >\n");
     return;
   }
   if (rb->printe == NULL) {
-    DPRINTF("Ringbuffer: < No print function >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < No print function >\n");
     return;
   }
 
-  size_t i;
-  for (i = 0; i < rb->current; ++i) {
+  for (size_t i = 0; i < rb->current; ++i) {
     rb->printe(rbuffer_data_get(rb, (rb->start + i) % rb->max_elts));
   } /* for() */
   DPRINTF("\n");

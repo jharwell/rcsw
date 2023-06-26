@@ -14,17 +14,15 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODNAME "rcsw.ds.bstree"
+#define RCSW_ER_MODID M_DS_BSTREE
+#include "rcsw/er/client.h"
+
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/ds/rbtree.h"
 #include "rcsw/utils/utils.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_BSTREE
 
 /*******************************************************************************
  * Forward Declarations
@@ -42,6 +40,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
               params->tag == ekRCSW_DS_BSTREE,
               params->cmpkey != NULL,
               params->elt_size > 0);
+  RCSW_ER_MODULE_INIT();
 
   struct bstree* tree = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -57,8 +56,8 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
 
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    RCSW_ER_CHECK(params->max_elts != -1,
-                  "ERROR: Cannot have uncapped tree size with "
+    ER_CHECK(params->max_elts != -1,
+                  "Cannot have uncapped tree size with "
                   "RCSW_DS_NOALLOC_NODES");
 
     /*
@@ -73,9 +72,9 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
 
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    RCSW_ER_CHECK(params->max_elts != -1,
-                  "ERROR: Cannot have uncapped tree size with "
-                  "RCSW_DS_NOALLOC_DATA");
+    ER_CHECK(params->max_elts != -1,
+             "Cannot have uncapped tree size with "
+             "RCSW_DS_NOALLOC_DATA");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
@@ -108,10 +107,10 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   } else if (tree->flags & RCSW_DS_BSTREE_OS) {
     ostree_init_helper(tree);
   }
-  DBGD("max_elts=%d elt_size=%zu flags=0x%08x\n",
-       tree->max_elts,
-       tree->elt_size,
-       tree->flags);
+  ER_DEBUG("max_elts=%d elt_size=%zu flags=0x%08x",
+           tree->max_elts,
+           tree->elt_size,
+           tree->flags);
   return tree;
 
 error:
@@ -338,13 +337,13 @@ status_t bstree_delete(struct bstree* const tree,
 
 void bstree_print(struct bstree* const tree) {
   if (NULL == tree) {
-    DPRINTF("BSTREE: < NULL tree >\n");
+    DPRINTF(RCSW_ER_MODNAME " :  < NULL >\n");
     return;
   } else if (bstree_isempty(tree)) {
-    DPRINTF("BSTREE: < Empty tree >\n");
+    DPRINTF(RCSW_ER_MODNAME " :  < Empty >\n");
     return;
   } else if (tree->printe == NULL) {
-    DPRINTF("BSTREE: < No print function >\n");
+    DPRINTF(RCSW_ER_MODNAME " :  < No print function >\n");
     return;
   }
 

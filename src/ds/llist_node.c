@@ -11,14 +11,12 @@
  ******************************************************************************/
 #include "rcsw/ds/llist_node.h"
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODNAME "rcsw.ds.llist"
+#define RCSW_ER_MODID M_DS_LLIST
+#include "rcsw/er/client.h"
+
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/hash.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID ekRCSW_DS_LLIST
 
 /*******************************************************************************
  * API Functions
@@ -33,17 +31,16 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-
-    size_t index = list->current;
-    int alloc_idx =
-        allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
+    int alloc_idx = allocm_probe(list->space.node_map,
+                                 (size_t)list->max_elts,
+                                 list->current);
     RCSW_CHECK(-1 != alloc_idx);
     node = list->space.nodes + alloc_idx;
 
     /* mark node as in use */
     allocm_mark_inuse(list->space.node_map + alloc_idx);
 
-    DBGV("Allocated llist_node %zu/%d\n", index + 1, list->max_elts);
+    ER_TRACE("Allocated llist_node %zu/%d", list->current + 1, list->max_elts);
   } else {
     node = calloc(1, sizeof(struct llist_node));
     RCSW_CHECK_PTR(node);
@@ -61,7 +58,7 @@ void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
 
     allocm_mark_free(list->space.node_map + index);
 
-    DBGV("Deallocated llist_node %d/%d\n", index + 1, list->max_elts);
+    ER_TRACE("Deallocated llist_node %d/%d", index + 1, list->max_elts);
   } else {
     free(node);
   }
@@ -118,7 +115,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
     /* mark data block as available */
     allocm_mark_free(list->space.db_map + block_idx);
 
-    DBGV("Dellocated data block %zu/%d\n", block_idx, list->max_elts);
+    ER_TRACE("Dellocated data block %zu/%d", block_idx, list->max_elts);
   } else {
     free(datablock);
   }
@@ -141,7 +138,7 @@ void* llist_node_datablock_alloc(struct llist* const list) {
     /* mark data block as inuse */
     allocm_mark_inuse(list->space.db_map + alloc_idx);
 
-    DBGV("Allocated data block %d/%d\n", alloc_idx, list->max_elts);
+    ER_TRACE("Allocated data block %d/%d", alloc_idx, list->max_elts);
   } else {
     datablock = malloc(list->elt_size);
     RCSW_CHECK_PTR(datablock);

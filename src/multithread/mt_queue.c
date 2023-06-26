@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multithread/mt_queue.h"
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************

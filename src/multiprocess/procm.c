@@ -17,7 +17,7 @@
 #include <sched.h>
 #include <unistd.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations

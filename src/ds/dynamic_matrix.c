@@ -11,12 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/dynamic_matrix.h"
 
-#include "rcsw/common/dbg.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_DYNAMIC_MATRIX
+#define RCSW_ER_MODNAME "rcsw.ds.dynmat"
+#define RCSW_ER_MODID M_DS_DYNAMIC_MATRIX
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -33,6 +30,8 @@ struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* const matrix_i
               params->tag == ekRCSW_DS_DYNAMIC_MATRIX,
               params->type.dmat.n_rows > 0,
               params->type.dmat.n_cols > 0)
+      RCSW_ER_MODULE_INIT();
+
   struct dynamic_matrix* matrix = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
@@ -113,7 +112,7 @@ error:
 status_t
 dynamic_matrix_resize(struct dynamic_matrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
-  DBGD("Resizing matrix [%zu x %zu] -> [%zu x %zu]\n",
+  ER_DEBUG("Resizing matrix [%zu x %zu] -> [%zu x %zu]",
        matrix->n_rows,
        matrix->n_cols,
        RCSW_MAX(matrix->n_rows, u),
@@ -155,7 +154,7 @@ status_t dynamic_matrix_transpose(struct dynamic_matrix* const matrix) {
    * Assuming matrix is square, the simple algorithm can be used. First and
    * last entries in matrix/array don't move, hence starting at 1.
    */
-  DBGD("Transpose %zu x %zu matrix\n", matrix->n_rows, matrix->n_cols);
+  ER_DEBUG("Transpose %zu x %zu matrix", matrix->n_rows, matrix->n_cols);
   for (size_t i = 1; i < matrix->n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
       ds_elt_swap(dynamic_matrix_access(matrix, i, j),

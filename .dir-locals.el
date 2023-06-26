@@ -13,8 +13,13 @@
                                            )))
                        (setq flycheck-clang-include-path includes-list)
                        (setq flycheck-gcc-include-path includes-list)
-                       (setq flycheck-clang-args '("-std=gnu99"))
-                       (setq flycheck-gcc-args '("-std=gnu99"))
+                       (setq flycheck-clang-args '("-std=gnu11"))
+                       (add-to-list 'flycheck-clang-definitions
+                                    "LIBRA_ER=LIBRA_ER_ALL")
+
+                       (setq flycheck-gcc-args '("-std=gnu11"))
+                       (add-to-list 'flycheck-gcc-definitions "LIBRA_ER=LIBRA_ER_ALL")
+
                        (setq cc-search-directories includes-list)
                        )
                      )

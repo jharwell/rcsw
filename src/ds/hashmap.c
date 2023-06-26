@@ -12,16 +12,13 @@
 
 #include <math.h>
 
+#define RCSW_ER_MODNAME "rcsw.ds.hm"
+#define RCSW_ER_MODID M_DS_HASHMAP
+#include "rcsw/er/client.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/darray.h"
 #include "rcsw/utils/hash.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_HASHMAP
 
 /*******************************************************************************
  * Forward Declarations
@@ -84,7 +81,7 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
               params->elt_size > 0,
               params->type.hm.sort_thresh != 0,
               params->type.hm.n_buckets > 0);
-
+  RCSW_ER_MODULE_INIT();
   struct hashmap* map = NULL;
 
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -105,10 +102,10 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   }
 
   /* validate keysize */
-  RCSW_ER_CHECK(params->type.hm.keysize <= RCSW_HASHMAP_MAX_KEYSIZE,
-                "ERROR: Keysize (%zu) > HASHMAP_MAX_KEYSIZE (%d)\n",
-                params->type.hm.keysize,
-                RCSW_HASHMAP_MAX_KEYSIZE);
+  ER_CHECK(params->type.hm.keysize <= RCSW_HASHMAP_MAX_KEYSIZE,
+           "Keysize (%zu) > HASHMAP_MAX_KEYSIZE (%d)\n",
+           params->type.hm.keysize,
+           RCSW_HASHMAP_MAX_KEYSIZE);
   map->keysize = params->type.hm.keysize;
 
   map->hash = params->type.hm.hash;
@@ -171,7 +168,7 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
     RCSW_CHECK(darray_init(map->space.buckets + i, &da_params) != NULL);
   } /* for() */
 
-  DBGD("max_elts=%zu n_buckets=%zu bsize=%zu sort_thresh=%d flags=0x%08x\n",
+  ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu sort_thresh=%d flags=0x%08x",
        map->max_elts,
        map->n_buckets,
        params->type.hm.bsize,
@@ -242,7 +239,7 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
    */
   if (node_index == -1) {
     if (!(map->flags & RCSW_DS_HASHMAP_LINPROB)) {
-      DBGD("Key not found in bucket %d\n", bucket_index);
+      ER_DEBUG("Key not found in bucket %d", bucket_index);
       return NULL;
     }
     hashmap_linear_probe(map, &node, &bucket_index, &node_index);
@@ -279,7 +276,7 @@ status_t hashmap_add(struct hashmap* const map,
 
   if (darray_isfull(bucket)) {
     if (!(map->flags & RCSW_DS_HASHMAP_LINPROB)) {
-      DBGD("Bucket %zu is full (%zu elements): cannot add new hashnode\n",
+      ER_DEBUG("Bucket %zu is full (%zu elements): cannot add new hashnode",
            bucket_index,
            bucket->current);
       map->stats.n_addfails++;
@@ -303,11 +300,11 @@ status_t hashmap_add(struct hashmap* const map,
     } /* for() */
 
     if (!bucket) {
-      DBGD("All buckets full: Cannot add new hashnode\n");
+      ER_DEBUG("All buckets full: Cannot add new hashnode");
       map->stats.n_addfails++;
       return ERROR;
     }
-    DBGD("Linear probing found bucket %d\n", i);
+    ER_DEBUG("Linear probing found bucket %d", i);
   } /* if(bucket->current >= bucket->max_elts) */
 
   void* datablock = hashmap_db_alloc(map);
@@ -322,12 +319,12 @@ status_t hashmap_add(struct hashmap* const map,
   /* check for duplicates */
   if (darray_idx_query(bucket, &node) != -1) {
     errno = EAGAIN;
-    DBGE("ERROR: Node already exists in bucket\n");
+    ER_ERR("Node already exists in bucket");
     return ERROR;
   }
 
-  RCSW_ER_CHECK(darray_insert(bucket, &node, bucket->current) == OK,
-                "ERROR: could not append node to bucket");
+  ER_CHECK(darray_insert(bucket, &node, bucket->current) == OK,
+                "could not append node to bucket");
   map->stats.n_collisions += (bucket->current != 1); /* if not 1, wasn't 0 before
                                                         (COLLISION) */
   map->stats.n_nodes++;
@@ -369,13 +366,13 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
 
   if (node_index == -1) {
     if (!(map->flags & RCSW_DS_HASHMAP_LINPROB)) {
-      DBGD("No key found in bucket %d for removal (probing disabled)\n",
+      ER_DEBUG("No key found in bucket %d for removal (probing disabled)",
            bucket_index);
       goto error; /* normal return */
     }
     hashmap_linear_probe(map, &node, &bucket_index, &node_index);
     if (bucket_index == -1 || node_index == -1) {
-      DBGD("No matching key found in hashmap\n");
+      ER_DEBUG("No matching key found in hashmap");
       goto error; /* normal return */
     }
     bucket = map->space.buckets + bucket_index;
@@ -387,7 +384,7 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
 
   /* remove hashnode */
   if (darray_remove(bucket, NULL, (size_t)node_index) != OK) {
-    DBGE("ERROR: Failed to remove node from bucket");
+    ER_ERR("Failed to remove node from bucket");
     errno = EAGAIN;
     return ERROR;
   }
@@ -454,7 +451,7 @@ status_t hashmap_gather(const struct hashmap* const map,
 
 void hashmap_print(const struct hashmap* const map) {
   if (map == NULL) {
-    DPRINTF("Hashmap: < NULL hashmap >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
 
@@ -468,12 +465,12 @@ void hashmap_print(const struct hashmap* const map) {
   DPRINTF("Successful adds : %zu\n", stats.n_adds);
   DPRINTF("Failed adds     : %zu\n", stats.n_addfails);
   DPRINTF("Collisions      : %zu\n", stats.n_collisions);
-  DPRINTF_FLOAT("Collision ratio : %.8f\n", stats.collision_ratio);
+  DPRINTF("Collision ratio : %.8f\n", stats.collision_ratio);
   DPRINTF("Map sorted      : %s\n", (stats.sorted) ? "yes" : "no");
 
-  DPRINTF_FLOAT("Max bucket utilization     : %.8f\n", stats.max_util);
-  DPRINTF_FLOAT("Min bucket utilization     : %.8f\n", stats.min_util);
-  DPRINTF_FLOAT("Average bucket utilization : %.8f\n", stats.average_util);
+  DPRINTF("Max bucket utilization     : %.8f\n", stats.max_util);
+  DPRINTF("Min bucket utilization     : %.8f\n", stats.min_util);
+  DPRINTF("Average bucket utilization : %.8f\n", stats.average_util);
   DPRINTF("\n");
 
 error:
@@ -482,7 +479,7 @@ error:
 
 void hashmap_print_dist(const struct hashmap* const map) {
   if (NULL == map) {
-    DPRINTF("Hashmap: < NULL hashmap >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   DPRINTF("\n----------------------------------------\n");
@@ -496,7 +493,7 @@ void hashmap_print_dist(const struct hashmap* const map) {
         RCSW_MAX(darray_n_elts(&map->space.buckets[i]), max_node_count);
   }
   if (max_node_count == 0) {
-    DPRINTF("Hashmap: < Empty hashmap >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < empty >\n");
     return;
   }
   size_t xmax = RCSW_MIN(max_node_count, 80UL);
@@ -559,7 +556,7 @@ static void hashmap_db_dealloc(const struct hashmap* const map,
   /* mark data block as available */
   allocm_mark_free(map->space.db_map + block_index);
 
-  DBGV("Dellocated data block %zu/%zu\n", block_index, map->max_elts);
+  ER_TRACE("Dellocated data block %zu/%zu", block_index, map->max_elts);
 } /* datablock_dealloc() */
 
 static void* hashmap_db_alloc(const struct hashmap* const map) {
@@ -583,7 +580,7 @@ static void* hashmap_db_alloc(const struct hashmap* const map) {
   /* mark data block as in use */
   allocm_mark_inuse(map->space.db_map + alloc_idx);
 
-  DBGV("Allocated data block %d/%zu\n", alloc_idx, map->max_elts);
+  ER_TRACE("Allocated data block %d/%zu", alloc_idx, map->max_elts);
 
   return datablock;
 

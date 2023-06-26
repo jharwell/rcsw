@@ -12,7 +12,7 @@
 #include "rcsw/multithread/omp_kernel2d.h"
 
 #include "rcsw/adapter/simple_image.h"
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************

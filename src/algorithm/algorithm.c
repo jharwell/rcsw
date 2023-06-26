@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/utils.h"
 

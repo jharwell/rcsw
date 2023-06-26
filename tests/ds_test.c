@@ -12,7 +12,6 @@
  * Includes
  ******************************************************************************/
 #include "tests/ds_test.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/ds/bin_heap.h"
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/darray.h"
@@ -27,10 +26,9 @@
 #include "rcsw/ds/static_matrix.h"
 #include "rcsw/utils/utils.h"
 
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_CORE
+#define RCSW_ER_MODNAME "rcsw.ds.test"
+#define RCSW_ER_MODID M_TESTING
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Global Variables
@@ -38,8 +36,7 @@
 BEGIN_C_DECLS
 
 status_t th_ds_init(struct ds_params *const params) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING, "Testing"); */
+  RCSW_ER_MODULE_INIT();
 
   /* finish initializing parameter struct */
   params->elements = NULL;
@@ -108,7 +105,7 @@ status_t th_ds_init(struct ds_params *const params) {
                                                                          params->elt_size)));
     break;
   default:
-    DBGE("ERROR: No tag defined.\n");
+    ER_ERR("No tag defined.");
     break;
   } /* switch() */
 
@@ -140,8 +137,8 @@ int th_leak_check_data(const struct ds_params *params) {
   }
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
     for (i = 0; i < len; ++i) {
-      RCSW_ER_CHECK(((struct allocm_entry*)(params->elements))[i].value == -1,
-                  "ERROR: Memory leak at index %d in data block area\n", i);
+      ER_CHECK(((struct allocm_entry*)(params->elements))[i].value == -1,
+               "Memory leak at index %d in data block area", i);
     } /* for() */
   }
   return 0;
@@ -168,8 +165,8 @@ int th_leak_check_nodes(const struct ds_params *params) {
   }
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     for (i = 0; i < len; ++i) {
-      RCSW_ER_CHECK(((struct allocm_entry *)(params->nodes))[i].value == -1,
-                  "ERROR: Memory leak at index %d in node area\n", i);
+      ER_CHECK(((struct allocm_entry *)(params->nodes))[i].value == -1,
+                  "Memory leak at index %d in node area", i);
     }
   }
   return 0;
@@ -193,7 +190,7 @@ int th_key_cmp(const void *a, const void *b) {
 
 void th_printn(const void *node) {
   const struct hashnode *hashnode = (node);
-  PRINTF("node key: %s\nnode hash: 0x%08x\nnode data: 0x%08x\n",
+  DPRINTF("node key: %s\nnode hash: 0x%08x\nnode data: 0x%08x\n",
          (const char *)hashnode->key, hashnode->hash, *(int *)hashnode->data);
 } /* th_printn() */
 

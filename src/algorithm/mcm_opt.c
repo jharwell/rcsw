@@ -13,7 +13,7 @@
 
 #include <limits.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************

@@ -11,14 +11,11 @@
  ******************************************************************************/
 #include "rcsw/ds/llist.h"
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODNAME "rcsw.ds.llist"
+#define RCSW_ER_MODID M_DS_LLIST
+#include "rcsw/er/client.h"
 #include "rcsw/ds/llist_node.h"
 #include "rcsw/utils/utils.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_LLIST
 
 /*******************************************************************************
  * API Functions
@@ -32,6 +29,7 @@ struct llist* llist_init(struct llist* list_in,
               params->tag == ekRCSW_DS_LLIST,
               params->max_elts != 0,
               params->elt_size > 0);
+  RCSW_ER_MODULE_INIT();
 
   struct llist* list = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -47,8 +45,8 @@ struct llist* llist_init(struct llist* list_in,
 
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
-    RCSW_ER_CHECK(params->max_elts != -1,
-                  "ERROR: Cannot have uncapped list length with "
+    ER_CHECK(params->max_elts != -1,
+                  "Cannot have uncapped list length with "
                   "RCSW_DS_NOALLOC_NODES");
 
     /* initialize free list of llist_nodes */
@@ -60,8 +58,8 @@ struct llist* llist_init(struct llist* list_in,
 
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
-    RCSW_ER_CHECK(params->max_elts != -1,
-                  "ERROR: Cannot have uncapped list length with "
+    ER_CHECK(params->max_elts != -1,
+                  "Cannot have uncapped list length with "
                   "RCSW_DS_NOALLOC_DATA");
 
     /* initialize free list of data elements */
@@ -71,7 +69,7 @@ struct llist* llist_init(struct llist* list_in,
   }
 
   if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_PTR_CMP)) {
-    DBGW("WARNING: No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
+    ER_WARN("No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
          "passed\n");
   }
 
@@ -83,7 +81,7 @@ struct llist* llist_init(struct llist* list_in,
   list->max_elts = params->max_elts;
   list->sorted = FALSE;
 
-  DBGD("elt_size=%zu max_elts=%d flags=0x%08x\n",
+  ER_DEBUG("elt_size=%zu max_elts=%d flags=0x%08x",
        list->elt_size,
        list->max_elts,
        list->flags);
@@ -135,7 +133,7 @@ status_t llist_remove(struct llist* const list, const void* const e) {
 
   /* can't remove from an empty list */
   if (llist_isempty(list)) {
-    DBGE("ERROR: list is empty: cannot remove element\n");
+    ER_ERR("list is empty: cannot remove element");
     errno = EINVAL;
     return ERROR;
   }
@@ -176,7 +174,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   RCSW_FPC_NV(ERROR, list != NULL, data != NULL);
 
   if (llist_isfull(list) && list->max_elts != -1) {
-    DBGE("ERROR: Cannot insert element: no space\n");
+    ER_ERR("Cannot insert element: no space");
     errno = ENOSPC;
     return ERROR;
   }
@@ -211,7 +209,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   RCSW_FPC_NV(ERROR, list != NULL, data != NULL);
 
   if (llist_isfull(list) && list->max_elts != -1) {
-    DBGE("ERROR: Cannot insert element: no space\n");
+    ER_ERR("Cannot insert element: no space");
     errno = ENOSPC;
     return ERROR;
   }
@@ -245,15 +243,15 @@ error:
 
 void llist_print(struct llist* const list) {
   if (list == NULL) {
-    DPRINTF("LLIST: < NULL list >\n");
+    DPRINTF(RCSW_ER_MODNAME ": < NULL >\n");
     return;
   }
   if (llist_isempty(list)) {
-    DPRINTF("LLIST: < Empty list >\n");
+    DPRINTF(RCSW_ER_MODNAME ": < Empty >\n");
     return;
   }
   if (list->printe == NULL) {
-    DPRINTF("LLIST: < No print function >\n");
+    DPRINTF(RCSW_ER_MODNAME ": < No print function >\n");
     return;
   }
 
@@ -266,7 +264,7 @@ void* llist_data_query(struct llist* const list, const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
   if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
-    DBGE("ERROR: Cannot search list: NULL cmpe()\n");
+    ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
 
@@ -279,7 +277,7 @@ struct llist_node* llist_node_query(struct llist* const list,
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
   if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
-    DBGE("ERROR: Cannot search list: NULL cmpe()\n");
+    ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
 
@@ -310,7 +308,7 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
    * flag set
    */
   if (list->current <= 1 || list->sorted) {
-    DBGD("Already sorted: nothing to do\n");
+    ER_DEBUG("Already sorted: nothing to do");
   } else {
     if (type == MSORT_REC) {
       list->first = mergesort_rec(list->first, list->cmpe, TRUE);
@@ -328,7 +326,7 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
     }
 
     if (count != list->current) {
-      DBGE("ERROR: Sort truncated list to %zu elements\n", count);
+      ER_ERR("Sort truncated list to %zu elements", count);
       errno = EAGAIN;
       rval = ERROR;
     }
@@ -358,7 +356,7 @@ struct llist* llist_copy(struct llist* const list,
 
   LLIST_FOREACH(list, next, curr) { llist_append(clist, curr->data); }
 
-  DBGD("Copied list: %zu %zu-byte elements\n", list->current, list->elt_size);
+  ER_DEBUG("Copied list: %zu %zu-byte elements", list->current, list->elt_size);
 error:
   return clist;
 } /* llist_copy() */
@@ -388,7 +386,7 @@ struct llist* llist_copy2(struct llist* const list,
     }
     llist_append(clist, curr->data);
   }
-  DBGD("Copied list: %zu %zu-byte elements matched copy predicate\n",
+  ER_DEBUG("Copied list: %zu %zu-byte elements matched copy predicate",
        clist->current,
        clist->elt_size);
 
@@ -438,8 +436,8 @@ struct llist* llist_filter(struct llist* list,
     match = NULL;
   }
 
-  DBGD("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-       "remain.\n",
+  ER_DEBUG("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
+       "remain.",
        flist->current,
        flist->elt_size,
        list->current);
@@ -461,8 +459,8 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
       count++;
-      RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
-                    "ERROR: Llist_Node remove failed");
+      ER_CHECK(llist_remove(list, match->data) == OK,
+                    "Llist_Node remove failed");
       match = NULL;
     }
     if (pred(curr->data)) {
@@ -472,13 +470,13 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
 
   /* catch corner case where last item in list matched */
   if (match != NULL) {
-    RCSW_ER_CHECK(llist_remove(list, match->data) == OK,
-                  "ERROR: Llist_Node remove failed");
+    ER_CHECK(llist_remove(list, match->data) == OK,
+                  "Llist_Node remove failed");
   }
 
   rval = OK;
-  DBGD("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-       "remain.\n",
+  ER_DEBUG("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
+       "remain.",
        count,
        list->elt_size,
        list->current);
@@ -494,14 +492,14 @@ status_t llist_splice(struct llist* list1,
 
   if (list1->current + list2->current > (size_t)list1->max_elts &&
       list1->max_elts != -1) {
-    DBGE("ERROR: Cannot splice: %zu + %zu > %d (max elements exceeded)\n",
+    ER_ERR("Cannot splice: %zu + %zu > %d (max elements exceeded)",
          list1->current,
          list2->current,
          list1->max_elts);
     errno = ENOSPC;
     return ERROR;
   } else if (list1->current == 0 || list2->current == 0) {
-    DBGE("ERROR: Cannot splice an empty list\n");
+    ER_ERR("Cannot splice an empty list");
     errno = EINVAL;
     return ERROR;
   }
@@ -546,7 +544,7 @@ status_t llist_splice(struct llist* list1,
   }
 
   if (count == 0) {
-    DBGE("ERROR: Could not splice: splice node not found in list1\n");
+    ER_ERR("Could not splice: splice node not found in list1");
     errno = EAGAIN;
     goto error;
   }

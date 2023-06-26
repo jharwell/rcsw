@@ -11,17 +11,17 @@
  * Includes
  ******************************************************************************/
 #include <stdlib.h>
-#include "rcsw/pulse/pulse.h"
-#include "pulse_test.h"
-#include "rcsw/common/dbg.h"
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
 
+#include "rcsw/pulse/pulse.h"
+#include "tests/pulse_test.h"
+#include "rcsw/er/client.h"
+
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#define NUM_TESTS            3
 #define MODULE_ID M_TESTING
 #define MAX_POOLS 16
 #define MAX_RXQS 16
@@ -34,11 +34,11 @@ static void test_runner1(void (*test)(struct pulse_params* params)) {
   struct pulse_params bus_params;
   bus_params.n_pools = MAX_POOLS;
   memset(bus_params.name, 0, sizeof(bus_params.name));
-  dbg_init();
-  dbg_insmod(M_PULSE, "PULSE");
-  dbg_insmod(M_DS_RBUFFER, "RBUFFER");
-  dbg_mod_lvl_set(M_PULSE, DBG_V);
-  dbg_mod_lvl_set(M_DS_RBUFFER, DBG_V);
+  /* dbg_init(); */
+  /* dbg_insmod(M_PULSE, "PULSE"); */
+  /* dbg_insmod(M_DS_RBUFFER, "RBUFFER"); */
+  /* dbg_mod_lvl_set(M_PULSE, DBG_V); */
+  /* dbg_mod_lvl_set(M_DS_RBUFFER, DBG_V); */
 
   bus_params.pools = (pulse_bp_params*)malloc(sizeof(struct pulse_bp_params)*MAX_POOLS);
   for (int i = 0; i < MAX_POOLS; ++i) {

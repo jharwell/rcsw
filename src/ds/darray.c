@@ -15,15 +15,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define RCSW_ER_MODNAME "rcsw.ds.darray"
+#define RCSW_ER_MODID M_DS_DARRAY
+#include "rcsw/er/client.h"
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_DARRAY
 
 /*******************************************************************************
  * Forward Declarations
@@ -106,7 +103,7 @@ struct darray* darray_init(struct darray* arr_in,
   arr->printe = params->printe;
   arr->sorted = FALSE;
 
-  DBGD("Capacity=%zu init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x\n",
+  ER_DEBUG("Capacity=%zu init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
        arr->capacity,
        params->type.da.init_size,
        arr->max_elts,
@@ -158,7 +155,7 @@ darray_insert(struct darray* const arr, const void* const e, size_t index) {
 
   /* cannot insert--no space left */
   if (darray_isfull(arr) && arr->max_elts != -1) {
-    DBGE("ERROR: Cannot insert element: no space\n");
+    ER_ERR("Cannot insert element: no space");
     errno = ENOSPC;
     return ERROR;
   } else if (arr->current >= arr->capacity) {
@@ -252,7 +249,7 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
   int rval = -1;
 
   if (arr->sorted) {
-    DBGD("Currently sorted: performing binary search\n");
+    ER_DEBUG("Currently sorted: performing binary search");
     rval = bsearch_rec(
         arr->elements, e, arr->cmpe, arr->elt_size, 0, arr->current - 1);
   } else {
@@ -291,15 +288,15 @@ status_t darray_resize(struct darray* const arr, size_t size) {
 
 void darray_print(const struct darray* const arr) {
   if (arr == NULL) {
-    DPRINTF("DARRAY: < NULL dynamic array >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   if (arr->current == 0) {
-    DPRINTF("DARRAY: < Empty dynamic array >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < Empty >\n");
     return;
   }
   if (arr->printe == NULL) {
-    DPRINTF("DARRAY: < No print function >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < No print function >\n");
     return;
   }
 
@@ -317,7 +314,7 @@ status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
    * already sorted
    */
   if (arr->current <= 1 || arr->sorted) {
-    DBGD("Already sorted: nothing to do\n");
+    ER_DEBUG("Already sorted: nothing to do\n");
   } else {
     if (type == QSORT_REC) {
       qsort_rec(arr->elements, 0, arr->current - 1, arr->elt_size, arr->cmpe);
@@ -368,7 +365,7 @@ struct darray* darray_filter(struct darray* const arr,
     }
   } /* for() */
 
-  DBGD("%zu %zu-byte elements filtered out into new list. %zu elements remain "
+  ER_DEBUG("%zu %zu-byte elements filtered out into new list. %zu elements remain "
        "in original list.\n",
        n_removed,
        arr->elt_size,
@@ -409,7 +406,7 @@ struct darray* darray_copy(const struct darray* const arr,
    */
   memcpy(carr->elements, arr->elements, arr->current * arr->elt_size);
 
-  DBGD("%zu %zu-byte elements\n", arr->current, arr->elt_size);
+  ER_DEBUG("%zu %zu-byte elements", arr->current, arr->elt_size);
   return carr;
 
 error:
@@ -444,7 +441,7 @@ status_t darray_inject(const struct darray* const arr,
  ******************************************************************************/
 static status_t darray_extend(struct darray* const arr, size_t size) {
   if (arr->flags & RCSW_DS_NOALLOC_DATA) {
-    DBGE("ERROR: Cannot extend array: RCSW_DS_NOALLOC_DATA\n");
+    ER_ERR("Cannot extend array: RCSW_DS_NOALLOC_DATA");
     errno = EAGAIN;
     return ERROR;
   }
@@ -474,8 +471,8 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
   arr->capacity = size;
 
   if (arr->capacity > 0) {
-    RCSW_ER_CHECK(!(arr->flags & RCSW_DS_NOALLOC_DATA),
-                  "ERROR: Cannot shrink array: RCSW_DS_NOALLOC_DATA");
+    ER_CHECK(!(arr->flags & RCSW_DS_NOALLOC_DATA),
+             "Cannot shrink array: RCSW_DS_NOALLOC_DATA");
     void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
     RCSW_CHECK_PTR(tmp);
     arr->elements = tmp;

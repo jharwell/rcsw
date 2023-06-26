@@ -11,24 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/static_adj_matrix.h"
 
-#include "rcsw/common/dbg.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_STATIC_ADJ_MATRIX
-
-/*******************************************************************************
- * Structure Definitions
- ******************************************************************************/
-
-/*******************************************************************************
- * Global Variables
- ******************************************************************************/
-
-/*******************************************************************************
- * Macros
- ******************************************************************************/
+#define RCSW_ER_MODNAME "rcsw.ds.static_adj_mat"
+#define RCSW_ER_MODID M_DS_STATIC_ADJ_MATRIX
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -45,6 +30,7 @@ struct static_adj_matrix*
 static_adj_matrix_init(struct static_adj_matrix* const matrix_in,
                        const struct ds_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->tag == ekRCSW_DS_ADJ_MATRIX);
+  RCSW_ER_MODULE_INIT();
   struct static_adj_matrix* matrix = NULL;
 
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -117,7 +103,7 @@ status_t static_adj_matrix_edge_addu(struct static_adj_matrix* const matrix,
               v < matrix->n_vertices);
 
   int val = 1;
-  DBGV("Add undirected edges: (%zu, %zu), (%zu, %zu)\n", u, v, v, u);
+  ER_TRACE("Add undirected edges: (%zu, %zu), (%zu, %zu)", u, v, v, u);
   RCSW_CHECK(OK == static_matrix_set(&matrix->matrix, u, v, &val));
   ++matrix->n_edges;
 
@@ -140,7 +126,7 @@ status_t static_adj_matrix_edge_addd(struct static_adj_matrix* const matrix,
               u < matrix->n_vertices,
               v < matrix->n_vertices);
 
-  DBGV("Add directed edge: (%zu, %zu) = %f\n", u, v, w ? *w : 1.0);
+  ER_TRACE("Add directed edge: (%zu, %zu) = %f", u, v, w ? *w : 1.0);
   if (matrix->is_weighted) {
     RCSW_CHECK(OK == static_matrix_set(&matrix->matrix, u, v, w));
   } else {
@@ -159,7 +145,8 @@ status_t static_adj_matrix_edge_remove(struct static_adj_matrix* const matrix,
                                        size_t v) {
   RCSW_FPC_NV(
       ERROR, NULL != matrix, u < matrix->n_vertices, v < matrix->n_vertices);
-  DBGV("Remove edge: (%zu, %zu)\n", u, v);
+  ER_TRACE("Remove edge: (%zu, %zu)", u, v);
+
   if (matrix->is_weighted) {
     *(double*)static_matrix_access(&matrix->matrix, u, v) = NAN;
   } else {
@@ -170,7 +157,7 @@ status_t static_adj_matrix_edge_remove(struct static_adj_matrix* const matrix,
 
   /* If the graph is undirected, also remove edge from v to u. */
   if (!matrix->is_directed) {
-    DBGV("Remove edge: (%zu, %zu)\n", v, u);
+    ER_TRACE("Remove edge: (%zu, %zu)", v, u);
     if (matrix->is_weighted) {
       *(double*)static_matrix_access(&matrix->matrix, v, u) = NAN;
     } else {

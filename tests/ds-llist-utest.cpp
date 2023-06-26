@@ -16,7 +16,6 @@
 #include <catch.hpp>
 
 #include "rcsw/ds/llist.h"
-#include "rcsw/common/dbg.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 

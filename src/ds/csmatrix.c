@@ -11,14 +11,11 @@
  ******************************************************************************/
 #include "rcsw/ds/csmatrix.h"
 
+#define RCSW_ER_MODNAME "rcsw.ds.csmat"
+#define RCSW_ER_MODID M_DS_CSMATRIX
+#include "rcsw/er/client.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_CSMATRIX
 
 /*******************************************************************************
  * Structure Definitions
@@ -75,6 +72,7 @@ BEGIN_C_DECLS
 struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
                                const struct csmatrix_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
+  RCSW_ER_MODULE_INIT();
 
   struct csmatrix* matrix = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -126,7 +124,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
 
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
-  DBGD("n_rows=%zu n_nz_elts=%zu flags=0x%08x\n",
+  ER_DEBUG("n_rows=%zu n_nz_elts=%zu flags=0x%08x",
        csmatrix_n_rows(matrix),
        darray_n_elts(&matrix->outer_starts),
        matrix->flags);
@@ -212,7 +210,7 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
     j++;
   } /* while() */
 
-  DBGV("Add entry [%zu, %zu]: (rstart=%d,rsize=%zu,inner_index=%zu)\n",
+  ER_TRACE("Add entry [%zu, %zu]: (rstart=%d,rsize=%zu,inner_index=%zu)",
        row,
        col,
        row_start[0],
@@ -360,7 +358,7 @@ status_t csmatrix_vmult(const struct csmatrix* const matrix,
     for (int j = 0; j < row_end - row_start; ++j) {
       res += csmatrix_entry_mult(
           matrix, vals + j, darray_data_get(vector_in, cols[j]));
-      DBGV("Multiply in[(%zu, %d) -> %zu]=%f * vector[%d]=%f = %f\n",
+      ER_TRACE("Multiply in[(%zu, %d) -> %zu]=%f * vector[%d]=%f = %f",
            i,
            cols[j],
            vals + j - csmatrix_values(matrix),
@@ -420,11 +418,11 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
   struct csmatrix* new = csmatrix_init(NULL, &params);
   RCSW_CHECK_PTR(new);
 
-  DBGD("TRANSPOSE: Sorting column lists\n");
+  ER_DEBUG("TRANSPOSE: Sorting column lists");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {
     RCSW_CHECK(OK == llist_sort(matrix->cols + i, MSORT_REC));
   } /* for(i..) */
-  DBGD("TRANSPOSE: Begin\n");
+  ER_DEBUG("TRANSPOSE: Begin");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {
     if ((i % 100000) == 0) {
       DPRINTF("Column %zu/%zu (%zu)\n",
@@ -436,7 +434,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
     LLIST_FOREACH(matrix->cols + i, next, col) {
       struct col_pair* pair = (struct col_pair*)col->data;
       double val = csmatrix_values(matrix)[pair->inner_index];
-      DBGV("TRANSPOSE: new[%zu, %d] = old[%d, %zu] (%f)\n",
+      ER_TRACE("TRANSPOSE: new[%zu, %d] = old[%d, %zu] (%f)",
            i,
            pair->row,
            pair->row,
@@ -456,28 +454,28 @@ void csmatrix_print(const struct csmatrix* matrix) {
   if (NULL == matrix) {
     return;
   }
-  printf("{");
+  DPRINTF("{");
   for (size_t i = 0; i < csmatrix_n_rows(matrix); ++i) {
-    printf("{");
+    DPRINTF("{");
     for (size_t j = 0; j < csmatrix_n_cols(matrix); ++j) {
       /* row i has a column j */
       if (-1 != csmatrix_inner_index_get(matrix, i, j)) {
-        /* printf("(%zu,%zu) exists\n", i, j); */
+        /* DPRINTF("(%zu,%zu) exists\n", i, j); */
         csmatrix_entry_print(matrix, csmatrix_entry_get(matrix, i, j));
       } else {
         double val = 0.0;
         csmatrix_entry_print(matrix, &val);
       }
       if (j < csmatrix_n_cols(matrix) - 1) {
-        printf(", ");
+        DPRINTF(", ");
       }
     } /* for(j..) */
-    printf("}");
+    DPRINTF("}");
     if (i < csmatrix_n_rows(matrix) - 1) {
-      printf("\n");
+      DPRINTF("\n");
     }
   } /* for(i..) */
-  printf("}\n");
+  DPRINTF("}\n");
 } /* csmatrix_print() */
 
 /*******************************************************************************
@@ -487,13 +485,13 @@ static void csmatrix_entry_print(const struct csmatrix* const matrix,
                                  const void* const e1) {
   switch (matrix->type) {
     case CSMATRIX_INT:
-      printf("%d", *(const int*)e1);
+      DPRINTF("%d", *(const int*)e1);
       break;
     case CSMATRIX_FLOAT:
-      printf("%f", *(const float*)e1);
+      DPRINTF("%f", *(const float*)e1);
       break;
     case CSMATRIX_DOUBLE:
-      printf("%f", *(const double*)e1);
+      DPRINTF("%f", *(const double*)e1);
       break;
     default:
       break;

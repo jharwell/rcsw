@@ -11,7 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/fifo.h"
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODNAME "rcsw.ds.fifo"
+#define RCSW_ER_MODID M_DS_FIFO
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * API Functions
@@ -25,6 +27,7 @@ struct fifo* fifo_init(struct fifo* fifo_in,
               params->tag == ekRCSW_DS_FIFO,
               params->max_elts > 0,
               params->elt_size > 0);
+  RCSW_ER_MODULE_INIT();
 
   struct fifo* fifo = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -91,7 +94,7 @@ status_t fifo_inject(struct fifo* const fifo,
 
 void fifo_print(struct fifo* const fifo) {
   if (NULL == fifo) {
-    DPRINTF("NULL FIFO\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   rbuffer_print(&fifo->rb);

@@ -269,6 +269,23 @@
 #endif /* __clang__ */
 
 /*******************************************************************************
+ * Other Macros
+ ******************************************************************************/
+#if defined(__INTEL_COMPILER)
+
+#define __FILE_NAME__ __BASE_FILE__
+
+#elif defined(__GNUC__) && !defined(__clang__)
+/**
+ * \def __FILE_NAME__
+ *
+ * GCC does not provide this macro, so we use \p __FILE__ instead which is very
+ * sub-optimal.
+ */
+#define __FILE_NAME__ __FILE__
+#endif /* defined(__INTEL_COMPILER) */
+
+/*******************************************************************************
  * C++ Definitions
  ******************************************************************************/
 #ifdef __cplusplus

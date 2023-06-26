@@ -11,12 +11,9 @@
  ******************************************************************************/
 #include "rcsw/multiprocess/mpi_spmv_mult.h"
 
-#include "rcsw/common/dbg.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_MULTIPROCESS
+#define RCSW_ER_MODNAME "rcsw.mp"
+#define RCSW_ER_MODID M_MULTIPROCESS
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Structure Definitions
@@ -40,8 +37,9 @@ BEGIN_C_DECLS
 struct mpi_spmv_mult*
 mpi_spmv_mult_init(const struct mpi_spmv_mult_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
+  RCSW_ER_MODULE_INIT();
 
-  DBGD("Initializing sparse matrix -> vector multiplier\n");
+  ER_DEBUG("Initializing sparse matrix -> vector multiplier");
 
   /* All MPI processes perform the same basic initialization */
   struct mpi_spmv_mult* mult = malloc(sizeof(struct mpi_spmv_mult));
@@ -89,7 +87,7 @@ mpi_spmv_mult_init(const struct mpi_spmv_mult_params* const params) {
   mult->row_owners = calloc(mult->n_rows_init + 2, sizeof(int));
   RCSW_CHECK_PTR(mult->row_owners);
 
-  DBGD("Rank%d: world_size=%d n_rows_init=%d\n",
+  ER_DEBUG("Rank%d: world_size=%d n_rows_init=%d",
        mult->mpi_rank,
        mult->mpi_world_size,
        mult->n_rows_init);
@@ -137,11 +135,11 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult) {
   RCSW_FPC_NV(ERROR, NULL != mult);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  DBGD("Rank%d: Initializing data structures\n", mult->mpi_rank);
+  ER_DEBUG("Rank%d: Initializing data structures", mult->mpi_rank);
   RCSW_CHECK(OK == mpi_spmv_alloc_init(mult));
 
   if (0 != mult->mpi_rank) {
-    DBGD("Rank%d: Initialize sparse matrix (%d x %d, %d elts)\n",
+    ER_DEBUG("Rank%d: Initialize sparse matrix (%d x %d, %d elts)",
          mult->mpi_rank,
          mult->n_rows_alloc,
          mult->n_rows_init,
@@ -157,7 +155,7 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult) {
   }
 
   /* Initialize input/output vector at all nodes */
-  DBGV("Rank%d: Initialize input/output vector (%d/%d elts)\n",
+  ER_TRACE("Rank%d: Initialize input/output vector (%d/%d elts)",
        mult->mpi_rank,
        mult->n_cols_init,
        mult->n_rows_alloc);
@@ -209,7 +207,7 @@ error:
 status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                                   struct darray* const vector) {
   RCSW_FPC_NV(ERROR, NULL != mult);
-  DBGD("Rank%d: Distribute data to all ranks\n", mult->mpi_rank);
+  ER_DEBUG("Rank%d: Distribute data to all ranks", mult->mpi_rank);
   /*
    * First, distribute the matrix to all ranks
    */
@@ -235,7 +233,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
       }
 
       /* Note the +1 for the extra element at the end of outer_starts */
-      DBGD("Send outer_starts[%d-%d] (%d)to rank %d\n",
+      ER_DEBUG("Send outer_starts[%d-%d] (%d)to rank %d",
            row_accum,
            row_accum + mult->rank_alloc_rows[i],
            mult->rank_alloc_rows[i] + 1,
@@ -251,7 +249,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                            MPI_COMM_WORLD,
                            &req));
 
-      DBGD("Send inner_indices[%d-%d]  (%d) to rank %d\n",
+      ER_DEBUG("Send inner_indices[%d-%d]  (%d) to rank %d",
            elt_accum,
            elt_accum + mult->rank_alloc_elts[i] - 1,
            mult->rank_alloc_elts[i],
@@ -265,7 +263,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                            MPI_COMM_WORLD,
                            &req));
 
-      DBGD("Send values[%d-%d] (%d) to rank %d \n",
+      ER_DEBUG("Send values[%d-%d] (%d) to rank %d ",
            elt_accum,
            elt_accum + mult->rank_alloc_elts[i] - 1,
            mult->rank_alloc_elts[i],
@@ -283,7 +281,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
       elt_accum += mult->rank_alloc_elts[i];
     } /* for(i..) */
   }
-  DBGD("Rank%d: Receive matrix data\n", mult->mpi_rank);
+  ER_DEBUG("Rank%d: Receive matrix data", mult->mpi_rank);
 
   /* receive matrix data */
   RCSW_CHECK(MPI_SUCCESS == MPI_Recv(csmatrix_outer_starts(mult->matrix),
@@ -309,7 +307,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                                      MPI_COMM_WORLD,
                                      MPI_STATUS_IGNORE));
 
-  DBGD("Rank%d: Receive matrix data...done\n", mult->mpi_rank);
+  ER_DEBUG("Rank%d: Receive matrix data...done", mult->mpi_rank);
 
   if (0 == mult->mpi_rank) {
     mult->vector_in = darray_copy(vector, NULL);
@@ -324,7 +322,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
    */
   RCSW_CHECK(OK == csmatrix_resize(
                        mult->matrix, mult->n_rows_alloc, mult->n_elts_alloc));
-  DBGV("Rank%d: Broadcast row->rank mappings\n", mult->mpi_rank);
+  ER_TRACE("Rank%d: Broadcast row->rank mappings", mult->mpi_rank);
 
   /*
    * Finally, get the row -> rank mappings so you know where to
@@ -359,7 +357,7 @@ struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult) {
    * Now do the actual multiply!
    */
   darray_set_n_elts(mult->vector_out, mult->n_rows_alloc);
-  DBGD("Rank%d: Multiply: [%zu x %zu] x [%zu x 1] = [%zu x 1]\n",
+  ER_DEBUG("Rank%d: Multiply: [%zu x %zu] x [%zu x 1] = [%zu x 1]",
        mult->mpi_rank,
        csmatrix_n_rows(mult->matrix),
        csmatrix_n_cols(mult->matrix),
@@ -401,7 +399,7 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
    */
   if (0 == mult->mpi_rank) {
     size_t target_size = csmatrix_n_elts(mult->matrix) / mult->mpi_world_size;
-    DBGD("Allocate ~ %zu/%zu elts to %d ranks\n",
+    ER_DEBUG("Allocate ~ %zu/%zu elts to %d ranks",
          target_size,
          csmatrix_n_elts(mult->matrix),
          mult->mpi_world_size);
@@ -417,7 +415,7 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
         mult->rank_alloc_elts[j] = curr_size;
         mult->rank_alloc_rows[j]++;
 
-        DBGV("Rank%d owns row %d (%zu/%zu): %d alloc()ed\n",
+        ER_TRACE("Rank%d owns row %d (%zu/%zu): %d alloc()ed",
              j,
              curr_row,
              curr_size,
@@ -466,7 +464,7 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
   RCSW_CHECK(
       MPI_SUCCESS ==
       MPI_Bcast(mult->row_owners, mult->n_rows_init, MPI_INT, 0, MPI_COMM_WORLD));
-  DBGD("Rank%d: Received allocation parameters: n_rows=%d n_elts=%d\n",
+  ER_DEBUG("Rank%d: Received allocation parameters: n_rows=%d n_elts=%d",
        mult->mpi_rank,
        mult->n_rows_alloc,
        mult->n_elts_alloc);

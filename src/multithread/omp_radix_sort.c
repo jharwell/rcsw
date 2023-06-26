@@ -13,15 +13,12 @@
 
 #include <omp.h>
 
+#define RCSW_ER_MODNAME "rcsw.mt"
+#define RCSW_ER_MODID M_MULTITHREAD
+#include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_MULTIPROCESS
 
 /*******************************************************************************
  * Forward Declarations
@@ -49,6 +46,7 @@ BEGIN_C_DECLS
 struct omp_radix_sorter*
 omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, NULL != params->data);
+  RCSW_ER_MODULE_INIT();
 
   struct omp_radix_sorter* sorter = malloc(sizeof(struct omp_radix_sorter));
   RCSW_CHECK_PTR(sorter);
@@ -91,7 +89,7 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
     sorter->data[i] = params->data[i];
   } /* for(i..) */
 
-  DBGD("n_threads=%zu n_elts=%zu chunk_size=%zu base=%zu\n",
+  ER_DEBUG("n_threads=%zu n_elts=%zu chunk_size=%zu base=%zu",
        sorter->n_threads,
        sorter->n_elts,
        sorter->chunk_size,
@@ -122,7 +120,7 @@ void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter) {
 } /* omp_radix_sorter_destroy() */
 
 status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter) {
-  DBGN("Starting radix sort\n");
+  ER_INFO("Starting radix sort");
 
   int m;
   /* Get largest # in array to get total # of digits */
@@ -134,7 +132,7 @@ status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter) {
   for (int exp = 1; m / exp > 0; exp *= sorter->base) {
     RCSW_CHECK(OK == omp_radix_sorter_step(sorter, exp));
   } /* for(exp...) */
-  DBGN("Finished sorting\n");
+  ER_INFO("Finished sorting");
   return OK;
 
 error:
@@ -146,7 +144,7 @@ error:
  ******************************************************************************/
 static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
                                       int digit) {
-  DBGN("Radix sort digit %d\n", digit);
+  ER_INFO("Radix sort digit %d", digit);
 
 /* Each thread flushes its own FIFOs */
 #pragma omp parallel for num_threads(sorter->n_threads)
@@ -163,7 +161,7 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
                  ((sorter->data[i] / digit) % sorter->base),
              sorter->data + i);
   } /* for(i..) */
-  DBGD("Finished sorting digit %d\n", digit);
+  ER_DEBUG("Finished sorting digit %d", digit);
 
   /*
    * Calculate all prefix sums for symbol 0 for all threads, to make math in
@@ -188,7 +186,7 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
     } /* for(i..) */
   } /* for(j..) */
 
-  DBGV("Computed all prefix sums\n");
+  ER_TRACE("Computed all prefix sums");
 
 /* all threads copy elements back into original array in parallel */
 #pragma omp parallel for num_threads(sorter->n_threads) schedule(static)

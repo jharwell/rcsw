@@ -13,15 +13,12 @@
 
 #include <mpi.h>
 
+#define RCSW_ER_MODNAME "rcsw.mp"
+#define RCSW_ER_MODID M_MULTIPROCESS
+#include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/common/fpc.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_MULTIPROCESS
 
 /*******************************************************************************
  * Forward Declarations
@@ -47,6 +44,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
 struct mpi_radix_sorter*
 mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, NULL != params->data);
+  RCSW_ER_MODULE_INIT();
 
   /* All MPI processes perform the same basic initialization */
   struct mpi_radix_sorter* sorter = malloc(sizeof(struct mpi_radix_sorter));
@@ -74,7 +72,7 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   sorter->data = malloc(sizeof(size_t) * sorter->chunk_size);
   RCSW_CHECK_PTR(sorter->data);
 
-  DBGD("Rank %d: n_elts=%zu chunk_size=%zu base=%zu world_size=%d\n",
+  ER_DEBUG("Rank %d: n_elts=%zu chunk_size=%zu base=%zu world_size=%d",
        sorter->mpi_rank,
        sorter->n_elts,
        sorter->chunk_size,
@@ -106,7 +104,7 @@ void mpi_radix_sorter_destroy(struct mpi_radix_sorter* const sorter) {
 } /* mpi_radix_sorter_destroy() */
 
 status_t mpi_radix_sorter_exec(struct mpi_radix_sorter* const sorter) {
-  DBGN("Rank %d: Starting radix sort\n", sorter->mpi_rank);
+  DBGN("Rank %d: Starting radix sort", sorter->mpi_rank);
   memset(sorter->prefix_sums, 0, sizeof(size_t) * (sorter->base + 1));
 
   /*
@@ -134,7 +132,7 @@ error:
  ******************************************************************************/
 static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                       int digit) {
-  DBGD("Rank %d: Radix sort digit %d\n", sorter->mpi_rank, digit);
+  ER_DEBUG("Rank %d: Radix sort digit %d", sorter->mpi_rank, digit);
   int prefix_recv_counts[sorter->mpi_world_size];
   int prefix_disp_counts[sorter->mpi_world_size];
   int data_recv_counts[sorter->mpi_world_size];
@@ -149,7 +147,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                         MPI_INT,
                                         0,
                                         MPI_COMM_WORLD));
-  DBGV("Rank %d: All data received (%zu bytes)\n",
+  ER_TRACE("Rank %d: All data received (%zu bytes)",
        sorter->mpi_rank,
        sorter->n_elts);
   radix_counting_sort(
@@ -162,7 +160,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                         digit,
                         sorter->prefix_sums + 1);
 
-  DBGV("Rank %d: Finished sorting\n", sorter->mpi_rank);
+  ER_TRACE("Rank %d: Finished sorting", sorter->mpi_rank);
 
   /* receive prefix sums and data from workers*/
   for (size_t i = 0; i < (size_t)sorter->mpi_world_size; ++i) {
@@ -191,7 +189,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                           MPI_INT,
                                           0,
                                           MPI_COMM_WORLD));
-    DBGV("Rank %d: Received prefixes for value %zu at master\n",
+    ER_TRACE("Rank %d: Received prefixes for value %zu at master",
          sorter->mpi_rank,
          i);
     /* Only the master needs to compute recv counts/displacements  */
@@ -226,7 +224,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                            MPI_INT,
                            0,
                            MPI_COMM_WORLD));
-    DBGV("Rank %d: Received data for value %zu to master\n", sorter->mpi_rank, i);
+    ER_TRACE("Rank %d: Received data for value %zu to master", sorter->mpi_rank, i);
     prev_total = total;
   } /* for(i..) */
   return OK;

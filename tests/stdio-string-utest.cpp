@@ -19,7 +19,6 @@
 
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/utils/utils.h"
 
 /******************************************************************************

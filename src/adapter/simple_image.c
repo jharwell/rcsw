@@ -16,7 +16,7 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
 
 /*******************************************************************************

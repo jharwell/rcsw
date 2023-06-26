@@ -23,9 +23,7 @@
  ******************************************************************************/
 template <typename T>
 static void run_test(ds_test_t test) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING,"Testing"); */
-  /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
+  log4cl_init();
 
   struct ds_params params;
   params.tag = ekRCSW_DS_RBUFFER;
@@ -49,6 +47,7 @@ static void run_test(ds_test_t test) {
     } /* for(i..) */
   } /* for(j..) */
   th_ds_shutdown(&params);
+  log4cl_shutdown();
 } /* test_runner() */
 
 /*******************************************************************************

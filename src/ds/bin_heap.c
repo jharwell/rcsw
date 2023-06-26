@@ -11,13 +11,11 @@
  ******************************************************************************/
 #include "rcsw/ds/bin_heap.h"
 
-#include "rcsw/common/dbg.h"
+#define RCSW_ER_MODNAME "rcsw.ds.bin_heap"
+#define RCSW_ER_MODID M_DS_BIN_HEAP
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define MODULE_ID M_DS_BIN_HEAP
 
 /*******************************************************************************
  * Forward Declarations
@@ -61,6 +59,7 @@ struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
               params->max_elts > 0,
               params->elt_size > 0,
               params->cmpe != NULL);
+  RCSW_ER_MODULE_INIT();
 
   struct bin_heap* heap = NULL;
   if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
@@ -91,11 +90,11 @@ struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
   RCSW_CHECK(NULL != darray_init(&heap->arr, &darray_params));
   RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, 1));
 
-  DBGD("init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x\n",
-       params->type.bhp.init_size,
-       params->max_elts,
-       params->elt_size,
-       params->flags);
+  ER_DEBUG("init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
+             params->type.bhp.init_size,
+             params->max_elts,
+             params->elt_size,
+             params->flags);
 
   return heap;
 
@@ -131,7 +130,9 @@ status_t bin_heap_make(struct bin_heap* const heap,
                        size_t n_elts) {
   RCSW_FPC_NV(ERROR, NULL != heap, NULL != data, n_elts > 0);
 
-  DBGD("Making heap from %zu %zu-byte elements\n", n_elts, heap->arr.elt_size);
+  ER_DEBUG("Making heap from %zu %zu-byte elements",
+             n_elts,
+             heap->arr.elt_size);
   for (size_t i = 0; i < n_elts; ++i) {
     RCSW_CHECK(OK == darray_insert(&heap->arr,
                                    (const uint8_t*)data + heap->arr.elt_size * i,
@@ -198,7 +199,7 @@ error:
 
 void bin_heap_print(const struct bin_heap* const heap) {
   if (heap == NULL) {
-    DPRINTF("Heap: < NULL heap >\n");
+    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   return darray_print(&heap->arr);
@@ -224,12 +225,12 @@ static void bin_heap_sift_down(struct bin_heap* const heap, size_t m) {
                        darray_data_get(&heap->arr, smallest)) < 0) {
       smallest = r_child;
     }
-    DBGV("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu\n",
-         n_elts,
-         smallest,
-         m,
-         l_child,
-         r_child);
+    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
+               n_elts,
+               smallest,
+               m,
+               l_child,
+               r_child);
     if (smallest != m) {
       bin_heap_swap(heap, m, smallest);
       bin_heap_sift_down(heap, smallest);
@@ -246,12 +247,12 @@ static void bin_heap_sift_down(struct bin_heap* const heap, size_t m) {
                        darray_data_get(&heap->arr, largest)) > 0) {
       largest = r_child;
     }
-    DBGV("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu\n",
-         n_elts,
-         largest,
-         m,
-         l_child,
-         r_child);
+    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
+               n_elts,
+               largest,
+               m,
+               l_child,
+               r_child);
 
     if (largest != m) {
       bin_heap_swap(heap, m, largest);

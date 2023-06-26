@@ -115,6 +115,12 @@ libra_component_register_as_src(
   common
   "src/common")
 libra_component_register_as_src(
+  rcsw_er_SRC
+  rcsw
+  "${rcsw_SRC}"
+  er
+  "src/er")
+libra_component_register_as_src(
   rcsw_ds_SRC
   rcsw
   "${rcsw_SRC}"
@@ -169,6 +175,7 @@ if (NOT rcsw_FIND_COMPONENTS)
     common
     algorithm
     ds
+    er
     adapter
     multithread
     mp_common
@@ -222,10 +229,14 @@ add_compile_definitions(${rcsw_LIBRARY}
   RCSW_STDIO_PUTCHAR=myputchar
 )
 
-# add_compile_definitions(${rcsw_LIBRARY}
-#   PRIVATE
-#   RCSW_STDIO_GETCHAR=mygetchar
-# )
+target_compile_definitions(${rcsw_LIBRARY}
+  INTERFACE
+  LIBRA_ER=LIBRA_ER_${LIBRA_ER}
+)
+add_compile_definitions(${rcsw_LIBRARY}
+  INTERFACE
+  RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_ER_PLUGIN}
+)
 
 foreach(config ${RCSW_STDIO_ONOFF_CONFIG})
   if(${config})
@@ -310,6 +321,7 @@ message("-----------------------------------------------------------------------
 message("")
 
 message(STATUS "Version                                       : rcsw_VERSION=${rcsw_VERSION}")
+message(STATUS "Event reporting plugin                        : RCSW_ER_PLUGIN=${RCSW_ER_PLUGIN}")
 message(STATUS "stdio getchar() function                      : RCSW_STDIO_GETCHAR=${RCSW_STDIO_GETCHAR}")
 message(STATUS "stdio putchar() function                      : RCSW_STDIO_PUTCHAR=${RCSW_STDIO_PUTCHAR}")
 message(STATUS "stdio math taylor expansion terms             : RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS=${RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS}")

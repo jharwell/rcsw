@@ -26,7 +26,6 @@ using std::isnan;
 }
 
 #include "rcsw/ds/static_adj_matrix.h"
-#include "rcsw/common/dbg.h"
 #include "tests/ds_test.h"
 
 /*******************************************************************************
@@ -42,10 +41,10 @@ void test_runner(void (*test)(struct ds_params *params));
  * Test Helper Functions
  ******************************************************************************/
 void test_runner(void (*test)(struct ds_params *params)) {
-  dbg_init();
-  dbg_insmod(M_TESTING, "Testing");
-  dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix");
-  dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V);
+  /* dbg_init(); */
+  /* dbg_insmod(M_TESTING, "Testing"); */
+  /* dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix"); */
+  /* dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V); */
   struct ds_params params;
   params.tag = ekRCSW_DS_ADJ_MATRIX;
   params.flags = 0;

@@ -13,7 +13,7 @@
 
 #include <limits.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree_node.h"

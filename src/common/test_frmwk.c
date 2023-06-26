@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rcsw/common/dbg.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Functions
@@ -51,9 +51,9 @@ void test_frmwk_test_status(struct test_frmwk* const tests, /* test array */
 {
   PRINTF("%-32.32s ", tests->test_insts[index].name);
   if (tests->test_insts[index].status == OK) {
-    PRINTF("%sPASSED%s\n", DBG_OKC, DBG_ENDC);
+    PRINTF("%sPASSED%s\n", RCSW_ER_OKC, RCSW_ER_ENDC);
   } else {
-    PRINTF("%sFAILED%s\n", DBG_FAILC, DBG_ENDC);
+    PRINTF("%sFAILED%s\n", RCSW_ER_FAILC, RCSW_ER_ENDC);
     tests->status = ERROR;
   }
 } /* test_frmwk_test_status() */
@@ -67,15 +67,15 @@ void test_frmwk_summary(struct test_frmwk* const tests) /* test array */
     }
   }
   PRINTF("%sPassed %zu/%zu tests.%s\n\n",
-         DBG_HEADC,
+         RCSW_ER_HEADC,
          passcount,
          tests->n_tests,
-         DBG_ENDC);
+         RCSW_ER_ENDC);
   if (passcount < tests->n_tests) {
-    PRINTF("%sTEST SUITE FAILED%s\n", DBG_FAILC, DBG_ENDC);
+    PRINTF("%sTEST SUITE FAILED%s\n", RCSW_ER_FAILC, RCSW_ER_ENDC);
     tests->status = ERROR;
   } else {
-    PRINTF("%sTEST SUITE PASSED%s\n", DBG_OKC, DBG_ENDC);
+    PRINTF("%sTEST SUITE PASSED%s\n", RCSW_ER_OKC, RCSW_ER_ENDC);
   }
 } /* test_frmwk_summary() */
 

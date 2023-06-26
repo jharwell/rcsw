@@ -17,7 +17,6 @@
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree.h"
 #include "rcsw/ds/bstree_node.h"
-#include "rcsw/common/dbg.h"
 #include "rcsw/utils/utils.h"
 
 #include "tests/ds_test.h"

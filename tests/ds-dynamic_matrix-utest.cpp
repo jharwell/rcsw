@@ -18,7 +18,6 @@
 
 extern "C" {
 #include "rcsw/ds/dynamic_matrix.h"
-#include "rcsw/common/dbg.h"
 #include "tests/ds_test.h"
 }
 
@@ -35,10 +34,10 @@ static void printe(const void* const e);
  * Test Helper Functions
  ******************************************************************************/
 void test_runner(void (*test)(struct ds_params *params)) {
-  dbg_init();
-  dbg_insmod(M_TESTING,"Testing");
-  dbg_insmod(M_DS_DYNAMIC_MATRIX,"DYNAMIC_MATRIX");
-  dbg_mod_lvl_set(M_DS_DYNAMIC_MATRIX, DBG_V);
+  /* dbg_init(); */
+  /* dbg_insmod(M_TESTING,"Testing"); */
+  /* dbg_insmod(M_DS_DYNAMIC_MATRIX,"DYNAMIC_MATRIX"); */
+  /* dbg_mod_lvl_set(M_DS_DYNAMIC_MATRIX, DBG_V); */
 
   struct ds_params params;
   params.tag = ekRCSW_DS_DYNAMIC_MATRIX;
