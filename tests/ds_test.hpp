@@ -111,9 +111,9 @@ template<typename T>
 void th_printe(const void *e) {
   const T *el = reinterpret_cast<const T*>(e);
   if constexpr (std::is_same<T, element1>::value) {
-      PRINTF("value1: %d value2: N/A\n", el->value1);
+      DPRINTF("value1: %d value2: N/A\n", el->value1);
   } else {
-    PRINTF("value1: %d value2: %d\n", el->value1, el->value2);
+    DPRINTF("value1: %d value2: %d\n", el->value1, el->value2);
   }
 } /* th_printe() */
 

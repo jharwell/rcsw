@@ -82,9 +82,13 @@ struct darray* darray_init(struct darray* arr_in,
     arr->elements = params->elements;
     arr->capacity = params->max_elts;
   } else {
+    RCSW_CHECK(-1 == params->max_elts ||
+               params->type.da.init_size < (size_t)params->max_elts);
     arr->capacity = params->type.da.init_size;
-    arr->elements = calloc(params->type.da.init_size, params->elt_size);
-    RCSW_CHECK_PTR(arr->elements);
+    arr->elements = NULL;
+    if (arr->capacity > 0) {
+      arr->elements = calloc(params->type.da.init_size, params->elt_size);
+    }
   }
   arr->max_elts = params->max_elts;
 
@@ -185,7 +189,7 @@ darray_insert(struct darray* const arr, const void* const e, size_t index) {
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = FALSE;
-    darray_sort(arr, QSORT_ITER);
+    darray_sort(arr, ekQSORT_ITER);
   }
   return OK;
 
@@ -316,9 +320,9 @@ status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
   if (arr->current <= 1 || arr->sorted) {
     ER_DEBUG("Already sorted: nothing to do\n");
   } else {
-    if (type == QSORT_REC) {
+    if (type == ekQSORT_REC) {
       qsort_rec(arr->elements, 0, arr->current - 1, arr->elt_size, arr->cmpe);
-    } else if (type == QSORT_ITER) {
+    } else if (type == ekQSORT_ITER) {
       qsort_iter(arr->elements, arr->current - 1, arr->elt_size, arr->cmpe);
     } else {
       return ERROR; /* bad sort type */
@@ -378,8 +382,9 @@ error:
 } /* darray_filter() */
 
 struct darray* darray_copy(const struct darray* const arr,
-                           const struct ds_params* const cparams) {
-  RCSW_FPC_NV(NULL, arr != NULL);
+                           uint32_t flags,
+                           uint8_t* elements) {
+  RCSW_FPC_NV(NULL, arr != NULL, !(flags & RCSW_DS_NOALLOC_HANDLE));
 
   struct ds_params params = {.type = {.da =
                                           {
@@ -390,9 +395,9 @@ struct darray* darray_copy(const struct darray* const arr,
                              .elt_size = arr->elt_size,
                              .max_elts = arr->max_elts,
                              .tag = ekRCSW_DS_DARRAY,
-                             .flags = (cparams == NULL) ? 0 : cparams->flags,
-                             .elements =
-                                 (cparams == NULL) ? NULL : cparams->elements};
+                             .flags = flags,
+                             .elements = elements
+                             };
 
   struct darray* carr = darray_init(NULL, &params);
   RCSW_CHECK_PTR(carr);
@@ -400,13 +405,13 @@ struct darray* darray_copy(const struct darray* const arr,
   carr->sorted = arr->sorted;
 
   /*
-   * Copy items into new list. Don't use ds_elt_copy(), as that does not work
-   * if the source list is empty.
-   *
+   * Copy items into new list, if it makes sense to do so. Don't use
+   * ds_elt_copy(), as that does not work if the source list is empty.
    */
-  memcpy(carr->elements, arr->elements, arr->current * arr->elt_size);
+  if (darray_capacity(carr) > 0) {
+    memcpy(carr->elements, arr->elements, arr->current * arr->elt_size);
+  }
 
-  ER_DEBUG("%zu %zu-byte elements", arr->current, arr->elt_size);
   return carr;
 
 error:

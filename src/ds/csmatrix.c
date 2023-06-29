@@ -420,7 +420,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
 
   ER_DEBUG("TRANSPOSE: Sorting column lists");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {
-    RCSW_CHECK(OK == llist_sort(matrix->cols + i, MSORT_REC));
+    RCSW_CHECK(OK == llist_sort(matrix->cols + i, ekMSORT_REC));
   } /* for(i..) */
   ER_DEBUG("TRANSPOSE: Begin");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {

@@ -266,8 +266,8 @@ CATCH_TEST_CASE("misc Test", "[utils]") {
   CATCH_REQUIRE(memcmp(arr, ret, RCSW_ARRAY_SIZE(arr)) == 0);
 
   uint32_t arr2[4] = {0x4, 0x1, 0x2, 0x3};
-  arr32_el_swap(arr2, 0, 1);
-  arr32_el_swap(arr2, 2, 3);
+  arr32_elt_swap(arr2, 0, 1);
+  arr32_elt_swap(arr2, 2, 3);
 
   uint32_t ret2[4] = {0x1, 0x4, 0x3, 0x2};
   CATCH_REQUIRE(memcmp(arr2, ret2, RCSW_ARRAY_SIZE(arr)) == 0);

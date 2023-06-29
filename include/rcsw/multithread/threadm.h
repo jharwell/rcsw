@@ -31,4 +31,3 @@ BEGIN_C_DECLS
 status_t threadm_core_lock(pthread_t thread, size_t core);
 
 END_C_DECLS
-

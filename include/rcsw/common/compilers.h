@@ -172,6 +172,22 @@
 
 #endif /* RCSW_EXPORT */
 
+/**
+ * \def RCSW_LIB_INIT
+ *
+ * Mark a function that should be run when the the library it belongs to is
+ * loaded.
+ */
+#define RCSW_LIB_INIT __attribute__((constructor))
+
+/**
+ * \def RCPPSW_LIB_FINI
+ *
+ * Mark a function that should be run when the the library it belongs to is
+ * unloaded.
+ */
+#define RCSW_LIB_FINI __attribute__((destructor))
+
 /*
  * Intel compiler (as of version 19) does not support these attribute macros
  */
@@ -235,7 +251,7 @@
 #else
 
 /**
- * \def RCSW_PURE Shorthand for marked a function as purely function of its
+ * \def RCSW_PURE Shorthand for marking a function as purely function of its
  * input parameters and (possibly) global data.
  */
 #define RCSW_PURE __attribute__((pure))
@@ -248,11 +264,24 @@
 
 #else
 /**
- * \def RCSW_DEAD Shorthand for marked a function as one that will not return.
+ * \def RCSW_DEAD Shorthand for marking a function as one that will not return.
  */
 #define RCSW_DEAD __attribute__((noreturn))
 
 #endif /* RCSW_DEAD */
+
+#if defined(RCSW_WEAK)
+#error "RCSW_WEAK defined!"
+
+#else
+/**
+ * \def RCSW_WEAK Shorthand for marking a function as weak
+ *
+ * Weak functions can be overridden with an equivalent definition at link time.
+ */
+#define RCSW_WEAK __attribute__((weak))
+
+#endif /* RCSW_WEAK */
 
 #endif /* __clang__ || __GNUC__ */
 
@@ -279,10 +308,13 @@
 /**
  * \def __FILE_NAME__
  *
- * GCC does not provide this macro, so we use \p __FILE__ instead which is very
- * sub-optimal.
+ * Only very recent GCC providees this macro, so we use \p __FILE__ instead
+ * in some cases which is very sub-optimal.
  */
+#if !defined(__FILE_NAME__)
 #define __FILE_NAME__ __FILE__
+#endif
+
 #endif /* defined(__INTEL_COMPILER) */
 
 /*******************************************************************************

@@ -44,4 +44,3 @@ pid_t procm_fork_exec(char** const cmd, const char* new_wd,
                       bool_t stdout_sup, int* pipefd);
 
 END_C_DECLS
-

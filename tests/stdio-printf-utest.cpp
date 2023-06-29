@@ -125,8 +125,9 @@ BEGIN_C_DECLS
 // dummy putchar
 static char   printf_buffer[base_buffer_size];
 static size_t printf_idx = 0U;
-void myputchar(char c) {
+int th_putchar(int c) {
   printf_buffer[printf_idx++] = c;
+  return c;
 }
 END_C_DECLS
 

@@ -54,6 +54,9 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   sorter->mpi_rank = params->mpi_rank;
   sorter->mpi_world_size = params->mpi_world_size;
   sorter->chunk_size = sorter->n_elts / sorter->mpi_world_size;
+  sorter->tmp_arr = NULL;
+  sorter->cum_prefix_sums = NULL;
+  sorter->data = NULL;
 
   /*
    * Allocate memory. The master needs more space for the prefix sums,
@@ -86,21 +89,21 @@ error:
 } /* mpi_radix_sorter_init() */
 
 void mpi_radix_sorter_destroy(struct mpi_radix_sorter* const sorter) {
-  if (sorter) {
-    if (sorter->prefix_sums) {
-      free(sorter->prefix_sums);
-    }
-    if (sorter->tmp_arr) {
-      free(sorter->tmp_arr);
-    }
-    if (sorter->cum_prefix_sums) {
-      free(sorter->cum_prefix_sums);
-    }
-    if (sorter->data) {
-      free(sorter->data);
-    }
-    free(sorter);
+  RCSW_FPC_V(NULL != sorter);
+
+  if (sorter->prefix_sums) {
+    free(sorter->prefix_sums);
   }
+  if (sorter->tmp_arr) {
+    free(sorter->tmp_arr);
+  }
+  if (sorter->cum_prefix_sums) {
+    free(sorter->cum_prefix_sums);
+  }
+  if (sorter->data) {
+    free(sorter->data);
+  }
+  free(sorter);
 } /* mpi_radix_sorter_destroy() */
 
 status_t mpi_radix_sorter_exec(struct mpi_radix_sorter* const sorter) {

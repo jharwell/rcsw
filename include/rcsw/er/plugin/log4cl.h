@@ -1,11 +1,7 @@
 /**
- * \file dbg.h
+ * \file log4cl.h
  * \ingroup er
- * \brief A simple C debugging/logging frameworkwhich only uses RCSW internals.
- *
- * Comprises debug printing on a module basis, with the capability to set the
- * level for each module independently (if you really want to). Mainly intended
- * for environments with no stdlib, such as bootstraps.
+ * \brief A C debugging/logging framework in the style of log4c, but less complex.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -27,16 +23,12 @@
 /*******************************************************************************
  * RCSW ER Plugin Definitions
  ******************************************************************************/
-#define RCSW_ER_PLUGIN_OFF   6
-#define RCSW_ER_PLUGIN_ERROR 5
-#define RCSW_ER_PLUGIN_WARN  4
-#define RCSW_ER_PLUGIN_INFO  3
-#define RCSW_ER_PLUGIN_DEBUG 2
-#define RCSW_ER_PLUGIN_TRACE 1
-
 #define RCSW_ER_PLUGIN_PRINTF printf
 
-#define RCSW_ER_PLUGIN_REPORT(lvl, logger,  id, name, msg, ...) \
+#define RCSW_ER_PLUGIN_INIT(...) log4cl_init(__VA_ARGS__)
+#define RCSW_ER_PLUGIN_SHUTDOWN(...) log4cl_shutdown(__VA_ARGS__)
+
+#define RCSW_ER_PLUGIN_REPORT(lvl, handle,  id, name, msg, ...) \
   {                                                             \
     RCSW_ER_PLUGIN_PRINTF(name " [" RCSW_XSTR(lvl) "] "  msg,   \
                           ## __VA_ARGS__);                      \
@@ -48,6 +40,7 @@
 
 #define RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl) log4cl_mod_enabled(handle, lvl)
 
+#define RCSW_LOG4CL_MODNAME_LEN 32
 
 /*******************************************************************************
  * Module codes
@@ -102,7 +95,7 @@ enum log4cl_module_codes {RCSW_XGEN_ENUMS(RCSW_LOG4CL_MODULES)};
 struct log4cl_module {
   int64_t id; /* id must be the first field for comparisons to work */
   uint8_t lvl; /* The current debugging level */
-  char name[20]; /* The name of the module */
+  char name[RCSW_LOG4CL_MODNAME_LEN]; /* The name of the module */
 };
 
 /**
@@ -122,14 +115,19 @@ struct log4cl_frmwk {
  * Global Variables
  ******************************************************************************/
 BEGIN_C_DECLS
-extern struct log4cl_frmwk log4cl_g;
 
 /*******************************************************************************
  * Function Prototypes
  ******************************************************************************/
-struct log4cl_module* log4cl_mod_query(uint64_t id);
+/**
+ * \brief Check if a module with the specified ID is currently loaded.
+ *
+ * \return The module, or NULL if not found.
+ */
+struct log4cl_module* log4cl_mod_query(uint64_t id) RCSW_CONST;
 
-bool_t log4cl_mod_enabled(const struct log4cl_module* module, uint8_t lvl);
+bool_t log4cl_mod_enabled(const struct log4cl_module* module,
+                          uint8_t lvl) RCSW_PURE;
 
 /**
  * \brief Initialize Debugging Framework
@@ -195,9 +193,7 @@ status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
  * \param lvl The new default level (one of LOG4CL_OFF, LOG4CL_E, LOG4CL_W, etc.)
  *
  */
-static inline void log4cl_default_lvl_set(uint8_t lvl) {
-  log4cl_g.default_lvl = lvl;
-}
+void log4cl_default_lvl_set(uint8_t lvl);
 
 /**
  * \brief Get the ID of a module from its name

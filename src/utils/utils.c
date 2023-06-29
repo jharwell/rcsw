@@ -102,21 +102,19 @@ void arr32_permute(uint32_t* arr,
      */
     for (size_t j = start; j < size; ++j) {
       /* try the array with start and j switched */
-      arr32_el_swap(arr, start, j);
+      arr32_elt_swap(arr, start, j);
       arr32_permute(arr, size, start + 1, fp);
 
       /* swap them back the way they were */
-      arr32_el_swap(arr, start, j);
+      arr32_elt_swap(arr, start, j);
     }
   }
 } /* arr_permute() */
 
-void arr32_el_swap(uint32_t* const v, size_t i, size_t j) {
-  uint32_t t;
-
-  t = v[i];
+void arr32_elt_swap(uint32_t* const v, size_t i, size_t j) {
+  uint32_t t = v[i];
   v[i] = v[j];
   v[j] = t;
-} /* arr_el32_swap() */
+} /* arr32_elt_swap() */
 
 END_C_DECLS

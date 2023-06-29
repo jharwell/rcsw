@@ -488,7 +488,7 @@
 #ifndef __cplusplus
 
 
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 
 /**
  * \def RCSW_STATIC_ASSERT Compile time asserts for size, alignment, etc.

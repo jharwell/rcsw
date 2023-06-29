@@ -25,10 +25,10 @@ BEGIN_C_DECLS
 #warning "__SIZEOF_FLOAT__ not defined--strange behavior may occur..."
 #endif
 
-status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t el_size) {
-  RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, el_size > 0);
+status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) {
+  RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, elt_size > 0);
 
-  switch (el_size) {
+  switch (elt_size) {
     case sizeof(uint8_t):
       *((uint8_t*)(elt1)) = *((const uint8_t*)(elt2));
       break;
@@ -47,18 +47,18 @@ status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t el_size) {
       *((double*)(elt1)) = *((const double*)(elt2));
       break;
     default:
-      memcpy(elt1, elt2, el_size);
+      memcpy(elt1, elt2, elt_size);
       break;
   }
 
   return OK;
 } /* ds_elt_copy() */
 
-status_t ds_elt_swap(void* const elt1, void* const elt2, size_t el_size) {
+status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
   RCSW_FPC_NV(
-      ERROR, NULL != elt1, NULL != elt2, el_size > 0, el_size <= sizeof(double));
+      ERROR, NULL != elt1, NULL != elt2, elt_size > 0, elt_size <= sizeof(double));
   double tmp;
-  switch (el_size) {
+  switch (elt_size) {
     case sizeof(uint8_t):
       *((uint8_t*)(elt1)) ^= *((const uint8_t*)(elt2));
       *((uint8_t*)(elt2)) ^= *((const uint8_t*)(elt1));
@@ -93,10 +93,10 @@ status_t ds_elt_swap(void* const elt1, void* const elt2, size_t el_size) {
   return OK;
 } /* ds_elt_swap() */
 
-status_t ds_elt_clear(void* const elt, size_t el_size) {
-  RCSW_FPC_NV(ERROR, NULL != elt, el_size > 0);
+status_t ds_elt_clear(void* const elt, size_t elt_size) {
+  RCSW_FPC_NV(ERROR, NULL != elt, elt_size > 0);
 
-  switch (el_size) {
+  switch (elt_size) {
     case sizeof(uint8_t):
       *((uint8_t*)(elt)) = 0;
       break;
@@ -119,17 +119,18 @@ status_t ds_elt_clear(void* const elt, size_t el_size) {
       *((double*)(elt)) = 0;
       break;
     default:
-      memset(elt, 0, el_size);
+      memset(elt, 0, elt_size);
       break;
   } /* switch() */
 
   return OK;
 } /* ds_elt_clear() */
 
-bool_t ds_elt_zchk(void* const elt, size_t el_size) {
-  RCSW_FPC_NV(ERROR, NULL != elt, el_size > 0);
+bool_t ds_elt_zchk(void* const elt, size_t elt_size) {
+  RCSW_FPC_NV(FALSE, NULL != elt, elt_size > 0);
   int sum = 0;
-  switch (el_size) {
+
+  switch (elt_size) {
     case sizeof(uint8_t):
       return *((uint8_t*)(elt)) == 0;
     case sizeof(uint16_t):
@@ -150,7 +151,7 @@ bool_t ds_elt_zchk(void* const elt, size_t el_size) {
         return fabs(*((double *)(elt))) <= RCSW_DOUBLE_EPSILON;
         break;
     default:
-        for (size_t i = 0; i < el_size; ++i) {
+        for (size_t i = 0; i < elt_size; ++i) {
         sum |= ((int*)elt)[i];
         } /* for(i..) */
         return sum == 0;

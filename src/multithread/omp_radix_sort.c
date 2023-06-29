@@ -45,15 +45,18 @@ BEGIN_C_DECLS
  ******************************************************************************/
 struct omp_radix_sorter*
 omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
-  RCSW_FPC_NV(NULL, NULL != params, NULL != params->data);
+  RCSW_FPC_NV(NULL, NULL != params, NULL != params->data, params->base > 0);
   RCSW_ER_MODULE_INIT();
 
   struct omp_radix_sorter* sorter = malloc(sizeof(struct omp_radix_sorter));
   RCSW_CHECK_PTR(sorter);
+
   sorter->n_elts = params->n_elts;
   sorter->base = params->base;
   sorter->n_threads = params->n_threads;
   sorter->chunk_size = sorter->n_elts / sorter->n_threads;
+  sorter->cum_prefix_sums = NULL;
+  sorter->data = NULL;
 
   /*
    * Allocate memory. Make the FIFOs use a contiguous chunk of memory, rather
@@ -102,21 +105,21 @@ error:
 } /* omp_radix_sorter_init() */
 
 void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter) {
-  if (sorter) {
-    if (sorter->bins) {
-      for (size_t i = 0; i < sorter->base * sorter->n_threads; ++i) {
-        fifo_destroy(&sorter->bins[i]);
-      } /* for(i..) */
-      free(sorter->bins);
-    }
-    if (sorter->cum_prefix_sums) {
-      free(sorter->cum_prefix_sums);
-    }
-    if (sorter->data) {
-      free(sorter->data);
-    }
-    free(sorter);
+  RCSW_FPC_V(NULL != sorter);
+
+  if (sorter->bins) {
+    for (size_t i = 0; i < sorter->base * sorter->n_threads; ++i) {
+      fifo_destroy(&sorter->bins[i]);
+    } /* for(i..) */
+    free(sorter->bins);
   }
+  if (sorter->cum_prefix_sums) {
+    free(sorter->cum_prefix_sums);
+  }
+  if (sorter->data) {
+    free(sorter->data);
+  }
+  free(sorter);
 } /* omp_radix_sorter_destroy() */
 
 status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter) {
@@ -144,6 +147,8 @@ error:
  ******************************************************************************/
 static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
                                       int digit) {
+  RCSW_FPC_NV(ERROR, NULL != sorter, sorter->base > 0);
+
   ER_INFO("Radix sort digit %d", digit);
 
 /* Each thread flushes its own FIFOs */

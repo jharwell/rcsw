@@ -20,8 +20,7 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#define RCSW_OSTREE_ROOT(tree) RCSW_BSTREE_ROOT(tree)
-
+#define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
 
 /*******************************************************************************
  * Structure Definitions
@@ -29,6 +28,10 @@
 /**
  * \brief A node in an \ref ostree, derived from a \ref bstree_node (share
  * common fields).
+ *
+ * \note With later GCC versions, if you don't have the casting right for
+ * functions which are shared between bstree and ostree, things won't work
+ * because of differing alignments/packing under optimizations.
  */
 struct ostree_node {
     uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
@@ -38,7 +41,10 @@ struct ostree_node {
     struct ostree_node *parent;
     bool_t red;
 
-    int count;  /// Size of subtree anchored at node (including node)
+  /**
+   * Size of subtree anchored at node (including node)
+   */
+    int count;
 };
 
 /*******************************************************************************
@@ -80,6 +86,14 @@ static inline void ostree_destroy(struct bstree* tree) {
   return bstree_destroy(tree);
 }
 
+static inline struct ostree_node* ostree_node_query(const struct bstree* const tree,
+                                                    struct ostree_node* search_root,
+                                                    const void* const key) {
+  return (struct ostree_node*)bstree_node_query(tree,
+                                                (struct bstree_node*)search_root,
+                                                key);
+}
+
 /*******************************************************************************
  * API Functions
  *
@@ -101,7 +115,8 @@ static inline void ostree_destroy(struct bstree* tree) {
  * occurred.
  */
 struct ostree_node* ostree_select(const struct bstree* tree,
-                                  struct bstree_node * node_in, size_t i);
+                                  struct ostree_node * node_in,
+                                  int i);
 
 /**
  * \brief Get the rank of an element within an \ref ostree.

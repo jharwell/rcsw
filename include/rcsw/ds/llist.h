@@ -80,8 +80,8 @@ struct llist {
  */
 #define LLIST_FOREACH(LIST, DIR, VAR)                                   \
     struct llist_node *_node = NULL;                                    \
-    struct llist_node *VAR   = NULL;                                    \
-    for (VAR = _node = (LIST)->first; _node != NULL; VAR = _node = _node->DIR)
+    struct llist_node *(VAR)   = NULL;                                  \
+    for ((VAR) = _node = (LIST)->first; _node != NULL; (VAR) = _node = _node->DIR)
 
 /**
  * \brief Same as \ref LLIST_FOREACH(). but the 'S' parameter allows you to

@@ -25,8 +25,8 @@
  * algorithm.
  */
 enum search_types {
-  BSEARCH_ITER,  /// Use a recursive runtime implementation
-  BSEARCH_REC    /// Use a iterative runtime implementation
+  ekBSEARCH_ITER,  /// Use a recursive runtime implementation
+  ekBSEARCH_REC    /// Use a iterative runtime implementation
 };
 
 /*******************************************************************************

@@ -156,14 +156,16 @@ char *stdio_strncpy(char * __restrict__ dest,
 /**
  * \brief Copy one string over another.
  *
- * This routine copies one string over top of another until the null byte is
- * found. The src/dest strings must NOT overlap. The null byte of src is also
- * copied into dest.
+ * This routine copies one string over top of another until the NULL byte.
+ *
+ * The src/dest strings must NOT overlap. The null byte of src is also copied
+ * into dest. If either \p src or \p dest is NULL, nothing is done.
  *
  * \param dest Copy destination.
+ *
  * \param src Copy source.
  *
- * \return Pointer to dest.
+ * \return Pointer to dest, unless \p dest is NULL, then NULL.
  */
 char *stdio_strcpy(char * __restrict__ dest, const char * __restrict__ src);
 

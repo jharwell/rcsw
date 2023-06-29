@@ -59,29 +59,29 @@
  * \brief PULSE buffer pool initialization parameters
  */
 struct pulse_bp_params {
-    uint16_t n_bufs;    /// # of buffers in this pool.
-    uint16_t buf_size;  /// # of bytes in each buffer.
-    uint8_t *elements;  /// Space for buffers. Can be NULL.
-    /** Space for nodes used for buffer management. Can be NULL. */
-    uint8_t *nodes;
+  uint16_t n_bufs;    /// # of buffers in this pool.
+  uint16_t buf_size;  /// # of bytes in each buffer.
+  uint8_t *elements;  /// Space for buffers. Can be NULL.
+  /** Space for nodes used for buffer management. Can be NULL. */
+  uint8_t *nodes;
 };
 
 /**
  * \brief PULSE framework initialization parameters.
  */
 struct pulse_params {
-    size_t n_pools;   /// # of buffer pools for the bus.
-    size_t max_rxqs;  /// Max # of receive queues for the bus.
-    size_t max_subs;
-    uint32_t flags;   /// Configuration flags.
+  size_t n_pools;   /// # of buffer pools for the bus.
+  size_t max_rxqs;  /// Max # of receive queues for the bus.
+  size_t max_subs;
+  uint32_t flags;   /// Configuration flags.
 
-    /**
-     * Each PULSE can have any # of buffer pools (each pool can have any number
-     * of entries). If you need more than 8 or so, you are probably doing
-     * something weird (read: wrong)...
-     */
-    struct pulse_bp_params* pools;
-    char name[PULSE_MAX_NAMELEN];
+  /**
+   * Each PULSE can have any # of buffer pools (each pool can have any number
+   * of entries). If you need more than 8 or so, you are probably doing
+   * something weird (read: wrong)...
+   */
+  struct pulse_bp_params* pools;
+  char name[PULSE_MAX_NAMELEN];
 };
 
 /**
@@ -90,13 +90,13 @@ struct pulse_params {
  * Contains n bufs of whatever size that are used to hold the published packets.
  */
 struct pulse_bp_ent {
-    struct mpool pool;  /// The buffer pool containing actual data.
-    /**
-     * mutex to protect buffer pool when pushing out published packets. Pool
-     * protects itself during request/release. Only used if \ref
-     * PULSE_SERVICE_ASYNC is not passed.
-     */
-    mt_mutex_t mutex;
+  struct mpool pool;  /// The buffer pool containing actual data.
+  /**
+   * mutex to protect buffer pool when pushing out published packets. Pool
+   * protects itself during request/release. Only used if \ref
+   * PULSE_SERVICE_ASYNC is not passed.
+   */
+  mt_mutex_t mutex;
 };
 
 /**
@@ -106,12 +106,12 @@ struct pulse_bp_ent {
  * is placed in each subscribed receive queue.
  */
 struct pulse_rxq_ent {
-    void* buf;     /// Pointer to the buffer with the actual data.
-    size_t pkt_size;  /// Packet size in bytes.
-    uint32_t pid;     /// packet ID.
+  void* buf;     /// Pointer to the buffer with the actual data.
+  size_t pkt_size;  /// Packet size in bytes.
+  uint32_t pid;     /// packet ID.
 
-    /** The buffer pool entry that the data resides in. */
-    struct pulse_bp_ent *bp_ent;
+  /** The buffer pool entry that the data resides in. */
+  struct pulse_bp_ent *bp_ent;
 };
 
 /**
@@ -122,8 +122,8 @@ struct pulse_rxq_ent {
  * instance.
  */
 struct pulse_sub_ent {
-    uint32_t pid;                 /// ID of subscribed packet.
-    struct mt_queue *subscriber;  /// Pointer to receive queue of subscriber.
+  uint32_t pid;                 /// ID of subscribed packet.
+  struct mt_queue *subscriber;  /// Pointer to receive queue of subscriber.
 };
 
 /**
@@ -132,49 +132,47 @@ struct pulse_sub_ent {
  * available or are not suitable.
  */
 struct pulse_inst {
-    size_t n_pools;    /// # buffer pools (static during lifetime).
-    size_t n_rxqs;     /// # active receive queues (dynamic during lifetime).
-    size_t max_rxqs;   /// Max # of receive queues allowed
-    size_t max_subs;   /// Max # of subscribers (rxq-pid pairs) allowed.
-    mt_mutex_t mutex;  /// mutex to protect access to bus metadata.
-    uint32_t flags;    /// Run-time configuration flags.
+  size_t n_pools;    /// # buffer pools (static during lifetime).
+  size_t n_rxqs;     /// # active receive queues (dynamic during lifetime).
+  size_t max_rxqs;   /// Max # of receive queues allowed
+  size_t max_subs;   /// Max # of subscribers (rxq-pid pairs) allowed.
+  mt_mutex_t mutex;  /// mutex to protect access to bus metadata.
+  uint32_t flags;    /// Run-time configuration flags.
 
-    /**
-     * Array of buffer pool entries. Published data stored here. This is
-     * always allocated by PULSE during initialization.
-     */
-    struct pulse_bp_ent *buffer_pools;
+  /**
+   * Array of buffer pool entries. Published data stored here. This is
+   * always allocated by PULSE during initialization.
+   */
+  struct pulse_bp_ent *buffer_pools;
 
-    /**
-     * Array of receive queues. Used by the application to subscribe to
-     * packets and to receive published packets. This is always allocated by
-     * PULSE during initialization.
-     */
-    struct mt_queue *rx_queues;
+  /**
+   * Array of receive queues. Used by the application to subscribe to
+   * packets and to receive published packets. This is always allocated by
+   * PULSE during initialization.
+   */
+  struct mt_queue *rx_queues;
 
-    /** List of subscribers (rxq, ID) pairs. Always sorted. */
-    struct llist *sub_list;
+  /** List of subscribers (rxq, ID) pairs. Always sorted. */
+  struct llist *sub_list;
 
-    /**
-     * Name for instance. Used to assist with debugging if multiple PULSE
-     * instances are active. Has no effect on PULSE operation.
-     */
-    char name[PULSE_MAX_NAMELEN];
+  /**
+   * Name for instance. Used to assist with debugging if multiple PULSE
+   * instances are active. Has no effect on PULSE operation.
+   */
+  char name[PULSE_MAX_NAMELEN];
 };
 
 /*******************************************************************************
  * Inline Functions
  ******************************************************************************/
-static inline size_t pulse_rxq_n_elts(const struct pulse_inst* const pulse,
-                      const struct mt_queue *const queue) {
-    RCSW_FPC_NV(0, pulse != NULL, queue != NULL);
-    return mt_queue_n_elts(queue);
+static inline size_t pulse_rxq_n_elts(const struct mt_queue *const queue) {
+  RCSW_FPC_NV(0, queue != NULL);
+  return mt_queue_n_elts(queue);
 }
 
-static inline size_t pulse_rxq_n_free(const struct pulse_inst* const pulse,
-                                    const struct mt_queue *const queue) {
-    RCSW_FPC_NV(0, pulse != NULL, queue != NULL);
-    return mt_queue_n_free(queue);
+static inline size_t pulse_rxq_n_free(const struct mt_queue *const queue) {
+  RCSW_FPC_NV(0, queue != NULL);
+  return mt_queue_n_free(queue);
 }
 
 /**
@@ -182,21 +180,20 @@ static inline size_t pulse_rxq_n_free(const struct pulse_inst* const pulse,
  *
  * \return The top on the queue, or NULL if no such packet or an error occurred.
  */
-static inline uint8_t * pulse_get_top(struct pulse_inst* const pulse,
-                                    struct mt_queue *const queue) {
-    RCSW_FPC_NV(NULL, pulse != NULL, queue != NULL);
-    return (uint8_t*)mt_queue_peek(queue);
+static inline uint8_t * pulse_get_top(struct mt_queue *const queue) {
+  RCSW_FPC_NV(NULL, queue != NULL);
+  return (uint8_t*)mt_queue_peek(queue);
 }
 
 /*******************************************************************************
  * Inline Functions
  ******************************************************************************/
 static inline size_t pulse_pool_space(size_t elt_size, size_t max_elts) {
-    return mpool_element_space(elt_size, max_elts);
+  return mpool_element_space(elt_size, max_elts);
 }
 
 static inline size_t pulse_node_space(size_t max_elts) {
-    return mpool_node_space(max_elts);
+  return mpool_node_space(max_elts);
 }
 
 /*******************************************************************************

@@ -197,7 +197,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   list->current++;
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = FALSE;
-    llist_sort(list, MSORT_REC);
+    llist_sort(list, ekMSORT_REC);
   }
   rval = OK;
 
@@ -233,7 +233,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
 
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = FALSE;
-    llist_sort(list, MSORT_REC);
+    llist_sort(list, ekMSORT_REC);
   }
   rval = OK;
 
@@ -310,9 +310,9 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
   if (list->current <= 1 || list->sorted) {
     ER_DEBUG("Already sorted: nothing to do");
   } else {
-    if (type == MSORT_REC) {
+    if (type == ekMSORT_REC) {
       list->first = mergesort_rec(list->first, list->cmpe, TRUE);
-    } else if (type == MSORT_ITER) {
+    } else if (type == ekMSORT_ITER) {
       list->first = mergesort_iter(list->first, list->cmpe, TRUE);
     }
 

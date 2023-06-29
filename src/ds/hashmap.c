@@ -91,7 +91,20 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
     map = malloc(sizeof(struct hashmap));
     RCSW_CHECK_PTR(map);
   }
+
   map->flags = params->flags;
+  map->hash = params->type.hm.hash;
+  map->n_buckets = params->type.hm.n_buckets;
+  map->elt_size = params->elt_size;
+  map->max_elts = params->type.hm.bsize * params->type.hm.n_buckets;
+  map->stats.n_nodes = 0;
+  map->stats.n_collisions = 0;
+  map->stats.n_adds = 0;
+  map->stats.n_addfails = 0;
+  map->sort_thresh = params->type.hm.sort_thresh;
+  map->sorted = FALSE;
+  map->space.elements = NULL;
+  map->space.buckets = NULL;
 
   if (params->flags & RCSW_DS_NOALLOC_NODES) {
     RCSW_CHECK_PTR(params->nodes);
@@ -108,16 +121,6 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
            RCSW_HASHMAP_MAX_KEYSIZE);
   map->keysize = params->type.hm.keysize;
 
-  map->hash = params->type.hm.hash;
-  map->n_buckets = params->type.hm.n_buckets;
-  map->elt_size = params->elt_size;
-  map->max_elts = params->type.hm.bsize * params->type.hm.n_buckets;
-  map->stats.n_nodes = 0;
-  map->stats.n_collisions = 0;
-  map->stats.n_adds = 0;
-  map->stats.n_addfails = 0;
-  map->sort_thresh = params->type.hm.sort_thresh;
-  map->sorted = FALSE;
 
   /* Allocate space for hashnodes+datablocks+datablock alloc map */
   if (params->flags & RCSW_DS_NOALLOC_DATA) {
@@ -183,18 +186,22 @@ error:
 } /* hashmap_init() */
 
 void hashmap_destroy(struct hashmap* map) {
-  RCSW_FPC_V(NULL != map, NULL != map->space.buckets);
+  RCSW_FPC_V(NULL != map);
 
   for (size_t i = 0; i < map->n_buckets; i++) {
     darray_destroy(map->space.buckets + i);
   }
 
   if (!(map->flags & RCSW_DS_NOALLOC_DATA)) {
-    free(map->space.elements);
+    if (NULL != map->space.elements) {
+      free(map->space.elements);
+    }
   }
 
   if (!(map->flags & RCSW_DS_NOALLOC_NODES)) {
-    free(map->space.buckets);
+    if (NULL != map->space.buckets) {
+      free(map->space.buckets);
+    }
   }
   if (!(map->flags & RCSW_DS_NOALLOC_HANDLE)) {
     free(map);
@@ -399,7 +406,7 @@ status_t hashmap_sort(struct hashmap* const map) {
   RCSW_FPC_NV(ERROR, map != NULL);
 
   for (size_t i = 0; i < map->n_buckets; i++) {
-    darray_sort(&map->space.buckets[i], QSORT_ITER);
+    darray_sort(&map->space.buckets[i], ekQSORT_ITER);
   } /* for() */
 
   map->sorted = TRUE;

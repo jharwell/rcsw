@@ -186,9 +186,10 @@ extern const uint8_t util_revtable[];
  */
  RCSW_PURE static inline float utils_clamp_f255(float v) {
     if (v < 0) {
-        return 0.0;
-    } else if (v > 255.0) {
-      return 255.0;
+        return 0.0F;
+    }
+    if (v > 255.0F) {
+      return 255.0F;
     }
     return v;
 } /* utils_clam_f255() */
@@ -227,7 +228,7 @@ void arr32_permute(uint32_t *arr, size_t size, size_t start,
  * \param i Index #1
  * \param j Index #2
  */
-void arr32_el_swap(uint32_t * v, size_t i, size_t j);
+void arr32_elt_swap(uint32_t * v, size_t i, size_t j);
 
 /**
  * \brief Generate a random alpha-numeric string of known length.

@@ -198,7 +198,15 @@ status_t rbuffer_remove(struct rbuffer * rb, void * e);
  * The ringbuffer is not modified.
  *
  * \param rb The ringbuffer handle.
- * \param idx The index.
+ *
+ * \param idx The index. If >= max # elements for rbuffer, it is wrapped around
+ *            (this IS a ringbuffer after all).
+ *
+ * \note if \p idx is > rbuffer_n_elts() and < max_elts, then this function
+ * _might_ return potentially uninitialized/garbage/stale data past the end of
+ * the valid data currently in the rbuffer. Whether or not this is _actually_
+ * bad data depends on your application.
+ *
  * \return The element, or NULL if an error occurred.
  */
 void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);

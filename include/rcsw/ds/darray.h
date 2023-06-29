@@ -399,16 +399,17 @@ struct darray *darray_filter(struct darray * arr,
  * Makes a copy of an darray by initializing a new darray and copying the
  * original darray's data to it. The original darray is unchanged.
  *
- * \param arr The darray handle
- * \param cparams Initialization parameters of new array. The flags and elements
- * fields are are used to determine how memory should be managed for the
- * new array; the values of the rest of the fields are inherited from the
- * parent darray.
+ * \param arr The darray handle.
+ *
+ * \param flags Initialization flags for the new \ref darray
+ *
+ * \param elements Space for the elements of the new \ref darray. Can be NULL.
  *
  * \return The new arr, or NULL if an error occurred.
  */
 struct darray *darray_copy(const struct darray * arr,
-                           const struct ds_params * cparams);
+                           uint32_t flags,
+                           uint8_t* elements);
 
 /**
  * \brief Print an darray

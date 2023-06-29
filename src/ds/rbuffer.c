@@ -114,8 +114,9 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
 } /* rbuffer_add() */
 
 void* rbuffer_data_get(const struct rbuffer* const rb, size_t idx) {
-  RCSW_FPC_NV(NULL, rb != NULL, idx < rb->max_elts);
+  RCSW_FPC_NV(NULL, rb != NULL);
 
+  idx = idx % rb->max_elts;
   return rb->elements + (idx * rb->elt_size);
 } /* rbuffer_data_get() */
 

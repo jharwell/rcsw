@@ -14,11 +14,11 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu22.04:2023-04-12
+      image: jharwell/ubuntu20.04:2023-04-12
     strategy:
       matrix:
         build_type:
-          # - OPT # 2023/3/7: Tests don't pass with optimizations on...
+          - OPT
           - DEV
 
     steps:
@@ -37,7 +37,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DLIBRA_TESTS=yes \
           -DLIBRA_CODE_COV=YES \
-          -DLIBRA_ER=ALL \
+          -DRCSW_STDIO_PUTCHAR=th_putchar \
+          -DLIBRA_ERL=ALL \
           ..
 
           make build-and-test -j$(nproc)
@@ -82,6 +83,15 @@ jobs:
           -DCMAKE_BUILD_TYPE=DEV \
           -DLIBRA_DEPS_PREFIX=/usr \
           -DCPACK_PACKAGE_NAME=rcsw-dev \
+          ..
+
+          make package -j$(nproc)
+
+          cmake  \
+          -DCMAKE_INSTALL_PREFIX=/usr \
+          -DCMAKE_BUILD_TYPE=OPT \
+          -DLIBRA_DEPS_PREFIX=/usr \
+          -DCPACK_PACKAGE_NAME=rcsw-opt \
           ..
 
           make package -j$(nproc)

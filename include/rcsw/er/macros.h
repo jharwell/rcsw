@@ -15,74 +15,84 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Macros
+ * Macros when ER is enabled for FATAL events:
+ *
+ * - No plugin is used. When reporting FATAL events only, this is
+ *   frequently in production and/or using a full-featured ER plugin is too
+ *   costly in terms of execution time or space.
+ *
+ * - Debug printing macros enabled.
  ******************************************************************************/
 
-#if (RCSW_ER == RCSW_ER_NONE)
+#if (RCSW_ERL >= RCSW_ERL_FATAL)
 
-#define RCSW_ER_MODULE_INIT(...)
-
-/*
- * Don't define the macro to be nothing, as that can leave tons of "unused
- * variable" warnings in the code for variables which are only used in
- * asserts. The sizeof() trick here does *NOT* actually evaluate the
- * condition--only the size of whatever it returns. The variables are "used",
- * making the compiler happy, but ultimately removed by the optimizer.
+/**
+ * \brief General debug macros that will display whenever logging is enabled,
+ * any other settings.
  */
-#define ER_ASSERT(cond, msg, ...)               \
-  do {                                          \
-    (void)sizeof((cond));                       \
-  } while (0)
+#define DPRINTF(...) PRINTF(__VA_ARGS__)
 
-#define ER_FATAL(...)
+/**
+ * \brief Print a token AND it's value. Useful for debugging. Comes in the
+ * following flavors:
+ *
+ * TOK  - decimal/hexadecimal
+ * TOKD - decimal
+ * TOKX - hexadecimal
+ * TOKF - float
+ */
+#define DPRINT_TOK(tok) DPRINTF(STR(tok) ": %d 0x%x\n", (int)(tok), (int)(tok));
+#define DPRINT_TOKD(tok) DPRINTF(STR(tok) ": %d\n", (int)(tok));
+#define DPRINT_TOKX(tok) DPRINTF(STR(tok) ": 0x%x\n", (int)(tok));
+#define DPRINT_TOKF(tok) DPRINTF(STR(tok) ": %.8f\n", (float)(tok));
 
-#define ER_ERR(...)
-#define ER_WARN(...)
-#define ER_INFO(...)
-#define ER_DEBUG(...)
-#define ER_TRACE(...)
-#define ER_CONDW(...)
-#define ER_CONDI(...)
-#define ER_CONDD(...)
-#define ER_REPORT(...)
-#define DPRINTF(...)
-#define DPRINTFF(...)
+#endif /* RCSW_ERL >= RCSW_ERL_FATAL */
 
-#elif (RCSW_ER == RCSW_ER_FATAL)
-
-#define ER_ERR(...)
-#define ER_WARN(...)
-#define ER_INFO(...)
-#define ER_DEBUG(...)
-#define ER_TRACE(...)
-#define ER_REPORT(...)
-#define ER_CONDI(...)
-#define ER_CONDW(...)
-#define ER_CONDD(...)
-#define RCSW_ER_MODULE_INIT(...)
+#if (RCSW_ERL == RCSW_ERL_FATAL)
 
 #define ER_FATAL(msg, ...)                                              \
     {                                                                   \
       DPRINTF(RCSW_ER_MODNAME " [FATAL]: " msg, ## __VA_ARGS__);        \
     }                                                                   \
 
+#define RCSW_ER_MODULE_INIT(...)
 
-/**
- * \def ER_ASSERT(cond, msg, ...)
- *
- * Check a boolean condition \a cond in a function, halting the program if the
- * condition is not true. Like assert(), but allows for an additional custom
- * msg to be logged.
- *
- * You can use this macro in non-class contexts.
- */
-#define ER_ASSERT(cond, msg, ...) {             \
-    if (RCSW_UNLIKELY(!(cond))) {               \
-      ER_FATAL(msg, ##__VA_ARGS__);             \
-    }                                           \
+#elif (RCSW_ERL > RCSW_ERL_FATAL)
+
+#define ER_FATAL(...)  ER_FATAL_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID,   \
+                                                           RCSW_ER_MODNAME), \
+                                 __VA_ARGS__)
+
+#define ER_FATAL_IMPL(handle, ...) {                                    \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_FATAL)) {             \
+      ER_REPORT(FATAL, handle, __VA_ARGS__)                             \
+    }                                                                   \
   }
+#endif
 
-#elif (RCSW_ER == RCSW_ER_ALL)
+/*******************************************************************************
+ * Macros when ER is enabled for severity level >= ERROR:
+ *
+ * - The configured plugin is used. Only [FATAL,ERROR] events are compiled in;
+ *   others are discarded.
+ *
+ * - Debug printing macros enabled.
+ ******************************************************************************/
+#if (RCSW_ERL >= RCSW_ERL_ERROR)
+/**
+ * \def ER_ERR(...)
+ *
+ * Report a non-FATAL ERROR message.
+ */
+#define ER_ERR(...)  ER_ERR_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID,   \
+                                                       RCSW_ER_MODNAME), \
+                                 __VA_ARGS__)
+
+#define ER_ERR_IMPL(handle, ...) {                                      \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_ERROR)) {       \
+      ER_REPORT(ERROR, handle, __VA_ARGS__)                             \
+    }                                                                   \
+  }
 
 /**
  * \def RCSW_ER_MODULE_INIT()
@@ -92,8 +102,6 @@
  * Installation is idempotent. Requires that \ref RCSW_ER_MODID and \ref
  * RCSW_ER_MODNAME if they are used by the plugin; otherwise, they can be
  * undefined.
- *
- * This macro is only available if event reporting is fully enabled.
  */
 #if !defined(RCSW_ER_MODNAME)
 #define RCSW_ER_MODNAME __FILE_NAME__
@@ -101,6 +109,118 @@
 
 #define RCSW_ER_MODULE_INIT(...)                        \
   RCSW_ER_PLUGIN_INSMOD(RCSW_ER_MODID, RCSW_ER_MODNAME)
+
+#endif /* RCSW_ERL >= RCSW_ERL_ERROR */
+
+/*******************************************************************************
+ * Macros when ER is enabled for severity level >= WARN:
+ *
+ * - The configured plugin is used. Only [FATAL,ERROR,WARN] events are compiled
+ *   in; others are discarded.
+ *
+ * - Debug printing macros enabled.
+ ******************************************************************************/
+#if (RCSW_ERL >= RCSW_ERL_WARN)
+
+/**
+ * \def ER_WARN(...)
+ *
+ * Report a WARNING message (duh).
+ */
+#define ER_WARN(...)  ER_WARN_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
+                                                         RCSW_ER_MODNAME), \
+                                   __VA_ARGS__)
+
+#define ER_WARN_IMPL(handle, ...) {                                     \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_WARN)) {        \
+      ER_REPORT(WARN, handle, ## __VA_ARGS__)                           \
+    }                                                                   \
+  }
+#endif /* RCSW_ERL >= RCSW_ERL_WARN */
+
+/*******************************************************************************
+ * Macros when ER is enabled for severity level >= INFO:
+ *
+ * - The configured plugin is used. Only [FATAL,ERROR,WARN,INFO] events are
+ *   compiled in; others are discarded.
+ *
+ * - Debug printing macros enabled.
+ ******************************************************************************/
+#if (RCSW_ERL >= RCSW_ERL_INFO)
+
+/**
+ * \def ER_INFO(...)
+ *
+ * Report a INFOrmational message.
+ */
+#define ER_INFO(...)  ER_INFO_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
+                                                         RCSW_ER_MODNAME), \
+                                   __VA_ARGS__)
+
+#define ER_INFO_IMPL(handle, ...) {                                     \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_INFO)) {        \
+      ER_REPORT(INFO, handle, ## __VA_ARGS__)                           \
+    }                                                                   \
+  }
+#endif /* RCSW_ERL >= RCSW_ERL_INFO */
+
+/*******************************************************************************
+ * Macros when ER is enabled for severity level >= DEBUG:
+ *
+ * - The configured plugin is used. Only [FATAL,ERROR,WARN,INFO,DEBUG] events
+ *   are compiled in; others are discarded.
+ *
+ * - Debug printing macros enabled.
+ ******************************************************************************/
+#if (RCSW_ERL >= RCSW_ERL_DEBUG)
+
+/**
+ * \def ER_DEBUG(...)
+ *
+ * Report a DEBUGging message.
+ */
+#define ER_DEBUG(...)  ER_DEBUG_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
+                                                         RCSW_ER_MODNAME), \
+                                   __VA_ARGS__)
+
+#define ER_DEBUG_IMPL(handle, ...) {                                     \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_DEBUG)) {        \
+      ER_REPORT(DEBUG, handle, ## __VA_ARGS__)                           \
+    }                                                                   \
+  }
+#endif /* RCSW_ERL >= RCSW_ERL_DEBUG */
+
+/*******************************************************************************
+ * Macros when ER is enabled for severity level >= TRACE:
+ *
+ * - The configured plugin is used. Only [FATAL,ERROR,WARN,INFO,DEBUG,TRACE]
+ *   events are compiled in; others are discarded.
+ *
+ * - Debug printing macros enabled.
+ ******************************************************************************/
+#if (RCSW_ERL >= RCSW_ERL_TRACE)
+
+/**
+ * \def ER_TRACE(...)
+ *
+ * Report a TRACE message.
+ */
+#define ER_TRACE(...)  ER_TRACE_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
+                                                         RCSW_ER_MODNAME), \
+                                   __VA_ARGS__)
+
+#define ER_TRACE_IMPL(handle, ...) {                                     \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_TRACE)) {        \
+      ER_REPORT(TRACE, handle, ## __VA_ARGS__)                           \
+    }                                                                   \
+  }
+#endif /* RCSW_ERL >= RCSW_ERL_TRACE */
+
+
+/*******************************************************************************
+ * General ER macros for when ER is != NONE.
+ ******************************************************************************/
+#if RCSW_ERL != RCSW_ERL_NONE
 
 /**
  * \def ER_REPORT(lvl, msg, ...)
@@ -121,77 +241,15 @@
                           ## __VA_ARGS__)       \
   }
 
-#define ER_INFO_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ER_PLUGIN_INFO)) {        \
-      ER_REPORT(INFO, handle, __VA_ARGS__)                              \
-    }                                                                   \
-  }
-#define ER_ERR_IMPL(handle, ...) {                                      \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ER_PLUGIN_ERROR)) {       \
-      ER_REPORT(ERROR, handle, __VA_ARGS__)                             \
-    }                                                                   \
-  }
+#endif /* (RCSW_ERL != RCSW_ERL_NONE) */
 
-#define ER_WARN_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ER_PLUGIN_WARN)) {        \
-      ER_REPORT(WARN, handle, ## __VA_ARGS__)                           \
-    }                                                                   \
-  }
-#define ER_DEBUG_IMPL(handle, ...) {                                    \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ER_PLUGIN_DEBUG)) {       \
-      ER_REPORT(DEBUG, handle, __VA_ARGS__)                             \
-    }                                                                   \
-  }
-#define ER_TRACE_IMPL(handle, ...) {                                    \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ER_PLUGIN_TRACE)) {       \
-      ER_REPORT(TRACE, handle, __VA_ARGS__)                             \
-    }                                                                   \
-  }
-
+/*******************************************************************************
+ * General ER macros independent of level
+ ******************************************************************************/
 /**
- * \def ER_ERR(...)
- *
- * Report a non-FATAL ERROR message.
+ * \brief Platform/OS independent macro for printing to the terminal
  */
-#define ER_ERR(...)  ER_ERR_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID,   \
-                                                       RCSW_ER_MODNAME), \
-                                 __VA_ARGS__)
-
-/**
- * \def ER_WARN(...)
- *
- * Report a WARNING message (duh).
- */
-#define ER_WARN(...)  ER_WARN_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
-                                                         RCSW_ER_MODNAME), \
-                                   __VA_ARGS__)
-
-/**
- * \def ER_INFO(...)
- *
- * Report an INFOrmational message.
- */
-#define ER_INFO(...)  ER_INFO_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
-                                                         RCSW_ER_MODNAME), \
-                                   __VA_ARGS__)
-
-/**
- * \def ER_DEBUG(...)
- *
- * Report a DEBUG message.
- */
-#define ER_DEBUG(...)  ER_DEBUG_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
-                                                           RCSW_ER_MODNAME), \
-                                     __VA_ARGS__)
-
-/**
- * \def ER_TRACE(...)
- *
- * Report a TRACE message.
- */
-#define ER_TRACE(...)  ER_TRACE_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, \
-                                                           RCSW_ER_MODNAME), \
-                                     __VA_ARGS__)
+#define PRINTF(...) RCSW_ER_PLUGIN_PRINTF(__VA_ARGS__)
 
 /**
  * \def ER_ASSERT(cond, msg, ...)
@@ -199,18 +257,25 @@
  * Check a boolean condition \a cond in a function, halting the program if the
  * condition is not true. Like assert(), but allows for an additional custom
  * msg to be logged.
- *
- * You cannot use this macro in non-class contexts, and all classes using it
- * must derive from \ref client.
+ */
+/*
+ * Don't define the macro to be nothing, as that can leave tons of "unused
+ * variable" warnings in the code for variables which are only used in
+ * asserts. The sizeof() trick here does *NOT* actually evaluate the
+ * condition--only the size of whatever it returns. The variables are "used",
+ * making the compiler happy, but ultimately removed by the optimizer.
  */
 #define ER_ASSERT(cond, msg, ...)               \
-  if (RCSW_UNLIKELY(!(cond))) {                 \
-    ER_FATAL( msg, ##__VA_ARGS__);              \
-    assert(cond);                               \
-  }
+  do {                                          \
+    (void)sizeof((cond));                       \
+    if (RCSW_UNLIKELY(!(cond))) {               \
+      ER_FATAL( msg, ##__VA_ARGS__);            \
+      assert(cond);                             \
+    }                                           \
+  } while (0);
 
 /**
- * \def ER_CHECKW(cond, msg, ...)
+ * \def ER_CONDW(cond, msg, ...)
  *
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit a warning message.
@@ -227,7 +292,7 @@
   }
 
 /**
- * \def ER_CHECKI(cond, msg, ...)
+ * \def ER_CONDI(cond, msg, ...)
  *
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit an informational message.
@@ -261,7 +326,6 @@
   }
 
 
-#endif /* (RCSW_ER == RCSW_ER_ALL) */
 
 /**
  * \def ER_FATAL_SENTINEL(msg,...)
@@ -305,31 +369,64 @@
     goto error;                                 \
   }
 
-/**
- * \brief Platform/OS independent macro for printing to the terminal
- */
-#define PRINTF(...) RCSW_ER_PRINTF(__VA_ARGS__)
-
-#if RCSW_ER >= RCSW_ER_FATAL
-
-/**
- * \brief General debug macros that will display whenever logging is enabled,
- * any other settings.
- */
-#define DPRINTF(...) PRINTF(__VA_ARGS__)
-
-/**
- * \brief Print a token AND it's value. Useful for debugging. Comes in the
- * following flavors:
+/*******************************************************************************
+ * Macro Cleanup
  *
- * TOK  - decimal/hexadecimal
- * TOKD - decimal
- * TOKX - hexadecimal
- * TOKF - float
- */
-#define PRINT_TOK(tok) DPRINTF(STR(tok) ": %d 0x%x\n", (int)(tok), (int)(tok));
-#define PRINT_TOKD(tok) DPRINTF(STR(tok) ": %d\n", (int)(tok));
-#define PRINT_TOKX(tok) DPRINTF(STR(tok) ": 0x%x\n", (int)(tok));
-#define PRINT_TOKF(tok) DPRINTF(STR(tok) ": %.8f\n", (float)(tok));
+ * Depending on compile-time level, one or more of these macros may be
+ * undefined, so make sure everything is defined so things build cleanly.
+ ******************************************************************************/
+#ifndef ER_FATAL
+#define ER_FATAL(...)
+#endif
 
-#endif /* RCSW_ER >= RCSW_ER_FATAL */
+#ifndef ER_ERR
+#define ER_ERR(...)
+#endif
+
+#ifndef ER_WARN
+#define ER_WARN(...)
+#endif
+
+#ifndef ER_INFO
+#define ER_INFO(...)
+#endif
+
+#ifndef ER_DEBUG
+#define ER_DEBUG(...)
+#endif
+
+#ifndef ER_TRACE
+#define ER_TRACE(...)
+#endif
+
+#ifndef RCSW_ER_MODULE_INIT
+#define RCSW_ER_MODULE_INIT(...)
+#endif
+
+#ifndef ER_REPORT
+#define ER_REPORT(...)
+#endif
+
+#ifndef DPRINTF
+#define DPRINTF(...)
+#endif
+
+#ifndef DPRINTFF
+#define DPRINTFF(...)
+#endif
+
+#ifndef DPRINT_TOK
+#define DPRINT_TOK(...)
+#endif
+
+#ifndef DPRINT_TOKD
+#define DPRINT_TOKD(...)
+#endif
+
+#ifndef DPRINT_TOKX
+#define DPRINT_TOKX(...)
+#endif
+
+#ifndef DPRINT_TOKF
+#define DPRINT_TOKF(...)
+#endif

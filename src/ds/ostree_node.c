@@ -33,7 +33,7 @@ void ostree_count_fixup(const struct bstree* const tree,
    * Deletion: decrement the counter of the parent node by 1.
    * Insertion: No action; seamlessly handled by update_count().
    */
-  if (type == OSTREE_FIXUP_DELETE) {
+  if (type == ekOSTREE_FIXUP_DELETE) {
     node = node->parent;
     node->count--;
   }

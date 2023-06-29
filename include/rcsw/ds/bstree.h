@@ -141,7 +141,7 @@ struct bstree {
   struct bstree_node *root;
 
   /**
-   * Sentinel.Points to a node which should always be black (for red-black
+   * Sentinel. Points to a node which should always be black (for red-black
    * trees) but has aribtrary children and parent. Use this so that there are no
    * fewer special cases in the code/less checking for NULL pointers.
    */
@@ -232,9 +232,9 @@ status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
  *
  * \return The node with the matching key, or NULL if not found
  */
-struct bstree_node *bstree_node_query(const struct bstree * tree,
-                                      struct bstree_node * search_root,
-                                      const void * key);
+struct bstree_node *bstree_node_query(const struct bstree* tree,
+                                      struct bstree_node* search_root,
+                                      const void* key);
 
 /**
  * \brief Get the data associated with a key

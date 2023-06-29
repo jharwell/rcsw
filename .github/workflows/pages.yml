@@ -45,6 +45,7 @@ jobs:
           cmake \
           -DCMAKE_INSTALL_PREFIX=$HOME/.local \
           -DCMAKE_BUILD_TYPE=DEV \
+          -DLIBRA_DOCS=YES \
           ..
           make apidoc
 

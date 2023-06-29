@@ -31,22 +31,26 @@ void ostree_init_helper(struct bstree* const tree) {
 } /* ostree_init_helper() */
 
 struct ostree_node* ostree_select(const struct bstree* const tree,
-                                  struct bstree_node* const node_in,
-                                  size_t i) {
-  RCSW_FPC_NV(NULL, NULL != tree, NULL != node_in, i <= tree->current - 1);
+                                  struct ostree_node* const node_in,
+                                  int i) {
+  RCSW_FPC_NV(NULL,
+              NULL != tree,
+              NULL != node_in,
+              !bstree_isempty(tree),
+              i <= (int)bstree_n_elts(tree) - 1);
 
-  if (node_in == tree->nil) {
+  if (node_in == (struct ostree_node*)tree->nil) {
     return NULL;
   }
 
   struct ostree_node* node = (struct ostree_node*)node_in;
   int k = node->left->count;
-  if ((int)i == k) {
+  if (i == k) {
     return node;
-  } else if ((int)i < k) {
-    return ostree_select(tree, (struct bstree_node*)node->left, i);
+  } else if (i < k) {
+    return ostree_select(tree, node->left, i);
   } else {
-    return ostree_select(tree, (struct bstree_node*)node->right, i - (k + 1));
+    return ostree_select(tree, node->right, i - (k + 1));
   }
 } /* ostree_select() */
 

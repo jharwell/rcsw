@@ -217,7 +217,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
     if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
       inttree_high_fixup(tree, (struct inttree_node*)node);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)node, OSTREE_FIXUP_INSERT);
+      ostree_count_fixup(tree, (struct ostree_node*)node, ekOSTREE_FIXUP_INSERT);
     }
 
     node->red = TRUE;
@@ -300,7 +300,7 @@ status_t bstree_delete(struct bstree* const tree,
     if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
       inttree_high_fixup(tree, (struct inttree_node*)x);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)x, OSTREE_FIXUP_DELETE);
+      ostree_count_fixup(tree, (struct ostree_node*)x, ekOSTREE_FIXUP_DELETE);
     }
 
     rbtree_delete_fixup(tree, x);

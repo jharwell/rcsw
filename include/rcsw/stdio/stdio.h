@@ -26,7 +26,7 @@ BEGIN_C_DECLS
 #ifndef RCSW_STDIO_PUTCHAR
 #define RCSW_STDIO_PUTCHAR_UNDEF
 #else
-void RCSW_STDIO_PUTCHAR(char);
+int RCSW_STDIO_PUTCHAR(int c);
 #endif
 
 #ifndef RCSW_STDIO_GETCHAR
@@ -34,7 +34,6 @@ void RCSW_STDIO_PUTCHAR(char);
 #else
 int RCSW_STDIO_GETCHAR(void);
 #endif
-
 
 /*******************************************************************************
  * Function Prototypes
@@ -61,11 +60,11 @@ size_t stdio_puts(const char *const s);
  * \param c The char to write.
  */
 #if !defined(RCSW_STDIO_PUTCHAR_UNDEF)
-static inline void stdio_putchar(char c) {
-  RCSW_STDIO_PUTCHAR(c);
+static inline int stdio_putchar(int c) {
+  return RCSW_STDIO_PUTCHAR(c);
 }
 #else
-static inline void stdio_putchar(char c) {}
+static inline void stdio_putchar(int c) {}
 #endif
 
 /**

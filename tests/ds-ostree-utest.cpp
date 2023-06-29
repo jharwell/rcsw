@@ -37,8 +37,6 @@ static void run_test(ds_test_t test) {
   params.max_elts = TH_NUM_ITEMS;
   params.cmpkey = th_cmpe<element8>;
 
-  /* dbg_insmod(M_DS_BSTREE, "BSTree"); */
-
   th_ds_init(&params);
   uint32_t flags[] = {
     RCSW_DS_NOALLOC_HANDLE,
@@ -46,7 +44,6 @@ static void run_test(ds_test_t test) {
     RCSW_DS_NOALLOC_NODES,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    /* printf("Testing with %d items\n", j); */
     for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
       params.flags |= flags[i];
       test(j, &params);
@@ -102,7 +99,8 @@ static void ostree_select_test(int len, struct ds_params *params) {
 
     /* verify statistics as we delete */
     for (int j = i+1; j < len; ++j) {
-      struct ostree_node *node = ostree_select(tree, RCSW_OSTREE_ROOT(tree),
+      struct ostree_node *node = ostree_select(tree,
+                                               RCSW_OSTREE_ROOT(tree),
                                                j - i - 1);
       CATCH_REQUIRE(NULL != node);
       CATCH_REQUIRE(((struct element8*)node->data)->value1 ==
@@ -137,9 +135,9 @@ static void ostree_rank_test(int len, struct ds_params *params) {
 
     /* verify statistics as we build */
     for (int j = 0; j <= i; ++j) {
-      struct ostree_node * node = (struct ostree_node*)bstree_node_query(tree,
-                                                                         RCSW_OSTREE_ROOT(tree),
-                                                                         &insert_arr[j]);
+      struct ostree_node * node = ostree_node_query(tree,
+                                                    RCSW_OSTREE_ROOT(tree),
+                                                    &insert_arr[j]);
       CATCH_REQUIRE(NULL != node);
       CATCH_REQUIRE(j == ostree_rank(tree, node));
     } /* for(j..) */
@@ -154,10 +152,10 @@ static void ostree_rank_test(int len, struct ds_params *params) {
     CATCH_REQUIRE(NULL == bstree_data_query(tree, &insert_arr[i].value1));
 
     /* verify statistics as we delete */
-    for (int j = i+1; j < len; ++j) {
-      struct ostree_node* node = (struct ostree_node*)bstree_node_query(tree,
-                                                                        RCSW_OSTREE_ROOT(tree),
-                                                                        &insert_arr[j].value1);
+    for (int j = i + 1; j < len; ++j) {
+      struct ostree_node* node = ostree_node_query(tree,
+                                                   RCSW_OSTREE_ROOT(tree),
+                                                   &insert_arr[j].value1);
       CATCH_REQUIRE(NULL != node);
       CATCH_REQUIRE(j - i - 1 == ostree_rank(tree, node));
     } /* for(j..) */

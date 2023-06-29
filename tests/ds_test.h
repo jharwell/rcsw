@@ -90,7 +90,13 @@ void th_ds_shutdown(const struct ds_params *const params);
 /**
  * \brief Compare the keys of two nodes (BSTREE, hashmap)
  */
-int th_key_cmp(const void *a, const void *b);
+int th_key_cmp(const void *a, const void *b) RCSW_PURE;
+
+/**
+ * \brief Stub implementation so that unit tests OTHER than the stdio test
+ * (which defines its own version of this) link.
+ */
+int th_putchar(int c) RCSW_ATTR(weak,const);
 
 END_C_DECLS
 

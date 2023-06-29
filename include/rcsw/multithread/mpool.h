@@ -56,12 +56,13 @@ struct mpool_params {
 };
 
 /**
- * \brief Memory pool structure (a threadsafe malloc()/free() over a set of
- * memory chunks of a fixed size).
+ * \brief Memory pool: a threadsafe malloc()/free() over a set of memory chunks.
+ *
+ * Memory chunks must be fixed size.
  */
 struct mpool {
     uint8_t *elements;   /// The actual elements.
-    uint8_t *nodes;      /// Space for the llist nodes.
+    struct llist_node *nodes;      /// Space for the llist nodes.
     struct llist free;   /// Pool free list.
     struct llist alloc;  /// Pool allocated list.
 

@@ -45,10 +45,9 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   if (params->flags & RCSW_DS_NOALLOC_NODES ||
       params->flags & MT_APP_DOMAIN_MEM) {
     RCSW_CHECK_PTR(params->nodes);
-    the_pool->nodes = params->nodes;
+    the_pool->nodes = (struct llist_node*)params->nodes;
   } else {
-    the_pool->nodes =
-        (uint8_t*)calloc(params->max_elts, sizeof(struct llist_node));
+    the_pool->nodes = calloc(params->max_elts, sizeof(struct llist_node));
     RCSW_CHECK_PTR(the_pool->nodes);
   }
 

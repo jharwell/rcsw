@@ -14,7 +14,7 @@
 #include "rcsw/er/er.h"
 
 #if RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_SIMPLE
-#include "rcsw/er/plugin/dbg.h"
+#include "rcsw/er/plugin/simple.h"
 #elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4CL
 #include "rcsw/er/plugin/log4cl.h"
 #elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4C
@@ -24,23 +24,19 @@
 #endif
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-#define RCSW_ER_OFF   RCSW_ER_PLUGIN_OFF
-#define RCSW_ER_ERROR RCSW_ER_PLUGIN_ERROR
-#define RCSW_ER_WARN  RCSW_ER_PLUGIN_WARN
-#define RCSW_ER_INFO  RCSW_ER_PLUGIN_INFO
-#define RCSW_ER_DEBUG RCSW_ER_PLUGIN_DEBUG
-#define RCSW_ER_TRACE RCSW_ER_PLUGIN_TRACE
-
-/*******************************************************************************
  * Macros
  ******************************************************************************/
 #ifndef RCSW_ER_PLUGIN_PRINTF
 #error "RCSW_ER_PLUGIN_PRINTF() not defined"
 #endif
 
-#define RCSW_ER_PRINTF RCSW_ER_PLUGIN_PRINTF
+#ifndef RCSW_ER_PLUGIN_INIT
+#error "RCSW_ER_PLUGIN_INIT() not defined"
+#endif
+
+#ifndef RCSW_ER_PLUGIN_SHUTDOWN
+#error "RCSW_ER_PLUGIN_SHUTDOWN() not defined"
+#endif
 
 #ifndef RCSW_ER_PLUGIN_REPORT
 #error "RCSW_ER_PLUGIN_REPORT() not defined"

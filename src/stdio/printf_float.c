@@ -503,6 +503,6 @@ void print_floating_point(struct printf_output_gadget* output,
     print_exponential_number(output, value, precision, width, flags, buf, len);
   else
 #endif
-    print_decimal_number(output, value, precision, width, flags, buf, len);
+  print_decimal_number(output, value, precision, width, flags, buf, len);
 }
 RCSW_WARNING_DISABLE_POP()

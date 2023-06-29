@@ -55,7 +55,9 @@ static inline void allocm_mark_inuse(struct allocm_entry* entry) {
  *
  * \return Index of free datablock in map, or -1 if none found
  **/
-int allocm_probe(struct allocm_entry *map, size_t max_elts, size_t index);
+int allocm_probe(struct allocm_entry *map,
+                 size_t max_elts,
+                 size_t index) RCSW_PURE;
 
 /**
  * \brief Initialize a datablock allocation map, marking each block as available.

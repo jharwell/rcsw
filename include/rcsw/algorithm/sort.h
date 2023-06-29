@@ -26,10 +26,10 @@
  *
  */
 enum alg_sort_type {
-    QSORT_ITER,  /// Iterative quicksort (arrays only).
-    QSORT_REC,   /// Recursive quicksort (arrays only).
-    MSORT_ITER,  /// Iterative mergesort (linked lists only).
-    MSORT_REC    /// Recursive mergesort (linked lists only).
+    ekQSORT_ITER,  /// Iterative quicksort (arrays only).
+    ekQSORT_REC,   /// Recursive quicksort (arrays only).
+    ekMSORT_ITER,  /// Iterative mergesort (linked lists only).
+    ekMSORT_REC    /// Recursive mergesort (linked lists only).
 };
 
 /*******************************************************************************

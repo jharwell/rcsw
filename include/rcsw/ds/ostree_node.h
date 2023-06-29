@@ -24,8 +24,8 @@
  * different)
  */
 enum ostree_fixup_type {
-    OSTREE_FIXUP_INSERT,
-    OSTREE_FIXUP_DELETE,
+    ekOSTREE_FIXUP_INSERT,
+    ekOSTREE_FIXUP_DELETE,
 };
 
 /*******************************************************************************

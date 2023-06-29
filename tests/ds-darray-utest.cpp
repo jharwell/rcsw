@@ -18,11 +18,6 @@
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 
-/**
- * \brief Test of \ref darray_map().
- */
-static void map_test(int len, struct ds_params * params);
-
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
@@ -38,6 +33,8 @@ static void run_test(void (*test)(int len, struct ds_params *params)) {
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
   params.elt_size = sizeof(T);
+  params.type.da.init_size = 0;
+
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
@@ -70,9 +67,9 @@ static void addremove_test(int len, struct ds_params *params) {
   } else {
     _arr = darray_init(nullptr, params);
   }
+  CATCH_REQUIRE(nullptr != _arr);
 
   T arr[TH_NUM_ITEMS];
-  CATCH_REQUIRE(nullptr != _arr);
 
   element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
@@ -253,9 +250,9 @@ static void copy_test(int len, struct ds_params *params) {
 
 
   if (!(params->flags & (RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
-    _arr2 = darray_copy(_arr1, params);
+    _arr2 = darray_copy(_arr1, params->flags, nullptr);
   } else {
-    _arr2 = darray_copy(_arr1, nullptr);
+    _arr2 = darray_copy(_arr1, 0x0, nullptr);
   }
 
   CATCH_REQUIRE(nullptr != _arr2);
@@ -290,9 +287,9 @@ static void sort_test(int len, struct ds_params *params) {
   }
 
   if (rand() %2) {
-    darray_sort(_arr1, QSORT_ITER);
+    darray_sort(_arr1, ekQSORT_ITER);
   } else {
-    darray_sort(_arr1, QSORT_REC);
+    darray_sort(_arr1, ekQSORT_REC);
   }
 
   /* validate sorting */
@@ -326,7 +323,7 @@ static void binarysearch_test(int len, struct ds_params *params) {
     CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   } /* for() */
 
-  darray_sort(_arr1, QSORT_ITER);
+  darray_sort(_arr1, ekQSORT_ITER);
 
   for (int i = 0; i < len; i++) {
     CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);

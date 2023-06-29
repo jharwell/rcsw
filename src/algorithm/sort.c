@@ -230,22 +230,34 @@ struct llist_node* mergesort_iter(struct llist_node* list, /* list to sort */
                                                                        function */
                                               const void* const e2),
                                   bool_t isdouble) {
-  struct llist_node* p1; /* temporary pointer that starts at the head of the
-                            list */
-  struct llist_node* p2; /* secondary pointer advanced along always in front of
-                            p */
-  struct llist_node* next_el; /* next element to be added to sorted list */
-  struct llist_node* head; /* the unsorted list */
-  struct llist_node* tail; /* the sorted list, built from the end forward (is
-                                 remade each pass) */
+  /* temporary pointer that starts at the head of the list */
+  struct llist_node* p1 = NULL;
+  /* secondary pointer advanced along always in front of p1 */
+  struct llist_node* p2 = NULL;
+
+  /* next element to be added to sorted list */
+  struct llist_node* next_el = NULL;
+
+  /* the unsorted list */
+  struct llist_node* head;
+
+  /* the sorted list, built from the end forward (is remade each pass) */
+  struct llist_node* tail;
 
   int merge_size; /* size of sub-lists to merge */
-  int p2_size; /* set to merge_size at the start of every pass; size of 2nd list
-                  for the pass */
-  int p1_size; /* # of elements you managed to step q past ( will always be
-                * equal to merge_size,
-                * unless the end of the list is reached); the size of the 1st
-                * list for the pass */
+
+  /*
+   * set to merge_size at the start of every pass; size of 2nd list for the
+   * pass
+   */
+  int p2_size = 0;
+
+  /*
+   * # of elements you managed to step q past ( will always be equal to
+   * merge_size, unless the end of the list is reached); the size of the 1st
+   * list for the pass.
+   */
+  int p1_size = 0;
 
   merge_size = 1;
   head = list;
@@ -293,17 +305,18 @@ struct llist_node* mergesort_iter(struct llist_node* list, /* list to sort */
           next_el = p2;
           p2 = p2->next;
           p2_size--;
-        } else if (p2_size == 0 || !p2) { /* p2 is empty; next_el comes from p1
-                                           */
+        } else if (p2_size == 0 || !p2) {
+          /* p2 is empty; next_el comes from p1 */
           next_el = p1;
           p1 = p1->next;
           p1_size--;
-        } else if (cmpe(p1->data, p2->data) <= 0) { /* p1 <= p2, so next_el
-                                                       comes from p1 */
+        } else if (cmpe(p1->data, p2->data) <= 0) {
+          /* p1 <= p2, so next_el comes from p1 */
           next_el = p1;
           p1 = p1->next;
           p1_size--;
-        } else { /* p2 > p1; next_el comes from p2 */
+        } else {
+          /* p2 > p1; next_el comes from p2 */
           next_el = p2;
           p2 = p2->next;
           p2_size--;

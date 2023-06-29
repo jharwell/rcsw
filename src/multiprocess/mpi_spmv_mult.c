@@ -167,8 +167,8 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult) {
                                     .max_elts = mult->n_cols_init,
                                     .cmpe = NULL,
                                     .printe = NULL,
-                                    .el_size = sizeof(double),
-                                    .tag = DS_DARRAY,
+                                    .elt_size = sizeof(double),
+                                    .tag = ekRCSW_DS_DARRAY,
                                     .flags = 0};
 
   if (0 != mult->mpi_rank) {
@@ -310,7 +310,7 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
   ER_DEBUG("Rank%d: Receive matrix data...done", mult->mpi_rank);
 
   if (0 == mult->mpi_rank) {
-    mult->vector_in = darray_copy(vector, NULL);
+    mult->vector_in = darray_copy(vector, 0x0, NULL);
     RCSW_CHECK_PTR(mult->vector_in);
   }
   /*

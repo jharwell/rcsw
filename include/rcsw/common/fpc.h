@@ -26,22 +26,29 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-/**
- * \brief Readability constants for determining whether or not the program
- * should halt if a function pre/post condition fails.
- */
-#define RCSW_FPC_ABORT 0
+#define LIBRA_FPC_NONE 0
+#define LIBRA_FPC_ABORT 1
+#define LIBRA_FPC_RETURN 2
 
-/**
- * \brief Readability constants for determining whether or not the program
- * should return an error code of some kind when a function pre/post condition
- * fails.
- */
-#define RCSW_FPC_RETURN 1
-
-#ifndef RCSW_FPC_TYPE
-#define RCSW_FPC_TYPE RCSW_FPC_ABORT
+#if defined(LIBRA_FPC_INHERIT) && !defined(LIBRA_FPC)
+#error LIBRA_FPC_INHERIT defined but LIBRA_FPC not defined!
 #endif
+
+/*
+ * If rcsw is used in a context where this is not defined it is almost
+ * assuredly an error, buuuttttt RCSW might be needed to compile in weird
+ * environments.
+ */
+#if !defined(LIBRA_FPC)
+#define LIBRA_FPC LIBRA_FPC_RETURN
+#endif
+
+
+#define RCSW_FPC LIBRA_FPC
+
+#define RCSW_FPC_RETURN LIBRA_FPC_RETURN
+#define RCSW_FPC_ABORT LIBRA_FPC_ABORT
+#define RCSW_FPC_NONE LIBRA_FPC_NONE
 
 /*******************************************************************************
  * Function Precondition Checking Macros
@@ -56,14 +63,14 @@
  *
  * This macro can be used to unconditionally return if a precondition fails,
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
- * value of \ref RCSW_FPC_TYPE.
+ * value of \ref RCSW_FPC.
  */
 #define RCSW_FPC_RET_NV(X, v)                                        \
-  {                                                                     \
-      if (!(X)) {                                                       \
-        errno = EINVAL;                                                 \
-        return v;                                                       \
-      }                                                                 \
+  {                                                                  \
+    if (!RCSW_UNLIKELY(X)) {                                         \
+      errno = EINVAL;                                                \
+      return v;                                                      \
+    }                                                                \
   }
 
 /**
@@ -73,12 +80,12 @@
  * is not met. Requires that the function returns void.
  *
  * This macro can be used to unconditionally return if a precondition fails,
- * rather than the behavior of \ref RCSW_FPC_NV_NV_V, which is dependent on the
- * value of \ref RCSW_FPC_TYPE.
+ * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
+ * value of \ref RCSW_FPC.
  */
-#define RCSW_FPC_RET_V(X)                     \
+#define RCSW_FPC_RET_V(X)                       \
   {                                             \
-    if (!(X)) {                                 \
+    if (!RCSW_UNLIKELY(X)) {                    \
       errno = EINVAL;                           \
       return;                                   \
     }                                           \
@@ -99,8 +106,8 @@
  * is not met.
  *
  * This macro can be used to unconditionally abort if a precondition fails,
- * rather than the behavior of \ref RCSW_FPC_NV_NV_NV, which is dependent on the
- * value of \ref RCSW_FPC_TYPE.
+ * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
+ * value of \ref RCSW_FPC.
  */
 #define RCSW_FPC_ABORT_NV(X, v) RCSW_FPC_ASSERT(X)
 
@@ -111,12 +118,12 @@
  * is not met.
  *
  * This macro can be used to unconditionally abort if a precondition fails,
- * rather than the behavior of \ref RCSW_FPC_NV_NV_V, which is dependent on the
- * value of \ref RCSW_FPC_TYPE.
+ * rather than the behavior of \ref RCSW_FPC_V, which is dependent on the
+ * value of \ref RCSW_FPC.
  */
 #define RCSW_FPC_ABORT_V(X) RCSW_FPC_ASSERT(X)
 
-#if(RCSW_FPC_TYPE == RCSW_FPC_RETURN)
+#if(RCSW_FPC == RCSW_FPC_RETURN)
 
 /**
  * \def RCSW_FPC_NV(v, ...)
@@ -133,8 +140,8 @@
  * \a ... is a list of conditions that need to be met before the function can
  * execute/must be true when the function returns.
  */
-#define RCSW_FPC_NV(v, ...)                               \
-    { RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__); }
+#define RCSW_FPC_NV(v, ...)                             \
+  { RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__); }
 
 /**
  * \def RCSW_FPC_V(v, ...)
@@ -151,14 +158,16 @@
 #define RCSW_FPC_V(...)                                 \
   { RCSW_XFOR_EACH1(RCSW_FPC_RET_V, __VA_ARGS__); }
 
-#elif(RCSW_FPC_TYPE == RCSW_FPC_ABORT)
+#elif(RCSW_FPC == RCSW_FPC_ABORT)
 
-#define RCSW_FPC_NV(v, ...)                       \
-    { RCSW_XFOR_EACH2(RCSW_FPC_ABORT_NV, v, __VA_ARGS__); }
-#define RCSW_FPC_V(...)                               \
-  { RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__); }
+#define RCSW_FPC_NV(v, ...)                                     \
+  { RCSW_XFOR_EACH2(RCSW_FPC_ABORT_NV, v, __VA_ARGS__); }
+#define RCSW_FPC_V(...)                                 \
+    { RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__); }
+
 #else
+
 #define RCSW_FPC_NV(v, ...)
 #define RCSW_FPC_V(...)
-#endif /* RCSW_FPC_TYPE */
 
+#endif /* RCSW_FPC */
