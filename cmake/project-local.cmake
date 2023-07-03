@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 5)
+set(PROJECT_VERSION_PATCH 6)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -112,13 +112,6 @@ endif()
 # Components
 ################################################################################
 libra_component_register_as_src(
-  rcsw_adapter_SRC
-  rcsw
-  "${rcsw_SRC}"
-  adapter
-  "src/adapter")
-
-libra_component_register_as_src(
   rcsw_algorithm_SRC
   rcsw
   "${rcsw_SRC}"
@@ -192,7 +185,6 @@ if (NOT rcsw_FIND_COMPONENTS)
     algorithm
     ds
     er
-    adapter
     multithread
     mp_common
     pulse
