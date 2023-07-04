@@ -61,12 +61,12 @@ status_t time_ts_ref_conv(const struct timespec * __restrict__ in,
 /**
  * \brief Convert a timespec to a scalar monotonic count in seconds.
  */
-double time_ts2mono(const struct timespec* const ts);
+double time_ts2mono(const struct timespec* const ts) RCSW_PURE;
 
 /**
  * \brief Convert a timespec to a scalar monotonic count in nanoseconds.
  */
-size_t time_ts2monons(const struct timespec* const ts);
+size_t time_ts2monons(const struct timespec* const ts) RCSW_PURE;
 
 /**
  * \brief Convert a scalar monotonic count in nanoseconds to a timespec.

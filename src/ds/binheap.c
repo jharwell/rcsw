@@ -84,7 +84,7 @@ struct binheap* binheap_init(struct binheap* heap_in,
   dparams.max_elts += (dparams.max_elts == -1) ? 0 : 1;
 
   RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));
-  RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, 1));
+  RCSW_CHECK(OK == darray_set_size(&heap->arr, 1));
 
   ER_DEBUG("init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
              params->init_size,
@@ -114,7 +114,7 @@ status_t binheap_insert(struct binheap* const heap, const void* const e) {
   RCSW_CHECK(OK == darray_insert(&heap->arr, e, heap->arr.current));
 
   /* Sift last element up to its correct position in the heap. */
-  binheap_sift_up(heap, binheap_n_elts(heap));
+  binheap_sift_up(heap, binheap_size(heap));
   return OK;
 
 error:
@@ -134,9 +134,9 @@ status_t binheap_make(struct binheap* const heap,
                                    (const uint8_t*)data + heap->arr.elt_size * i,
                                    i + 1));
   } /* for(i..) */
-  RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, n_elts + 1));
+  RCSW_CHECK(OK == darray_set_size(&heap->arr, n_elts + 1));
   /* Find median element, (n / 2) */
-  size_t k = (binheap_n_elts(heap) / 2) + 1;
+  size_t k = (binheap_size(heap) / 2) + 1;
 
   /* Sift each element preceding the median down to its correct position. */
   while (k > 1) {
@@ -159,7 +159,7 @@ status_t binheap_extract(struct binheap* const heap, void* const e) {
   /* Copy last element to tmp position, and sift down to correct position */
   RCSW_CHECK(OK == darray_remove(&heap->arr,
                                  darray_data_get(&heap->arr, 1),
-                                 darray_n_elts(&heap->arr) - 1));
+                                 darray_size(&heap->arr) - 1));
   binheap_sift_down(heap, 1);
 
   return OK;
@@ -207,7 +207,7 @@ void binheap_print(const struct binheap* const heap) {
 static void binheap_sift_down(struct binheap* const heap, size_t m) {
   size_t l_child = RCSW_BINHEAP_LCHILD(m);
   size_t r_child = RCSW_BINHEAP_RCHILD(m);
-  size_t n_elts = binheap_n_elts(heap);
+  size_t n_elts = binheap_size(heap);
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     size_t smallest = m;

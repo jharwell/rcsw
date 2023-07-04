@@ -34,10 +34,11 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
   params.elt_size = sizeof(T);
   params.n_cols = TH_NUM_ITEMS;
   params.n_rows = TH_NUM_ITEMS;
-  params.printe = th_printe<T>;
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  params.printe = th::printe<T>;
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
@@ -51,7 +52,7 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
       } /* for(k..) */
     } /* for(j..) */
   } /* for(i..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* test_runner() */
 
 /*******************************************************************************
@@ -70,7 +71,7 @@ static void addremove_test(struct matrix_params* params) {
 
 
   CATCH_REQUIRE(nullptr != matrix);
-  element_generator<T> g(gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
                          params->n_rows * params->n_cols);
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
@@ -96,7 +97,7 @@ static void transpose_test(struct matrix_params* params) {
   matrix = matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
                          params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
@@ -140,7 +141,7 @@ static void print_test(struct matrix_params* params) {
   CATCH_REQUIRE(nullptr != matrix);
   matrix_print(matrix);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
                          params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {

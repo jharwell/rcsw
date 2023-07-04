@@ -53,8 +53,8 @@ To use one of the existing RCSW ER plugins in your code, you need to::
    or::
 
      void library_init(void) {
-        RCSW_ER_PLUGIN_INSMOD(0x1, "myapp.module1")
-        RCSW_ER_PLUGIN_INSMOD(0x2, "myapp.module1h2")
+        RCSW_ER_INSMOD(0x1, "myapp.module1")
+        RCSW_ER_INSMOD(0x2, "myapp.module1h2")
      }
 
   The two forms are equivalent. The first is generally more convenient for more

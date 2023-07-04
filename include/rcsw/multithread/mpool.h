@@ -21,24 +21,10 @@
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-/**
- * Tell the \ref mpool to keep track of how many things are using a given piece
- * of memory, so that \ref mpool_release() will only release the memory after
- * the reference count reaches 0.
- *
- * If you do not specify this flag you cannot rely on the results of \ref
- * mpool_ref_query(), and \ref mpool_ref_add()/\ref mpool_ref_remove() cannot be
- * used.
- */
-#define RCSW_MPOOL_REFCOUNT (1 << (RCSW_DS_EXTFLAGS_START + 0))
-
-/*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief Memory pool queue initialization parameters
+ * \brief Memory pool queue initialization parameters.
  */
 struct mpool_params {
   RCSW_DECLARE_DS_PARAMS_COMMON;
@@ -62,17 +48,30 @@ struct mpool {
   /** List of free chunks of memory. */
   struct llist      alloc;
 
-  int               *refs;       /// Pointer to array for reference counting
-  size_t            elt_size;    /// Size of elements in the pool in bytes.
-  size_t            max_elts;    /// Max # of elements in the pool.
-  struct csem       sem;         /// Semaphore used for waiting on free slots in pool.
-  struct mutex      mutex;       /// Mutex used to protect mpool integrity.
-  uint32_t          flags;       /// Run time configuration flags.
+  /** Reference counting. Same length as max # elements. */
+  int               *refs;
+
+  /** Size of elements in the pool in bytes. */
+  size_t            elt_size;
+
+  /** Max # of elements in the pool. Must be > 0. */
+  size_t            max_elts;
+
+  /** Used to wait for a chunk to become free in \ref mpool_req(). */
+  struct csem       slots_avail;
+
+  /** Lock around most operations for concurrency safety. */
+  struct mutex      mutex;
+
+  /** Run time configuration flags. */
+  uint32_t          flags;
 };
 
 /*******************************************************************************
- * Macros
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Get # of bytes needed for space for the mpool nodes.
  *
@@ -101,17 +100,23 @@ static inline size_t  mpool_element_space(size_t max_elts, size_t elt_size) {
 /**
  * \brief Determine if the memory pool is currently full.
  *
- * \param pool The memory pool handle.
+ * \note The returned value cannot be relied upon in concurrent contexts without
+ * additional synchronization.
+ *
+ * \param pool The pool handle.
  *
  * \return \ref bool_t
  */
 static inline bool_t mpool_isfull(const struct mpool* const pool) {
     RCSW_FPC_NV(false, NULL != pool);
-    return llist_isfull(&pool->free);
+    return llist_isfull(&pool->alloc);
 }
 
 /**
  * \brief Determine if the memory pool is currently empty.
+ *
+ * \note The returned value cannot be relied upon in concurrent contexts without
+ * additional synchronization.
  *
  * \param pool The pool handle.
  *
@@ -125,25 +130,38 @@ static inline bool_t mpool_isempty(const struct mpool* const pool) {
 /**
  * \brief Determine # elements currently in the memory pool.
  *
+ * \note The returned value cannot be relied upon in concurrent contexts without
+ * additional synchronization.
+ *
  * \param pool The pool handle.
  *
  * \return # elements in memory pool, or 0 on ERROR.
  */
-static inline size_t mpool_n_elts(const struct mpool* const pool) {
+static inline size_t mpool_size(const struct mpool* const pool) {
     RCSW_FPC_NV(0, NULL != pool);
-    return llist_n_elts(&pool->alloc) + llist_n_elts(&pool->free);
+    return llist_size(&pool->alloc);
 }
 
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
+/**
+ * \brief Determine maximum # elements in the memory pool.
+ *
+ * \param pool The pool handle.
+ *
+ * \return Max # elements in memory pool, or 0 on ERROR.
+ */
+static inline size_t mpool_capacity(const struct mpool* const pool) {
+    RCSW_FPC_NV(0, NULL != pool);
+    return pool->max_elts;
+}
+
 
 /**
- * \brief Initialize a memory pool.
+ * \brief Initialize a \ref mpool.
  *
  * \param pool_in An application allocated handle for the memory pool. Can be
- * NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
+ *                NULL, depending on if \ref RCSW_NOALLOC_HANDLE is passed or
+ *                not.
+ *
  * \param params The initialization parameters.
  *
  * \return The initialized pool, or NULL if an error occurred.
@@ -152,16 +170,18 @@ struct mpool*mpool_init(struct mpool * pool_in,
                         const struct mpool_params * params) RCSW_CHECK_RET;
 
 /**
- * \brief Deallocate a memory pool. Any further use of the pool handle after
- * calling this function is undefined.
+ * \brief Destroy a \ref mpool.
+ *
+ * Any further use of the pool handle after calling this function is undefined.
  *
  * \param the_pool The mpool handle.
  */
 void mpool_destroy(struct mpool * the_pool);
 
 /**
- * \brief Request a memory from a pool. If no memory of the requested type is
- * current available, wait until some becomes available.
+ * \brief Request a memory chunk from a \ref mpool.
+ *
+ * If no memory of the requested type is currently available, wait indefinitely.
  *
  * \param the_pool The mpool handle.
  *
@@ -170,13 +190,28 @@ void mpool_destroy(struct mpool * the_pool);
 uint8_t *mpool_req(struct mpool * the_pool);
 
 /**
- * \brief Release allocated memory from a pool (presumably after you have
- * finished using it).
- *
- * Note that if \ref MPOOL_REF_COUNT_EN was passed, then this function will not
- * actually free memory until the last reference has released it.
+ * \brief Request a memory chunk from a \ref mpool with a timeout.
  *
  * \param the_pool The mpool handle.
+ *
+ * \param to Timeout.
+ *
+ * \param chunk The pointer to fill. Can be NULL.
+ *
+ * \return The allocated chunk, or NULL if an error occurred.
+ */
+status_t mpool_timedreq(struct mpool * the_pool,
+                        const struct timespec* to,
+                        uint8_t** chunk);
+
+/**
+ * \brief Release a chunk of memory from a \ref mpool.
+ *
+ * Memory chunk will not actually be freed until the last reference has released
+ * it.
+ *
+ * \param the_pool The mpool handle.
+ *
  * \param ptr The memory to release.
  *
  * \return \ref status_t.
@@ -184,9 +219,13 @@ uint8_t *mpool_req(struct mpool * the_pool);
 status_t mpool_release(struct mpool * the_pool, uint8_t * ptr);
 
 /**
- * \brief Add a reference to a chunk of memory (must have been previously requested).
+ * \brief Increment ref count for a previously allocated chunk in a \ref mpool.
+ *
+ * This function is useful if a thread/module wants to give a non-owning
+ * reference to a chunk of memory to another thread/module.
  *
  * \param the_pool The mpool handle.
+ *
  * \param ptr The chunk to add a reference to.
  *
  * \return \ref status_t.
@@ -194,9 +233,13 @@ status_t mpool_release(struct mpool * the_pool, uint8_t * ptr);
 status_t mpool_ref_add(struct mpool * the_pool, const uint8_t * ptr);
 
 /**
- * \brief Remove a reference to a chunk of memory (must have been previously requested).
+ * \brief Decrement ref count for a currently allocated chunk in a \ref mpool.
+ *
+ * If the reference count reaches 0 as a result of calling this function, the
+ * chunk is not freed.
  *
  * \param the_pool The mpool handle.
+ *
  * \param ptr The chunk to remove a reference from.
  *
  * \return \ref status_t
@@ -205,15 +248,31 @@ status_t mpool_ref_remove(struct mpool * the_pool,
                           const uint8_t * ptr);
 
 /**
- * \brief Get the reference count of an allocated chunk. This function does NOT
- * perform locking, so you need to lock at a higher level if you want to be able
- * to rely on the value returned.
+ * \brief Get the index of the reference count (not the reference count)
+ *
+ * \note The returned value cannot be relied upon in concurrent contexts without
+ * additional synchronization.
  *
  * \param the_pool The mpool handle.
+ *
  * \param ptr The chunk to query.
  *
- * \return The reference count, or -1 on error.
+ * \return The reference index, or -1 if does not exist.
  */
 int mpool_ref_query(struct mpool * the_pool, const uint8_t* ptr);
+
+/**
+ * \brief Get the reference count of an allocated chunk in a \ref mpool.
+ *
+ * \note The returned value cannot be relied upon in concurrent contexts without
+ * additional synchronization.
+ *
+ * \param the_pool The mpool handle.
+ *
+ * \param ptr The chunk to query.
+ *
+ * \return The reference count, or 0 on error.
+ */
+size_t mpool_ref_count(struct mpool * the_pool, const uint8_t* ptr);
 
 END_C_DECLS

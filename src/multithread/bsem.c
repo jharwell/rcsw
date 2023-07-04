@@ -45,7 +45,7 @@ void bsem_destroy(struct bsem* const sem) {
 
   mutex_destroy(&sem->mtx);
   condv_destroy(&sem->cv);
-  if (sem->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(sem->flags & RCSW_NOALLOC_HANDLE)) {
     free(sem);
   }
 } /* bsem_destroy() */

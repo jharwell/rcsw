@@ -44,7 +44,7 @@ void mt_cvm_destroy(struct cvm* const cvm) {
 
   condv_destroy(&cvm->cv);
   mutex_destroy(&cvm->mtx);
-  if (cvm->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(cvm->flags & RCSW_NOALLOC_HANDLE)) {
     free(cvm);
   }
 } /* mt_cvm_destroy() */

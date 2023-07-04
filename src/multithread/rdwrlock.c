@@ -38,7 +38,7 @@ static void rdwrl_wr_enter(struct rdwrlock* const rdwr) {
 } /* rdwrl_wr_enter() */
 
 static status_t rdwrl_wr_timed_enter(struct rdwrlock* const rdwr,
-                              const struct timespec* const to) {
+                                     const struct timespec* const to) {
   status_t rval = ERROR;
 
   /* get a place in line (ensure fairness) */
@@ -121,7 +121,7 @@ error:
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-status_t rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
+struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
   struct rdwrlock* rdwr = NULL;
   if (flags & RCSW_NOALLOC_HANDLE) {
     rdwr = rdwr_in;
@@ -136,11 +136,11 @@ status_t rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
   RCSW_CHECK(NULL != csem_init(&rdwr->access, 1, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK(NULL != csem_init(&rdwr->read, 1, RCSW_NOALLOC_HANDLE));
 
-  return OK;
+  return rdwr;
 
 error:
   rdwrl_destroy(rdwr);
-  return ERROR;
+  return NULL;
 } /* rdwrlinit() */
 
 void rdwrl_destroy(struct rdwrlock* const rdwr) {
@@ -150,12 +150,14 @@ void rdwrl_destroy(struct rdwrlock* const rdwr) {
   csem_destroy(&rdwr->access);
   csem_destroy(&rdwr->read);
 
-  if (rdwr->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(rdwr->flags & RCSW_NOALLOC_HANDLE)) {
     free(rdwr);
   }
 } /* rdwrl_destroy() */
 
-void rdwrl_enter(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
+void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
+  RCSW_FPC_V(NULL != rdwr);
+
   switch (scope) {
     case ekSCOPE_RD:
       rdwrl_rd_enter(rdwr);
@@ -168,9 +170,11 @@ void rdwrl_enter(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
   } /* switch() */
 error:
   return;
-} /* rdwrl_enter() */
+} /* rdwrl_req() */
 
 void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
+  RCSW_FPC_V(NULL != rdwr);
+
   switch (scope) {
     case ekSCOPE_RD:
       rdwrl_rd_exit(rdwr);
@@ -185,9 +189,11 @@ error:
   return;
 } /* rdwrl_exit() */
 
-status_t rdwrl_timed_enter(struct rdwrlock *const rdwr,
-                           enum rdwrlock_scope scope,
-                           const struct timespec* const to) {
+status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
+                        enum rdwrlock_scope scope,
+                        const struct timespec* const to) {
+  RCSW_FPC_NV(ERROR, NULL != rdwr, NULL != to);
+
   switch (scope) {
     case ekSCOPE_RD:
       return rdwrl_rd_timed_enter(rdwr, to);
@@ -200,6 +206,6 @@ status_t rdwrl_timed_enter(struct rdwrlock *const rdwr,
 
 error:
   return ERROR;
-} /* rdwrl_exit() */
+} /* rdwrl_timedreq() */
 
 END_C_DECLS

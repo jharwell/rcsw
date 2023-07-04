@@ -283,7 +283,6 @@ int bstree_traverse(struct bstree * tree,
  */
 void bstree_print(struct bstree * tree);
 
-END_C_DECLS
 
 /*******************************************************************************
  * Inline Functions
@@ -297,7 +296,7 @@ END_C_DECLS
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
-  return (bool_t)(bst->current == (size_t)bst->max_elts);
+  return (bst->current == (size_t)bst->max_elts);
 }
 
 /**
@@ -309,7 +308,7 @@ static inline bool_t bstree_isfull(const struct bstree* const bst) {
  */
 static inline bool_t bstree_isempty(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
-  return (bool_t)(bst->current == 0);
+  return (bst->current == 0);
 }
 
 /**
@@ -320,7 +319,7 @@ static inline bool_t bstree_isempty(const struct bstree* const bst) {
  * \return # elements in bst, or 0 on ERROR
  */
 
-static inline size_t bstree_n_elts(const struct bstree* const bst) {
+static inline size_t bstree_size(const struct bstree* const bst) {
   RCSW_FPC_NV(0, NULL != bst);
   return bst->current;
 }
@@ -380,3 +379,5 @@ static inline struct bstree* bstree_init(struct bstree* tree_in,
                                          const struct bstree_params* const params) {
   return bstree_init_internal(tree_in, params, sizeof(struct bstree_node));
 }
+
+END_C_DECLS

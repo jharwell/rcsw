@@ -25,14 +25,14 @@
  ******************************************************************************/
 template<typename T>
 static void test_insertion_sort(size_t n_elts) {
-  struct element_set<T> data(n_elts);
+  th::element_set<T> data(n_elts);
   data.data_gen();
   insertion_sort(data.elts.data(),
                  n_elts,
                  sizeof(T),
-                 th_cmpe<T>);
+                 th::cmpe<T>);
   for (int i = 0; i < (int)n_elts - 1; ++i) {
-    CATCH_REQUIRE(th_cmpe<T>(data.elts.data() + i,
+    CATCH_REQUIRE(th::cmpe<T>(data.elts.data() + i,
                              data.elts.data() + i + 1) <= 0);
   } /* for(i..) */
 }
@@ -57,20 +57,20 @@ static void test_radix_sort(size_t n_elts) {
 
 template<typename T>
 void test_qsort(size_t n_elts) {
-  struct element_set<T> data1(n_elts);
+  th::element_set<T> data1(n_elts);
   data1.data_gen();
 
-  qsort_rec(data1.elts.data(), 0, n_elts - 1, sizeof(T), th_cmpe<T>);
+  qsort_rec(data1.elts.data(), 0, n_elts - 1, sizeof(T), th::cmpe<T>);
 
-  struct element_set<T> data2(n_elts);
+  th::element_set<T> data2(n_elts);
   data2.data_gen();
 
-  qsort_iter(data2.elts.data(), n_elts - 1, sizeof(T), th_cmpe<T>);
+  qsort_iter(data2.elts.data(), n_elts - 1, sizeof(T), th::cmpe<T>);
 
   for (int i = 0; i < (int)n_elts - 1; ++i) {
-    CATCH_REQUIRE(th_cmpe<T>(data1.elts.data() + i,
+    CATCH_REQUIRE(th::cmpe<T>(data1.elts.data() + i,
                              data1.elts.data() + i + 1) <= 0);
-    CATCH_REQUIRE(th_cmpe<T>(data2.elts.data() + i,
+    CATCH_REQUIRE(th::cmpe<T>(data2.elts.data() + i,
                              data2.elts.data() + i + 1) <= 0);
   } /* for(i..) */
 }

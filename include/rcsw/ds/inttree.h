@@ -61,6 +61,7 @@ struct inttree_node {
 /*******************************************************************************
  * Inline Functions
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief Determine if an \ref inttree is full.
  *
@@ -90,8 +91,8 @@ static inline bool_t inttree_isempty(const struct bstree* const tree) {
  *
  * \return The # of elements, or 0 on error.
  */
-static inline size_t inttree_n_elts(const struct bstree* const tree) {
-    return bstree_n_elts(tree);
+static inline size_t inttree_size(const struct bstree* const tree) {
+    return bstree_size(tree);
 }
 
 /**
@@ -153,7 +154,6 @@ static inline status_t inttree_remove(struct bstree* tree, const void* key) {
  * bstree API here for that reason.
  *
  ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Determine if the given interval overlaps any in the \ref inttree.

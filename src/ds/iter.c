@@ -37,7 +37,7 @@ ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
       if (ekRCSW_DS_ITER_FORWARD == type) {
         iter->index = 0;
       } else if (ekRCSW_DS_ITER_BACKWARD == type) {
-        iter->index = darray_n_elts(da) - 1;
+        iter->index = darray_size(da) - 1;
       }
     } break;
     case ekRCSW_DS_LLIST: {
@@ -165,8 +165,8 @@ void* ds_iter_next(struct ds_iterator* const iter) {
           if (-1 == iter->index) {
             iter->index = iter->rb->start;
           }
-          iter->index = (iter->index + rbuffer_n_elts(iter->rb) - 1) %
-                        rbuffer_n_elts(iter->rb);
+          iter->index = (iter->index + rbuffer_size(iter->rb) - 1) %
+                        rbuffer_size(iter->rb);
           if (iter->classify &&
               !iter->classify(rbuffer_data_get(iter->rb, iter->index))) {
             continue;

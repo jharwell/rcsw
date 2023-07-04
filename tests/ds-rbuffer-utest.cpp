@@ -33,12 +33,13 @@ static void run_test(rbuffer_test_t test) {
 
   struct rbuffer_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<T>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_DS_RBUFFER_AS_FIFO
@@ -51,7 +52,7 @@ static void run_test(rbuffer_test_t test) {
       test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
   log4cl_shutdown();
 } /* test_runner() */
 
@@ -68,7 +69,7 @@ static void rdwr_test(int len, struct rbuffer_params* params) {
   CATCH_REQUIRE(rb != nullptr);
   rbuffer_print(rb);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -104,7 +105,7 @@ static void overwrite_test(int len, struct rbuffer_params *  params) {
 
   unsigned tail = 0;
   unsigned count = 0;
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   /* test overwriting */
   for (int i = 0; i < len * len; i++) {
@@ -139,7 +140,7 @@ static void map_test(int len, struct rbuffer_params * params) {
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(rb != nullptr);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -147,7 +148,7 @@ static void map_test(int len, struct rbuffer_params * params) {
     CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
   } /* for() */
 
-  CATCH_REQUIRE(rbuffer_map(rb, th_map_func<T>) == OK);
+  CATCH_REQUIRE(rbuffer_map(rb, th::map_func<T>) == OK);
 
   for (int i = 0; i < len; ++i) {
     T e;
@@ -170,7 +171,7 @@ static void fifo_test(int len, struct rbuffer_params * params) {
 
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(nullptr != rb);
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   /* fill the FIFO, verifying it does not allow addition of items once full */
   unsigned curr_old, start_old;
@@ -217,7 +218,7 @@ static void inject_test(int len, struct rbuffer_params * params) {
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(nullptr != rb);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     sum += i;
@@ -225,7 +226,7 @@ static void inject_test(int len, struct rbuffer_params * params) {
   } /* for() */
 
   int total = 0;
-  CATCH_REQUIRE(rbuffer_inject(rb, th_inject_func<T>, &total) == OK);
+  CATCH_REQUIRE(rbuffer_inject(rb, th::inject_func<T>, &total) == OK);
   CATCH_REQUIRE(total == sum);
 
   rbuffer_destroy(rb);
@@ -241,7 +242,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(rb);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
@@ -251,7 +252,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   T* e;
   struct ds_iterator * iter = ds_filter_init(rb,
                                              ekRCSW_DS_RBUFFER,
-                                             th_iter_func<T>);
+                                             th::iter_func<T>);
   CATCH_REQUIRE(iter != nullptr);
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
@@ -267,7 +268,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
     CATCH_REQUIRE((size_t)e->value1 == count);
     count++;
   } /* while() */
-  CATCH_REQUIRE(count == rbuffer_n_elts(rb));
+  CATCH_REQUIRE(count == rbuffer_size(rb));
 
   /*
    * Backward iteration
@@ -279,7 +280,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
     CATCH_REQUIRE((size_t)e->value1 == len - count - 1);
     count++;
   } /* while() */
-  CATCH_REQUIRE(count == rbuffer_n_elts(rb));
+  CATCH_REQUIRE(count == rbuffer_size(rb));
 
   /*
    * Iteration with overwriting

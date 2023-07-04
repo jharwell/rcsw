@@ -41,13 +41,14 @@ void mutex_destroy(struct mutex* mutex) {
   RCSW_FPC_V(NULL != mutex);
 
   pthread_mutex_destroy(&mutex->impl);
-  if (mutex->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(mutex->flags & RCSW_NOALLOC_HANDLE)) {
     free(mutex);
   }
 } /* mutex_destroy() */
 
 status_t mutex_lock(struct mutex* mutex) {
   RCSW_FPC_NV(ERROR, NULL != mutex);
+
   RCSW_CHECK(0 == pthread_mutex_lock(&mutex->impl));
   return OK;
 

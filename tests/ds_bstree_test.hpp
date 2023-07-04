@@ -16,15 +16,20 @@
 #include "rcsw/ds/rbtree.h"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+namespace th::bst {
+
+/*******************************************************************************
  * Type Definitions
  ******************************************************************************/
 using bst_verify_cb = int(*)(const struct bstree* const tree,
                              struct bstree_node * const node);
 
-using ds_bstree_test_t = void(*)(int len,
-                                 struct bstree_params *params,
-                                 bst_verify_cb verify_cb);
-using ds_bstree_rm_test_t = void (*)(int len,
+using test_t = void(*)(int len,
+                       struct bstree_params *params,
+                       bst_verify_cb verify_cb);
+using rm_test_t = void (*)(int len,
                                      int remove_type,
                                      struct bstree_params *params,
                                      bst_verify_cb verify_cb);
@@ -39,7 +44,7 @@ typedef int (*int_verify_cb)(const struct bstree* const tree,
  *
  * \return 0 if OK, nonzero otherwise
  */
-int th_verify_nodes_rb(const struct bstree* const tree,
+int verify_nodes_rb(const struct bstree* const tree,
                        struct bstree_node * const node);
 
 /**
@@ -47,7 +52,7 @@ int th_verify_nodes_rb(const struct bstree* const tree,
  *
  * \return 0 if OK, nonzero otherwise
  */
-int th_verify_nodes_bst(const struct bstree* const tree,
+int verify_nodes_bst(const struct bstree* const tree,
                         struct bstree_node * const node);
 
 /**
@@ -55,5 +60,7 @@ int th_verify_nodes_bst(const struct bstree* const tree,
  *
  * \return 0 if OK, nonzero otherwise
  */
-int th_verify_nodes_int(const struct bstree* const tree,
+int verify_nodes_int(const struct bstree* const tree,
                         struct inttree_node * const node);
+
+} /* namespace th::bst */

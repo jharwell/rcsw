@@ -26,6 +26,9 @@
 
 #if (RCSW_ERL >= RCSW_ERL_FATAL)
 
+#define RCSW_ER_INIT(...) RCSW_ER_PLUGIN_INIT(__VA_ARGS__)
+#define RCSW_ER_DEINIT(...) RCSW_ER_PLUGIN_DEINIT(__VA_ARGS__)
+
 /**
  * \brief General debug macros that will display whenever logging is enabled,
  * any other settings.
@@ -109,6 +112,8 @@
 
 #define RCSW_ER_MODULE_INIT(...)                        \
   RCSW_ER_PLUGIN_INSMOD(RCSW_ER_MODID, RCSW_ER_MODNAME)
+
+#define RCSW_ER_INSMOD(ID, NAME) RCSW_ER_PLUGIN_INSMOD(ID, NAME)
 
 #endif /* RCSW_ERL >= RCSW_ERL_ERROR */
 

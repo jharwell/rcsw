@@ -59,8 +59,10 @@ struct binheap {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Determine if the heap is currently full.
  *
@@ -82,7 +84,7 @@ static inline bool_t binheap_isfull(const struct binheap* const heap) {
  */
 static inline bool_t binheap_isempty(const struct binheap* const heap) {
     RCSW_FPC_NV(false, NULL != heap);
-    return (bool_t)(darray_n_elts(&heap->arr) == 1);
+    return (darray_size(&heap->arr) == 1);
 }
 
 /**
@@ -92,9 +94,9 @@ static inline bool_t binheap_isempty(const struct binheap* const heap) {
  *
  * \return # elements in heap, or 0 on ERROR.
  */
-static inline size_t binheap_n_elts(const struct binheap* const heap) {
+static inline size_t binheap_size(const struct binheap* const heap) {
     RCSW_FPC_NV(0, NULL != heap);
-    return darray_n_elts(&heap->arr) - 1; /* -1 for tmp element */
+    return darray_size(&heap->arr) - 1; /* -1 for tmp element */
 }
 
 /**
@@ -105,7 +107,7 @@ static inline size_t binheap_n_elts(const struct binheap* const heap) {
  * \return # of free elements
  */
 static inline size_t binheap_n_free(struct binheap * heap) {
-    return darray_capacity(&heap->arr) - darray_n_elts(&heap->arr);
+    return darray_capacity(&heap->arr) - darray_size(&heap->arr);
 }
 
 /**
@@ -147,13 +149,8 @@ static inline void* binheap_peek(const struct binheap * heap) {
 }
 
 static inline size_t binheap_height(const struct binheap * heap) {
-  return (size_t)(log10(binheap_n_elts(heap)) / log10(2));
+  return (size_t)(log10(binheap_size(heap)) / log10(2));
 }
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Initialize a heap.

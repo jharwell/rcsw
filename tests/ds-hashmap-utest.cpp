@@ -30,15 +30,16 @@ static void run_test(hashmap_test_t test) {
 
   struct hashmap_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
+  params.cmpe = th::cmpe<T>;
   params.hash = hash_default;
   params.sort_thresh = -1;
   params.keysize = RCSW_HASHMAP_MAX_KEYSIZE;
-  params.printe = th_printe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -56,7 +57,7 @@ static void run_test(hashmap_test_t test) {
       } /* for(k..) */
     } /* for(j..) */
   } /* for(i..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************
@@ -93,7 +94,7 @@ static void build_test(struct hashmap_params *  params) {
     if (rval == OK) {
       T * el = (T*)hashmap_data_get(map, nodes[i].key);
       CATCH_REQUIRE(el != nullptr);
-      CATCH_REQUIRE(th_cmpe<T>(data+i, el) == 0);
+      CATCH_REQUIRE(th::cmpe<T>(data+i, el) == 0);
 
 
     } else {
@@ -112,7 +113,7 @@ static void build_test(struct hashmap_params *  params) {
   for (j = 0; j < i; ++j) {
     T * el = (T*)hashmap_data_get(map, nodes[j].key);
     if (el != nullptr) {
-      CATCH_REQUIRE(th_cmpe<T>(data+j, el) == OK);
+      CATCH_REQUIRE(th::cmpe<T>(data+j, el) == OK);
     }
   } /* for() */
   hashmap_clear(map);
@@ -135,7 +136,7 @@ static void stats_test(struct hashmap_params *  params) {
   CATCH_REQUIRE(nullptr != map);
 
   /* fill hashmap */
-  element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
     string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
@@ -174,7 +175,7 @@ static void linear_probing_test(struct hashmap_params *  params) {
     /* verify new element in hashmap */
     T * el = (T*)hashmap_data_get(map, nodes[i].key);
     CATCH_REQUIRE(el != nullptr);
-    CATCH_REQUIRE(th_cmpe<T>(data+i, el) == 0);
+    CATCH_REQUIRE(th::cmpe<T>(data+i, el) == 0);
   } /* for() */
 
   /* verify all elements */
@@ -182,7 +183,7 @@ static void linear_probing_test(struct hashmap_params *  params) {
     T * el = (T*)hashmap_data_get(map, nodes[i].key);
 
     if (el != nullptr) {
-      CATCH_REQUIRE(th_cmpe<T>(data+i, el) == OK);
+      CATCH_REQUIRE(th::cmpe<T>(data+i, el) == OK);
     }
   } /* for() */
   hashmap_destroy(map);
@@ -239,7 +240,7 @@ static void remove_test(struct hashmap_params * params) {
   } /* for() */
 
   hashmap_destroy(map);
-  CATCH_REQUIRE(th_leak_check_data(params) == OK);
+  CATCH_REQUIRE(th::leak_check_data(params) == OK);
 } /* remove_test() */
 
 template<typename T>
@@ -259,7 +260,7 @@ static void print_test(struct hashmap_params *  params) {
   hashmap_print_dist(map);
 
   /* fill hashmap */
-  element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
     string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);

@@ -40,7 +40,7 @@ size_t rawfifo_deq(struct rawfifo* fifo, void* e, size_t n_elts) {
   RCSW_FPC_NV(-1, NULL != fifo, NULL != e);
 
   /* If they try to remove more elements than are in the fifo, cap it. */
-  n_elts = RCSW_MAX(rawfifo_n_elts(fifo), n_elts);
+  n_elts = RCSW_MAX(rawfifo_size(fifo), n_elts);
 
   size_t i;
   for (i = 0; i < n_elts; i++) {

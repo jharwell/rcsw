@@ -351,18 +351,18 @@ struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult) {
                                       0,
                                       MPI_COMM_WORLD));
 
-  RCSW_CHECK(OK == darray_set_n_elts(mult->vector_in, mult->n_cols_init));
+  RCSW_CHECK(OK == darray_set_size(mult->vector_in, mult->n_cols_init));
 
   /*
    * Now do the actual multiply!
    */
-  darray_set_n_elts(mult->vector_out, mult->n_rows_alloc);
+  darray_set_size(mult->vector_out, mult->n_rows_alloc);
   ER_DEBUG("Rank%d: Multiply: [%zu x %zu] x [%zu x 1] = [%zu x 1]",
            mult->mpi_rank,
            csmatrix_n_rows(mult->matrix),
            csmatrix_n_cols(mult->matrix),
-           darray_n_elts(mult->vector_in),
-           darray_n_elts(mult->vector_out));
+           darray_size(mult->vector_in),
+           darray_size(mult->vector_out));
   RCSW_CHECK(OK ==
              csmatrix_vmult(mult->matrix, mult->vector_in, mult->vector_out));
 
@@ -379,7 +379,7 @@ struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult) {
               0,
               MPI_COMM_WORLD);
   if (0 == mult->mpi_rank) {
-    darray_set_n_elts(mult->vector_out, mult->n_rows_init);
+    darray_set_size(mult->vector_out, mult->n_rows_init);
   }
 
   return mult->vector_out;
@@ -398,10 +398,10 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
    * Assign approximately n/p non-zero entries to each rank
    */
   if (0 == mult->mpi_rank) {
-    size_t target_size = csmatrix_n_elts(mult->matrix) / mult->mpi_world_size;
+    size_t target_size = csmatrix_size(mult->matrix) / mult->mpi_world_size;
     ER_DEBUG("Allocate ~ %zu/%zu elts to %d ranks",
              target_size,
-             csmatrix_n_elts(mult->matrix),
+             csmatrix_size(mult->matrix),
              mult->mpi_world_size);
     int curr_row = 0;
     size_t curr_size = 0;

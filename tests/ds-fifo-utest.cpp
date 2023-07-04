@@ -34,13 +34,14 @@ static void run_test(fifo_test_t test) {
 
   struct fifo_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<element8>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<element8>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
@@ -51,7 +52,7 @@ static void run_test(fifo_test_t test) {
       test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* test_runner() */
 
 /*******************************************************************************
@@ -65,7 +66,7 @@ static void rdwr_test(int len, struct fifo_params *  params) {
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE(nullptr != fifo);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len * 2; i++) {
     T e = g.next();
@@ -131,7 +132,7 @@ static void print_test(int len, struct fifo_params *  params) {
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE(nullptr != fifo);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len * 2; i++) {
     T e = g.next();

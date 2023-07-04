@@ -34,12 +34,13 @@ static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *para
   /* dbg_mod_lvl_set(M_DS_DARRAY, DBG_V); */
   struct binheap_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<T>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_DS_BINHEAP_MIN
@@ -52,18 +53,18 @@ static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *para
       test(type, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 template<typename T>
 static void verify_heap(struct binheap* heap) {
   size_t i = 0;
 
-  while (++i <= binheap_n_elts(heap)) {
+  while (++i <= binheap_size(heap)) {
     T* parent = (T*)darray_data_get(&heap->arr, i);
 
 
-    if (RCSW_BINHEAP_LCHILD(i) <= binheap_n_elts(heap)) {
+    if (RCSW_BINHEAP_LCHILD(i) <= binheap_size(heap)) {
       T* l_child = (T*)darray_data_get(&heap->arr,
                                        RCSW_BINHEAP_LCHILD(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
@@ -72,7 +73,7 @@ static void verify_heap(struct binheap* heap) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, l_child) >= 0);
       }
     }
-    if (RCSW_BINHEAP_RCHILD(i) <= binheap_n_elts(heap)) {
+    if (RCSW_BINHEAP_RCHILD(i) <= binheap_size(heap)) {
       T* r_child = (T*)darray_data_get(&heap->arr,
                                                    RCSW_BINHEAP_RCHILD(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
@@ -102,7 +103,7 @@ static void insert_test(enum gen_elt_type type, struct binheap_params * params) 
 
   CATCH_REQUIRE(nullptr != heap);
 
-  element_generator<T> g(type, params->max_elts);
+  th::element_generator<T> g(type, params->max_elts);
 
   for (int i = 0; i < params->max_elts; ++i) {
     T e = g.next();
@@ -111,7 +112,7 @@ static void insert_test(enum gen_elt_type type, struct binheap_params * params) 
   } /* for() */
 
   /* verify heap */
-  CATCH_REQUIRE(binheap_n_elts(heap) == (size_t)params->max_elts);
+  CATCH_REQUIRE(binheap_size(heap) == (size_t)params->max_elts);
   verify_heap<T>(heap);
 
   binheap_destroy(heap);
@@ -130,16 +131,16 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
 
   CATCH_REQUIRE(nullptr != heap);
 
-  element_generator<T> g(type, params->max_elts);
+  th::element_generator<T> g(type, params->max_elts);
 
   for (int i = 0; i < params->max_elts; ++i) {
     T e = g.next();
     CATCH_REQUIRE(binheap_insert(heap, &e) == OK);
   } /* for() */
 
-  CATCH_REQUIRE(binheap_n_elts(heap) == (size_t)params->max_elts);
+  CATCH_REQUIRE(binheap_size(heap) == (size_t)params->max_elts);
 
-  size_t old_elts = binheap_n_elts(heap);
+  size_t old_elts = binheap_size(heap);
   T minmax;
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
@@ -149,13 +150,13 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
   }
 
   while (!binheap_isempty(heap)) {
-    size_t index = std::max<int>(rand() % binheap_n_elts(heap),
+    size_t index = std::max<int>(rand() % binheap_size(heap),
                                                  1);
     CATCH_REQUIRE(OK == binheap_delete_key(heap, index, &minmax));
     CATCH_REQUIRE(ERROR == binheap_delete_key(nullptr, index, &minmax));
-    CATCH_REQUIRE(binheap_n_elts(heap) == old_elts - 1);
+    CATCH_REQUIRE(binheap_size(heap) == old_elts - 1);
     verify_heap<T>(heap);
-    old_elts = binheap_n_elts(heap);
+    old_elts = binheap_size(heap);
   } /* while() */
 
   binheap_destroy(heap);
@@ -176,7 +177,7 @@ static void make_test(gen_elt_type type, struct binheap_params * params) {
   T arr[TH_NUM_ITEMS];
 
 
-  element_generator<T> g(type, params->max_elts);
+  th::element_generator<T> g(type, params->max_elts);
   for (int i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();
   } /* for() */
@@ -202,7 +203,7 @@ static void structure_test(enum gen_elt_type type, struct binheap_params * param
   CATCH_REQUIRE(nullptr != heap);
   T arr[TH_NUM_ITEMS];
 
-  element_generator<T> g(type, params->max_elts);
+  th::element_generator<T> g(type, params->max_elts);
   for (int i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();
   } /* for() */
@@ -238,7 +239,7 @@ static void print_test(gen_elt_type type, struct binheap_params * params) {
   binheap_print(heap);
 
   T arr[TH_NUM_ITEMS];
-  element_generator<T> g(type, params->max_elts);
+  th::element_generator<T> g(type, params->max_elts);
 
   for (int i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();

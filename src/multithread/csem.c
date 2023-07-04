@@ -43,7 +43,7 @@ void csem_destroy(struct csem* sem) {
   RCSW_FPC_V(NULL != sem);
 
   sem_destroy(&sem->impl);
-  if (sem->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(sem->flags & RCSW_NOALLOC_HANDLE)) {
     free(sem);
   }
 } /* csem_destroy() */
@@ -74,9 +74,10 @@ status_t csem_timedwait(struct csem* const sem,
   RCSW_CHECK(0 == sem_timedwait(&sem->impl, &ts));
 
   return OK;
+
 error:
   return ERROR;
-} /* struct csemimedwait() */
+}
 
 status_t csem_post(struct csem* sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);

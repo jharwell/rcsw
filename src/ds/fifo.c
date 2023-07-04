@@ -69,7 +69,7 @@ status_t fifo_add(struct fifo* const fifo, const void* const e) {
 } /* fifo_add() */
 
 status_t fifo_remove(struct fifo* const fifo, void* const e) {
-  RCSW_FPC_NV(ERROR, NULL != fifo, NULL != e);
+  RCSW_FPC_NV(ERROR, NULL != fifo);
   return rbuffer_remove(&fifo->rb, e);
 } /* fifo_remove() */
 

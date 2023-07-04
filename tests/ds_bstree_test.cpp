@@ -21,9 +21,15 @@
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+namespace th::bst {
+
+
+/*******************************************************************************
  * API Functions
  ******************************************************************************/
-int th_verify_nodes_int(const struct bstree* const tree,
+int verify_nodes_int(const struct bstree* const tree,
                         struct inttree_node * const node) {
   const uint8_t * node_key = node->key;
   uint8_t* left_key;
@@ -34,19 +40,19 @@ int th_verify_nodes_int(const struct bstree* const tree,
    * Verify auxiliary field
    */
 
-  if (node != (struct inttree_node*)nil) {
-    if (node->right != (struct inttree_node*)nil) {
+  if (node != reinterpret_cast<inttree_node*>(nil)) {
+    if (node->right != reinterpret_cast<inttree_node*>(nil)) {
       CATCH_REQUIRE(node->max_high >= node->left->max_high);
     }
-    if (node->right != (struct inttree_node*)nil) {
+    if (node->right != reinterpret_cast<inttree_node*>(nil)) {
       CATCH_REQUIRE(node->max_high <= node->right->max_high);
     }
-    CATCH_REQUIRE(node->max_high >= ((struct interval_data*)node->data)->high);
+    CATCH_REQUIRE(node->max_high >= reinterpret_cast<interval_data*>(node->data)->high);
   }
   return 0;
 } /* th_verify_nodes_int() */
 
-int th_verify_nodes_rb(const struct bstree* const tree,
+int verify_nodes_rb(const struct bstree* const tree,
                        struct bstree_node * const node) {
   const uint8_t * node_key = node->key;
   uint8_t *left_key;
@@ -91,7 +97,7 @@ int th_verify_nodes_rb(const struct bstree* const tree,
   return 0;
 } /* th_verify_nodes_rb() */
 
-int th_verify_nodes_bst(const struct bstree* const tree,
+int verify_nodes_bst(const struct bstree* const tree,
                         struct bstree_node * const node) {
   const uint8_t * node_key = node->key;
   uint8_t* left_key;
@@ -118,7 +124,9 @@ int th_verify_nodes_bst(const struct bstree* const tree,
   /*
    * Verify height of tree is O(# nodes) (BSTree property #2)
    */
-  CATCH_REQUIRE(bstree_node_height(tree, node) <= 10* bstree_n_elts(tree));
+  CATCH_REQUIRE(bstree_node_height(tree, node) <= 10* bstree_size(tree));
 
   return 0;
 } /* th_verify_nodes_bst() */
+
+} /* namespace th::bst */

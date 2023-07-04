@@ -65,8 +65,8 @@ BEGIN_C_DECLS
  *
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
-status_t rdwrl_init(struct rdwrlock *const rdwr_in,
-                           uint32_t flags) RCSW_CHECK_RET;
+struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
+                            uint32_t flags) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a reader/writer fair lock
@@ -79,19 +79,19 @@ void rdwrl_destroy(struct rdwrlock *const rdwr);
 
 
 /**
- * \brief Enter a critical section requiring writer privileges.
+ * \brief Request to enter a critical section.
  *
- * This function is part of a fair (i.e. no rd/wr preference) sequence
- * that guarantees that no reader or write will starve.
+ * This function is part of a fair (i.e. no rd/wr preference) sequence that
+ * guarantees that no reader or write will starve.
  *
  * \param rdwr The lock handle.
  *
  * \param scope The scope of the privileges requested.
  */
-void rdwrl_enter(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
+void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
 
 /**
- * \brief Exit a critical section requiring writer privileges.
+ * \brief Exit a critical section.
  *
  * This function is part of a fair (i.e. no rd/wr preference) sequence
  * that guarantees that no reader or write will starve.
@@ -103,7 +103,7 @@ void rdwrl_enter(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
 void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
 
 /**
- * \brief Enter a critical section requiring writer privileges with a timeout.
+ * \brief Request to enter a critical section with a timeout.
  *
  * This function is part of a fair (i.e. no rd/wr preference) sequence
  * that guarantees that no reader or write will starve.
@@ -118,8 +118,8 @@ void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
  *
  * \return \ref status_t.
  */
-status_t rdwrl_timed_enter(struct rdwrlock *const rdwr,
-                           enum rdwrlock_scope scope,
-                           const struct timespec *const to);
+status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
+                        enum rdwrlock_scope scope,
+                        const struct timespec *const to);
 
 END_C_DECLS

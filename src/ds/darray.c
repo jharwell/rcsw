@@ -197,13 +197,13 @@ error:
 } /* darray_insert() */
 
 status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, index <= darray_n_elts(arr));
+  RCSW_FPC_NV(ERROR, arr != NULL, index <= darray_size(arr));
 
   if (e != NULL) {
     darray_idx_serve(arr, e, index);
   }
 
-  if (darray_n_elts(arr) == 1) {
+  if (darray_size(arr) == 1) {
     memset(darray_data_get(arr, index), 0xFFFFFFFF, arr->elt_size);
     arr->current--;
     return OK;

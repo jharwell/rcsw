@@ -63,13 +63,13 @@ static inline status_t rawfifo_clear(struct rawfifo *const fifo) {
  *
  * \return # element on the FIFO; 0 on ERROR.
  */
-static inline size_t rawfifo_n_elts(const struct rawfifo *const fifo) {
+static inline size_t rawfifo_size(const struct rawfifo *const fifo) {
     RCSW_FPC_NV(0, NULL != fifo);
     if (fifo->to_i >= fifo->from_i) {
         return fifo->to_i - fifo->from_i;
     }
     return (fifo->to_i) + (fifo->max_elts - fifo->from_i);
-} /* rawfifo_n_elts() */
+} /* rawfifo_size() */
 
 /**
  * \brief Get # of free slots remaining in FIFO.
@@ -81,7 +81,7 @@ static inline size_t rawfifo_n_elts(const struct rawfifo *const fifo) {
 static inline size_t rawfifo_n_free(const struct rawfifo *const fifo) {
     RCSW_FPC_NV(0, NULL != fifo);
     /* One elt must be wasted to make n_elts determination unambiguous */
-    return fifo->max_elts - rawfifo_n_elts(fifo) - 1;
+    return fifo->max_elts - rawfifo_size(fifo) - 1;
 }
 
 /*******************************************************************************

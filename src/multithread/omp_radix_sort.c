@@ -173,19 +173,19 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
   for (size_t i = 1; i < sorter->n_threads; ++i) {
     sorter->cum_prefix_sums[i * sorter->base] =
         sorter->cum_prefix_sums[(i - 1) * sorter->base] +
-        fifo_n_elts(&sorter->bins[(i - 1) * sorter->base]);
+        fifo_size(&sorter->bins[(i - 1) * sorter->base]);
   } /* for(i..) */
 
   /* Calculate all prefix sums for remaining symbols */
   for (size_t j = 1; j < sorter->base; ++j) {
     sorter->cum_prefix_sums[j] =
         sorter->cum_prefix_sums[(sorter->n_threads - 1) * sorter->base + j - 1] +
-        fifo_n_elts(
+        fifo_size(
             &sorter->bins[(sorter->n_threads - 1) * sorter->base + j - 1]);
     for (size_t i = 1; i < sorter->n_threads; ++i) {
       sorter->cum_prefix_sums[j + i * sorter->base] =
           sorter->cum_prefix_sums[j + (i - 1) * sorter->base] +
-          fifo_n_elts(&sorter->bins[j + (i - 1) * sorter->base]);
+          fifo_size(&sorter->bins[j + (i - 1) * sorter->base]);
     } /* for(i..) */
   } /* for(j..) */
 

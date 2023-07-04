@@ -494,7 +494,7 @@ void hashmap_print_dist(const struct hashmap* const map) {
   size_t max_node_count = 0;
   for (size_t i = 0; i < map->n_buckets; ++i) {
     max_node_count =
-        RCSW_MAX(darray_n_elts(&map->space.buckets[i]), max_node_count);
+        RCSW_MAX(darray_size(&map->space.buckets[i]), max_node_count);
   }
   if (max_node_count == 0) {
     DPRINTF(RCSW_ER_MODNAME " : < empty >\n");
@@ -504,12 +504,12 @@ void hashmap_print_dist(const struct hashmap* const map) {
 
   for (size_t i = 0; i < map->n_buckets; ++i) {
     DPRINTF("Bucket %-4zu| ", i);
-    if (darray_n_elts(&map->space.buckets[i]) == 0) {
+    if (darray_size(&map->space.buckets[i]) == 0) {
       DPRINTF("\n");
       continue;
     }
 
-    double scale = darray_n_elts(&map->space.buckets[i]) / (double)max_node_count;
+    double scale = darray_size(&map->space.buckets[i]) / (double)max_node_count;
     size_t fill = (size_t)(scale * xmax);
     for (size_t j = 0; j < fill; ++j) {
       DPRINTF("*");

@@ -1,10 +1,6 @@
 /**
  * \file pulse.h
  * \ingroup pulse
- * \brief Implementation of memory efficient PUbLisher-SubscribEr
- * (PULSE) system.
- *
- * Basically a fully connected network (in the parallel computing sense).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -22,18 +18,13 @@
 #include "rcsw/rcsw.h"
 #include "rcsw/multithread/mpool.h"
 #include "rcsw/ds/rbuffer.h"
+#include "rcsw/multithread/rdwrlock.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
 /* Just to make things easy */
-#define PULSE_MAX_NAMELEN 32
-
-/**
- * \brief Declare that the space for the PULSE handle will be provided by the
- * application.
- */
-#define PULSE_APP_DOMAIN_HANDLE 0x1
+#define RCSW_PULSE_MAX_NAMELEN 32
 
 /**
  * \brief Declare that space for ALL of the buffer pools is provided by the
@@ -43,151 +34,165 @@
  * Not passing this flag will cause PULSE to malloc() for the memory needed for
  * each buffer pool.
  */
-#define PULSE_APP_DOMAIN_POOLS 0x2
+#define RCSW_PULSE_NOALLOC_POOLS (RCSW_NOALLOC_DATA | RCSW_NOALLOC_META)
 
 /**
- * \brief Declare that it is OK for PULSE subscribers subscribers subscribed to
- * the same PID to service packets in their respective queues before all packets
- * have been pushed to all subscribers.
+ * \brief Declare that \ref pulse subscribers subscribed to the same PID can
+ * service received packets in their respective queues before all packets have
+ * been pushed to all subscribers during a given \ref pulse_publish_release().
  */
-#define PULSE_SERVICE_ASYNC 0x10
+#define RCSW_PULSE_ASYNC (1 << RCSW_MODFLAGS_START )
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief PULSE buffer pool initialization parameters
- */
-struct pulse_bp_params {
-  uint16_t n_bufs;    /// # of buffers in this pool.
-  uint16_t buf_size;  /// # of bytes in each buffer.
-  uint8_t *elements;  /// Space for buffers. Can be NULL.
-  /** Space for nodes used for buffer management. Can be NULL. */
-  uint8_t *nodes;
-};
-
-/**
  * \brief PULSE framework initialization parameters.
  */
 struct pulse_params {
-  size_t n_pools;   /// # of buffer pools for the bus.
-  size_t max_rxqs;  /// Max # of receive queues for the bus.
-  size_t max_subs;
-  uint32_t flags;   /// Configuration flags.
-
   /**
    * Each PULSE can have any # of buffer pools (each pool can have any number
    * of entries). If you need more than 8 or so, you are probably doing
    * something weird (read: wrong)...
    */
-  struct pulse_bp_params* pools;
-  char name[PULSE_MAX_NAMELEN];
-};
+  struct mpool_params* pools;
 
-/**
- * \brief PULSE Buffer pool entry.
- *
- * Contains n bufs of whatever size that are used to hold the published packets.
- */
-struct pulse_bp_ent {
-  struct mpool pool;  /// The buffer pool containing actual data.
+  /** Max # of buffer pools to create for the bus. */
+  size_t max_pools;
+
+  /** Max # of receive queues for the bus. */
+  size_t max_rxqs;
+
+  /** Max # of subscribers to a particular packet ID. */
+  size_t max_subs;
+
+  /** Configuration flags. */
+  uint32_t flags;
+
   /**
-   * mutex to protect buffer pool when pushing out published packets. Pool
-   * protects itself during request/release. Only used if \ref
-   * PULSE_SERVICE_ASYNC is not passed.
+   * Name for \ref pulse instance. Used to assist with debugging if multiple
+   * PULSE instances are active. Has no effect on PULSE operation.
    */
-  struct mutex mutex;
+  char name[RCSW_PULSE_MAX_NAMELEN];
 };
 
 /**
- * \brief PULSE receive queue entry.
+ * \brief \ref pulse receive queue entry.
  *
  * When a packet is published to the bus, a receive queue entry for the packet
  * is placed in each subscribed receive queue.
  */
 struct pulse_rxq_ent {
-  void* buf;     /// Pointer to the buffer with the actual data.
-  size_t pkt_size;  /// Packet size in bytes.
-  uint32_t pid;     /// packet ID.
+  /** Pointer to the buffer with the actual data. */
+  uint8_t* data;
+
+  /** Received packet size in bytes. */
+  size_t pkt_size;
+
+  /** ID of received packet. */
+  uint32_t pid;
 
   /** The buffer pool entry that the data resides in. */
-  struct pulse_bp_ent *bp_ent;
+  struct mpool *bp;
+};
+
+struct pulse_rsrvn {
+  /** Pointer to the buffer with the actual data. */
+  uint8_t* data;
+
+  /** Received packet size in bytes. */
+  size_t pkt_size;
+
+  /** The buffer pool entry that the data resides in. */
+  struct mpool *bp;
 };
 
 /**
- * \brief PULSE subscription list entry.
+ * \brief \ref pulse subscription (maps a PID to a rxqueue).
  *
  * Every time a task/thread subscribes to a packet ID, they get an subscription
  * entry, which is inserted into the sorted subscriber array for the pulse
  * instance.
  */
-struct pulse_sub_ent {
+struct pulse_sub {
   uint32_t pid;                 /// ID of subscribed packet.
   struct pcqueue *subscriber;  /// Pointer to receive queue of subscriber.
 };
 
 /**
- * \brief PULSE framework, for managing a publisher-subscriber needs in an
- * embedded environment, and/or one where MPI named pipes, etc. are not
- * available or are not suitable.
+ * \brief Manage publisher-subscriber needs in an embedded environment.
+ *
+ * Memory efficient. Basically a fully connected network (in the parallel
+ * computing sense).
  */
-struct pulse_inst {
-  size_t n_pools;    /// # buffer pools (static during lifetime).
-  size_t n_rxqs;     /// # active receive queues (dynamic during lifetime).
-  size_t max_rxqs;   /// Max # of receive queues allowed
-  size_t max_subs;   /// Max # of subscribers (rxq-pid pairs) allowed.
-  struct mutex mutex;  /// mutex to protect access to bus metadata.
-  uint32_t flags;    /// Run-time configuration flags.
+struct pulse {
+  /** # buffer pools (static during lifetime). */
+  size_t n_pools;
+
+  /** # active receive queues (dynamic during lifetime). */
+  size_t n_rxqs;
+
+  /** Max # of receive queues allowed. */
+  size_t max_rxqs;
+
+  /** Max # of subscribers (rxq-pid pairs) allowed. */
+  size_t max_subs;
+
+  /** Mutex to protect access to bus metadata. */
+  struct mutex mutex;
+
+  /** Run-time configuration flags. */
+  uint32_t flags;
 
   /**
    * Array of buffer pool entries. Published data stored here. This is
    * always allocated by PULSE during initialization.
    */
-  struct pulse_bp_ent *buffer_pools;
+  struct mpool *pools;
 
   /**
-   * Array of receive queues. Used by the application to subscribe to
-   * packets and to receive published packets. This is always allocated by
-   * PULSE during initialization.
+   * Array of receive queues. Used by the application to subscribe to packets
+   * and to receive published packets. This is always allocated during
+   * initialization.
    */
-  struct pcqueue *rx_queues;
+  struct pcqueue *rxqs;
 
-  /** List of subscribers (rxq, ID) pairs. Always sorted. */
-  struct llist *sub_list;
+  /** List of \ref pulse_sub. Always sorted. */
+  struct llist *subscribers;
+
+  /**
+   * Prevents applications from servicing their receive queues for the packet
+   * currently being pushed out via \ref pulse_publish_release() until all
+   * subscribers have been notified if \ref RCSW_PULSE_ASYNC is not passed.
+   */
+  struct rdwrlock syncl;
 
   /**
    * Name for instance. Used to assist with debugging if multiple PULSE
    * instances are active. Has no effect on PULSE operation.
    */
-  char name[PULSE_MAX_NAMELEN];
+  char name[RCSW_PULSE_MAX_NAMELEN];
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
-static inline size_t pulse_rxq_n_elts(const struct pcqueue *const queue) {
-  RCSW_FPC_NV(0, queue != NULL);
-  return pcqueue_n_elts(queue);
-}
-
-static inline size_t pulse_rxq_n_free(const struct pcqueue *const queue) {
-  RCSW_FPC_NV(0, queue != NULL);
-  return pcqueue_n_free(queue);
-}
+BEGIN_C_DECLS
 
 /**
  * \brief Get pointer to the top packet on a receive queue.
  *
- * \return The top on the queue, or NULL if no such packet or an error occurred.
+ * Use this function if a given RXQ is only subscribed to a single packet type,
+ * so there's no ambiguity about what comes out of the queue in terms of what to
+ * do with it.
+ *
+ * Note that if the queue is currently empty this function will wait until
+ * there's something in it before returning.
+ *
+ * \return The top of the queue, or NULL if no such packet or an error occurred.
  */
-static inline uint8_t * pulse_get_top(struct pcqueue *const queue) {
-  RCSW_FPC_NV(NULL, queue != NULL);
-  return (uint8_t*)pcqueue_peek(queue);
-}
+struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue);
 
-/*******************************************************************************
- * Inline Functions
- ******************************************************************************/
 static inline size_t pulse_pool_space(size_t elt_size, size_t max_elts) {
   return mpool_element_space(elt_size, max_elts);
 }
@@ -196,44 +201,42 @@ static inline size_t pulse_meta_space(size_t max_elts) {
   return mpool_meta_space(max_elts);
 }
 
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
- * \brief Initialize a pulse instance.
+ * \brief Initialize a \ref pulse instance.
  *
  * \param pulse_in The pulse handle to be filled (can be NULL if
- * \ref PULSE_APP_DOMAIN_HANDLE not passed).
+ *                 \ref RCSW_NOALLOC_HANDLE not passed).
+ *
  * \param params The initialization parameters.
  *
  * \return Initialized pulse instance, or NULL if an error occurred.
  */
-struct pulse_inst *pulse_init(
-    struct pulse_inst *pulse_in,
-    const struct pulse_params * params) RCSW_CHECK_RET;
+struct pulse *pulse_init(struct pulse *pulse_in,
+                         const struct pulse_params * params) RCSW_CHECK_RET;
 
 /**
- * \brief  Shutdown a PULSE instance and deallocate its memory.
+ * \brief Destroy a \ref pulse instance
  *
  * Any further use of th pulse handle after calling this function is undefined.
  *
  * \param pulse The pulse handle.
  */
-void pulse_destroy(struct pulse_inst *pulse);
+void pulse_destroy(struct pulse *pulse);
 
 /**
  * \brief Allocate and initialize a receive queue.
  *
  * \param pulse The pulse handle.
+ *
  * \param buf_p Space for the rxq entries. Can be NULL (pulse will malloc() for
  *              space).
+ *
  * \param n_entries Max # of entries for rxq.
  *
  * \return Pointer to new receive queue, or NULL if an error occurred.
  */
-struct pcqueue *pulse_rxq_init(struct pulse_inst * pulse,
+struct pcqueue *pulse_rxq_init(struct pulse * pulse,
                                 void * buf_p,
                                 uint32_t n_entries) RCSW_CHECK_RET;
 
@@ -246,8 +249,9 @@ struct pcqueue *pulse_rxq_init(struct pulse_inst * pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_subscribe(struct pulse_inst * pulse,
-                         struct pcqueue * queue, uint32_t pid);
+status_t pulse_subscribe(struct pulse * pulse,
+                         struct pcqueue * queue,
+                         uint32_t pid);
 
 /**
  * \brief Unsubscribe the specified RXQ from the specified packet ID
@@ -258,13 +262,15 @@ status_t pulse_subscribe(struct pulse_inst * pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_unsubscribe(struct pulse_inst * pulse,
-                           struct pcqueue * queue, uint32_t pid);
+status_t pulse_unsubscribe(struct pulse * pulse,
+                           struct pcqueue * queue,
+                           uint32_t pid);
 
 /**
- * \brief Publish a packet to the bus. A memcpy() will be performed, if the
- * packet is very large, consider using \ref pulse_publish_release() instead;
- * it will not perform a memcpy().
+ * \brief Publish a packet to the bus.
+ *
+ * A memcpy() will be performed. If the packet is very large, consider using
+ * \ref pulse_publish_release() instead; it will not perform a memcpy().
  *
  * \param pulse The pulse handle.
  * \param pid The packet ID.
@@ -273,8 +279,28 @@ status_t pulse_unsubscribe(struct pulse_inst * pulse,
  *
  * \return \ref status_t
  */
-status_t pulse_publish(struct pulse_inst * pulse, uint32_t pid,
-                       size_t pkt_size, const void * pkt);
+status_t pulse_publish(struct pulse * pulse,
+                       uint32_t pid,
+                       size_t pkt_size,
+                       const uint8_t* pkt);
+
+/**
+ * \brief Reserve a buffer on a \ref pulse instance.
+ *
+ * A suitable buffer will be found in the first pool large enough to contain the
+ * packet and has free space.
+ *
+ * \param pulse The pulse handle.
+ *
+ * \param res The reservation for the publish (to be filled on success).
+ *
+ * \param pkt_size Size of the packet in bytes.
+ *
+ * \return \ref status_t.
+ */
+status_t pulse_publish_reserve(struct pulse* pulse,
+                               struct pulse_rsrvn* res,
+                               size_t pkt_size);
 /**
  * \brief Release a published entry (i.e. send it to all subscribed receive
  * queues).
@@ -286,50 +312,73 @@ status_t pulse_publish(struct pulse_inst * pulse, uint32_t pid,
  * copy.
  *
  * \param pulse The pulse handle.
+ *
  * \param pid The packet ID.
- * \param bp_ent The buffer pool entry reserved for the packet, as a result of
- * \ref pulse_publish_reserve(). Should be NULL if called directly by
- * application.
- * \param reservation The space reserved for the packet in a particular buffer
- * pool. Should be NULL if called directly by the application.
+ *
+ * \param bp The buffer pool entry reserved for the packet, as a result of \ref
+ *           pulse_publish_reserve(). Should be NULL if called directly by
+ *           application.
+ *
+ * \param res The space reserved for the packet in a particular buffer
+ *            pool. The pointed-to value must have been the result of a
+ *            successful \ref pulse_publish_reserve().
+ *
  * \param pkt_size Size of the packet in bytes.
  *
  * \return \ref status_t.
  */
-status_t pulse_publish_release(struct pulse_inst* pulse, uint32_t pid,
-                               struct pulse_bp_ent* bp_ent,
-                               void * reservation, size_t pkt_size);
+status_t pulse_publish_release(struct pulse* pulse,
+                               uint32_t pid,
+                               struct pulse_rsrvn* res,
+                               size_t pkt_size);
 
 /**
  * \brief Wait (indefinitely) until the given receive queue is not empty,
  * returning a reference to the first item in the queue.
  *
+ * \param pulse The pulse handle.
+ *
  * \param queue The receive queue to wait on.
+ *
+ * Regardless of how the packet was published, you need to call \ref
+ * pulse_rxq_pop_front() when you are finished with the packet.
  *
  * \return A reference to the first item in the queue, or NULL if an ERROR
  * occurred.
  */
-void *pulse_wait_front(struct pcqueue * queue) RCSW_CHECK_RET;
+struct pulse_rxq_ent* pulse_rxq_wait(struct pulse* pulse,
+                                     struct pcqueue * queue) RCSW_CHECK_RET;
 
 /**
  * \brief Wait (until a timeout) until the given receive queue is not empty.
  *
+ * \param pulse The pulse handle.
+ *
  * \param queue The receive queue to wait on.
+ *
  * \param to A RELATIVE timeout.
+ *
+ * Regardless of how the packet was published, you need to call \ref
+ * pulse_rxq_pop_front() when you are finished with the packet.
  *
  * \return A reference to the first item in the queue, or NULL if an ERROR or a
  * timeout occurred.
  */
-void *pulse_timedwait_front(struct pcqueue * queue,
-                            struct timespec * to) RCSW_CHECK_RET;
+struct pulse_rxq_ent* pulse_rxq_timedwait(struct pulse* pulse,
+                                          struct pcqueue * queue,
+                                          struct timespec * to) RCSW_CHECK_RET;
 
 /**
- * \brief Remove the front element from the selected receive queue.
+ * \brief Remove and release the front element from the selected receive queue.
  *
- * \param queue The receive queue remove from.
+ * \param queue The parent \ref pcqueue of the packet.
+ *
+ * \param ent The previously "peeked" element from \ref pulse_rxq_front(), \ref
+ *            pulse_rxq_wait(), or \ref pulse_rxq_timedwait().
  *
  * \return \ref status_t.
  */
-status_t pulse_pop_front(struct pcqueue * queue);
+status_t pulse_rxq_pop_front(struct pcqueue* queue,
+                             struct pulse_rxq_ent * ent);
 
 END_C_DECLS

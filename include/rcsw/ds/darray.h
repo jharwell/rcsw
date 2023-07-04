@@ -89,8 +89,10 @@ struct darray {
 };
 
 /*******************************************************************************
- * Macros
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Determine if the dynamic array is currently full
  *
@@ -100,7 +102,7 @@ struct darray {
  */
 static inline bool_t darray_isfull(const struct darray* const arr) {
     RCSW_FPC_NV(false, NULL != arr);
-    return (bool_t)(arr->current == (size_t)arr->max_elts);
+    return (arr->current == (size_t)arr->max_elts);
 }
 
 /**
@@ -112,7 +114,7 @@ static inline bool_t darray_isfull(const struct darray* const arr) {
  */
 static inline bool_t darray_isempty(const struct darray* const arr) {
     RCSW_FPC_NV(false, NULL != arr);
-    return (bool_t)(arr->current == 0);
+    return arr->current == 0;
 }
 
 /**
@@ -122,7 +124,7 @@ static inline bool_t darray_isempty(const struct darray* const arr) {
  *
  * \return # elements in arr, or 0 on ERROR
  */
-static inline size_t darray_n_elts(const struct darray* const arr) {
+static inline size_t darray_size(const struct darray* const arr) {
     RCSW_FPC_NV(0, NULL != arr);
     return arr->current;
 }
@@ -148,7 +150,7 @@ static inline size_t darray_capacity(const struct darray* const arr) {
  * \param n_elts The new # of elements in the array.
  * \return \ref status_t.
  */
-static inline status_t darray_set_n_elts(struct darray* const arr,
+static inline status_t darray_set_size(struct darray* const arr,
                                          size_t n_elts) {
     RCSW_FPC_NV(ERROR, NULL != arr, n_elts <= arr->capacity);
     arr->current = n_elts;
@@ -167,11 +169,6 @@ static inline status_t darray_set_n_elts(struct darray* const arr,
 static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
     return ds_elt_space_simple(max_elts, elt_size);
 }
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Initialize an darray
@@ -236,7 +233,7 @@ status_t darray_data_clear(struct darray * arr);
  * \param e The element to insert
  * \param index The index to insert at. If so, this function behaves as a
  * prepend function (very inefficient, but allowable). If equal to
- * \ref darray_n_elts(), behaves as append function (efficient--use this).
+ * \ref darray_size(), behaves as append function (efficient--use this).
  *
  * \return \ref status_t
  */
@@ -294,7 +291,7 @@ int darray_idx_query(const struct darray * arr, const void * e);
  * \brief Retrieve an item from an darray
  *
  * Returns the item at the specified index. There is NO upper bounds checking to
- * make sure that index < \ref darray_n_elts().
+ * make sure that index < \ref darray_size().
  *
  * \param arr The darray handle
  * \param index The index to get the data for
@@ -307,7 +304,7 @@ void *darray_data_get(const struct darray * arr, size_t index);
  * \brief Set an item in a darray
  *
  * Sets the item at the specified index to the passed in value. There is NO
- * upper bounds checking to  make sure that index < \ref darray_n_elts().
+ * upper bounds checking to  make sure that index < \ref darray_size().
  *
  * \param arr The darray handle
  * \param index The index of the item to set

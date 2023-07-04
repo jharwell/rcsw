@@ -45,10 +45,10 @@ struct pcqueue* pcqueue_init(struct pcqueue* queue_in,
   RCSW_CHECK(NULL != fifo_init(&queue->fifo, &impl_params));
 
   /* all slots available initially */
-  RCSW_CHECK_PTR(csem_init(&queue->empty,
+  RCSW_CHECK_PTR(csem_init(&queue->slots_avail,
                            params->max_elts,
                            RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK_PTR(csem_init(&queue->full, 0, RCSW_NOALLOC_HANDLE));
+  RCSW_CHECK_PTR(csem_init(&queue->slots_inuse, 0, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(mutex_init(&queue->mutex, RCSW_NOALLOC_HANDLE));
   return queue;
 
@@ -61,6 +61,12 @@ error:
 void pcqueue_destroy(struct pcqueue* const queue) {
   RCSW_FPC_V(NULL != queue);
 
+  fifo_destroy(&queue->fifo);
+
+  mutex_destroy(&queue->mutex);
+  csem_destroy(&queue->slots_avail);
+  csem_destroy(&queue->slots_inuse);
+
   if (!(queue->flags & RCSW_NOALLOC_HANDLE)) {
     free(queue);
   }
@@ -69,67 +75,94 @@ void pcqueue_destroy(struct pcqueue* const queue) {
 status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
 
-  status_t rval = ERROR;
+  csem_wait(&queue->slots_avail);
 
-  csem_wait(&queue->empty);
   mutex_lock(&queue->mutex);
-  RCSW_CHECK(OK == fifo_add(&queue->fifo, e));
-  rval = OK;
-
-error:
+  status_t rval = fifo_add(&queue->fifo, e);
   mutex_unlock(&queue->mutex);
-  csem_post(&queue->full);
+
+  if (OK == rval) {
+    csem_post(&queue->slots_inuse);
+  }
+
   return rval;
 } /* pcqueue_push() */
 
 status_t pcqueue_pop(struct pcqueue* const queue, void* const e) {
   RCSW_FPC_NV(ERROR, NULL != queue);
 
-  status_t rval = ERROR;
+  csem_wait(&queue->slots_inuse);
 
-  csem_wait(&queue->full);
   mutex_lock(&queue->mutex);
-
-  RCSW_CHECK(OK == fifo_remove(&queue->fifo, e));
-  rval = OK;
-
-error:
+  status_t rval = fifo_remove(&queue->fifo, e);
   mutex_unlock(&queue->mutex);
-  csem_post(&queue->empty);
+
+  if (OK == rval) {
+    csem_post(&queue->slots_avail);
+  }
+
   return rval;
 } /* pcqueue_pop() */
 
-status_t pcqueue_timed_pop(struct pcqueue* const queue,
+status_t pcqueue_timedpop(struct pcqueue* const queue,
                             const struct timespec* const to,
                             void* const e) {
-  RCSW_FPC_NV(ERROR, NULL != queue);
+  RCSW_FPC_NV(ERROR, NULL != queue, NULL != to);
 
-  status_t rval = ERROR;
+  RCSW_CHECK(OK == csem_timedwait(&queue->slots_inuse, to));
 
-  RCSW_CHECK(OK == csem_timedwait(&queue->full, to));
   mutex_lock(&queue->mutex);
 
-  RCSW_CHECK(OK == fifo_remove(&queue->fifo, e));
-  rval = OK;
-
-error:
+  /*
+   * We don't use a CHECK() macro here because we need to make sure we unlock
+   * the mutex, and we can't do that AND have the csem_timedwait() call above
+   * also use a CHECK() macro, because in one case the mutex is locked when the
+   * check is called and in one it isn't.
+   */
+  status_t rval = fifo_remove(&queue->fifo, e);
   mutex_unlock(&queue->mutex);
-  csem_post(&queue->empty);
+  csem_post(&queue->slots_avail);
+
   return rval;
-} /* pcqueue_pop() */
-
-void* pcqueue_peek(struct pcqueue* const queue) {
-  RCSW_FPC_NV(NULL, NULL != queue);
-
-  uint8_t* ret = NULL;
-
-  RCSW_CHECK(-1 != csem_trywait(&queue->full));
-  mutex_lock(&queue->mutex);
-  ret = fifo_front(&queue->fifo);
-  mutex_unlock(&queue->mutex);
 
 error:
-  return ret;
+  return ERROR;
 } /* pcqueue_pop() */
+
+status_t pcqueue_timedpeek(struct pcqueue* const queue,
+                           const struct timespec* const to,
+                           uint8_t** const e) {
+  RCSW_FPC_NV(ERROR, NULL != queue, NULL != to, NULL != e);
+
+  RCSW_CHECK(OK == csem_timedwait(&queue->slots_inuse, to));
+
+  mutex_lock(&queue->mutex);
+
+  *e = fifo_front(&queue->fifo);
+
+  mutex_unlock(&queue->mutex);
+  csem_post(&queue->slots_inuse);
+
+  return OK;
+
+error:
+  *e = NULL;
+  return ERROR;
+} /* pcqueue_timedpeek() */
+
+status_t pcqueue_peek(struct pcqueue* const queue,
+                      uint8_t** const e) {
+  RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
+
+  csem_wait(&queue->slots_inuse);
+  mutex_lock(&queue->mutex);
+
+  *e = fifo_front(&queue->fifo);
+
+  mutex_unlock(&queue->mutex);
+  csem_post(&queue->slots_inuse);
+
+  return OK;
+} /* pcqueue_peek() */
 
 END_C_DECLS

@@ -29,11 +29,11 @@
  * ends of a FIFO.
  */
 struct pcqueue {
-    struct fifo fifo;   /// The underlying FIFO.
-    uint32_t flags;     /// Configuration flags.
-    struct mutex mutex;   /// Mutex protecting buffer, in, out, count.
-    struct csem empty;    /// Semaphore counting empty slots in buffer.
-    struct csem full;     /// Semaphore counting full slots in buffer.
+  struct fifo fifo;    /// The underlying FIFO.
+  struct mutex mutex;  /// Mutex protecting fifo.
+  struct csem slots_avail;   /// Semaphore counting empty slots in buffer.
+  struct csem slots_inuse;    /// Semaphore counting full slots in buffer.
+  uint32_t flags;      /// Configuration flags.
 };
 
 /*******************************************************************************
@@ -72,9 +72,9 @@ static inline bool_t pcqueue_isempty(const struct pcqueue* const queue) {
  *
  * \return # elements in queue, or 0 on ERROR.
  */
-static inline size_t pcqueue_n_elts(const struct pcqueue* const queue) {
+static inline size_t pcqueue_size(const struct pcqueue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
-    return fifo_n_elts(&queue->fifo);
+    return fifo_size(&queue->fifo);
 }
 
 /**
@@ -101,7 +101,7 @@ static inline size_t pcqueue_capacity(const struct pcqueue* const queue) {
  */
 static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
-    return pcqueue_capacity(queue) - pcqueue_n_elts(queue);
+    return pcqueue_capacity(queue) - pcqueue_size(queue);
 }
 
 /*******************************************************************************
@@ -112,8 +112,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a producer-consumer queue.
  *
- * \param pcqueue_in An application allocated handle for the queue. Can be
- * NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
+ * \param pcqueue_in An application allocated handle for the queue. Can be NULL,
+ *                   depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
+ *
  * \param params The initialization parameters.
  *
  * \return The initialized queue, or NULL if an error occurred.
@@ -123,8 +124,9 @@ struct pcqueue * pcqueue_init(
     const struct pcqueue_params * params) RCSW_CHECK_RET;
 
 /**
- * \brief Destroy a producer-consumer queue. Any further use of the queue handle
- * after calling this function is undefined.
+ * \brief Destroy a producer-consumer queue.
+ *
+ * Any further use of the queue handle after calling this function is undefined.
  *
  * \param pcqueue The queue handle.
  */
@@ -162,19 +164,39 @@ status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
  *
  * \return \ref status_t.
  */
-status_t pcqueue_timed_pop(struct pcqueue * pcqueue,
-                            const struct timespec * to, void * e);
+status_t pcqueue_timedpop(struct pcqueue * pcqueue,
+                            const struct timespec * to,
+                           void * e);
 
 /**
- * \brief Get a reference to the first element in the queue if it exists. The
- * non-NULL value returned by this function cannot be relied upon in a
+ * \brief Get the first element in the queue if it exists.
+ *
+ * \note The filled value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
  * \param pcqueue The queue handle.
  *
- * \return A reference to the first element in the queue, or NULL if no such
- * element or an error occurred.
+ * \param e To be filled with the address of the first element, if it exists,
+ *          and set to NULL otherwise.
+ *
+ * \return \ref status_t.
  */
-void* pcqueue_peek(struct pcqueue * pcqueue);
+status_t pcqueue_timedpeek(struct pcqueue* const queue,
+                           const struct timespec* const to,
+                           uint8_t** const e);
+/**
+ * \brief Get the first element in the queue if it exists, with a timeout.
+ *
+ * \note The filled value returned by this function cannot be relied upon in a
+ * multi-threaded context without additional synchronization.
+ *
+ * \param pcqueue The queue handle.
+ *
+ * \param e To be filled with the address of the first element, if it exists,
+ *          and set to NULL otherwise.
+ *
+ * \return \ref status_t.
+ */
+status_t pcqueue_peek(struct pcqueue* const queue, uint8_t** const e);
 
 END_C_DECLS

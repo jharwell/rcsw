@@ -32,20 +32,21 @@ int n_elements; /* global var for # elements in RBTREE */
  ******************************************************************************/
 template<typename T>
 static void run_test(uint32_t extra_flags,
-                     ds_bstree_test_t test,
-                     bst_verify_cb verify_cb) {
+                     th::bst::test_t test,
+                     th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
-  params.printe = th_printe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_ITEMS;
-  th_ds_init(&params);
+  th::ds_init(&params);
 
   /* dbg_insmod(M_DS_BSTREE, "BSTree"); */
   /* dbg_mod_lvl_set(M_DS_BSTREE,DBG_V); */
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -57,23 +58,24 @@ static void run_test(uint32_t extra_flags,
       test(j, &params, verify_cb);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 template<typename T>
 static void run_test_remove(uint32_t extra_flags,
-                            ds_bstree_rm_test_t test,
-                            bst_verify_cb verify_cb) {
+                            th::bst::rm_test_t test,
+                            th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
-  params.printe = th_printe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_ITEMS;
 
-  th_ds_init(&params);
+  th::ds_init(&params);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -87,7 +89,7 @@ static void run_test_remove(uint32_t extra_flags,
       } /* for(k..) */
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test_remove() */
 
 /*******************************************************************************
@@ -103,7 +105,7 @@ static void run_test_remove(uint32_t extra_flags,
 template<typename T>
 static void insert_test(int len,
                         struct bstree_params *params,
-                        bst_verify_cb verify_cb) {
+                        th::bst::bst_verify_cb verify_cb) {
   struct bstree* tree;
   struct bstree mytree;
 
@@ -117,7 +119,7 @@ static void insert_test(int len,
   CATCH_REQUIRE(nullptr != tree);
 
   /* Build tree with random keys and verify insertions */
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -133,7 +135,7 @@ static void insert_test(int len,
   } /* for() */
 
   /* verify node count */
-  CATCH_REQUIRE(bstree_n_elts(tree) == (size_t)len);
+  CATCH_REQUIRE(bstree_size(tree) == (size_t)len);
 
   /* verify all data in the trees */
   for (int i = 0; i < len; ++i) {
@@ -154,8 +156,8 @@ static void insert_test(int len,
   bstree_destroy(tree);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* insert_test() */
 
 /**
@@ -164,7 +166,7 @@ static void insert_test(int len,
 template<typename T>
 static void print_test(int len,
                        struct bstree_params *params,
-                       bst_verify_cb) {
+                       th::bst::bst_verify_cb) {
   struct bstree* tree;
 
   T data_arr[TH_NUM_ITEMS];
@@ -177,7 +179,7 @@ static void print_test(int len,
   bstree_print(tree);
 
   /* Build tree with random keys and verify insertions */
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -207,7 +209,7 @@ template<typename T>
 static void remove_test(int len,
                         int remove_type,
                         struct bstree_params *params,
-                        bst_verify_cb verify_cb) {
+                        th::bst::bst_verify_cb verify_cb) {
   struct bstree* tree;
   struct bstree mytree;
 
@@ -222,7 +224,7 @@ static void remove_test(int len,
    * Build tree with random keys (don't need to verify insertions--that is done
    * elsewhere)
    */
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; ++i) {
     int rand_key;
     string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
@@ -262,8 +264,8 @@ static void remove_test(int len,
   bstree_destroy(tree);
 
   /* verify all APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* remove_test() */
 
 /*******************************************************************************
@@ -271,45 +273,45 @@ static void remove_test(int len,
  ******************************************************************************/
 /* Binary Search Tree tests */
 CATCH_TEST_CASE("Insert Test", "[ds][bstree]") {
-  run_test<element1>(0, insert_test<element1>, th_verify_nodes_bst);
-  run_test<element2>(0, insert_test<element2>, th_verify_nodes_bst);
-  run_test<element4>(0, insert_test<element4>, th_verify_nodes_bst);
-  run_test<element8>(0, insert_test<element8>, th_verify_nodes_bst);
+  run_test<element1>(0, insert_test<element1>, th::bst::verify_nodes_bst);
+  run_test<element2>(0, insert_test<element2>, th::bst::verify_nodes_bst);
+  run_test<element4>(0, insert_test<element4>, th::bst::verify_nodes_bst);
+  run_test<element8>(0, insert_test<element8>, th::bst::verify_nodes_bst);
 }
 
 CATCH_TEST_CASE("Remove Test", "[ds][bstree]") {
   run_test_remove<element1>(0,
                             remove_test<element1>,
-                            th_verify_nodes_bst);
+                            th::bst::verify_nodes_bst);
   run_test_remove<element2>(0,
                             remove_test<element2>,
-                            th_verify_nodes_bst);
+                            th::bst::verify_nodes_bst);
   run_test_remove<element4>(0,
                             remove_test<element4>,
-                            th_verify_nodes_bst);
+                            th::bst::verify_nodes_bst);
   run_test_remove<element8>(0,
                             remove_test<element8>,
-                            th_verify_nodes_bst);
+                            th::bst::verify_nodes_bst);
 }
 
 CATCH_TEST_CASE("Print Test", "[ds][bstree]") {
   run_test<element8>(RCSW_DS_BSTREE_RB,
                      print_test<element8>,
-                     th_verify_nodes_bst);
+                     th::bst::verify_nodes_bst);
 }
 
 /* Red-black Tree tests */
 CATCH_TEST_CASE("RB Insert Test", "[ds][rbtree]") {
   run_test<element1>(RCSW_DS_BSTREE_RB,
                      insert_test<element1>,
-                     th_verify_nodes_rb);
+                     th::bst::verify_nodes_rb);
   run_test<element2>(RCSW_DS_BSTREE_RB,
                      insert_test<element2>,
-                     th_verify_nodes_rb);
+                     th::bst::verify_nodes_rb);
   run_test<element4>(RCSW_DS_BSTREE_RB,
                      insert_test<element4>,
-                     th_verify_nodes_rb);
+                     th::bst::verify_nodes_rb);
   run_test<element8>(RCSW_DS_BSTREE_RB,
                      insert_test<element8>,
-                     th_verify_nodes_rb);
+                     th::bst::verify_nodes_rb);
 }

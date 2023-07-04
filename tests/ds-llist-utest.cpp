@@ -39,12 +39,13 @@ static void run_test(llist_test1_t test) {
 
   struct llist_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<T>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -56,7 +57,7 @@ static void run_test(llist_test1_t test) {
         test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 template<typename T>
@@ -67,12 +68,13 @@ static void run_test2(llist_test2_t test) {
 
   struct llist_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<T>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -87,7 +89,7 @@ static void run_test2(llist_test2_t test) {
       } /* for(i..) */
     } /* for(j..) */
   } /* for(k..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************
@@ -113,7 +115,7 @@ static void insert_test(int len, struct llist_params * params) {
   }
   CATCH_REQUIRE(nullptr != list);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
 
@@ -142,8 +144,8 @@ static void insert_test(int len, struct llist_params * params) {
   llist_destroy(list);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* insert_test () */
 
 /**
@@ -157,7 +159,7 @@ static void clear_test(int len, struct llist_params * params) {
   list = llist_init(&mylist, params);
   CATCH_REQUIRE(nullptr != list);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 1; i <= len; i++) {
     T e = g.next();
     CATCH_REQUIRE(llist_append(list, &e) == OK);
@@ -169,8 +171,8 @@ static void clear_test(int len, struct llist_params * params) {
   llist_destroy(list);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* clear_test() */
 
 /**
@@ -184,7 +186,7 @@ static void delete_test(int len, struct llist_params * params) {
   list = llist_init(&mylist, params);
   CATCH_REQUIRE(nullptr != list);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 1; i <= len; i++) {
     T e = g.next();
 
@@ -194,8 +196,8 @@ static void delete_test(int len, struct llist_params * params) {
   llist_destroy(list);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* delete_test() */
 
 /**
@@ -210,7 +212,7 @@ static void copy_test(int len, struct llist_params * params) {
   list1 = llist_init(&mylist, params);
   CATCH_REQUIRE(nullptr != list1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
 
@@ -233,8 +235,8 @@ static void copy_test(int len, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* copy_test() */
 
 /**
@@ -255,7 +257,7 @@ static void copy2_test(int len, struct llist_params * params) {
 
   CATCH_REQUIRE(nullptr != list1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(llist_append(list1, &e) == OK);
@@ -264,11 +266,11 @@ static void copy2_test(int len, struct llist_params * params) {
 
   if ((params->flags & (RCSW_NOALLOC_HANDLE |
                         RCSW_NOALLOC_DATA | RCSW_NOALLOC_META))) {
-    list2 = llist_copy2(list1, th_filter_func<T>, 0, nullptr, nullptr);
+    list2 = llist_copy2(list1, th::filter_func<T>, 0, nullptr, nullptr);
     CATCH_REQUIRE(nullptr != list2);
 
     for (int i = 0; i < len; i++) {
-      if (th_filter_func<T>(&arr[i])) {
+      if (th::filter_func<T>(&arr[i])) {
         CATCH_REQUIRE(nullptr != llist_node_query(list2, &arr[i]));
       }
       CATCH_REQUIRE(nullptr != llist_node_query(list1, &arr[i]));
@@ -281,8 +283,8 @@ static void copy2_test(int len, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* copy2_test() */
 
 /**
@@ -303,7 +305,7 @@ static void filter_test(int len, struct llist_params * params) {
 
   CATCH_REQUIRE(nullptr != list1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(llist_append(list1, &e) == OK);
@@ -312,11 +314,11 @@ static void filter_test(int len, struct llist_params * params) {
 
   if ((params->flags & (RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA |
                          RCSW_NOALLOC_META))) {
-    list2 = llist_filter(list1, th_filter_func<T>, 0, nullptr, nullptr);
+    list2 = llist_filter(list1, th::filter_func<T>, 0, nullptr, nullptr);
     CATCH_REQUIRE(nullptr != list2);
 
     for (int i = 0; i < len; i++) {
-      if (th_filter_func<T>(&arr[i])) {
+      if (th::filter_func<T>(&arr[i])) {
         CATCH_REQUIRE(llist_node_query(list2, &arr[i]) != nullptr);
         CATCH_REQUIRE(llist_node_query(list1, &arr[i]) == nullptr);
       }
@@ -327,8 +329,8 @@ static void filter_test(int len, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* filter_test() */
 
 /**
@@ -348,17 +350,17 @@ static void filter2_test(int len, struct llist_params * params) {
 
   CATCH_REQUIRE(nullptr != list1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(llist_append(list1, &e) == OK);
     arr[i] = e;
   } /* for() */
 
-  CATCH_REQUIRE(llist_filter2(list1, th_filter_func<T>) == OK);
+  CATCH_REQUIRE(llist_filter2(list1, th::filter_func<T>) == OK);
 
   for (int i = 0; i < len; i++) {
-    if (th_filter_func<T>(&arr[i])) {
+    if (th::filter_func<T>(&arr[i])) {
       CATCH_REQUIRE(llist_node_query(list1, &arr[i]) == nullptr);
     }
   } /* for() */
@@ -366,8 +368,8 @@ static void filter2_test(int len, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);} /* filter2_test() */
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);} /* filter2_test() */
 
 /**
  * \brief Test of \ref llist_sort()
@@ -408,8 +410,8 @@ static void sort_test(int len, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* sort_test() */
 
 /**
@@ -516,8 +518,8 @@ static void splice_test(int len1, int len2, struct llist_params * params) {
   llist_destroy(list1);
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* splice_test() */
 
 /**
@@ -590,8 +592,8 @@ static void pool_test(int len, struct llist_params * params) {
   params->flags &= ~RCSW_DS_LLIST_DB_DISOWN;
 
   /* verify all DS_APP_DOMAIN data deallocated */
-  CATCH_REQUIRE(th_leak_check_data(params) == 0);
-  CATCH_REQUIRE(th_leak_check_nodes(params) == 0);
+  CATCH_REQUIRE(th::leak_check_data(params) == 0);
+  CATCH_REQUIRE(th::leak_check_nodes(params) == 0);
 } /* pool_test() */
 
 /**
@@ -610,7 +612,7 @@ static void inject_test(int len, struct llist_params * params) {
   }
   CATCH_REQUIRE(nullptr != list);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     sum += i;
@@ -618,7 +620,7 @@ static void inject_test(int len, struct llist_params * params) {
   } /* for() */
 
   int total = 0;
-  CATCH_REQUIRE(llist_inject(list, th_inject_func<T>, &total) == OK);
+  CATCH_REQUIRE(llist_inject(list, th::inject_func<T>, &total) == OK);
   CATCH_REQUIRE(total == sum);
 
   llist_destroy(list);
@@ -640,7 +642,7 @@ static void iter_test(int len, struct llist_params * params) {
   }
   CATCH_REQUIRE(nullptr != list);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   /* for easy comparison when reverse iterating */
 
@@ -653,7 +655,7 @@ static void iter_test(int len, struct llist_params * params) {
 
   struct ds_iterator * iter = ds_filter_init(list,
                                              ekRCSW_DS_LLIST,
-                                             th_iter_func<T>);
+                                             th::iter_func<T>);
   CATCH_REQUIRE(nullptr != iter);
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);

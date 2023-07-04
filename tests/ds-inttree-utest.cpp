@@ -43,9 +43,10 @@ static void run_test(inttree_test_t test) {
   params.elt_size = sizeof(struct interval_data);
   params.max_elts = TH_NUM_ITEMS;
   params.cmpkey = inttree_cmp_key;
-  th_ds_init(&params);
+  th::ds_init(&params);
 
-    uint32_t flags[] = {
+  uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -59,7 +60,7 @@ static void run_test(inttree_test_t test) {
       test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************
@@ -142,7 +143,7 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
 
     n_elements = tree->current;
     CATCH_REQUIRE(bstree_traverse(tree,
-                                  (int(*)(const bstree*, bstree_node*))th_verify_nodes_int,
+                                  (th::bst::bst_verify_cb)th::bst::verify_nodes_int,
                                   ekBSTREE_TRAVERSE_INORDER) == OK);
   } /* for() */
 

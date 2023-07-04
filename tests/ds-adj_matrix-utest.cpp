@@ -34,11 +34,12 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
   params.elt_size = sizeof(T);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
 
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
   for (size_t m = 0; m < 2; ++m) {
     for (size_t k = 0; k < 2; ++k) {
       for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
@@ -55,7 +56,7 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
       } /* for(i..) */
     } /* for(k..) */
   } /* for(m..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************

@@ -29,14 +29,15 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
 
   struct darray_params params;
   params.flags = 0;
-  params.cmpe = th_cmpe<T>;
-  params.printe = th_printe<T>;
+  params.cmpe = th::cmpe<T>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   params.init_size = 0;
 
-  CATCH_REQUIRE(th_ds_init(&params) == OK);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_DS_SORTED,
     RCSW_DS_ORDERED,
     RCSW_NOALLOC_HANDLE,
@@ -49,7 +50,7 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
       test(j, &params);
     } /* for(i...) */
   } /* for(j...) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************
@@ -70,7 +71,7 @@ static void addremove_test(int len, struct darray_params *params) {
 
   T arr[TH_NUM_ITEMS];
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
@@ -87,10 +88,10 @@ static void addremove_test(int len, struct darray_params *params) {
     }
   } /* for() */
 
-  CATCH_REQUIRE(darray_n_elts(_arr) == (size_t)len);
+  CATCH_REQUIRE(darray_size(_arr) == (size_t)len);
 
   if (!(_arr->flags & RCSW_NOALLOC_DATA)) {
-    CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr) * 2));
+    CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr) * 2));
   }
 
   darray_print(_arr);
@@ -116,7 +117,7 @@ static void delete_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE(nullptr != _arr);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 1; i <= len; i++) {
     T e = g.next();
@@ -139,14 +140,14 @@ static void delete_test(int len, struct darray_params *params) {
 
   if (len / 2 > 0) {
     if (_arr->flags & RCSW_NOALLOC_DATA) {
-      CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_n_elts(_arr)/ 2));
+      CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_size(_arr)/ 2));
     } else {
-      CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr)/ 2));
-      CATCH_REQUIRE(darray_n_elts(_arr) == (size_t)(len / 2 - 1));
+      CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr)/ 2));
+      CATCH_REQUIRE(darray_size(_arr) == (size_t)(len / 2 - 1));
     }
   } else {
-    CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr)/ 2));
-    CATCH_REQUIRE(darray_n_elts(_arr) == 0);
+    CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr)/ 2));
+    CATCH_REQUIRE(darray_size(_arr) == 0);
   }
   darray_destroy(_arr);
 } /* delete_test() */
@@ -166,7 +167,7 @@ static void contains_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE(nullptr != _arr);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
@@ -195,7 +196,7 @@ static void filter_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE(nullptr != _arr1);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
@@ -203,10 +204,10 @@ static void filter_test(int len, struct darray_params *params) {
   }
 
   if ((params->flags & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_HANDLE))) {
-    _arr2 = darray_filter(_arr1, th_filter_func<T>, 0, nullptr);
+    _arr2 = darray_filter(_arr1, th::filter_func<T>, 0, nullptr);
     CATCH_REQUIRE(nullptr != _arr2);
     for (int i = 0; i < len; i++) {
-      if (th_filter_func<T>(&arr[i])) {
+      if (th::filter_func<T>(&arr[i])) {
         CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) != -1);
         CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) == -1);
       } else {
@@ -233,7 +234,7 @@ static void copy_test(int len, struct darray_params *params) {
   }
   CATCH_REQUIRE(nullptr != _arr1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
@@ -271,7 +272,7 @@ static void sort_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE((nullptr != _arr1));
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -308,7 +309,7 @@ static void binarysearch_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE(nullptr != _arr1);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
@@ -336,7 +337,7 @@ static void inject_test(int len, struct darray_params * params) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   int sum = 0;
   for (int i = 0; i < len; i++) {
@@ -346,7 +347,7 @@ static void inject_test(int len, struct darray_params * params) {
   }
 
   int total = 0;
-  CATCH_REQUIRE(darray_inject(arr, th_inject_func<T>, &total) == OK);
+  CATCH_REQUIRE(darray_inject(arr, th::inject_func<T>, &total) == OK);
   CATCH_REQUIRE(total == sum);
 
   darray_destroy(arr);
@@ -364,7 +365,7 @@ static void iter_test(int len, struct darray_params * params) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -374,7 +375,7 @@ static void iter_test(int len, struct darray_params * params) {
   T * e;
   struct ds_iterator * iter = ds_filter_init(arr,
                                              ekRCSW_DS_DARRAY,
-                                             th_iter_func<T>);
+                                             th::iter_func<T>);
   CATCH_REQUIRE(nullptr != iter);
 
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
@@ -389,7 +390,7 @@ static void iter_test(int len, struct darray_params * params) {
     CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
     count++;
   }
-  CATCH_REQUIRE(count == darray_n_elts(arr));
+  CATCH_REQUIRE(count == darray_size(arr));
 
   iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekRCSW_DS_ITER_BACKWARD);
   CATCH_REQUIRE(nullptr != iter);
@@ -399,7 +400,7 @@ static void iter_test(int len, struct darray_params * params) {
     CATCH_REQUIRE(e->value1 == len - (decltype(T::value1))count - 1);
     count++;
   }
-  CATCH_REQUIRE(count == darray_n_elts(arr));
+  CATCH_REQUIRE(count == darray_size(arr));
 
   darray_destroy(arr);
 } /* iter_test() */
@@ -416,14 +417,14 @@ static void map_test(int len, struct darray_params * params) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  CATCH_REQUIRE(darray_map(arr, th_map_func<T>) == OK);
+  CATCH_REQUIRE(darray_map(arr, th::map_func<T>) == OK);
   for (int i = 0; i < len; ++i) {
     T e;
     CATCH_REQUIRE(darray_idx_serve(arr, &e, i) == OK);
@@ -448,7 +449,7 @@ static void print_test(int len, struct darray_params *params) {
 
   CATCH_REQUIRE(nullptr != _arr);
 
-  element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();

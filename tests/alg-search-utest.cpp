@@ -26,15 +26,15 @@
  ******************************************************************************/
 template<typename T>
 void test_bsearch(size_t n_elts) {
-  struct element_set<T> data1(n_elts);
+  th::element_set<T> data1(n_elts);
   data1.data_gen();
 
-  qsort_rec(data1.elts.data(), 0, n_elts - 1, sizeof(T), th_cmpe<T>);
+  qsort_rec(data1.elts.data(), 0, n_elts - 1, sizeof(T), th::cmpe<T>);
 
   for (int i = 0; i < (int)n_elts - 1; ++i) {
     CATCH_REQUIRE(bsearch_iter(data1.elts.data(),
                                &data1.elts[i],
-                               th_cmpe<T>,
+                               th::cmpe<T>,
                                sizeof(T),
                                0,
                                data1.elts.size() - 1) != -1);

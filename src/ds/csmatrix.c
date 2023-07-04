@@ -103,7 +103,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .elt_size = sizeof(int),
       .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->outer_starts, &count_params));
-  RCSW_CHECK(OK == darray_set_n_elts(&matrix->outer_starts, params->n_rows + 1));
+  RCSW_CHECK(OK == darray_set_size(&matrix->outer_starts, params->n_rows + 1));
   struct darray_params coeff_params = {
                        .init_size = params->n_nz_elts,
       .cmpe = NULL,
@@ -115,7 +115,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
   ER_DEBUG("n_rows=%zu n_nz_elts=%zu flags=0x%08x",
            csmatrix_n_rows(matrix),
-           darray_n_elts(&matrix->outer_starts),
+           darray_size(&matrix->outer_starts),
            matrix->flags);
 
   matrix->csizes = calloc(params->n_cols, sizeof(int));
@@ -215,7 +215,7 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
    */
   int* start = csmatrix_outer_starts(matrix);
   if (!sequential_insertions) {
-    for (size_t i = row + 1; i < darray_n_elts(&matrix->outer_starts); ++i) {
+    for (size_t i = row + 1; i < darray_size(&matrix->outer_starts); ++i) {
       (*(start + i))++;
     } /* for(j..) */
   } else {
@@ -227,7 +227,7 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
     index++;
     darray_data_set(&matrix->outer_starts, row + 1, &index);
 
-    if (row + 1 < darray_n_elts(&matrix->outer_starts)) {
+    if (row + 1 < darray_size(&matrix->outer_starts)) {
       darray_data_set(&matrix->outer_starts, row + 2, &index);
     }
   }
@@ -245,7 +245,7 @@ error:
 int csmatrix_inner_index_get(const struct csmatrix* const matrix,
                              size_t row,
                              size_t col) {
-  RCSW_FPC_NV(0, NULL != matrix, row < darray_n_elts(&matrix->outer_starts));
+  RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
 
   size_t row_start = *(int*)darray_data_get(&matrix->outer_starts, row);
   size_t rsize = csmatrix_rsize(matrix, row);
@@ -270,7 +270,7 @@ status_t csmatrix_entry_set(struct csmatrix* const matrix,
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               NULL != e,
-              row < darray_n_elts(&matrix->outer_starts));
+              row < darray_size(&matrix->outer_starts));
 
   int i = csmatrix_inner_index_get(matrix, row, col);
   RCSW_CHECK(-1 != i);
@@ -284,7 +284,7 @@ error:
 void* csmatrix_entry_get(const struct csmatrix* const matrix,
                          size_t row,
                          size_t col) {
-  RCSW_FPC_NV(0, NULL != matrix, row < darray_n_elts(&matrix->outer_starts));
+  RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
 
   int index = csmatrix_inner_index_get(matrix, row, col);
   RCSW_CHECK(-1 != index);
@@ -303,9 +303,9 @@ csmatrix_resize(struct csmatrix* const matrix, size_t n_rows, size_t n_nz_elts) 
   /* RCSW_CHECK(OK == darray_resize(&matrix->inner_indices, n_nz_elts)); */
   /* RCSW_CHECK(OK == darray_resize(&matrix->values, n_nz_elts)); */
 
-  RCSW_CHECK(OK == darray_set_n_elts(&matrix->outer_starts, n_rows + 1));
-  RCSW_CHECK(OK == darray_set_n_elts(&matrix->inner_indices, n_nz_elts));
-  RCSW_CHECK(OK == darray_set_n_elts(&matrix->values, n_nz_elts));
+  RCSW_CHECK(OK == darray_set_size(&matrix->outer_starts, n_rows + 1));
+  RCSW_CHECK(OK == darray_set_size(&matrix->inner_indices, n_nz_elts));
+  RCSW_CHECK(OK == darray_set_size(&matrix->values, n_nz_elts));
   return OK;
 
 error:
@@ -335,8 +335,8 @@ status_t csmatrix_vmult(const struct csmatrix* const matrix,
                         const struct darray* const vector_in,
                         struct darray* const vector_out) {
   /* RCSW_FPC_NV(ERROR, NULL != matrix, NULL != vector_in, NULL != vector_out, */
-  /*           csmatrix_n_rows(matrix) == darray_n_elts(vector_out), */
-  /*           csmatrix_n_cols(matrix) == darray_n_elts(vector_in)); */
+  /*           csmatrix_n_rows(matrix) == darray_size(vector_out), */
+  /*           csmatrix_n_cols(matrix) == darray_size(vector_in)); */
 
   for (size_t i = 0; i < csmatrix_n_rows(matrix); ++i) {
     double res = 0;
@@ -373,7 +373,7 @@ status_t csmatrix_cols_normalize(struct csmatrix* const matrix) {
       DPRINTF("Column %zu/%zu (%zu)\n",
               i,
               csmatrix_n_cols(matrix),
-              llist_n_elts(matrix->cols + i));
+              llist_size(matrix->cols + i));
     }
     double total = 0;
 
@@ -401,7 +401,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
   RCSW_FPC_NV(NULL, NULL != matrix);
 
   struct csmatrix_params params = { .n_rows = csmatrix_n_cols(matrix),
-                                    .n_nz_elts = csmatrix_n_elts(matrix),
+                                    .n_nz_elts = csmatrix_size(matrix),
                                     .n_cols = csmatrix_n_rows(matrix),
                                     .type = matrix->type,
                                     .flags = 0 };
@@ -418,7 +418,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
       DPRINTF("Column %zu/%zu (%zu)\n",
               i,
               csmatrix_n_cols(matrix),
-              llist_n_elts(matrix->cols + i));
+              llist_size(matrix->cols + i));
     }
 
     LLIST_FOREACH(matrix->cols + i, next, col) {

@@ -141,7 +141,7 @@ static inline size_t csmatrix_n_rows(
      * Last element does not correspond to a row--just there to make math
      * simple
      */
-    return darray_n_elts(&matrix->outer_starts) - 1;
+    return darray_size(&matrix->outer_starts) - 1;
 } /* csmatrix_n_rows() */
 
 /**
@@ -174,12 +174,12 @@ static inline size_t csmatrix_n_cols(const struct csmatrix* const matrix) {
     return matrix->n_cols;
 } /* csmatrix_n_eff_cols() */
 
-static inline size_t csmatrix_n_elts(
+static inline size_t csmatrix_size(
     const struct csmatrix* const matrix) {
     RCSW_FPC_NV(0, NULL != matrix);
     return (size_t)*(int*)darray_data_get(&matrix->outer_starts,
-                                          darray_n_elts(&matrix->outer_starts)-1);
-} /* csmatrix_n_elts() */
+                                          darray_size(&matrix->outer_starts)-1);
+} /* csmatrix_size() */
 
 static inline int* csmatrix_row(const struct csmatrix* const matrix,
                                 size_t row) {
@@ -199,7 +199,7 @@ static inline int* csmatrix_row(const struct csmatrix* const matrix,
  */
 static inline size_t csmatrix_rsize(
     const struct csmatrix* const matrix, size_t row) {
-    RCSW_FPC_NV(0, NULL != matrix, row < darray_n_elts(&matrix->outer_starts));
+    RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
     size_t row_start = (size_t)*(int*)darray_data_get(&matrix->outer_starts,
                                                       row);
     size_t row_end = (size_t)*(int*)darray_data_get(&matrix->outer_starts,

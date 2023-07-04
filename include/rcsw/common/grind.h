@@ -411,7 +411,7 @@ void grind_reset(const struct grinder * const the_grinder,
  * \return The index the grindee module name maps to, or -1 on ERROR
  */
 int grindee_lookup(const struct grinder * const the_grinder,
-                   const char *const name);
+                   const char *const name) RCSW_PURE;
 
 /**
  * \brief Find the largest datapoint of a \ref grindee.

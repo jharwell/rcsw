@@ -12,6 +12,11 @@
  * Constant Definitions
  ******************************************************************************/
 /**
+ * \brief Declare that no flags are passed.
+ */
+#define RCSW_NONE           0x0
+
+/**
  * \brief Declare that space for some structure is provided by the application.
  *
  * Applicable to xx_init() functions with an \p xx_in parameter which is ignored

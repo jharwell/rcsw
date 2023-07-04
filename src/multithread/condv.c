@@ -42,7 +42,7 @@ void condv_destroy(struct condv* const cv) {
   RCSW_FPC_V(NULL != cv);
 
   pthread_cond_destroy(&cv->impl);
-  if (cv->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(cv->flags & RCSW_NOALLOC_HANDLE)) {
     free(cv);
   }
 } /* condv_destroy() */

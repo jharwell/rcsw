@@ -78,9 +78,9 @@ static inline bool_t fifo_isempty(const struct fifo* const fifo) {
  * \return # elements in FIFO, or 0 on ERROR.
  */
 
-static inline size_t fifo_n_elts(const struct fifo* const fifo) {
+static inline size_t fifo_size(const struct fifo* const fifo) {
     RCSW_FPC_NV(0, NULL != fifo);
-    return rbuffer_n_elts(&fifo->rb);
+    return rbuffer_size(&fifo->rb);
 }
 
 /**
@@ -160,7 +160,7 @@ status_t fifo_add(struct fifo * fifo, const void * e);
  * \brief Dequeue an element from the FIFO.
  *
  * \param fifo The FIFO handle.
- * \param e The element to dequeue into from the FIFO.
+ * \param e The element to dequeue into from the FIFO. Can be NULL.
  *
  * \return \ref status_t.
  */

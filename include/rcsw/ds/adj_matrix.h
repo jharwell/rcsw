@@ -84,7 +84,7 @@ struct adj_matrix {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -140,9 +140,9 @@ static inline bool_t adj_matrix_edge_query(struct adj_matrix* const matrix,
               u < matrix->n_vertices,
               v < matrix->n_vertices);
   if (matrix->is_weighted) {
-    return (bool_t)(!isnan(*(double*)adj_matrix_access(matrix, u, v)));
+    return (!isnan(*(double*)adj_matrix_access(matrix, u, v)));
   } else {
-    return (bool_t)!util_zchk(adj_matrix_access(matrix, u, v),
+    return !util_zchk(adj_matrix_access(matrix, u, v),
                               matrix->elt_size);
   }
 }
@@ -179,7 +179,7 @@ static inline void adj_matrix_print(const struct adj_matrix* const matrix) {
  */
 static inline bool_t adj_matrix_isempty(const struct adj_matrix* matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
-  return (bool_t)(0 == matrix->n_edges);
+  return (0 == matrix->n_edges);
 }
 
 /**
@@ -193,10 +193,6 @@ static inline bool_t adj_matrix_isempty(const struct adj_matrix* matrix) {
 static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
   return matrix_transpose(&matrix->matrix);
 }
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
 
 /**
  * \brief Initialize an adjacency matrix.

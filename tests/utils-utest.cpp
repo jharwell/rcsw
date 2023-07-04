@@ -237,7 +237,7 @@ CATCH_TEST_CASE("time Test", "[utils]") {
 }
 
 CATCH_TEST_CASE("checksum Test", "[utils]") {
-  struct element_set<struct element1> data(100);
+  th::element_set<struct element1> data(100);
   data.data_gen();
 
   /*

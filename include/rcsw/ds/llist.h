@@ -112,8 +112,10 @@ struct llist {
     for ((VAR) = _node = (START); _node != NULL; (VAR) = _node = _node->DIR)
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Determine if the \ref llist is currently full.
  *
@@ -123,7 +125,7 @@ struct llist {
  */
 static inline bool_t llist_isfull(const struct llist* const list) {
   RCSW_FPC_NV(false, NULL != list);
-  return (bool_t)(list->current == (size_t)list->max_elts);
+  return (list->current == (size_t)list->max_elts);
 }
 
 /**
@@ -135,7 +137,7 @@ static inline bool_t llist_isfull(const struct llist* const list) {
  */
 static inline bool_t llist_isempty(const struct llist* const list) {
   RCSW_FPC_NV(false, NULL != list);
-  return (bool_t)(list->current == 0);
+  return (list->current == 0);
 }
 
 /**
@@ -146,7 +148,7 @@ static inline bool_t llist_isempty(const struct llist* const list) {
  * \return # elements in linked list, or 0 on ERROR.
  */
 
-static inline size_t llist_n_elts(const struct llist* const list) {
+static inline size_t llist_size(const struct llist* const list) {
   RCSW_FPC_NV(0, NULL != list);
   return list->current;
 }
@@ -178,11 +180,6 @@ static inline size_t llist_element_space(size_t max_elts, size_t elt_size) {
 static inline size_t llist_meta_space(size_t max_elts) {
   return ds_elt_space_with_meta(max_elts, sizeof(struct llist_node));
 }
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Initialize a llist.

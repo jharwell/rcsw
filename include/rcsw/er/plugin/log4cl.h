@@ -58,8 +58,8 @@
     M_DS_LLIST,                                 \
     M_DS_HASHMAP,                               \
     M_DS_RBUFFER,                               \
-    M_MT_QUEUE,                                 \
-    M_DS_MPOOL,                                 \
+    M_MT_PCQUEUE,                               \
+    M_MT_MPOOL,                                 \
     M_UTILS,                                    \
     M_PULSE,                                    \
     M_STDIO,                                    \

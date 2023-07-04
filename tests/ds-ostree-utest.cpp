@@ -40,10 +40,11 @@ static void run_test(ostree_test_t test) {
   params.flags = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
   params.elt_size = sizeof(struct element8);
   params.max_elts = TH_NUM_ITEMS;
-  params.cmpkey = th_cmpe<element8>;
+  params.cmpkey = th::cmpe<element8>;
 
-  th_ds_init(&params);
+  th::ds_init(&params);
   uint32_t flags[] = {
+    RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -54,7 +55,7 @@ static void run_test(ostree_test_t test) {
       test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
-  th_ds_shutdown(&params);
+  th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************

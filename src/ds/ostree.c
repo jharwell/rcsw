@@ -37,7 +37,7 @@ struct ostree_node* ostree_select(const struct bstree* const tree,
               NULL != tree,
               NULL != node_in,
               !bstree_isempty(tree),
-              i <= (int)bstree_n_elts(tree) - 1);
+              i <= (int)bstree_size(tree) - 1);
 
   if (node_in == (struct ostree_node*)tree->nil) {
     return NULL;

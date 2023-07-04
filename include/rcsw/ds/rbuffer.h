@@ -74,10 +74,15 @@ struct rbuffer {
 };
 
 /*******************************************************************************
- * Macros
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Determine if the ringbuffer is currently full.
+ *
+ * \note If \ref RCSW_DS_RBUFFER_AS_FIFO is not passed (i.e., regular
+ * ringbuffers), the concept of "full" doesn't really make sense.
  *
  * \param rb The ringbuffer handle.
  *
@@ -85,7 +90,8 @@ struct rbuffer {
  */
 static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
   RCSW_FPC_NV(false, NULL != rb);
-  return (bool_t)(rb->current == rb->max_elts);
+
+  return rb->current == rb->max_elts;
 }
 
 /**
@@ -97,7 +103,7 @@ static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
  */
 static inline bool_t rbuffer_isempty(const struct rbuffer* const rb) {
   RCSW_FPC_NV(false, NULL != rb);
-  return (bool_t)(rb->current == 0);
+  return (rb->current == 0);
 }
 
 /**
@@ -107,7 +113,7 @@ static inline bool_t rbuffer_isempty(const struct rbuffer* const rb) {
  *
  * \return # elements in ringbuffer, or 0 on ERROR.
  */
-static inline size_t rbuffer_n_elts(const struct rbuffer* const rb) {
+static inline size_t rbuffer_size(const struct rbuffer* const rb) {
   RCSW_FPC_NV(0, NULL != rb);
   return rb->current;
 }
@@ -137,11 +143,6 @@ static inline size_t rbuffer_capacity(const struct rbuffer* const rb) {
 static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
   return ds_elt_space_simple(max_elts, elt_size);
 }
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Initialize a ringbuffer.
@@ -206,7 +207,7 @@ status_t rbuffer_remove(struct rbuffer * rb, void * e);
  * \param idx The index. If >= max # elements for rbuffer, it is wrapped around
  *            (this IS a ringbuffer after all).
  *
- * \note if \p idx is > rbuffer_n_elts() and < max_elts, then this function
+ * \note if \p idx is > rbuffer_size() and < max_elts, then this function
  * _might_ return potentially uninitialized/garbage/stale data past the end of
  * the valid data currently in the rbuffer. Whether or not this is _actually_
  * bad data depends on your application.
