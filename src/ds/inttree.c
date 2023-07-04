@@ -29,7 +29,7 @@ BEGIN_C_DECLS
  * \param a Interval #1
  * \param b Interval #2
  *
- * \return TRUE if intervals overlap, FALSE otherwise
+ * \return true if intervals overlap, false otherwise
  */
 static bool_t inttree_cmp_overlap(const void* a, const void* b) {
   const struct interval_data* a_p = a;

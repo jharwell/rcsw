@@ -31,9 +31,9 @@ status_t mt_rdwr_lock_init(mt_rdwr_lock_t* const rdwr_in, uint32_t flags) {
   rdwr->flags = flags;
 
   rdwr->n_readers = 0;
-  RCSW_CHECK(NULL != mt_csem_init(&rdwr->order, FALSE, 1, MT_APP_DOMAIN_MEM));
-  RCSW_CHECK(NULL != mt_csem_init(&rdwr->access, FALSE, 1, MT_APP_DOMAIN_MEM));
-  RCSW_CHECK(NULL != mt_csem_init(&rdwr->read, FALSE, 1, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK(NULL != mt_csem_init(&rdwr->order, false, 1, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK(NULL != mt_csem_init(&rdwr->access, false, 1, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK(NULL != mt_csem_init(&rdwr->read, false, 1, MT_APP_DOMAIN_MEM));
 
   return OK;
 

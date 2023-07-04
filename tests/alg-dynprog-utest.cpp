@@ -151,7 +151,7 @@ CATCH_TEST_CASE("Alphabet Parenthesization", "[alg][Dynamic Programming]") {
   char x2[5]={'b','a','a','b','\0'};
   char x3[3]={'a','b','\0'};
   char r[16];
-  CATCH_REQUIRE(TRUE == str_is_parenthesizable(x1, r,'a', th_multiply_cb));
-  CATCH_REQUIRE(FALSE == str_is_parenthesizable(x2, r, 'a', th_multiply_cb));
-  CATCH_REQUIRE(TRUE == str_is_parenthesizable(x3, r, 'a', th_multiply_cb));
+  CATCH_REQUIRE(true == str_is_parenthesizable(x1, r,'a', th_multiply_cb));
+  CATCH_REQUIRE(false == str_is_parenthesizable(x2, r, 'a', th_multiply_cb));
+  CATCH_REQUIRE(true == str_is_parenthesizable(x3, r, 'a', th_multiply_cb));
 }

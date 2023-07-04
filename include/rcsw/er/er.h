@@ -1,5 +1,5 @@
 /**
- * \file er.hpp
+ * \file er.h
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *

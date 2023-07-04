@@ -158,10 +158,10 @@ status_t mcm_opt_report(const struct mcm_optimizer* mcm, size_t* ordering) {
 
 status_t mcm_opt_print(const struct mcm_optimizer* mcm) {
   RCSW_FPC_NV(ERROR, NULL != mcm);
-  printf("Minimum scalar multiplications: %zu\n", mcm->min_mults);
-  printf("Parenthesization:\n");
+  DPRINTF("Minimum scalar multiplications: %zu\n", mcm->min_mults);
+  DPRINTF("Parenthesization:\n");
   mcm_opt_print_parens(mcm->route, 1, mcm->size - 1, mcm->size);
-  printf("\n");
+  DPRINTF("\n");
   return OK;
 } /* mcm_opt_print() */
 
@@ -171,13 +171,13 @@ status_t mcm_opt_print(const struct mcm_optimizer* mcm) {
 static void
 mcm_opt_print_parens(const size_t* arr, size_t i, size_t j, size_t length) {
   if (i == j) {
-    printf("A%zu", i);
+    DPRINTF("A%zu", i);
   } else {
-    printf("(");
+    DPRINTF("(");
     size_t k = arr[i + length * j];
     mcm_opt_print_parens(arr, i, k, length);
     mcm_opt_print_parens(arr, k + 1, j, length);
-    printf(")");
+    DPRINTF(")");
   }
 } /* mcm_opt_print_parens() */
 

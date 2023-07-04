@@ -112,7 +112,7 @@
 #define RCSW_FPC_ABORT_NV(X, v) RCSW_FPC_ASSERT(X)
 
 /**
- * \def RCSW_FPC_NV_ABORT_V(X)
+ * \def RCSW_FPC_ABORT_V(X)
  *
  * Check a single function pre/post condition \a X, aborting if the condition
  * is not met.

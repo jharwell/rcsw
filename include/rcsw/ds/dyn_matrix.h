@@ -1,22 +1,6 @@
 /**
- * \file dynamic_matrix.h
+ * \file dyn_matrix.h
  * \ingroup ds
- * \brief Implementation of dynamic matrix.
- *
- * Dynamic in the sense that the matrix dimensions can be changed after
- * initialization. The matrix can grow to be any size, but an initial size can
- * be specified during initialization, as the resizing operation can be very
- * expensive, depending on the current size of the matrix. Assumes row-major
- * order (this is C after all).
- *
- * Should only be used for applications where the matrix is dense, or when the
- * dimensions of the matrix are small (if the dimensions are large AND the
- * matrix is sparse, it will definitely be really inefficient, and possibly
- * won't even fit into memory). In addition, this data structure should really
- * only be used if you can guarantee that resizing the matrix happens
- * infrequently.
- *
- * The matrix is never resized autonomously.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -32,17 +16,28 @@
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-
-/*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
 /**
  * \brief Representation of a dynamically-sized matrix using a dynamic array row
  * vectors, with each row vector also being a dynamic array.
+ *
+ * Dynamic in the sense that the matrix dimensions can be changed after
+ * initialization. The matrix can grow to be any size, but an initial size can
+ * be specified during initialization, as the resizing operation can be very
+ * expensive, depending on the current size of the matrix. Assumes row-major
+ * order (this is C after all).
+ *
+ * Should only be used for applications where the matrix is dense, or when the
+ * dimensions of the matrix are small (if the dimensions are large AND the
+ * matrix is sparse, it will definitely be really inefficient, and possibly
+ * won't even fit into memory). In addition, this data structure should really
+ * only be used if you can guarantee that resizing the matrix happens
+ * infrequently.
+ *
+ * The matrix is never resized autonomously.
  */
-struct dynamic_matrix {
+struct dyn_matrix {
   struct darray* rows;  /// Vector of row vectors.
   size_t n_rows;        /// # of rows in matrix.
   size_t n_cols;        /// # of columns in matrix.
@@ -59,8 +54,10 @@ struct dynamic_matrix {
 BEGIN_C_DECLS
 
 /**
- * \brief Access an element within a dynamic matrix. The element must exist
- * within the matrix (i.e. this function does not expand the matrix).
+ * \brief Access an element within a dynamic matrix.
+ *
+ * The element must exist within the matrix (i.e. this function does not expand
+ * the matrix).
  *
  * \param matrix The matrix handle.
  * \param u The row within the matrix.
@@ -68,9 +65,11 @@ BEGIN_C_DECLS
  *
  * \return Reference to element, or NULL if an error occurred.
  */
-static inline void* dynamic_matrix_access(const struct dynamic_matrix* const matrix,
+static inline void* dyn_matrix_access(const struct dyn_matrix* const matrix,
                                           size_t u, size_t v) {
-    RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_rows,
+    RCSW_FPC_NV(NULL,
+                NULL != matrix,
+                u < matrix->n_rows,
               v < matrix->n_cols);
     return darray_data_get((struct darray*)darray_data_get(matrix->rows, u), v);
 }
@@ -85,8 +84,9 @@ static inline void* dynamic_matrix_access(const struct dynamic_matrix* const mat
  *
  * \return The # of bytes required.
  */
-static inline size_t dynamic_matrix_space(size_t n_rows, size_t n_cols,
-                                         size_t elt_size) {
+static inline size_t dyn_matrix_space(size_t n_rows,
+                                      size_t n_cols,
+                                      size_t elt_size) {
   return darray_element_space(n_cols, elt_size) * n_rows +
       darray_element_space(n_rows, sizeof(struct darray));
 }
@@ -100,71 +100,85 @@ static inline size_t dynamic_matrix_space(size_t n_rows, size_t n_cols,
  *
  * \return \ref status_t
  */
-static inline status_t dynamic_matrix_clear(struct dynamic_matrix* const matrix,
+static inline status_t dyn_matrix_clear(struct dyn_matrix* const matrix,
                                            size_t u, size_t v) {
-    RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
-    ds_elt_clear(dynamic_matrix_access(matrix, u, v), matrix->elt_size);
+    RCSW_FPC_NV(ERROR,
+                NULL != matrix,
+                u < matrix->n_rows,
+                v < matrix->n_cols);
+    ds_elt_clear(dyn_matrix_access(matrix, u, v), matrix->elt_size);
     return OK;
 }
 
+static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) {
+  RCSW_FPC_NV(false, NULL != matrix);
+
+  return matrix->n_cols == matrix->n_rows;
+}
+
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Initialize a dynamic matrix.
  *
  * \param matrix_in An application allocated handle for the dynamic matrix. Can
- * be NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
+ *                  be NULL if \ref RCSW_DS_NOALLOC_HANDLE is passed as a flag.
+ *
  * \param params The initialization parameters.
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-struct dynamic_matrix* dynamic_matrix_init(struct dynamic_matrix* matrix_in,
-                                           const struct ds_params* params) RCSW_CHECK_RET;
+struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
+                                   const struct ds_params* params) RCSW_CHECK_RET;
 
 /**
- * \brief Destroy a dynamic matrix. Any further use of the handle is undefined
- * after this function is called.
+ * \brief Destroy a dynamic matrix.
+ *
+ * Any further use of the handle is undefined after this function is called.
  *
  * \param matrix The matrix handle.
  */
-void dynamic_matrix_destroy(struct dynamic_matrix* matrix);
+void dyn_matrix_destroy(struct dyn_matrix* matrix);
 
 /**
- * \brief Transpose a dynamic matrix. Currently only works if the matrix is
- * square.
+ * \brief Transpose a dynamic matrix.
+ *
+ * \note Currently only works if the matrix is square.
  *
  * \param matrix The matrix handle.
  *
  * \return \ref status_t
  */
-status_t dynamic_matrix_transpose(struct dynamic_matrix* matrix);
+status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
 
 /**
- * \brief Print a dynamic matrix, by calling the printe() function on each
- * element in the matrix.
+ * \brief Print a dynamic matrix.
+ *
+ * Calls the printe() function on each element in the matrix.
  *
  * \param matrix The matrix handle.
  */
-void dynamic_matrix_print(const struct dynamic_matrix* matrix);
+void dyn_matrix_print(const struct dyn_matrix* matrix);
 
 /**
  * \brief Resize a dynamic matrix manually.
  *
  * \param matrix The matrix handle.
- * \param u The desired # of rows (can be less than the current #, in which case
- *          no expansion of rows is performed).
- * \param v The desired # of columns (can be less than the current #, in which
- * case no expansion of columns in performed).
+ * \param u The desired # of rows. Can be <,>,= the current #. If =, no action
+ *          is performed.
+ *
+ * \param v The desired # of columns. Can be <,>,= the current #. If =, no
+ *          action is performed.
  *
  * \return \ref status_t
  */
-status_t dynamic_matrix_resize(struct dynamic_matrix* matrix, size_t u,
-                               size_t v);
+status_t dyn_matrix_resize(struct dyn_matrix* matrix, size_t u, size_t v);
 /**
- * \brief Set an element in the dynamic matrix to a specific value. If the
- * row/column is outside the current bounds of the matrix, the matrix will be
- * resized to accommodate.
+ * \brief Set an element in the dynamic matrix to a specific value.
+ *
+ * If the row/column is outside the current bounds of the matrix, the matrix
+ * will be resized to accommodate.
  *
  * \param matrix The matrix handle.
  * \param u Element row index.
@@ -173,8 +187,9 @@ status_t dynamic_matrix_resize(struct dynamic_matrix* matrix, size_t u,
  *
  * \return \ref status_t
  */
-status_t dynamic_matrix_set(struct dynamic_matrix* matrix, size_t u,
-                            size_t v, const void *w);
+status_t dyn_matrix_set(struct dyn_matrix* matrix,
+                        size_t u,
+                        size_t v,
+                        const void *w);
 
 END_C_DECLS
-

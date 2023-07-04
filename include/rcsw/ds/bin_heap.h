@@ -60,7 +60,7 @@ struct bin_heap {
  * \return \ref bool_t
  */
 static inline bool_t bin_heap_isfull(const struct bin_heap* const heap) {
-    RCSW_FPC_NV(FALSE, NULL != heap);
+    RCSW_FPC_NV(false, NULL != heap);
     return darray_isfull(&heap->arr);
 }
 
@@ -72,7 +72,7 @@ static inline bool_t bin_heap_isfull(const struct bin_heap* const heap) {
  * \return \ref bool_t
  */
 static inline bool_t bin_heap_isempty(const struct bin_heap* const heap) {
-    RCSW_FPC_NV(FALSE, NULL != heap);
+    RCSW_FPC_NV(false, NULL != heap);
     return (bool_t)(darray_n_elts(&heap->arr) == 1);
 }
 

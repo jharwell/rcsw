@@ -95,12 +95,12 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   tree->nil = bstree_node_create(tree, NULL, NULL, NULL, node_size);
   RCSW_CHECK_PTR(tree->nil);
   tree->nil->parent = tree->nil->left = tree->nil->right = tree->nil;
-  tree->nil->red = FALSE;
+  tree->nil->red = false;
 
   tree->root = bstree_node_create(tree, NULL, NULL, NULL, node_size);
   RCSW_CHECK_PTR(tree->root);
   tree->root->parent = tree->root->left = tree->root->right = tree->nil;
-  tree->root->red = FALSE;
+  tree->root->red = false;
 
   if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
     inttree_init_helper(tree);
@@ -220,14 +220,14 @@ status_t bstree_insert_internal(struct bstree* const tree,
       ostree_count_fixup(tree, (struct ostree_node*)node, ekOSTREE_FIXUP_INSERT);
     }
 
-    node->red = TRUE;
+    node->red = true;
 
     /*
      * Fixup tree structure in the event that it was wrecked by the insert
      */
     rbtree_insert_fixup(tree, node);
 
-    tree->root->left->red = FALSE; /* first node is always black */
+    tree->root->left->red = false; /* first node is always black */
 
     /* Verify properties of RB Tree still hold */
     RCSW_FPC_NV(ERROR, !tree->root->red);
@@ -289,7 +289,7 @@ status_t bstree_delete(struct bstree* const tree,
   /*
    * Fix up RBTree structure if required
    */
-  if (tree->flags & RCSW_DS_BSTREE_RB && y->red == FALSE) {
+  if (tree->flags & RCSW_DS_BSTREE_RB && y->red == false) {
     /*
      * Fixup interval tree/OS-Tree auxiliary field. Must be done BEFORE
      * fixing up tree red-black tree structure, to update the fields of

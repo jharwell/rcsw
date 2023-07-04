@@ -100,22 +100,22 @@ CATCH_TEST_CASE("Convert Test", "[stdio]") {
   CATCH_REQUIRE(stdio_atoi("    +1234", 10) == 1234);
 
   char buf[20];
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, FALSE),"0") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, FALSE), "1") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, FALSE), "64") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, FALSE), "fe87") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, FALSE), "234") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x10000000, buf, FALSE), "10000000") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFFF, buf, FALSE), "fffffff") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFF, buf, FALSE), "ffffff") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFF, buf, FALSE), "fffff") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFF, buf, FALSE), "ffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, false),"0") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, false), "1") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, false), "64") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, false), "fe87") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, false), "234") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x10000000, buf, false), "10000000") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFFF, buf, false), "fffffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFF, buf, false), "ffffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFF, buf, false), "fffff") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFF, buf, false), "ffff") == 0);
 
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, TRUE),"0x0") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, TRUE), "0x1") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, TRUE), "0x64") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, TRUE), "0xfe87") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, TRUE), "0x234") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, true),"0x0") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, true), "0x1") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, true), "0x64") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, true), "0xfe87") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, true), "0x234") == 0);
 
   CATCH_REQUIRE(stdio_strcmp(stdio_itoad(0, buf), "0") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoad(1, buf), "+1") == 0);

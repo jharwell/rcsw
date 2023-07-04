@@ -75,7 +75,7 @@ static printf_flags_t parse_flags(const char** format) {
       default:
         return flags;
     }
-  } while (TRUE);
+  } while (true);
 }
 
 static inline void format_string_loop(struct printf_output_gadget* output,
@@ -245,7 +245,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
             print_integer(output,
                           (printf_unsigned_value_t)va_arg(args,
                                                           unsigned long long),
-                          FALSE,
+                          false,
                           base,
                           precision,
                           width,
@@ -254,7 +254,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           } else if (flags & FLAGS_LONG) {
             print_integer(output,
                           (printf_unsigned_value_t)va_arg(args, unsigned long),
-                          FALSE,
+                          false,
                           base,
                           precision,
                           width,
@@ -267,7 +267,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
                     : va_arg(args, unsigned int);
             print_integer(output,
                           (printf_unsigned_value_t)value,
-                          FALSE,
+                          false,
                           base,
                           precision,
                           width,
@@ -367,7 +367,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         (value == (uintptr_t)NULL) ? out_rev_(output, ")lin(", 5, width, flags)
                                    : print_integer(output,
                                                    (printf_unsigned_value_t)value,
-                                                   FALSE,
+                                                   false,
                                                    BASE_HEX,
                                                    precision,
                                                    width,

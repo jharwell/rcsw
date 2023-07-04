@@ -66,7 +66,7 @@ static void hashmap_linear_probe(const struct hashmap* map,
  * \param n1 hashnode #1
  * \param n2 hashnode #2
  *
- * \return TRUE if n1 = n2, FALSE otherwise
+ * \return true if n1 = n2, false otherwise
  */
 static int hashnode_cmp(const void* n1, const void* n2);
 
@@ -102,7 +102,7 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   map->stats.n_adds = 0;
   map->stats.n_addfails = 0;
   map->sort_thresh = params->type.hm.sort_thresh;
-  map->sorted = FALSE;
+  map->sorted = false;
   map->space.elements = NULL;
   map->space.buckets = NULL;
 
@@ -409,7 +409,7 @@ status_t hashmap_sort(struct hashmap* const map) {
     darray_sort(&map->space.buckets[i], ekQSORT_ITER);
   } /* for() */
 
-  map->sorted = TRUE;
+  map->sorted = true;
   return OK;
 } /* hashmap_sort() */
 

@@ -279,10 +279,6 @@
  *
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit a warning message.
- *
- * You cannot use this macro in non-class contexts, and all classes using it
- * must derive from \ref client. This macro is only available if event reporting
- * is fully enabled.
  */
 #define ER_CONDW(cond, msg, ...)                \
   {                                             \
@@ -296,10 +292,6 @@
  *
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit an informational message.
- *
- * You cannot use this macro in non-class contexts, and all classes using it
- * must derive from \ref client. This macro is only available if event reporting
- * is fully enabled.
  */
 #define ER_CONDI(cond, msg, ...)                \
   {                                             \
@@ -309,14 +301,10 @@
   }
 
 /**
- * \def ER_CHECKD(cond, msg, ...)
+ * \def ER_CONDD(cond, msg, ...)
  *
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit a debug message.
- *
- * You cannot use this macro in non-class contexts, and all classes using it
- * must derive from \ref client. This macro is only available if event reporting
- * is fully enabled.
  */
 #define ER_CONDD(cond, msg, ...)                \
   {                                             \

@@ -107,7 +107,7 @@ file):
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 50 30
+   :widths: 10 50 30 10
 
    * - ``#define``
 
@@ -126,81 +126,81 @@ file):
 
      - ``#define`` as nothing
 
-    * - ``RCSW_ER_PLUGIN_INIT(...)``
+   * - ``RCSW_ER_PLUGIN_INIT(...)``
 
-      - A framework initialization hook which RCSW will call in its internal
-        modules; should be idempotent. Can take any number of arguments of any
-        type.
+     - A framework initialization hook which RCSW will call in its internal
+       modules; should be idempotent. Can take any number of arguments of any
+       type.
 
-      - No; if omitted then:
+     - No; if omitted then:
 
-        - :ef:`ln-rcsw-er-plugin-log4cl` plugin will not work with RCSW modules.
-        - :ref:`ln-rcsw-er-plugin-simple` will still work with RCSW modules.
+       - :ref:`ln-rcsw-er-plugin-log4cl` plugin will not work with RCSW modules.
+       - :ref:`ln-rcsw-er-plugin-simple` will still work with RCSW modules.
 
-      - ``#define`` as nothing.
+     - ``#define`` as nothing.
 
-    * - ``RCSW_ER_PLUGIN_SHUTDOWN()``
+   * - ``RCSW_ER_PLUGIN_SHUTDOWN()``
 
-      - A framework shutdown hook; should be idempotent. Should not take any
-        arguments. Not used by RCSW currently.
+     - A framework shutdown hook; should be idempotent. Should not take any
+       arguments. Not used by RCSW currently.
 
-      - No
+     - No
 
-      - ``#define`` as nothing.
+     - ``#define`` as nothing.
 
-    * - ``RCSW_ER_PLUGIN_REPORT(lvl, handle, id, name, msg, ...)``
+   * - ``RCSW_ER_PLUGIN_REPORT(lvl, handle, id, name, msg, ...)``
 
-      - The main ER plugin hook. Will be called as part of every
-        :ref:`ER_WARN()`, etc. statement. Arguments:
+     - The main ER plugin hook. Will be called as part of every
+       :ref:`ER_WARN()`, etc. statement. Arguments:
 
-        - ``lvl`` - The level of the statement. See :ref:`ln-rcsw-er-levels` for
-          details.
+       - ``lvl`` - The level of the statement. See :ref:`ln-rcsw-er-levels` for
+         details.
 
-        - ``handle`` - Whatever was returned from ``RCSW_ER_PLUGIN_HANDLE()``.
+       - ``handle`` - Whatever was returned from ``RCSW_ER_PLUGIN_HANDLE()``.
 
-        - ``id`` - The ID of the current module (file). This will expand to
-          nothing if ``RCSW_ER_MODID`` is not defined.
+       - ``id`` - The ID of the current module (file). This will expand to
+         nothing if ``RCSW_ER_MODID`` is not defined.
 
-        - ``name`` - The name of the current module (file)
+       - ``name`` - The name of the current module (file)
 
-        - ``msg`` - The message string
+       - ``msg`` - The message string
 
-        - ``...`` - Any additional arguments for the message string
+       - ``...`` - Any additional arguments for the message string
 
-      - Yes
+     - Yes
 
-      - N/A
+     - N/A
 
-    * - ``RCSW_ER_PLUGIN_INSMOD(id, name)``
+   * - ``RCSW_ER_PLUGIN_INSMOD(id, name)``
 
-      - Install/enable a module with the specified ID and name.
+     - Install/enable a module with the specified ID and name.
 
-      - No
+     - No
 
-      - ``#define`` as nothing.
+     - ``#define`` as nothing.
 
-    * - ``RCSW_ER_PLUGIN_HANDLE(id, name)``
+   * - ``RCSW_ER_PLUGIN_HANDLE(id, name)``
 
-      - Get a logger "handle" of some kind which contains the necessary
-        information to determine if a given module is enabled. For example, in
-        the :ref:`LOG4CL` plugin, the :ref:``log4cl_mod_query()`` function
-        serves this purpose.
+     - Get a logger "handle" of some kind which contains the necessary
+       information to determine if a given module is enabled. For example, in
+       the :ref:`LOG4CL` plugin, the :ref:``log4cl_mod_query()`` function
+       serves this purpose.
 
-        If the module with the specified ``id, name`` is not enabled, then the
-        handle should be a false-y value, like 0 or NULL.
+       If the module with the specified ``id, name`` is not enabled, then the
+       handle should be a false-y value, like 0 or NULL.
 
-      - No
+     - No
 
-      - ``#define`` as nothing.
+     - ``#define`` as nothing.
 
-    * - ``RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl)``
+   * - ``RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl)``
 
-      - Given an active module ``handle``, determine if the statement with the
-        specified ``lvl`` should be emitted or not.
+     - Given an active module ``handle``, determine if the statement with the
+       specified ``lvl`` should be emitted or not.
 
-      - No
+     - No
 
-      - ``#define`` as a truth-y value, such as 1.
+     - ``#define`` as a truth-y value, such as 1.
 
 A few important notes:
 

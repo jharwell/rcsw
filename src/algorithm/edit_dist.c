@@ -174,7 +174,7 @@ static int edit_dist_iter(const void* a,
         c[i * m + j] = (int)j;
       } else if (0 == j) {
         c[i * m + j] = (int)i;
-      } else if (TRUE == cmpe(((const uint8_t*)a) + (i - 1) * el_size,
+      } else if (true == cmpe(((const uint8_t*)a) + (i - 1) * el_size,
                               ((const uint8_t*)b) + (j - 1) * el_size)) {
         c[i * m + j] = c[(i - 1) * m + j - 1];
       } else {
@@ -215,7 +215,7 @@ static int edit_dist_rec_sub(const char* a,
    * chars in a and are not the same, then return the minimum of what happens
    * if you substitute, delete, or insert chars from a to transform it into b.
    */
-  if (TRUE ==
+  if (true ==
       cmpe(((const uint8_t*)a) + (i - 1), ((const uint8_t*)b) + (j - 1))) {
     c[i * length + j] =
         edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, el_size);

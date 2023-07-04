@@ -98,6 +98,8 @@ static void map_test(int, struct ds_params *  params) {
    * coverage.
    */
   CATCH_REQUIRE(ERROR == fifo_map(fifo, nullptr));
+
+  fifo_destroy(fifo);
 } /* map_test() */
 
 template<typename T>
@@ -113,6 +115,8 @@ static void inject_test(int, struct ds_params *  params) {
    * coverage.
    */
   CATCH_REQUIRE(ERROR == fifo_inject(fifo, nullptr, nullptr));
+
+  fifo_destroy(fifo);
 } /* inject_test() */
 
 template<typename T>
@@ -145,7 +149,6 @@ static void print_test(int len, struct ds_params *  params) {
   fifo_print(nullptr);
   fifo_print(fifo);
   fifo_destroy(fifo);
-  fifo_print(fifo);
 } /* print_test() */
 
 /*******************************************************************************

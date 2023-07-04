@@ -33,8 +33,8 @@ enum ds_tag {
   ekRCSW_DS_RBUFFER,
   ekRCSW_DS_BIN_HEAP,
   ekRCSW_DS_FIFO,
-  ekRCSW_DS_STATIC_MATRIX,
-  ekRCSW_DS_DYNAMIC_MATRIX,
+  ekRCSW_DS_MATRIX,
+  ekRCSW_DS_DYN_MATRIX,
   ekRCSW_DS_ADJ_MATRIX
 };
 
@@ -256,7 +256,7 @@ struct bhp_params {
 /**
  * \brief Static matrix initialization parameters.
  */
-struct static_matrix_params {
+struct matrix_params {
   size_t n_rows;  /// # rows in matrix.
   size_t n_cols;  /// # columns in matrix.
 };
@@ -264,7 +264,7 @@ struct static_matrix_params {
 /**
  * \brief Dynamic matrix initialization parameters.
  */
-struct dynamic_matrix_params {
+struct dyn_matrix_params {
   size_t n_rows;  /// # rows in matrix.
   size_t n_cols;  /// # columns in matrix.
   uint8_t* rows;  /// Ptr to space for vector-of-row-vectors.
@@ -288,20 +288,6 @@ struct adj_matrix_params {
 };
 
 /**
- * \brief Adjacency list initialization parameters.
- */
-struct adj_list_params {
-  /**
-   * Initial # of vertices for graph, for space allocation.
-   */
-  size_t init_vertices;
-  size_t max_vertices;  /// Max # of vertices graph will hold.
-  int max_vertex_edges;   /// Max # of edges a vertex can have. -1 = no limit.
-  bool_t is_directed;  /// Is the graph directed or undirected?
-  bool_t is_weighted;  /// Are the graph edges weighted?
-};
-
-/**
  * \ref A single parameters structure for all general purpose data structures.
  *
  * Some data structures require additional parameters which are captured in the
@@ -313,8 +299,8 @@ struct ds_params {
     struct hm_params hm;
     struct bhp_params bhp;
     struct adj_matrix_params adjm;
-    struct static_matrix_params smat;
-    struct dynamic_matrix_params dmat;
+    struct matrix_params smat;
+    struct dyn_matrix_params dmat;
   } type;
 
   /**

@@ -35,7 +35,7 @@ status_t procm_socket_lock(int socket);
  * \param cmd The cmd to run exec() on
  * \param new_wd The new working directory of the fork()ed process, or NULL if
  * no change is desired.
- * \param stdout_sup If TRUE, then the stdout of the child process will be sent
+ * \param stdout_sup If true, then the stdout of the child process will be sent
  * to /dev/null.
  * \param pipefd If not NULL, the child will read data from the parent's stdin.
  * \return The pid of the child in the parent, nothing in the child.

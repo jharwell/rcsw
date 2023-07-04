@@ -15,15 +15,15 @@
 #include "rcsw/ds/bin_heap.h"
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/ds/dynamic_matrix.h"
+#include "rcsw/ds/dyn_matrix.h"
 #include "rcsw/ds/fifo.h"
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/ds/ostree.h"
 #include "rcsw/ds/rbuffer.h"
-#include "rcsw/ds/static_adj_matrix.h"
-#include "rcsw/ds/static_matrix.h"
+#include "rcsw/ds/adj_matrix.h"
+#include "rcsw/ds/matrix.h"
 #include "rcsw/utils/utils.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.test"
@@ -71,8 +71,8 @@ status_t th_ds_init(struct ds_params *const params) {
     break;
   case ekRCSW_DS_ADJ_MATRIX:
     /* Just do weighted all the time--need the space.... */
-    params->elements = (malloc(static_adj_matrix_space(TH_NUM_ITEMS, TRUE)));
-    memset(params->elements, 0, static_adj_matrix_space(TH_NUM_ITEMS, TRUE));
+    params->elements = (malloc(adj_matrix_element_space(TH_NUM_ITEMS, true)));
+    memset(params->elements, 0, adj_matrix_element_space(TH_NUM_ITEMS, true));
     break;
   case ekRCSW_DS_HASHMAP:
     params->nodes = (malloc(hashmap_node_space(TH_NUM_BUCKETS)));
@@ -94,15 +94,15 @@ status_t th_ds_init(struct ds_params *const params) {
       RCSW_CHECK_PTR(params->elements);
     }
     break;
-  case ekRCSW_DS_STATIC_MATRIX:
-    params->elements = (malloc(static_matrix_space(params->type.smat.n_rows,
-                                                                       params->type.smat.n_cols,
-                                                                       params->elt_size)));
+  case ekRCSW_DS_MATRIX:
+    params->elements = (malloc(matrix_element_space(params->type.smat.n_rows,
+                                                    params->type.smat.n_cols,
+                                                    params->elt_size)));
     break;
-  case ekRCSW_DS_DYNAMIC_MATRIX:
-    params->elements = (malloc(dynamic_matrix_space(params->type.dmat.n_rows,
-                                                                         params->type.dmat.n_cols,
-                                                                         params->elt_size)));
+  case ekRCSW_DS_DYN_MATRIX:
+    params->elements = (malloc(dyn_matrix_space(params->type.dmat.n_rows,
+                                                params->type.dmat.n_cols,
+                                                params->elt_size)));
     break;
   default:
     ER_ERR("No tag defined.");

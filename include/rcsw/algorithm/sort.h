@@ -77,7 +77,7 @@ void qsort_iter(void *a, int max_index, size_t el_size,
  *
  * \param list The list to sort
  * \param cmpe A comparison function for the data managed by each node
- * \param isdouble TRUE if the list to be sorted is doubly linked
+ * \param isdouble true if the list to be sorted is doubly linked
  *
  * \return A pointer to the sorted list
  *
@@ -96,7 +96,7 @@ struct llist_node *mergesort_iter(struct llist_node *list,
   *
   * \param list The list to sort
   * \param cmpe A comparison function for the data managed by each node
-  * \param isdouble TRUE if the list to be sorted is doubly linked
+  * \param isdouble true if the list to be sorted is doubly linked
   *
   * \return A pointer to the sorted list
   */

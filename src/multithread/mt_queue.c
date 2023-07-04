@@ -47,8 +47,8 @@ struct mt_queue* mt_queue_init(struct mt_queue* queue_in,
 
   /* all slots available initially */
   RCSW_CHECK_PTR(
-      mt_csem_init(&queue->empty, FALSE, params->max_elts, MT_APP_DOMAIN_MEM));
-  RCSW_CHECK_PTR(mt_csem_init(&queue->full, FALSE, 0, MT_APP_DOMAIN_MEM));
+      mt_csem_init(&queue->empty, false, params->max_elts, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK_PTR(mt_csem_init(&queue->full, false, 0, MT_APP_DOMAIN_MEM));
   RCSW_CHECK_PTR(mt_mutex_init(&queue->mutex, MT_APP_DOMAIN_MEM));
   return queue;
 

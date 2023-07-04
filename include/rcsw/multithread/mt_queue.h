@@ -1,7 +1,6 @@
 /**
  * \file mt_queue.h
  * \ingroup multithread
- * \brief Producer-consumer queue implementation.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -57,7 +56,7 @@ struct mt_queue {
  * \return \ref bool_t
  */
 static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
-    RCSW_FPC_NV(FALSE, NULL != queue);
+    RCSW_FPC_NV(false, NULL != queue);
     return fifo_isfull(&queue->fifo);
 }
 
@@ -69,7 +68,7 @@ static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
  * \return \ref bool_t
  */
 static inline bool_t mt_queue_isempty(const struct mt_queue* const queue) {
-    RCSW_FPC_NV(FALSE, NULL != queue);
+    RCSW_FPC_NV(false, NULL != queue);
     return fifo_isempty(&queue->fifo);
 }
 

@@ -43,4 +43,4 @@
 
 #define RCSW_ER_PLUGIN_HANDLE(id, name)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl) TRUE
+#define RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl) true

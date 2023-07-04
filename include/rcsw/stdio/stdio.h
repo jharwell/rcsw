@@ -122,7 +122,7 @@ char *stdio_itoad(int32_t n, char *s);
  *
  * \param i The number to convert.
  * \param s The string to fill.
- * \params add_0x Should "0x" be added to the front of the string?
+ * \param add_0x Should "0x" be added to the front of the string?
  *
  * \return The converted string.
  */

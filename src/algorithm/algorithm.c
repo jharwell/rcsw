@@ -36,7 +36,7 @@ bool_t str_is_parenthesizable(const char* const x,
                               char* const r,
                               char el,
                               char (*multiply_cb)(char x, char y)) {
-  RCSW_FPC_NV(FALSE, NULL != x, NULL != r, NULL != multiply_cb);
+  RCSW_FPC_NV(false, NULL != x, NULL != r, NULL != multiply_cb);
 
   size_t len = strlen(x);
   memset(r, '\0', len * len);

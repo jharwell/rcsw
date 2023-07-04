@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 6)
+set(PROJECT_VERSION_PATCH 7)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -273,11 +273,6 @@ endforeach()
 ########################################
 # Include directories
 ########################################
-target_include_directories(
-  ${rcsw_LIBRARY}
-  SYSTEM PUBLIC
-  $<BUILD_INTERFACE:${rcsw_DIR}/ext>
-)
 target_include_directories(
   ${rcsw_LIBRARY}
   PUBLIC

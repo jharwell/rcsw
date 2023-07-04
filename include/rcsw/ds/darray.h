@@ -87,7 +87,7 @@ struct darray {
  * \return \ref bool_t
  */
 static inline bool_t darray_isfull(const struct darray* const arr) {
-    RCSW_FPC_NV(FALSE, NULL != arr);
+    RCSW_FPC_NV(false, NULL != arr);
     return (bool_t)(arr->current == (size_t)arr->max_elts);
 }
 
@@ -99,7 +99,7 @@ static inline bool_t darray_isfull(const struct darray* const arr) {
  * \return \ref bool_t
  */
 static inline bool_t darray_isempty(const struct darray* const arr) {
-    RCSW_FPC_NV(FALSE, NULL != arr);
+    RCSW_FPC_NV(false, NULL != arr);
     return (bool_t)(arr->current == 0);
 }
 
@@ -376,7 +376,7 @@ status_t darray_inject(const struct darray * arr,
  *
  * Iterate through the darray and find all the items that satisfy the predicate,
  * and return a new darray containing only the items for which the predicate
- * returned TRUE. Matched elements are transferred from the original array to
+ * returned true. Matched elements are transferred from the original array to
  * the new array, and removed from the original array. If no elements are found
  * that fulfill the predicate, an empty darray is returned.
  *

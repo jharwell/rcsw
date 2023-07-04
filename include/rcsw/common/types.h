@@ -36,6 +36,11 @@ typedef char int8_t;
 #define NULL ((void *)0)
 #endif /* NULL */
 
+typedef enum {
+  false = 0,
+  true  = 1
+} bool_t;
+
 extern uint32_t errno;
 
 /* includes */
@@ -50,6 +55,11 @@ extern uint32_t errno;
 #include <unistd.h>
 #include <limits.h>
 #include <stdbool.h>
+
+/**
+ * \brief A C boolean type.
+ */
+#define bool_t bool
 
 #else
 #error UNKNOWN OS: __nos__, __linux__ suppored
@@ -71,17 +81,3 @@ typedef enum {
     /** Return this when a function fails. */
     ERROR    = -1,
 } status_t;
-
-/**
- * \brief A C boolean type.
- */
-#if defined(TRUE) || defined(FALSE)
-#undef TRUE
-#undef FALSE
-#endif
-
-typedef enum {
-    FALSE = 0,
-    TRUE  = 1
-} bool_t;
-

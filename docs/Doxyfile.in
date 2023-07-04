@@ -2207,6 +2207,7 @@ PREDEFINED             = __cplusplus= \
                          RCSW_UNUSED= \
                          RCSW_WARNING_DISABLE= \
                          RCSW_CHECK_RET= \
+                         RCSW_LIB_INIT= \
                          RCSW_PURE= \
                          RCSW_CONST= \
                          RCSW_EXPORT= \

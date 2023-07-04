@@ -60,7 +60,7 @@ status_t log4cl_init(void) {
   g_log4cl.modules = llist_init(NULL, &params);
   RCSW_CHECK_PTR(g_log4cl.modules);
   g_log4cl.default_lvl = RCSW_ERL_INFO;
-  g_log4cl.initialized = TRUE;
+  g_log4cl.initialized = true;
   return OK;
 
 error:
@@ -94,7 +94,7 @@ bool_t log4cl_mod_enabled(const struct log4cl_module* module, uint8_t lvl) {
   if (module)  {
     return module->lvl <= lvl;
   }
-  return FALSE;
+  return false;
 }
 status_t log4cl_rmmod(int64_t id) {
   RCSW_CHECK(OK == llist_remove(g_log4cl.modules, &id));
@@ -139,7 +139,7 @@ int64_t log4cl_mod_id_get(const char* const name) {
 void log4cl_shutdown(void) {
   llist_destroy(g_log4cl.modules);
   g_log4cl.modules = NULL;
-  g_log4cl.initialized = FALSE;
+  g_log4cl.initialized = false;
 } /* log4cl_shutdown() */
 
 
