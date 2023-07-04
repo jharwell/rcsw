@@ -440,7 +440,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
            pair->row,
            i,
            val);
-      RCSW_CHECK(OK == csmatrix_entry_add(new, TRUE, i, pair->row, &val));
+      RCSW_CHECK(OK == csmatrix_entry_add(new, true, i, pair->row, &val));
     }
   } /* for(i..) */
 

@@ -50,7 +50,7 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t fifo_isfull(const struct fifo* const fifo) {
-    RCSW_FPC_NV(FALSE, NULL != fifo);
+    RCSW_FPC_NV(false, NULL != fifo);
     return rbuffer_isfull(&fifo->rb);
 }
 
@@ -62,7 +62,7 @@ static inline bool_t fifo_isfull(const struct fifo* const fifo) {
  * \return \ref bool_t
  */
 static inline bool_t fifo_isempty(const struct fifo* const fifo) {
-    RCSW_FPC_NV(FALSE, NULL != fifo);
+    RCSW_FPC_NV(false, NULL != fifo);
     return rbuffer_isempty(&fifo->rb);
 }
 

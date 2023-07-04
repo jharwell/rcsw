@@ -9,7 +9,7 @@
  * \note Others have made smaller contributions to this file: see the
  * contributors page at https://github.com/eyalroz/printf/graphs/contributors
  * or ask one of the authors. The original code for exponential specifiers was
- * contributed by Martijn Jasperse <m.jasperse\gmail.com>.
+ * contributed by Martijn Jasperse <m.jasperse@gmail.com>.
  *
  * \brief Small stand-alone implementation of the printf family of functions
  * (`(v)printf`, `(v)s(n)printf` etc., geared towards use on embedded systems with

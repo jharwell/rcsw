@@ -21,6 +21,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
+# sphinx uses python by default, so set to cpp
+primary_domain = 'cpp'
+highlight_language = 'cpp'
 
 today = datetime.date.today()
 project = 'RCSW'

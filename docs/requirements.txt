@@ -1,0 +1,12 @@
+sphinx
+docutils
+sphinx-rtd-theme
+sphinx-argparse
+sphinx-tabs
+sphinxcontrib-napoleon
+autoapi
+psutil
+sphinx-last-updated-by-git
+graphviz
+breathe
+exhale

@@ -127,7 +127,7 @@ status_t ds_elt_clear(void* const elt, size_t elt_size) {
 } /* ds_elt_clear() */
 
 bool_t ds_elt_zchk(void* const elt, size_t elt_size) {
-  RCSW_FPC_NV(FALSE, NULL != elt, elt_size > 0);
+  RCSW_FPC_NV(false, NULL != elt, elt_size > 0);
   int sum = 0;
 
   switch (elt_size) {

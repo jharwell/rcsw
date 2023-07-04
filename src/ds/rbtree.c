@@ -50,33 +50,33 @@ void rbtree_insert_fixup(struct bstree* const tree, struct bstree_node* node) {
     if (node->parent == node->parent->parent->left) {
       uncle = node->parent->parent->right;
       if (uncle->red) {
-        node->parent->red = FALSE;
-        uncle->red = FALSE;
-        node->parent->parent->red = TRUE;
+        node->parent->red = false;
+        uncle->red = false;
+        node->parent->parent->red = true;
         node = node->parent->parent;
       } else /* if (uncle->color == black) */ {
         if (node == node->parent->right) {
           node = node->parent;
           bstree_node_rotate_left(tree, node);
         }
-        node->parent->red = FALSE;
-        node->parent->parent->red = TRUE;
+        node->parent->red = false;
+        node->parent->parent->red = true;
         bstree_node_rotate_right(tree, node->parent->parent);
       }
     } else { /* if (node->parent == node->parent->parent->right) */
       uncle = node->parent->parent->left;
-      if (uncle->red == TRUE) {
-        node->parent->red = FALSE;
-        uncle->red = FALSE;
-        node->parent->parent->red = TRUE;
+      if (uncle->red == true) {
+        node->parent->red = false;
+        uncle->red = false;
+        node->parent->parent->red = true;
         node = node->parent->parent;
       } else /* if (uncle->color == black) */ {
         if (node == node->parent->left) {
           node = node->parent;
           bstree_node_rotate_right(tree, node);
         }
-        node->parent->red = FALSE;
-        node->parent->parent->red = TRUE;
+        node->parent->red = false;
+        node->parent->parent->red = true;
         bstree_node_rotate_left(tree, node->parent->parent);
       }
     }
@@ -89,55 +89,55 @@ void rbtree_delete_fixup(struct bstree* const tree, struct bstree_node* node) {
   while (node->red == 0) {
     if (node == node->parent->left) {
       sibling = node->parent->right;
-      if (sibling->red == TRUE) {
-        sibling->red = FALSE;
-        node->parent->red = TRUE;
+      if (sibling->red == true) {
+        sibling->red = false;
+        node->parent->red = true;
         bstree_node_rotate_left(tree, node->parent);
         sibling = node->parent->right;
       }
-      if (sibling->right->red == FALSE && sibling->left->red == FALSE) {
-        sibling->red = TRUE;
+      if (sibling->right->red == false && sibling->left->red == false) {
+        sibling->red = true;
         node = node->parent;
       } else {
-        if (sibling->right->red == FALSE) {
-          sibling->left->red = FALSE;
-          sibling->red = TRUE;
+        if (sibling->right->red == false) {
+          sibling->left->red = false;
+          sibling->red = true;
           bstree_node_rotate_right(tree, sibling);
           sibling = node->parent->right;
         }
         sibling->red = node->parent->red;
-        node->parent->red = FALSE;
-        sibling->right->red = FALSE;
+        node->parent->red = false;
+        sibling->right->red = false;
         bstree_node_rotate_left(tree, node->parent);
         break;
       }
     } else { /* if (node == node->parent->right) */
       sibling = node->parent->left;
-      if (sibling->red == TRUE) {
-        sibling->red = FALSE;
-        node->parent->red = TRUE;
+      if (sibling->red == true) {
+        sibling->red = false;
+        node->parent->red = true;
         bstree_node_rotate_right(tree, node->parent);
         sibling = node->parent->left;
       }
-      if (sibling->right->red == FALSE && sibling->left->red == FALSE) {
-        sibling->red = TRUE;
+      if (sibling->right->red == false && sibling->left->red == false) {
+        sibling->red = true;
         node = node->parent;
       } else {
-        if (sibling->left->red == FALSE) {
-          sibling->right->red = FALSE;
-          sibling->red = TRUE;
+        if (sibling->left->red == false) {
+          sibling->right->red = false;
+          sibling->red = true;
           bstree_node_rotate_left(tree, sibling);
           sibling = node->parent->left;
         }
         sibling->red = node->parent->red;
-        node->parent->red = FALSE;
-        sibling->left->red = FALSE;
+        node->parent->red = false;
+        sibling->left->red = false;
         bstree_node_rotate_right(tree, node->parent);
         break;
       }
     }
   } /* while() */
-  node->red = FALSE;
+  node->red = false;
 } /* rbtree_delete_fixup() */
 
 int rbtree_node_black_height(const struct bstree_node* const node) {

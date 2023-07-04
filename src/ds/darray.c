@@ -105,7 +105,7 @@ struct darray* darray_init(struct darray* arr_in,
 
   arr->cmpe = params->cmpe;
   arr->printe = params->printe;
-  arr->sorted = FALSE;
+  arr->sorted = false;
 
   ER_DEBUG("Capacity=%zu init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
        arr->capacity,
@@ -188,7 +188,7 @@ darray_insert(struct darray* const arr, const void* const e, size_t index) {
 
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
-    arr->sorted = FALSE;
+    arr->sorted = false;
     darray_sort(arr, ekQSORT_ITER);
   }
   return OK;
@@ -328,7 +328,7 @@ status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
       return ERROR; /* bad sort type */
     }
 
-    arr->sorted = TRUE;
+    arr->sorted = true;
   }
   return OK;
 } /* darray_sort() */

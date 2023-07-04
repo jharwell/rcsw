@@ -139,8 +139,7 @@
 #else
 
 /**
- * \def RCSW_ATTR() for attaching a list of attributes to a
- * function/variable/etc.
+ * \def RCSW_ATTR for attaching a list of attributes to a function/variable/etc.
  */
 #define RCSW_ATTR(...) __attribute__((__VA_ARGS__))
 
@@ -181,7 +180,7 @@
 #define RCSW_LIB_INIT __attribute__((constructor))
 
 /**
- * \def RCPPSW_LIB_FINI
+ * \def RCSW_LIB_FINI
  *
  * Mark a function that should be run when the the library it belongs to is
  * unloaded.

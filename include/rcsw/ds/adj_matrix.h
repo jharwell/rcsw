@@ -1,5 +1,5 @@
 /**
- * \file static_adj_matrix.h
+ * \file adj_matrix.h
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,7 +13,7 @@
  ******************************************************************************/
 #include <math.h>
 #include "rcsw/ds/ds.h"
-#include "rcsw/ds/static_matrix.h"
+#include "rcsw/ds/matrix.h"
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
@@ -43,18 +43,30 @@
  * sparse graphs). Also you cannot use this data structure if the max # of edges
  * in the graph is not known a priori.
  */
-struct static_adj_matrix {
-  bool_t is_directed;            /// Is the graph directed?
-  bool_t is_weighted;            /// Is the graph weighted?
-  size_t n_edges;                /// # edges currently in the graph?
+struct adj_matrix {
+  /** Is the graph directed? */
+  bool_t        is_directed;
+
+  /** Is the graph weighted? */
+  bool_t        is_weighted;
+
+  /** # edges currently in the graph? */
+
+  size_t        n_edges;
+
   /**
-   * Size of elements in bytes (only used to make edge
-   * queries a bit faster.)
-  */
-  size_t elt_size;
-  size_t n_vertices;             /// # vertices in the graph (this is static!).
-  struct static_matrix  matrix;  /// Underlying matrix implementation handle.
-  uint32_t flags;                /// Configuration flags.
+   * Size of elements in bytes (only used to make edge queries a bit faster.)
+   */
+  size_t        elt_size;
+
+  /** # vertices in the graph */
+  size_t        n_vertices;
+
+  /** Underlying matrix implementation handle. */
+  struct matrix matrix;
+
+  /** Configuration flags. */
+  uint32_t      flags;
 };
 
 /*******************************************************************************
@@ -70,13 +82,16 @@ BEGIN_C_DECLS
  * \param v Edge sink.
  *
  * \return The value of the edge between the two vertices (may dereference as 0
- * if no edge exists--used \ref static_adj_matrix_edge_query() to be sure).
+ * if no edge exists--used \ref adj_matrix_edge_query() to be sure).
  */
-static inline void* static_adj_matrix_access(const struct static_adj_matrix* const matrix,
-                                       size_t u, size_t v) {
-  RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_vertices,
-            v < matrix->n_vertices);
-  return static_matrix_access(&matrix->matrix, u, v);
+static inline void* adj_matrix_access(const struct adj_matrix* const matrix,
+                                       size_t u,
+                                      size_t v) {
+  RCSW_FPC_NV(NULL,
+              NULL != matrix,
+              u < matrix->n_vertices,
+              v < matrix->n_vertices);
+  return matrix_access(&matrix->matrix, u, v);
 }
 
 /**
@@ -88,9 +103,10 @@ static inline void* static_adj_matrix_access(const struct static_adj_matrix* con
  *
  * \return
  */
-static inline size_t static_adj_matrix_space(size_t n_vertices, bool_t is_weighted) {
-  return static_matrix_space(n_vertices, n_vertices,
-                             is_weighted?sizeof(double):sizeof(int));
+static inline size_t adj_matrix_element_space(size_t n_vertices,
+                                              bool_t is_weighted) {
+  return matrix_element_space(n_vertices, n_vertices,
+                              is_weighted?sizeof(double):sizeof(int));
 }
 
 /**
@@ -102,14 +118,17 @@ static inline size_t static_adj_matrix_space(size_t n_vertices, bool_t is_weight
  *
  * \return \ref bool_t.
  */
-static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* const matrix,
-                                            size_t u, size_t v) {
-  RCSW_FPC_NV(FALSE, NULL != matrix, u < matrix->n_vertices,
-            v < matrix->n_vertices);
+static inline bool_t adj_matrix_edge_query(struct adj_matrix* const matrix,
+                                            size_t u,
+                                           size_t v) {
+  RCSW_FPC_NV(false,
+              NULL != matrix,
+              u < matrix->n_vertices,
+              v < matrix->n_vertices);
   if (matrix->is_weighted) {
-    return (bool_t)(!isnan(*(double*)static_adj_matrix_access(matrix, u, v)));
+    return (bool_t)(!isnan(*(double*)adj_matrix_access(matrix, u, v)));
   } else {
-    return (bool_t)!ds_elt_zchk(static_adj_matrix_access(matrix, u, v),
+    return (bool_t)!ds_elt_zchk(adj_matrix_access(matrix, u, v),
                                 matrix->elt_size);
   }
 }
@@ -121,8 +140,7 @@ static inline bool_t static_adj_matrix_edge_query(struct static_adj_matrix* cons
  *
  * \return The # of edges, or 0 on ERROR.
  */
-static inline size_t adj_matrix_n_edges(
-    const struct static_adj_matrix *const matrix) {
+static inline size_t adj_matrix_n_edges(const struct adj_matrix *const matrix) {
   RCSW_FPC_NV(0, NULL != matrix);
   return matrix->n_edges;
 }
@@ -132,8 +150,9 @@ static inline size_t adj_matrix_n_edges(
  *
  * \param matrix The matrix handle.
  */
-static inline void static_adj_matrix_print(const struct static_adj_matrix* const matrix) {
-  static_matrix_print(&matrix->matrix);
+static inline void adj_matrix_print(const struct adj_matrix* const matrix) {
+  RCSW_FPC_V(NULL != matrix);
+  matrix_print(&matrix->matrix);
 }
 
 /**
@@ -144,8 +163,8 @@ static inline void static_adj_matrix_print(const struct static_adj_matrix* const
  *
  * \return \ref bool_t.
  */
-static inline bool_t static_adj_matrix_isempty(const struct static_adj_matrix* matrix) {
-  RCSW_FPC_NV(FALSE, NULL != matrix);
+static inline bool_t adj_matrix_isempty(const struct adj_matrix* matrix) {
+  RCSW_FPC_NV(false, NULL != matrix);
   return (bool_t)(0 == matrix->n_edges);
 }
 
@@ -157,8 +176,8 @@ static inline bool_t static_adj_matrix_isempty(const struct static_adj_matrix* m
  *
  * \return \ref status_t.
  */
-static inline status_t static_adj_matrix_transpose(struct static_adj_matrix* const matrix) {
-  return static_matrix_transpose(&matrix->matrix);
+static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
+  return matrix_transpose(&matrix->matrix);
 }
 
 /*******************************************************************************
@@ -174,7 +193,7 @@ static inline status_t static_adj_matrix_transpose(struct static_adj_matrix* con
  *
  * \return The initialized adjacency matrix, or NULL if an error occurred.
  */
-struct static_adj_matrix* static_adj_matrix_init(struct static_adj_matrix* matrix_in,
+struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
                                      const struct ds_params* params) RCSW_CHECK_RET;
 
 /**
@@ -183,11 +202,10 @@ struct static_adj_matrix* static_adj_matrix_init(struct static_adj_matrix* matri
  *
  * \param matrix The matrix handle.
  */
-void static_adj_matrix_destroy(struct static_adj_matrix* matrix);
+void adj_matrix_destroy(struct adj_matrix* matrix);
 
 /**
- * \brief Add a directed edge to the graph (which must have been initialized as
- * a directed graph obviously).
+ * \brief Add a directed edge to the graph.
  *
  * \param matrix The matrix handle.
  * \param u Source vertex.
@@ -196,12 +214,13 @@ void static_adj_matrix_destroy(struct static_adj_matrix* matrix);
  *
  * \return \ref status_t.
  */
-status_t static_adj_matrix_edge_addd(struct static_adj_matrix* matrix,
-                               size_t u, size_t v, const double *w);
+status_t adj_matrix_edge_addd(struct adj_matrix* matrix,
+                              size_t u,
+                              size_t v,
+                              const double *w);
 
 /**
- * \brief Add an undirected edge to the graph (which must have been initialized
- * as an undirected graph obviously).
+ * \brief Add an undirected edge to the graph.
  *
  * Adding an edge  (u, v) will also automatically add an edge (v, u) with the
  * same value (1.0). This is OK because the having a graph that is both
@@ -214,8 +233,7 @@ status_t static_adj_matrix_edge_addd(struct static_adj_matrix* matrix,
  *
  * \return \ref status_t.
  */
-status_t static_adj_matrix_edge_addu(struct static_adj_matrix* matrix, size_t u,
-                               size_t v);
+status_t adj_matrix_edge_addu(struct adj_matrix* matrix, size_t u, size_t v);
 
 /**
  * \brief Remove an edge (u,v). If the graph was undirected, also remove the
@@ -227,8 +245,8 @@ status_t static_adj_matrix_edge_addu(struct static_adj_matrix* matrix, size_t u,
  *
  * \return \ref status_t.
  */
-status_t static_adj_matrix_edge_remove(struct static_adj_matrix* matrix,
-                                 size_t u, size_t v);
+status_t adj_matrix_edge_remove(struct adj_matrix* matrix,
+                                size_t u,
+                                size_t v);
 
 END_C_DECLS
-

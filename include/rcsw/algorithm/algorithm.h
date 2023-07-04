@@ -29,7 +29,7 @@ BEGIN_C_DECLS
  * \param el The goal char
  * \param multiply_cb Callback to multiple two chars in the alphabet
  *
- * If an invalid parameter is passed, the algorithm will return FALSE.
+ * If an invalid parameter is passed, the algorithm will return false.
  *
  * \return \ref bool_t
  **/

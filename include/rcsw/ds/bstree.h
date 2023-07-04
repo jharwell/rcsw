@@ -64,7 +64,7 @@ struct bstree_node {
   /**
    * If the tree is used as a red-black tree, then this field is used to
    * indicate the color of the node. It is undefined for regular BSTs. If
-   * red is FALSE then the node is black.
+   * red is false then the node is black.
    */
   bool_t red;
 };
@@ -292,7 +292,7 @@ END_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
-  RCSW_FPC_NV(FALSE, NULL != bst);
+  RCSW_FPC_NV(false, NULL != bst);
   return (bool_t)(bst->current == (size_t)bst->max_elts);
 }
 
@@ -304,7 +304,7 @@ static inline bool_t bstree_isfull(const struct bstree* const bst) {
  * \return \ref bool_t
  */
 static inline bool_t bstree_isempty(const struct bstree* const bst) {
-  RCSW_FPC_NV(FALSE, NULL != bst);
+  RCSW_FPC_NV(false, NULL != bst);
   return (bool_t)(bst->current == 0);
 }
 

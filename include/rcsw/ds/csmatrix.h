@@ -307,7 +307,7 @@ void csmatrix_destroy(struct csmatrix* matrix);
  * matrix.
  *
  * \param matrix The matrix handle.
- * \param sequential_insertions If TRUE, the application promises to insert an
+ * \param sequential_insertions If true, the application promises to insert an
  * entire row sequentially. This greatly speeds up the process of insertion.
  * \param row The row for the new entry.
  * \param col The column for the new entry.

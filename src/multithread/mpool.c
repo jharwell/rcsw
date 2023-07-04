@@ -83,7 +83,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
 
   /* initialize locks */
   RCSW_CHECK_PTR(
-      mt_csem_init(&the_pool->sem, FALSE, the_pool->max_elts, MT_APP_DOMAIN_MEM));
+      mt_csem_init(&the_pool->sem, false, the_pool->max_elts, MT_APP_DOMAIN_MEM));
   RCSW_CHECK_PTR(mt_mutex_init(&the_pool->mutex, MT_APP_DOMAIN_MEM));
 
   return the_pool;

@@ -114,7 +114,7 @@ static void print_broken_up_decimal(struct double_components number_,
     // %g/%G mandates we skip the trailing 0 digits...
     if ((flags & FLAGS_ADAPT_EXP) && !(flags & FLAGS_HASH) &&
         (number_.fractional > 0)) {
-      while (TRUE) {
+      while (true) {
         int_fast64_t digit = number_.fractional % 10U;
         if (digit != 0) {
           break;
@@ -220,7 +220,7 @@ update_normalization(struct scaling_factor sf,
                      double extra_multiplicative_factor) {
   struct scaling_factor result;
   if (sf.multiply) {
-    result.multiply = TRUE;
+    result.multiply = true;
     result.raw_factor = sf.raw_factor * extra_multiplicative_factor;
   } else {
     int factor_exp2 = stdio_exp2(get_bit_access(sf.raw_factor));
@@ -229,10 +229,10 @@ update_normalization(struct scaling_factor sf,
 
     // Divide the larger-exponent raw raw_factor by the smaller
     if (PRINTF_ABS(factor_exp2) > PRINTF_ABS(extra_factor_exp2)) {
-      result.multiply = FALSE;
+      result.multiply = false;
       result.raw_factor = sf.raw_factor / extra_multiplicative_factor;
     } else {
-      result.multiply = TRUE;
+      result.multiply = true;
       result.raw_factor = extra_multiplicative_factor / sf.raw_factor;
     }
   }
@@ -335,7 +335,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
   // same one: a 0 exponent-part width means "don't print the exponent"; a 0
   // decimal-part width means "use as many characters as necessary".
 
-  bool_t fall_back_to_decimal_only_mode = FALSE;
+  bool_t fall_back_to_decimal_only_mode = false;
   if (flags & FLAGS_ADAPT_EXP) {
     int required_significant_digits = (precision == 0) ? 1 : (int)precision;
     // Should we want to fall-back to "%f" mode, and only print the decimal part?

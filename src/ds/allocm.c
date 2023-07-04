@@ -23,7 +23,7 @@ void allocm_init(struct allocm_entry* map, size_t max_elts) {
 } /* db_alloc_init() */
 
 int allocm_probe(struct allocm_entry* map, size_t max_elts, size_t index) {
-  bool_t wrap = FALSE;
+  bool_t wrap = false;
   size_t i = index;
   int ret = -1;
 
@@ -34,7 +34,7 @@ int allocm_probe(struct allocm_entry* map, size_t max_elts, size_t index) {
     }
     /* wrapped around to index 0 */
     if (i + 1 == max_elts) {
-      wrap = TRUE;
+      wrap = true;
       i = 0;
     } else {
       i++;

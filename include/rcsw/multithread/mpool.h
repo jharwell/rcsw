@@ -112,7 +112,7 @@ static inline size_t  mpool_element_space(size_t max_elts, size_t elt_size) {
  * \return \ref bool_t
  */
 static inline bool_t mpool_isfull(const struct mpool* const pool) {
-    RCSW_FPC_NV(FALSE, NULL != pool);
+    RCSW_FPC_NV(false, NULL != pool);
     return llist_isfull(&pool->free);
 }
 
@@ -124,7 +124,7 @@ static inline bool_t mpool_isfull(const struct mpool* const pool) {
  * \return \ref bool_t
  */
 static inline bool_t mpool_isempty(const struct mpool* const pool) {
-    RCSW_FPC_NV(FALSE, NULL != pool);
+    RCSW_FPC_NV(false, NULL != pool);
     return llist_isempty(&pool->alloc);
 }
 

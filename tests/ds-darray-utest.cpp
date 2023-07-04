@@ -73,7 +73,6 @@ static void addremove_test(int len, struct ds_params *params) {
 
   element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
-  printf("START\n");
   for (int i = 0; i < len; i++) {
     arr[i] = g.next();
     /* arr[i].value1 += 1; */
@@ -151,8 +150,6 @@ static void delete_test(int len, struct ds_params *params) {
     CATCH_REQUIRE(darray_n_elts(_arr) == 0);
   }
   darray_destroy(_arr);
-  darray_print(_arr);
-  darray_print(NULL);
 } /* delete_test() */
 
 template <typename T>
@@ -464,9 +461,6 @@ static void print_test(int len, struct ds_params *params) {
   }
 
   darray_print(nullptr);
-  darray_print(_arr);
-  darray_destroy(_arr);
-  darray_print(_arr);
 } /* print_test() */
 
 /*******************************************************************************

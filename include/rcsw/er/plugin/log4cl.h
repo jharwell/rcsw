@@ -74,9 +74,9 @@
     M_TESTING,                                  \
     M_DS_INT_TREE,                              \
     M_DS_OSTREE,                                \
-    M_DS_STATIC_ADJ_MATRIX,                     \
-    M_DS_STATIC_MATRIX,                         \
-    M_DS_DYNAMIC_MATRIX,                        \
+    M_DS_ADJ_MATRIX,                            \
+    M_DS_MATRIX,                                \
+    M_DS_DYN_MATRIX,                            \
     M_MULTITHREAD,                              \
     M_MULTIPROCESS,                             \
     M_EXTERNAL

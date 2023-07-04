@@ -40,7 +40,7 @@ BEGIN_C_DECLS
  *
  * \param sem_in semaphore to initialize. Can be NULL if \ref MT_APP_DOMAIN_MEM
  * passed.
- * \param shared FALSE - shared between threads of a process; TRUE - shared
+ * \param shared false - shared between threads of a process; true - shared
  * between processes.
  * \param value The initial semaphore value.
  * \param flags Configuration flags.

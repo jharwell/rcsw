@@ -80,7 +80,7 @@ struct rbuffer {
  * \return \ref bool_t
  */
 static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
-  RCSW_FPC_NV(FALSE, NULL != rb);
+  RCSW_FPC_NV(false, NULL != rb);
   return (bool_t)(rb->current == rb->max_elts);
 }
 
@@ -92,7 +92,7 @@ static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
  * \return \ref bool_t
  */
 static inline bool_t rbuffer_isempty(const struct rbuffer* const rb) {
-  RCSW_FPC_NV(FALSE, NULL != rb);
+  RCSW_FPC_NV(false, NULL != rb);
   return (bool_t)(rb->current == 0);
 }
 

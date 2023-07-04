@@ -51,7 +51,7 @@ struct llist {
   int max_elts;       /// Maximum # of allowed elements. -1 = no upper limit.
   size_t elt_size;     /// Size in bytes of an element.
   uint32_t flags;     /// Runtime configuration flags.
-  bool_t sorted;      /// If TRUE, list is currently sorted.
+  bool_t sorted;      /// If true, list is currently sorted.
   struct llist_node *first;  /// First node in the list (for easy prepending)
   struct llist_node *last;   /// Last node in the list (for easy appending)
   struct ds_iterator iter;   /// iterator
@@ -118,7 +118,7 @@ struct llist {
  * \return \ref bool_t
  */
 static inline bool_t llist_isfull(const struct llist* const list) {
-  RCSW_FPC_NV(FALSE, NULL != list);
+  RCSW_FPC_NV(false, NULL != list);
   return (bool_t)(list->current == (size_t)list->max_elts);
 }
 
@@ -130,7 +130,7 @@ static inline bool_t llist_isfull(const struct llist* const list) {
  * \return \ref bool_t
  */
 static inline bool_t llist_isempty(const struct llist* const list) {
-  RCSW_FPC_NV(FALSE, NULL != list);
+  RCSW_FPC_NV(false, NULL != list);
   return (bool_t)(list->current == 0);
 }
 

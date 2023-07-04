@@ -23,23 +23,75 @@ library.
 
 The data structures library is comprised of the following modules:
 
-- Ringbuffer.
-- Linked list.
-- FIFO (built on ringbuffer).
-- Raw FIFO (only handles 1, 2, or 4 byte elements). Uses only pointer math when
-  adding/removing elements, instead of memcpy()/function calls, so is ISR safe.
-- Dynamic array (just like std::vector; grows/shrinks as needed). Uses approach
-  in *Introduction To Algorithms*.
-- Binary Search Tree (uses approach in *Introduction To Algorithms*.
-- Red-Black tree (uses approach in *Introduction To Algorithms*).
-- Order Statistics Tree (built on RB-Tree; uses approach in *Introduction To Algorithms*).
-- Interval Tree (built on RB-Tree; uses approach in *Introduction To Algorithms*).
-- Hashmap (built using linked lists and dynamic arrays).
-- Binary heap (built using dynamic array).
-- Static Adjacency Matrix.
-- Dynamic Adjacency Matrix (in progress).
-- Adjacency List (in progress).
-- Compressed Sparse Matrix (in progress).
+.. list-table::
+   :header-rows: 1
+   :widths: 20 70 10
+
+   *  - Module
+      - Notes
+      - Link
+
+   * - Ringbuffer
+     -
+     - :class:`rbuffer`
+
+   * - Linked list.
+     - Doubly linked.
+     - :class:`llist`
+
+   * - FIFO
+     -  Built on ringbuffer.
+     - :class:`fifo`
+
+   * - Raw FIFO
+     - Only handles {1, 2, 4} byte elements. Uses only pointer math when
+       adding/removing elements, instead of memcpy()/function calls, so is ISR
+       safe.
+     - :class:`rawfifo`
+
+   * - Dynamic array
+     - Just like ``std::vector``,  grows/shrinks as needed. Uses approach
+       in *Introduction To Algorithms*.
+     - :class:`darray`
+
+   * - Binary Search Tree
+     - Uses approach in *Introduction To Algorithms*.
+     - :class:`bstree`
+
+   * - Red-Black tree
+     - Uses approach in *Introduction To Algorithms*.
+     - :class:`rbtree`
+
+   * - Order Statistics Tree
+     - Built on Red-Black Tree; uses approach in *Introduction To Algorithms*.
+     - :class:`ostree`
+
+   * - Interval Tree
+     - Built on Red-Black Tree.  Uses approach in *Introduction To Algorithms*.
+     - :class:`inttree`
+
+   * - Hashmap
+     - Built using dynamic arrays.
+     - :class:`hashmap`
+
+   * - Binary heap
+     -  Built using dynamic array.
+     - :class:`bin_heap`
+
+   * - Matrix
+     - Static matrix; dimensions cannot change after initialization.
+     - :class:`matrix`
+
+   * - Dynamic Matrix
+     - Dimensions *can* change after initialization. Can be used to represent
+       dynamic graphs. Works best on densely connected graphs.
+     - :class:`dyn_matrix`
+
+   * - Adjacency Matrix
+     - Dimensions (# vertices) cannot change after initialization. Can be used
+       to represent graphs efficiently; Works best on densely connected
+       graphs.
+     - :class:`adj_matrix`
 
 Algorithms
 ==========

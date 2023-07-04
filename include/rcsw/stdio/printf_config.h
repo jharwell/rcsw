@@ -20,8 +20,8 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#define PRINTF_PREFER_DECIMAL     FALSE
-#define PRINTF_PREFER_EXPONENTIAL TRUE
+#define PRINTF_PREFER_DECIMAL     false
+#define PRINTF_PREFER_EXPONENTIAL true
 
 // internal flag definitions
 #define FLAGS_ZEROPAD   (1U <<  0U)

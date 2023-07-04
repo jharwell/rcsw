@@ -41,7 +41,12 @@ jobs:
           -DLIBRA_ERL=ALL \
           ..
 
+          # Normal tests
           make build-and-test -j$(nproc)
+
+          # Run under valgrind
+          ctest -T memcheck --verbose
+
           make coverage-report
 
       - name: Coveralls

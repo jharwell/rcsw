@@ -79,7 +79,7 @@ struct llist* llist_init(struct llist* list_in,
   list->cmpe = params->cmpe;
   list->printe = params->printe;
   list->max_elts = params->max_elts;
-  list->sorted = FALSE;
+  list->sorted = false;
 
   ER_DEBUG("elt_size=%zu max_elts=%d flags=0x%08x",
        list->elt_size,
@@ -196,7 +196,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   }
   list->current++;
   if (list->flags & RCSW_DS_SORTED) {
-    list->sorted = FALSE;
+    list->sorted = false;
     llist_sort(list, ekMSORT_REC);
   }
   rval = OK;
@@ -232,7 +232,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   list->current++;
 
   if (list->flags & RCSW_DS_SORTED) {
-    list->sorted = FALSE;
+    list->sorted = false;
     llist_sort(list, ekMSORT_REC);
   }
   rval = OK;
@@ -311,13 +311,13 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
     ER_DEBUG("Already sorted: nothing to do");
   } else {
     if (type == ekMSORT_REC) {
-      list->first = mergesort_rec(list->first, list->cmpe, TRUE);
+      list->first = mergesort_rec(list->first, list->cmpe, true);
     } else if (type == ekMSORT_ITER) {
-      list->first = mergesort_iter(list->first, list->cmpe, TRUE);
+      list->first = mergesort_iter(list->first, list->cmpe, true);
     }
 
     /* find new list->last */
-    list->sorted = TRUE;
+    list->sorted = true;
     struct llist_node* tmp = list->first;
     size_t count = 1;
     while (tmp->next != NULL) {
