@@ -56,13 +56,13 @@ static inline size_t ostree_element_space(size_t max_elts, size_t elt_size) {
   return bstree_element_space(max_elts, elt_size);
 }
 
-static inline size_t ostree_node_space(size_t max_elts) {
+static inline size_t ostree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts + 2) +
       ds_elt_space_simple(max_elts+2, sizeof(struct ostree_node));
 }
 
 static inline struct bstree* ostree_init(struct bstree* tree_in,
-                                         const struct ds_params* params) {
+                                         const struct bstree_params* params) {
   return bstree_init_internal(tree_in, params, sizeof(struct ostree_node));
 }
 

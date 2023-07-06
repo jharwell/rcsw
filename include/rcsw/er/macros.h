@@ -399,10 +399,6 @@
 #define DPRINTF(...)
 #endif
 
-#ifndef DPRINTFF
-#define DPRINTFF(...)
-#endif
-
 #ifndef DPRINT_TOK
 #define DPRINT_TOK(...)
 #endif

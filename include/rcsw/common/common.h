@@ -179,7 +179,7 @@
 #define RCSW_IS_BETWEENHO(n, low, high) ((n) >= (low) && (n) < (high))
 
 /*******************************************************************************
- * Other Macros
+ * Misc. Macros
  ******************************************************************************/
 /**
  * \def RCSW_LIKELY(x)
@@ -198,10 +198,20 @@
 #define RCSW_UNLIKELY(x) __builtin_expect((x), 0)
 
 /**
- * \def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
- * to an array) in units (not bytes).
+ * \def RCSW_CLAMP(val, min, max)
+ *
+ * Clamp a value between two setpoints.
  */
-#define RCSW_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define RCSW_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max): (val)))
+
+/**
+ * \def RCSW_ARRAY_ELTS(arr) Get the size of an array (NOT a pointer
+ * to an array) in units (not bytes).
+ *
+ * \note If you try this on arrays allocated dynamically (VLAs, heap,...) it
+ * will not work.
+ */
+#define RCSW_ARRAY_ELTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define RCSW_CONTAINER_OF(ptr, type, member) ({                      \
         const typeof(((type *)0)->member) *__mptr = (ptr);      \

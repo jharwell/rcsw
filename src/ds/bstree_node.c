@@ -11,9 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
 
 BEGIN_C_DECLS
@@ -81,7 +81,7 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree, /* parent tr
   if (datablock == NULL) {
     return;
   }
-  if (tree->flags & RCSW_DS_NOALLOC_DATA) {
+  if (tree->flags & RCSW_NOALLOC_DATA) {
     size_t idx = (datablock - tree->space.datablocks) / tree->elt_size;
 
     /* mark data block as available */
@@ -94,7 +94,7 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree, /* parent tr
 void* bstree_node_datablock_alloc(const struct bstree* const tree) {
   void* datablock = NULL;
 
-  if (tree->flags & RCSW_DS_NOALLOC_DATA) {
+  if (tree->flags & RCSW_NOALLOC_DATA) {
     /*
      * Try to find an available data block. Use hashing/linearing probing
      * instead of linear scanning. This reduces startup times if
@@ -133,7 +133,7 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
                                       size_t node_size) {
   struct bstree_node* node = NULL;
 
-  if (tree->flags & RCSW_DS_NOALLOC_NODES) {
+  if (tree->flags & RCSW_NOALLOC_META) {
     /*
      * Try to find an available data block. Use hashing/linearing probing
      * instead of linear scanning. This reduces startup times if
@@ -171,7 +171,7 @@ error:
 
 void bstree_node_dealloc(const struct bstree* const tree,
                          struct bstree_node* node) {
-  if (tree->flags & RCSW_DS_NOALLOC_NODES) {
+  if (tree->flags & RCSW_NOALLOC_META) {
     ptrdiff_t idx = node - tree->space.nodes;
 
     /* mark node as available */

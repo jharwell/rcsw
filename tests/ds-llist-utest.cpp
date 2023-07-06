@@ -20,16 +20,24 @@
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+using llist_test1_t = void(*)(int len,
+                               struct llist_params *params);
+using llist_test2_t = void(*)(int len1,
+                              int len2,
+                               struct llist_params *params);
+
+/*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-static void run_test(ds_test_t test) {
+static void run_test(llist_test1_t test) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING, "Testing"); */
   /* dbg_insmod(M_DS_LLIST, "LLIST"); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_LLIST;
+  struct llist_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
@@ -37,9 +45,9 @@ static void run_test(ds_test_t test) {
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
   };
   for (size_t j = 3; j <= TH_NUM_ITEMS; ++j) {
     for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
@@ -52,13 +60,12 @@ static void run_test(ds_test_t test) {
 } /* run_test() */
 
 template<typename T>
-static void run_test2(ds_test2_t test) {
+static void run_test2(llist_test2_t test) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_LLIST,"LLIST"); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_LLIST;
+  struct llist_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
@@ -66,9 +73,9 @@ static void run_test2(ds_test2_t test) {
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
   };
 
   for (size_t k = 2; k <= TH_NUM_ITEMS; ++k) {
@@ -90,13 +97,13 @@ static void run_test2(ds_test2_t test) {
  * \brief Test appending/prepending items into a linked list
  */
 template<typename T>
-static void insert_test(int len, struct ds_params * params) {
+static void insert_test(int len, struct llist_params * params) {
   struct llist* list;
   struct llist mylist;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     llist_print(nullptr);
     CATCH_REQUIRE(nullptr == llist_init(nullptr, params));
     list = llist_init(&mylist, params);
@@ -127,7 +134,7 @@ static void insert_test(int len, struct ds_params * params) {
   CATCH_REQUIRE(llist_append(list, nullptr) == ERROR);
   CATCH_REQUIRE(llist_prepend(list, nullptr) == ERROR);
 
-  if (!(list->flags & (RCSW_DS_NOALLOC_NODES | RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
+  if (!(list->flags & (RCSW_NOALLOC_META | RCSW_NOALLOC_DATA | RCSW_NOALLOC_HANDLE))) {
     CATCH_REQUIRE(llist_heap_footprint(list) == 0);
   } else {
     CATCH_REQUIRE(llist_heap_footprint(list) > 0);
@@ -143,7 +150,7 @@ static void insert_test(int len, struct ds_params * params) {
  * \brief Test clearing lists of different sizes
  */
 template<typename T>
-static void clear_test(int len, struct ds_params * params) {
+static void clear_test(int len, struct llist_params * params) {
   struct llist* list;
   struct llist mylist;
 
@@ -170,7 +177,7 @@ static void clear_test(int len, struct ds_params * params) {
  * \brief Test deleting lists of different sizes
  */
 template<typename T>
-static void delete_test(int len, struct ds_params * params) {
+static void delete_test(int len, struct llist_params * params) {
   struct llist* list;
   struct llist mylist;
 
@@ -195,7 +202,7 @@ static void delete_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_copy()
  */
 template<typename T>
-static void copy_test(int len, struct ds_params * params) {
+static void copy_test(int len, struct llist_params * params) {
   struct llist* list1, *list2;
   struct llist mylist;
   T arr[TH_NUM_ITEMS];
@@ -212,21 +219,18 @@ static void copy_test(int len, struct ds_params * params) {
     arr[i] = e;
   } /* for() */
 
-  if (!(params->flags & (RCSW_DS_NOALLOC_HANDLE | RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_NODES))) {
-    list2 = llist_copy(list1, params);
-  } else {
-    list2 = llist_copy(list1, nullptr);
-  }
+  if (params->flags & (RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA | RCSW_NOALLOC_META)) {
+  list2 = llist_copy(list1, 0, nullptr, nullptr);
   CATCH_REQUIRE(nullptr != list2);
-
 
   for (int i = 0; i < len; i++) {
     CATCH_REQUIRE(llist_node_query(list1, &arr[i]) != nullptr);
     CATCH_REQUIRE(llist_node_query(list2, &arr[i]) != nullptr);
   } /* for() */
+  llist_destroy(list2);
+}
 
   llist_destroy(list1);
-  llist_destroy(list2);
 
   /* verify all DS_APP_DOMAIN data deallocated */
   CATCH_REQUIRE(th_leak_check_data(params) == 0);
@@ -238,12 +242,12 @@ static void copy_test(int len, struct ds_params * params) {
  *
  */
 template<typename T>
-static void copy2_test(int len, struct ds_params * params) {
+static void copy2_test(int len, struct llist_params * params) {
   struct llist* list1, *list2;
   struct llist mylist;
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list1 = llist_init(&mylist, params);
   } else {
     list1 = llist_init(nullptr, params);
@@ -258,24 +262,23 @@ static void copy2_test(int len, struct ds_params * params) {
     arr[i] = e;
   } /* for() */
 
-  if (!(params->flags & (RCSW_DS_NOALLOC_HANDLE |
-                         RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_NODES))) {
-    list2 = llist_copy2(list1, th_filter_func<T>, params);
-  } else {
-    list2 = llist_copy2(list1, th_filter_func<T>, nullptr);
+  if ((params->flags & (RCSW_NOALLOC_HANDLE |
+                        RCSW_NOALLOC_DATA | RCSW_NOALLOC_META))) {
+    list2 = llist_copy2(list1, th_filter_func<T>, 0, nullptr, nullptr);
+    CATCH_REQUIRE(nullptr != list2);
+
+    for (int i = 0; i < len; i++) {
+      if (th_filter_func<T>(&arr[i])) {
+        CATCH_REQUIRE(nullptr != llist_node_query(list2, &arr[i]));
+      }
+      CATCH_REQUIRE(nullptr != llist_node_query(list1, &arr[i]));
+    } /* for() */
+    llist_destroy(list2);
+
+
   }
 
-  CATCH_REQUIRE(nullptr != list2);
-
-  for (int i = 0; i < len; i++) {
-    if (th_filter_func<T>(&arr[i])) {
-      CATCH_REQUIRE(nullptr != llist_node_query(list2, &arr[i]));
-    }
-    CATCH_REQUIRE(nullptr != llist_node_query(list1, &arr[i]));
-  } /* for() */
-
   llist_destroy(list1);
-  llist_destroy(list2);
 
   /* verify all DS_APP_DOMAIN data deallocated */
   CATCH_REQUIRE(th_leak_check_data(params) == 0);
@@ -286,13 +289,13 @@ static void copy2_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_filter()
  */
 template<typename T>
-static void filter_test(int len, struct ds_params * params) {
+static void filter_test(int len, struct llist_params * params) {
   struct llist* list1, *list2;
   struct llist mylist;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list1 = llist_init(&mylist, params);
   } else {
     list1 = llist_init(nullptr, params);
@@ -307,24 +310,21 @@ static void filter_test(int len, struct ds_params * params) {
     arr[i] = e;
   } /* for() */
 
-  if (!(params->flags & (RCSW_DS_NOALLOC_HANDLE | RCSW_DS_NOALLOC_DATA |
-                         RCSW_DS_NOALLOC_NODES))) {
-    list2 = llist_filter(list1, th_filter_func<T>, params);
-  } else {
-    list2 = llist_filter(list1, th_filter_func<T>, nullptr);
+  if ((params->flags & (RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA |
+                         RCSW_NOALLOC_META))) {
+    list2 = llist_filter(list1, th_filter_func<T>, 0, nullptr, nullptr);
+    CATCH_REQUIRE(nullptr != list2);
+
+    for (int i = 0; i < len; i++) {
+      if (th_filter_func<T>(&arr[i])) {
+        CATCH_REQUIRE(llist_node_query(list2, &arr[i]) != nullptr);
+        CATCH_REQUIRE(llist_node_query(list1, &arr[i]) == nullptr);
+      }
+    } /* for() */
+    llist_destroy(list2);
   }
 
-  CATCH_REQUIRE(nullptr != list2);
-
-  for (int i = 0; i < len; i++) {
-    if (th_filter_func<T>(&arr[i])) {
-      CATCH_REQUIRE(llist_node_query(list2, &arr[i]) != nullptr);
-      CATCH_REQUIRE(llist_node_query(list1, &arr[i]) == nullptr);
-    }
-  } /* for() */
-
   llist_destroy(list1);
-  llist_destroy(list2);
 
   /* verify all DS_APP_DOMAIN data deallocated */
   CATCH_REQUIRE(th_leak_check_data(params) == 0);
@@ -335,12 +335,12 @@ static void filter_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_filter2()
  */
 template<typename T>
-static void filter2_test(int len, struct ds_params * params) {
+static void filter2_test(int len, struct llist_params * params) {
   struct llist* list1;
   struct llist mylist;
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list1 = llist_init(&mylist, params);
   } else {
     list1 = llist_init(nullptr, params);
@@ -373,12 +373,12 @@ static void filter2_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_sort()
  */
 template<typename T>
-static void sort_test(int len, struct ds_params * params) {
+static void sort_test(int len, struct llist_params * params) {
   struct llist* list1;
   struct llist  mylist;
 
   int i;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list1 = llist_init(&mylist, params);
   } else {
     list1 = llist_init(nullptr, params);
@@ -416,7 +416,7 @@ static void sort_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_splice()
  */
 template<typename T>
-static void splice_test(int len1, int len2, struct ds_params * params) {
+static void splice_test(int len1, int len2, struct llist_params * params) {
   struct llist *list1 = nullptr;
   struct llist *list2 = nullptr;
   struct llist mylist1;
@@ -428,13 +428,13 @@ static void splice_test(int len1, int len2, struct ds_params * params) {
   struct llist_node* splice_node = nullptr;
   int splice = (rand() + len1/2) % len1;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list1 = llist_init(&mylist1, params);
   } else {
     list1 = llist_init(nullptr, params);
   }
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list2 = llist_init(&mylist2, params);
   } else {
     list2 = llist_init(nullptr, params);
@@ -524,16 +524,16 @@ static void splice_test(int len1, int len2, struct ds_params * params) {
  * \brief Test sharing llist_nodes between linked lists
  */
 template<typename T>
-static void pool_test(int len, struct ds_params * params) {
+static void pool_test(int len, struct llist_params * params) {
   struct llist* list1, *list2;
   int i;
 
-  if (!(params->flags & RCSW_DS_NOALLOC_DATA)) {
+  if (!(params->flags & RCSW_NOALLOC_DATA)) {
     return;
   }
 
   params->flags |= RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP;
-  params->flags &= ~RCSW_DS_NOALLOC_HANDLE;
+  params->flags &= ~RCSW_NOALLOC_HANDLE;
 
   list1 = llist_init(nullptr, params);
   list2 = llist_init(nullptr, params);
@@ -598,12 +598,12 @@ static void pool_test(int len, struct ds_params * params) {
  * \brief Test of \ref llist_inject()
  */
 template<typename T>
-static void inject_test(int len, struct ds_params * params) {
+static void inject_test(int len, struct llist_params * params) {
   struct llist *list;
   struct llist mylist;
   int sum = 0;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list = llist_init(&mylist, params);
   } else {
     list = llist_init(nullptr, params);
@@ -629,11 +629,11 @@ static void inject_test(int len, struct ds_params * params) {
  * \brief Test of linked list iteration
  */
 template<typename T>
-static void iter_test(int len, struct ds_params * params) {
+static void iter_test(int len, struct llist_params * params) {
   struct llist *list;
   struct llist mylist;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     list = llist_init(&mylist, params);
   } else {
     list = llist_init(nullptr, params);

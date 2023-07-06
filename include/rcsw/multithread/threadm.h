@@ -24,6 +24,7 @@ BEGIN_C_DECLS
  * \brief Lock a thread to a core.
  *
  * \param thread The thread handle.
+ *
  * \param core The core to lock to, 0-indexed.
  *
  * \return \ref status_t.

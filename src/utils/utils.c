@@ -11,10 +11,11 @@
  ******************************************************************************/
 #include "rcsw/utils/utils.h"
 
+#include <math.h>
 #include <stdlib.h>
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Global Variables
@@ -116,5 +117,37 @@ void arr32_elt_swap(uint32_t* const v, size_t i, size_t j) {
   v[i] = v[j];
   v[j] = t;
 } /* arr32_elt_swap() */
+
+bool_t util_zchk(void* const elt, size_t elt_size) {
+  RCSW_FPC_NV(false, NULL != elt, elt_size > 0);
+  bool_t sum = 0;
+
+  switch (elt_size) {
+    case sizeof(uint8_t):
+      return *((uint8_t*)(elt)) == 0;
+    case sizeof(uint16_t):
+      return *((uint16_t*)(elt)) == 0;
+    case sizeof(uint32_t):
+      return *((uint32_t*)(elt)) == 0;
+
+      /*
+       * sizeof(float) is the same as sizeof(uint32_t) on most platforms, but
+       * not all.
+       */
+#if __SIZEOF_FLOAT__ != 4
+    case sizeof(float):
+      return fabs(*((double*)(elt))) <= RCSW_FLOAT_EPSILON;
+      break;
+#endif
+    case sizeof(double):
+      return fabs(*((double*)(elt))) <= RCSW_DOUBLE_EPSILON;
+      break;
+    default:
+      for (size_t i = 0; i < elt_size; ++i) {
+        sum |= ((uint8_t*)elt)[i];
+      } /* for(i..) */
+      return sum;
+  } /* switch() */
+} /* ds_elt_zchk() */
 
 END_C_DECLS

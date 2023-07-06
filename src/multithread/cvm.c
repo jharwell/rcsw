@@ -9,10 +9,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_cvm.h"
+#include "rcsw/multithread/cvm.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/time.h"
 
 /*******************************************************************************
@@ -20,18 +20,18 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-mt_cvm_t* cvm_init(mt_cvm_t* const cvm_in, uint32_t flags) {
-  mt_cvm_t* cvm = NULL;
-  if (flags & MT_APP_DOMAIN_MEM) {
+struct cvm* cvm_init(struct cvm* const cvm_in, uint32_t flags) {
+  struct cvm* cvm = NULL;
+  if (flags & RCSW_NOALLOC_HANDLE) {
     cvm = cvm_in;
   } else {
-    cvm = calloc(1, sizeof(mt_cvm_t));
+    cvm = calloc(1, sizeof(struct cvm));
   }
   RCSW_CHECK_PTR(cvm);
   cvm->flags = flags;
 
-  RCSW_CHECK(OK == mt_cond_init(&cvm->cv, cvm->flags));
-  RCSW_CHECK(OK == mt_mutex_init(&cvm->mutex, cvm->flags));
+  RCSW_CHECK(OK == condv_init(&cvm->cv, cvm->flags));
+  RCSW_CHECK(OK == mutex_init(&cvm->mtx, cvm->flags));
   return cvm;
 
 error:
@@ -39,48 +39,48 @@ error:
   return NULL;
 } /* mt_cvm_init() */
 
-void mt_cvm_destroy(mt_cvm_t* const cvm) {
+void mt_cvm_destroy(struct cvm* const cvm) {
   RCSW_FPC_V(NULL != cvm);
 
-  mt_cond_destroy(&cvm->cv);
-  mt_mutex_destroy(&cvm->mutex);
-  if (cvm->flags & MT_APP_DOMAIN_MEM) {
+  condv_destroy(&cvm->cv);
+  mutex_destroy(&cvm->mtx);
+  if (cvm->flags & RCSW_NOALLOC_HANDLE) {
     free(cvm);
   }
 } /* mt_cvm_destroy() */
-status_t cvm_signal(mt_cvm_t* const cvm) {
+status_t cvm_signal(struct cvm* const cvm) {
   RCSW_FPC_NV(ERROR, NULL != cvm);
-  RCSW_CHECK(0 == mt_cond_signal(&cvm->cv));
+  RCSW_CHECK(0 == condv_signal(&cvm->cv));
   return OK;
 
 error:
   return ERROR;
 } /* mt_cvm_signal() */
 
-status_t cvm_wait(mt_cvm_t* const cvm) {
+status_t cvm_wait(struct cvm* const cvm) {
   RCSW_FPC_NV(ERROR, NULL != cvm);
-  RCSW_CHECK(0 == mt_cond_wait(&cvm->cv, &cvm->mutex));
+  RCSW_CHECK(0 == condv_wait(&cvm->cv, &cvm->mtx));
   return OK;
 
 error:
   return ERROR;
 } /* mt_cvm_wait() */
 
-status_t cvm_timedwait(mt_cvm_t* const cvm, const struct timespec* const to) {
+status_t cvm_timedwait(struct cvm* const cvm, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cvm, NULL != to);
   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
 
   RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
-  RCSW_CHECK(0 == mt_cond_timedwait(&cvm->cv, &cvm->mutex, &ts));
+  RCSW_CHECK(0 == condv_timedwait(&cvm->cv, &cvm->mtx, &ts));
   return OK;
 
 error:
   return ERROR;
-} /* mt_cvm_timedwait() */
+} /* struct cvmimedwait() */
 
-status_t cvm_broadcast(mt_cvm_t* const cvm) {
+status_t cvm_broadcast(struct cvm* const cvm) {
   RCSW_FPC_NV(ERROR, NULL != cvm);
-  RCSW_CHECK(0 == mt_cond_broadcast(&cvm->cv));
+  RCSW_CHECK(0 == condv_broadcast(&cvm->cv));
   return OK;
 
 error:

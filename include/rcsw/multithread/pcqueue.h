@@ -1,5 +1,5 @@
 /**
- * \file mt_queue.h
+ * \file pcqueue.h
  * \ingroup multithread
  *
  * \copyright 2017 John Harwell, All rights reserved.
@@ -12,8 +12,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_csem.h"
-#include "rcsw/multithread/mt_mutex.h"
+#include "rcsw/multithread/csem.h"
+#include "rcsw/multithread/mutex.h"
 #include "rcsw/ds/fifo.h"
 
 /*******************************************************************************
@@ -22,27 +22,18 @@
 /**
  * \brief Producer-consumer queue initialization parameters.
  */
-struct mt_queue_params {
-    size_t elt_size;     /// Size of each element in the queue.
-    size_t max_elts;    /// # of elements the queue will hold.
-    uint8_t *elements;  /// The elements the FIFO will manage. Can be NULL.
-
-    /**
-     * Configuration flags. You can pass an DS flag that applies to a FIFO.
-     */
-    uint32_t flags;
-};
+#define pcqueue_params fifo_params
 
 /**
  * \brief Producer-consumer queue, providing thread-safe access to data at both
  * ends of a FIFO.
  */
-struct mt_queue {
+struct pcqueue {
     struct fifo fifo;   /// The underlying FIFO.
     uint32_t flags;     /// Configuration flags.
-    mt_mutex_t mutex;   /// Mutex protecting buffer, in, out, count.
-    mt_csem_t empty;    /// Semaphore counting empty slots in buffer.
-    mt_csem_t full;     /// Semaphore counting full slots in buffer.
+    struct mutex mutex;   /// Mutex protecting buffer, in, out, count.
+    struct csem empty;    /// Semaphore counting empty slots in buffer.
+    struct csem full;     /// Semaphore counting full slots in buffer.
 };
 
 /*******************************************************************************
@@ -55,7 +46,7 @@ struct mt_queue {
  *
  * \return \ref bool_t
  */
-static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
+static inline bool_t pcqueue_isfull(const struct pcqueue* const queue) {
     RCSW_FPC_NV(false, NULL != queue);
     return fifo_isfull(&queue->fifo);
 }
@@ -67,7 +58,7 @@ static inline bool_t mt_queue_isfull(const struct mt_queue* const queue) {
  *
  * \return \ref bool_t
  */
-static inline bool_t mt_queue_isempty(const struct mt_queue* const queue) {
+static inline bool_t pcqueue_isempty(const struct pcqueue* const queue) {
     RCSW_FPC_NV(false, NULL != queue);
     return fifo_isempty(&queue->fifo);
 }
@@ -81,7 +72,7 @@ static inline bool_t mt_queue_isempty(const struct mt_queue* const queue) {
  *
  * \return # elements in queue, or 0 on ERROR.
  */
-static inline size_t mt_queue_n_elts(const struct mt_queue* const queue) {
+static inline size_t pcqueue_n_elts(const struct pcqueue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
     return fifo_n_elts(&queue->fifo);
 }
@@ -95,7 +86,7 @@ static inline size_t mt_queue_n_elts(const struct mt_queue* const queue) {
  *
  * \return Queue capacity, or 0 on ERROR.
  */
-static inline size_t mt_queue_capacity(const struct mt_queue* const queue) {
+static inline size_t pcqueue_capacity(const struct pcqueue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
     return fifo_capacity(&queue->fifo);
 }
@@ -108,9 +99,9 @@ static inline size_t mt_queue_capacity(const struct mt_queue* const queue) {
  *
  * \return # free slots, or 0 on ERROR.
  */
-static inline size_t mt_queue_n_free(const struct mt_queue* const queue) {
+static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
     RCSW_FPC_NV(0, NULL != queue);
-    return mt_queue_capacity(queue) - mt_queue_n_elts(queue);
+    return pcqueue_capacity(queue) - pcqueue_n_elts(queue);
 }
 
 /*******************************************************************************
@@ -121,57 +112,57 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a producer-consumer queue.
  *
- * \param mt_queue_in An application allocated handle for the queue. Can be
+ * \param pcqueue_in An application allocated handle for the queue. Can be
  * NULL, depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized queue, or NULL if an error occurred.
  */
-struct mt_queue * mt_queue_init(
-    struct mt_queue *mt_queue_in,
-    const struct mt_queue_params * params) RCSW_CHECK_RET;
+struct pcqueue * pcqueue_init(
+    struct pcqueue *pcqueue_in,
+    const struct pcqueue_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a producer-consumer queue. Any further use of the queue handle
  * after calling this function is undefined.
  *
- * \param mt_queue The queue handle.
+ * \param pcqueue The queue handle.
  */
-void mt_queue_destroy(struct mt_queue * mt_queue);
+void pcqueue_destroy(struct pcqueue * pcqueue);
 
 /**
  * \brief Push an item to the back of the queue, waiting if necessary for space
  * to become available.
  *
- * \param mt_queue The queue handle.
+ * \param pcqueue The queue handle.
  * \param e The item to enqueue.
  *
  * \return \ref status_t.
  */
-status_t mt_queue_push(struct mt_queue * mt_queue, const void * e);
+status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting if
  * necessary for the queue to become non-empty.
  *
- * \param mt_queue The queue handle.
+ * \param pcqueue The queue handle.
  * \param e The item to dequeue. Can be NULL.
  *
  * \return \ref status_t.
  */
-status_t mt_queue_pop(struct mt_queue * mt_queue, void * e);
+status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting until the
  * timeout if necessary for the queue to become non-empty.
  *
- * \param mt_queue The queue handle.
+ * \param pcqueue The queue handle.
  * \param to A RELATIVE timeout.
  * \param e The item to dequeue. Can be NULL.
  *
  * \return \ref status_t.
  */
-status_t mt_queue_timed_pop(struct mt_queue * mt_queue,
+status_t pcqueue_timed_pop(struct pcqueue * pcqueue,
                             const struct timespec * to, void * e);
 
 /**
@@ -179,12 +170,11 @@ status_t mt_queue_timed_pop(struct mt_queue * mt_queue,
  * non-NULL value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
- * \param mt_queue The queue handle.
+ * \param pcqueue The queue handle.
  *
  * \return A reference to the first element in the queue, or NULL if no such
  * element or an error occurred.
  */
-void* mt_queue_peek(struct mt_queue * mt_queue);
+void* pcqueue_peek(struct pcqueue * pcqueue);
 
 END_C_DECLS
-

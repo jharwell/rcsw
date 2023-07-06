@@ -32,12 +32,12 @@ static void adj_matrix_printew(const void* const e) {
  ******************************************************************************/
 struct adj_matrix*
 adj_matrix_init(struct adj_matrix* const matrix_in,
-                const struct ds_params* const params) {
-  RCSW_FPC_NV(NULL, NULL != params, params->tag == ekRCSW_DS_ADJ_MATRIX);
+                const struct adj_matrix_params* const params) {
+  RCSW_FPC_NV(NULL, NULL != params);
   RCSW_ER_MODULE_INIT();
   struct adj_matrix* matrix = NULL;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
     matrix = matrix_in;
   } else {
@@ -45,23 +45,22 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
     RCSW_CHECK_PTR(matrix);
   }
   matrix->flags = params->flags;
-  if (params->type.adjm.is_weighted) {
+  if (params->is_weighted) {
     matrix->elt_size = sizeof(double);
   } else {
     matrix->elt_size = sizeof(int);
   }
-  matrix->is_weighted = params->type.adjm.is_weighted;
-  matrix->is_directed = params->type.adjm.is_directed;
-  matrix->n_vertices = params->type.adjm.n_vertices;
+  matrix->is_weighted = params->is_weighted;
+  matrix->is_directed = params->is_directed;
+  matrix->n_vertices = params->n_vertices;
   matrix->n_edges = 0;
 
-  struct ds_params mat_params = {
-    .type = { .smat = { .n_rows = params->type.adjm.n_vertices,
-                        .n_cols = params->type.adjm.n_vertices } },
+  struct matrix_params mat_params = {
+    .n_rows = params->n_vertices,
+    .n_cols = params->n_vertices,
     .elements = params->elements,
     .elt_size = matrix->elt_size,
-    .flags = params->flags | RCSW_DS_NOALLOC_HANDLE,
-    .tag = ekRCSW_DS_MATRIX
+    .flags = params->flags | RCSW_NOALLOC_HANDLE,
   };
   if (matrix->is_weighted) {
     mat_params.printe = adj_matrix_printew;
@@ -92,7 +91,7 @@ error:
 void adj_matrix_destroy(struct adj_matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
   matrix_destroy(&matrix->matrix);
-  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* adj_matrix_destroy() */

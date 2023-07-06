@@ -19,6 +19,17 @@
  * Structure Definitions
  ******************************************************************************/
 /**
+ * \brief Dynamic matrix initialization parameters.
+ */
+struct dyn_matrix_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  size_t n_rows;  /// # rows in matrix.
+  size_t n_cols;  /// # columns in matrix.
+  uint8_t* rows;  /// Ptr to space for vector-of-row-vectors.
+};
+
+
+/**
  * \brief Representation of a dynamically-sized matrix using a dynamic array row
  * vectors, with each row vector also being a dynamic array.
  *
@@ -130,7 +141,7 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
  * \return The initialized matrix, or NULL if an error occurred.
  */
 struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
-                                   const struct ds_params* params) RCSW_CHECK_RET;
+                                   const struct dyn_matrix_params* params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a dynamic matrix.

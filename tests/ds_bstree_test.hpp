@@ -22,11 +22,11 @@ using bst_verify_cb = int(*)(const struct bstree* const tree,
                              struct bstree_node * const node);
 
 using ds_bstree_test_t = void(*)(int len,
-                                 struct ds_params *params,
+                                 struct bstree_params *params,
                                  bst_verify_cb verify_cb);
 using ds_bstree_rm_test_t = void (*)(int len,
                                      int remove_type,
-                                     struct ds_params *params,
+                                     struct bstree_params *params,
                                      bst_verify_cb verify_cb);
 typedef int (*int_verify_cb)(const struct bstree* const tree,
                              struct inttree_node * const node);

@@ -13,10 +13,10 @@
 
 #include <limits.h>
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/ostree_node.h"
+#include "rcsw/er/client.h"
 
 BEGIN_C_DECLS
 

@@ -201,7 +201,7 @@ static void print_decimal_number(struct printf_output_gadget* output,
 struct scaling_factor {
   double raw_factor;
   bool_t multiply; // if true, need to multiply by raw_factor; otherwise need to
-                   // divide by it
+      // divide by it
 };
 
 static double apply_scaling(double num, struct scaling_factor normalization) {
@@ -268,11 +268,11 @@ get_normalized_components(bool_t negative,
   double rounding_threshold = 0.5;
 
   components.fractional = (int_fast64_t)scaled_remainder; // when precision == 0,
-                                                          // the assigned value
-                                                          // should be 0
+      // the assigned value
+      // should be 0
   scaled_remainder -= (double)components.fractional; // when precision == 0, this
-                                                     // will not change
-                                                     // scaled_remainder
+      // will not change
+      // scaled_remainder
 
   components.fractional += (scaled_remainder >= rounding_threshold);
   if (scaled_remainder == rounding_threshold) {
@@ -312,7 +312,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
     // TODO: This is a special-case for 0.0 (and -0.0); but proper handling is
     // required for denormals more generally.
     floored_exp10 = 0; // ... and no need to set a normalization factor or check
-                       // the powers table
+        // the powers table
   } else {
     double exp10 = stdio_log10(abs_number);
     floored_exp10 = stdio_floor(exp10);
@@ -353,7 +353,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
     // point
     precision = (precision_ > 0 ? (unsigned)precision_ : 0U);
     flags |= FLAGS_PRECISION; // make sure print_broken_up_decimal respects our
-                              // choice above
+        // choice above
   }
 
   normalization.multiply =
@@ -372,7 +372,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
     if ((flags & FLAGS_ADAPT_EXP) && floored_exp10 >= -1 &&
         decimal_part_components.integral == powers_of_10[floored_exp10 + 1]) {
       floored_exp10++; // Not strictly necessary, since floored_exp10 is no longer
-                       // really used
+          // really used
       precision--;
       // ... and it should already be the case that
       // decimal_part_components.fractional == 0
@@ -494,7 +494,7 @@ void print_floating_point(struct printf_output_gadget* output,
   while ((len < RCSW_STDIO_PRINTF_BUFFER_SIZE) &&
          (precision > PRINTF_MAX_SUPPORTED_PRECISION)) {
     buf[len++] = '0'; // This respects the precision in terms of result length
-                      // only
+        // only
     precision--;
   }
 
@@ -503,6 +503,6 @@ void print_floating_point(struct printf_output_gadget* output,
     print_exponential_number(output, value, precision, width, flags, buf, len);
   else
 #endif
-  print_decimal_number(output, value, precision, width, flags, buf, len);
+    print_decimal_number(output, value, precision, width, flags, buf, len);
 }
 RCSW_WARNING_DISABLE_POP()

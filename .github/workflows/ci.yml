@@ -14,7 +14,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu20.04:2023-04-12
+      image: jharwell/ubuntu20.04:2023-07-09
     strategy:
       matrix:
         build_type:
@@ -39,6 +39,7 @@ jobs:
           -DLIBRA_CODE_COV=YES \
           -DRCSW_STDIO_PUTCHAR=th_putchar \
           -DLIBRA_ERL=ALL \
+          -DLIBRA_VALGRIND_COMPAT=YES \
           ..
 
           # Normal tests

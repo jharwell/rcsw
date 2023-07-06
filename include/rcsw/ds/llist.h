@@ -21,6 +21,10 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+struct llist_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+};
+
 /**
  * \brief Linked list node structure (note that this is for a doubly linked
  * list).
@@ -171,7 +175,7 @@ static inline size_t llist_element_space(size_t max_elts, size_t elt_size) {
  *
  * \return The # of bytes required.
  */
-static inline size_t llist_node_space(size_t max_elts) {
+static inline size_t llist_meta_space(size_t max_elts) {
   return ds_elt_space_with_meta(max_elts, sizeof(struct llist_node));
 }
 
@@ -190,8 +194,8 @@ BEGIN_C_DECLS
  *
  * \return The initialized list, or NULL if an error occured.
  */
-struct llist *llist_init(
-    struct llist *list_in, const struct ds_params *params) RCSW_CHECK_RET;
+struct llist *llist_init(struct llist *list_in,
+                         const struct llist_params *params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a \ref llist
@@ -320,15 +324,12 @@ status_t llist_sort(struct llist *list, enum alg_sort_type type);
  *
  * \param list The linked list handle
  *
- * \param cparams Initialization parameters for the new list. Flags, elements, and
- *        node fields are considered--all other fields inherited from parent list. If
- *        NULL, then I assume that the calling application wants all memory in
- *        the DS domain.
- *
  * \return The new list, or NULL if an error occurred..
  */
 struct llist* llist_copy(struct llist *list,
-                         const struct ds_params *cparams);
+                         uint32_t flags,
+                         uint8_t* elements,
+                         uint8_t* nodes);
 
 /**
  * \brief Create a copy of part of a \ref llist (conditional copy).
@@ -342,16 +343,13 @@ struct llist* llist_copy(struct llist *list,
  *
  * \param pred The predicate for determining element membership in the new list
  *
- * \param cparams Initialization parameters for the new list. Flags, elements,
- *                and node fields are considered--all other fields inherited
- *                from parent list. If NULL, then I assume that the calling
- *                application wants all memory in the DS domain.
- *
  * \return The new list, or NULL if an error occurred.
  */
 struct llist *llist_copy2(struct llist *list,
                           bool_t (*pred)(const void *e),
-                          const struct ds_params *cparams);
+                          uint32_t flags,
+                          uint8_t* elements,
+                          uint8_t* nodes);
 
 /**
  * \brief  Filter out elements from one \ref llist into another.
@@ -365,16 +363,13 @@ struct llist *llist_copy2(struct llist *list,
  *
  * \param pred The predicate for determining element membership in the new list
  *
- * \param fparams Initialization parameters for the new list. Flags, elements,
- *                and node fields are considered--all other fields inherited
- *                from parent list. If NULL, then I assume that the calling
- *                application wants all memory in the DS domain.
- *
  * \return The new list, or NULL if an error occurred.
  */
 struct llist *llist_filter(struct llist *list,
                            bool_t (*pred)(const void *const e),
-                           const struct ds_params * fparams);
+                           uint32_t flags,
+                           uint8_t* elements,
+                           uint8_t* nodes);
 
 /**
  * \brief - Filter out items that satisfy a predicate from a \ref llist.

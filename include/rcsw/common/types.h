@@ -43,7 +43,20 @@ typedef enum {
 
 extern uint32_t errno;
 
-/* includes */
+/**
+ * \brief A C boolean type.
+ */
+#if defined(true) || defined(false)
+#undef true
+#undef false
+#endif
+
+typedef enum {
+  false = 0,
+  true  = 1
+} bool_t;
+
+
 #elif defined(__linux__)
 
 #include <errno.h>

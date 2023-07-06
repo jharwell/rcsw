@@ -26,19 +26,19 @@
 #define RCSW_ER_PLUGIN_PRINTF printf
 
 #define RCSW_ER_PLUGIN_INIT(...) log4cl_init(__VA_ARGS__)
-#define RCSW_ER_PLUGIN_SHUTDOWN(...) log4cl_shutdown(__VA_ARGS__)
+#define RCSW_ER_PLUGIN_DEINIT(...) log4cl_shutdown(__VA_ARGS__)
 
-#define RCSW_ER_PLUGIN_REPORT(lvl, handle,  id, name, msg, ...) \
+#define RCSW_ER_PLUGIN_REPORT(LVL, HANDLE,  ID, NAME, MSG, ...) \
   {                                                             \
-    RCSW_ER_PLUGIN_PRINTF(name " [" RCSW_XSTR(lvl) "] "  msg,   \
+    RCSW_ER_PLUGIN_PRINTF(NAME " [" RCSW_XSTR(LVL) "] "  MSG,   \
                           ## __VA_ARGS__);                      \
   }
 
-#define RCSW_ER_PLUGIN_INSMOD(id, name) log4cl_insmod((id), (name))
+#define RCSW_ER_PLUGIN_INSMOD(ID, NAME) log4cl_insmod((ID), (NAME))
 
-#define RCSW_ER_PLUGIN_HANDLE(id, name) log4cl_mod_query(id)
+#define RCSW_ER_PLUGIN_HANDLE(ID, NAME) log4cl_mod_query(ID)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl) log4cl_mod_enabled(handle, lvl)
+#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) log4cl_mod_enabled(HANDLE, LVL)
 
 #define RCSW_LOG4CL_MODNAME_LEN 32
 
@@ -63,8 +63,9 @@
     M_UTILS,                                    \
     M_PULSE,                                    \
     M_STDIO,                                    \
+    M_GRIND,                                    \
     M_DS_CORE,                                  \
-    M_DS_BIN_HEAP,                              \
+    M_DS_BINHEAP,                              \
     M_DS_CSMATRIX,                              \
     M_COMMON,                                   \
     M_DS_FIFO,                                  \
@@ -77,8 +78,10 @@
     M_DS_ADJ_MATRIX,                            \
     M_DS_MATRIX,                                \
     M_DS_DYN_MATRIX,                            \
-    M_MULTITHREAD,                              \
+    M_MT_RDWRLOCK,                              \
+    M_MT_RADIX,                                 \
     M_MULTIPROCESS,                             \
+    M_CTRL_PID,                                 \
     M_EXTERNAL
 
 enum log4cl_module_codes {RCSW_XGEN_ENUMS(RCSW_LOG4CL_MODULES)};

@@ -24,8 +24,23 @@ BEGIN_C_DECLS
 double time_monotonic_sec(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec + ts.tv_nsec * 1e-9;
+  return time_ts2mono(&ts);
 } /* time_monotonic_sec() */
+
+double time_ts2mono(const struct timespec* const ts) {
+  return ts->tv_sec + ts->tv_nsec * 1.0 / ONEE9;
+} /* time_ts2mono() */
+
+size_t time_ts2monons(const struct timespec* const ts) {
+  return ts->tv_sec * ONEE9 + ts->tv_nsec;
+} /* time_ts2mono() */
+
+struct timespec time_monons2ts(size_t val) {
+  struct timespec ts;
+  ts.tv_sec = val / ONEE9;
+  ts.tv_nsec = val % ONEE9;
+  return ts;
+} /* time_monons2ts() */
 
 int time_ts_cmp(const struct timespec* const a, const struct timespec* const b) {
   if (a->tv_sec > b->tv_sec) {

@@ -16,9 +16,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_cvm.h"
-#include "rcsw/multithread/mt_mutex.h"
-#include "rcsw/multithread/mt_queue.h"
+#include "rcsw/multithread/cvm.h"
+#include "rcsw/multithread/mutex.h"
+#include "rcsw/multithread/pcqueue.h"
 #include "rcsw/rcsw.h"
 #include "rcsw/multithread/mpool.h"
 #include "rcsw/ds/rbuffer.h"
@@ -96,7 +96,7 @@ struct pulse_bp_ent {
    * protects itself during request/release. Only used if \ref
    * PULSE_SERVICE_ASYNC is not passed.
    */
-  mt_mutex_t mutex;
+  struct mutex mutex;
 };
 
 /**
@@ -123,7 +123,7 @@ struct pulse_rxq_ent {
  */
 struct pulse_sub_ent {
   uint32_t pid;                 /// ID of subscribed packet.
-  struct mt_queue *subscriber;  /// Pointer to receive queue of subscriber.
+  struct pcqueue *subscriber;  /// Pointer to receive queue of subscriber.
 };
 
 /**
@@ -136,7 +136,7 @@ struct pulse_inst {
   size_t n_rxqs;     /// # active receive queues (dynamic during lifetime).
   size_t max_rxqs;   /// Max # of receive queues allowed
   size_t max_subs;   /// Max # of subscribers (rxq-pid pairs) allowed.
-  mt_mutex_t mutex;  /// mutex to protect access to bus metadata.
+  struct mutex mutex;  /// mutex to protect access to bus metadata.
   uint32_t flags;    /// Run-time configuration flags.
 
   /**
@@ -150,7 +150,7 @@ struct pulse_inst {
    * packets and to receive published packets. This is always allocated by
    * PULSE during initialization.
    */
-  struct mt_queue *rx_queues;
+  struct pcqueue *rx_queues;
 
   /** List of subscribers (rxq, ID) pairs. Always sorted. */
   struct llist *sub_list;
@@ -165,14 +165,14 @@ struct pulse_inst {
 /*******************************************************************************
  * Inline Functions
  ******************************************************************************/
-static inline size_t pulse_rxq_n_elts(const struct mt_queue *const queue) {
+static inline size_t pulse_rxq_n_elts(const struct pcqueue *const queue) {
   RCSW_FPC_NV(0, queue != NULL);
-  return mt_queue_n_elts(queue);
+  return pcqueue_n_elts(queue);
 }
 
-static inline size_t pulse_rxq_n_free(const struct mt_queue *const queue) {
+static inline size_t pulse_rxq_n_free(const struct pcqueue *const queue) {
   RCSW_FPC_NV(0, queue != NULL);
-  return mt_queue_n_free(queue);
+  return pcqueue_n_free(queue);
 }
 
 /**
@@ -180,9 +180,9 @@ static inline size_t pulse_rxq_n_free(const struct mt_queue *const queue) {
  *
  * \return The top on the queue, or NULL if no such packet or an error occurred.
  */
-static inline uint8_t * pulse_get_top(struct mt_queue *const queue) {
+static inline uint8_t * pulse_get_top(struct pcqueue *const queue) {
   RCSW_FPC_NV(NULL, queue != NULL);
-  return (uint8_t*)mt_queue_peek(queue);
+  return (uint8_t*)pcqueue_peek(queue);
 }
 
 /*******************************************************************************
@@ -192,8 +192,8 @@ static inline size_t pulse_pool_space(size_t elt_size, size_t max_elts) {
   return mpool_element_space(elt_size, max_elts);
 }
 
-static inline size_t pulse_node_space(size_t max_elts) {
-  return mpool_node_space(max_elts);
+static inline size_t pulse_meta_space(size_t max_elts) {
+  return mpool_meta_space(max_elts);
 }
 
 /*******************************************************************************
@@ -233,7 +233,7 @@ void pulse_destroy(struct pulse_inst *pulse);
  *
  * \return Pointer to new receive queue, or NULL if an error occurred.
  */
-struct mt_queue *pulse_rxq_init(struct pulse_inst * pulse,
+struct pcqueue *pulse_rxq_init(struct pulse_inst * pulse,
                                 void * buf_p,
                                 uint32_t n_entries) RCSW_CHECK_RET;
 
@@ -247,7 +247,7 @@ struct mt_queue *pulse_rxq_init(struct pulse_inst * pulse,
  * \return \ref status_t.
  */
 status_t pulse_subscribe(struct pulse_inst * pulse,
-                         struct mt_queue * queue, uint32_t pid);
+                         struct pcqueue * queue, uint32_t pid);
 
 /**
  * \brief Unsubscribe the specified RXQ from the specified packet ID
@@ -259,7 +259,7 @@ status_t pulse_subscribe(struct pulse_inst * pulse,
  * \return \ref status_t.
  */
 status_t pulse_unsubscribe(struct pulse_inst * pulse,
-                           struct mt_queue * queue, uint32_t pid);
+                           struct pcqueue * queue, uint32_t pid);
 
 /**
  * \brief Publish a packet to the bus. A memcpy() will be performed, if the
@@ -309,7 +309,7 @@ status_t pulse_publish_release(struct pulse_inst* pulse, uint32_t pid,
  * \return A reference to the first item in the queue, or NULL if an ERROR
  * occurred.
  */
-void *pulse_wait_front(struct mt_queue * queue) RCSW_CHECK_RET;
+void *pulse_wait_front(struct pcqueue * queue) RCSW_CHECK_RET;
 
 /**
  * \brief Wait (until a timeout) until the given receive queue is not empty.
@@ -320,7 +320,7 @@ void *pulse_wait_front(struct mt_queue * queue) RCSW_CHECK_RET;
  * \return A reference to the first item in the queue, or NULL if an ERROR or a
  * timeout occurred.
  */
-void *pulse_timedwait_front(struct mt_queue * queue,
+void *pulse_timedwait_front(struct pcqueue * queue,
                             struct timespec * to) RCSW_CHECK_RET;
 
 /**
@@ -330,7 +330,6 @@ void *pulse_timedwait_front(struct mt_queue * queue,
  *
  * \return \ref status_t.
  */
-status_t pulse_pop_front(struct mt_queue * queue);
+status_t pulse_pop_front(struct pcqueue * queue);
 
 END_C_DECLS
-

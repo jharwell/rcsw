@@ -19,14 +19,19 @@
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+using rbuffer_test_t = void(*)(int len,
+                               struct rbuffer_params *params);
+
+/*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
 template <typename T>
-static void run_test(ds_test_t test) {
+static void run_test(rbuffer_test_t test) {
   log4cl_init();
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_RBUFFER;
+  struct rbuffer_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
@@ -34,13 +39,13 @@ static void run_test(ds_test_t test) {
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
     RCSW_DS_RBUFFER_AS_FIFO
   };
 
   for (size_t j = 3; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       params.max_elts = j;
       test(j, &params);
@@ -54,7 +59,7 @@ static void run_test(ds_test_t test) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void rdwr_test(int len, struct ds_params* params) {
+static void rdwr_test(int len, struct rbuffer_params* params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
 
@@ -89,7 +94,7 @@ static void rdwr_test(int len, struct ds_params* params) {
 } /* rdwr_test() */
 
 template<typename T>
-static void overwrite_test(int len, struct ds_params *  params) {
+static void overwrite_test(int len, struct rbuffer_params *  params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
   T arr[TH_NUM_ITEMS*TH_NUM_ITEMS];
@@ -126,7 +131,7 @@ static void overwrite_test(int len, struct ds_params *  params) {
 } /* overwrite_test() */
 
 template<typename T>
-static void map_test(int len, struct ds_params * params) {
+static void map_test(int len, struct rbuffer_params * params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
   int arr[TH_NUM_ITEMS];
@@ -154,7 +159,7 @@ static void map_test(int len, struct ds_params * params) {
 } /* map_test() */
 
 template<typename T>
-static void fifo_test(int len, struct ds_params * params) {
+static void fifo_test(int len, struct rbuffer_params * params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
   T arr[TH_NUM_ITEMS];
@@ -204,7 +209,7 @@ static void fifo_test(int len, struct ds_params * params) {
 } /* fifo_test() */
 
 template <typename T>
-static void inject_test(int len, struct ds_params * params) {
+static void inject_test(int len, struct rbuffer_params * params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
   int sum = 0;
@@ -227,7 +232,7 @@ static void inject_test(int len, struct ds_params * params) {
 } /* inject_test() */
 
 template <typename T>
-static void iter_test(int len, struct ds_params * params) {
+static void iter_test(int len, struct rbuffer_params * params) {
   struct rbuffer *rb;
   struct rbuffer myrb;
   int arr[TH_NUM_ITEMS * TH_NUM_ITEMS];

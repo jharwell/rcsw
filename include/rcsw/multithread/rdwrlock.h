@@ -1,5 +1,5 @@
 /**
- * \file mt_rdwr_lock.h
+ * \file rdwrlock.h
  * \ingroup multithread
  * \brief Implementation of fair reader-writer lock.
  *
@@ -15,7 +15,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_csem.h"
+#include "rcsw/multithread/csem.h"
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
@@ -25,13 +25,30 @@
  * \brief Fair reader-writer lock that guarantees that neither readers nor
  * writers will starve.
  */
-typedef struct {
-    mt_csem_t order;  /* used to form a queue of readers/writers*/
-    mt_csem_t access; /* exclusive access semaphore */
-    mt_csem_t read;   /* semaphore for updating n_readers */
-    size_t n_readers;    /* # of readers currently accessing resource */
-    uint32_t flags;
-} mt_rdwr_lock_t;
+struct rdwrlock {
+  /** Used to form a queue of readers/writers */
+  struct csem order;
+
+  /** Exclusive access semaphore */
+  struct csem access;
+
+  /** semaphore for updating n_readers */
+  struct csem read;
+
+  /** # of readers currently accessing resource */
+  size_t n_readers;
+
+  /** Configuration flags */
+  uint32_t flags;
+};
+
+/**
+ * \brief The scope of privileges requested for something: reading or writing.
+ */
+enum rdwrlock_scope {
+  ekSCOPE_RD,
+  ekSCOPE_WR,
+};
 
 /*******************************************************************************
  * Function Prototypes
@@ -41,12 +58,14 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a reader/writer fair lock
  *
- * \param rdwr_in Lock to initialize. Can be NULL if \ref MT_APP_DOMAIN_MEM
- * passed \param flags Configuration flags
+ * \param rdwr_in Lock to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
+ *                passed.
+ *
+ * \param flags Configuration flags
  *
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
-status_t mt_rdwr_lock_init(mt_rdwr_lock_t *const rdwr_in,
+status_t rdwrl_init(struct rdwrlock *const rdwr_in,
                            uint32_t flags) RCSW_CHECK_RET;
 
 /**
@@ -56,17 +75,8 @@ status_t mt_rdwr_lock_init(mt_rdwr_lock_t *const rdwr_in,
  *
  * \param rdwr The lock handle.
  */
-void mt_rdwr_lock_destroy(mt_rdwr_lock_t *const rdwr);
+void rdwrl_destroy(struct rdwrlock *const rdwr);
 
-/**
- * \brief Exit a critical section requiring writer privileges.
- *
- * This function is part of a fair (i.e. no rd/wr preference) sequence
- * that guarantees that no reader or write will starve.
- *
- * \param rdwr The lock handle.
- */
-void mt_rdwr_lock_wr_exit(mt_rdwr_lock_t *const rdwr);
 
 /**
  * \brief Enter a critical section requiring writer privileges.
@@ -75,8 +85,22 @@ void mt_rdwr_lock_wr_exit(mt_rdwr_lock_t *const rdwr);
  * that guarantees that no reader or write will starve.
  *
  * \param rdwr The lock handle.
+ *
+ * \param scope The scope of the privileges requested.
  */
-void mt_rdwr_lock_wr_enter(mt_rdwr_lock_t *const rdwr);
+void rdwrl_enter(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
+
+/**
+ * \brief Exit a critical section requiring writer privileges.
+ *
+ * This function is part of a fair (i.e. no rd/wr preference) sequence
+ * that guarantees that no reader or write will starve.
+ *
+ * \param rdwr The lock handle.
+ *
+ * \param scope The scope of the privileges requested.
+ */
+void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Enter a critical section requiring writer privileges with a timeout.
@@ -85,40 +109,17 @@ void mt_rdwr_lock_wr_enter(mt_rdwr_lock_t *const rdwr);
  * that guarantees that no reader or write will starve.
  *
  * \param rdwr The lock handle.
+ *
+ * \param scope The scope of the privileges requested.
+ *
  * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- * specifies. This function converts the relative timeout to absolute timeout
- * required.
+ *           specifies. This function converts the relative timeout to absolute
+ *           timeout required.
  *
  * \return \ref status_t.
  */
-status_t mt_rdwr_lock_timed_wr_enter(mt_rdwr_lock_t *const rdwr,
-                                     const struct timespec *const to);
+status_t rdwrl_timed_enter(struct rdwrlock *const rdwr,
+                           enum rdwrlock_scope scope,
+                           const struct timespec *const to);
 
-/**
- * \brief Exit a critical section requiring reader privileges.
- *
- * \param rdwr The lock handle.
- */
-void mt_rdwr_lock_rd_exit(mt_rdwr_lock_t *rdwr);
-
-/**
- * \brief Enter a critical section requiring reader privileges.
- *
- * \param rdwr The lock handle.
- */
-void mt_rdwr_lock_rd_enter(mt_rdwr_lock_t *rdwr);
-
-/**
- * \brief Enter a critical section requiring reader privileges with a timeout.
- *
- * \param rdwr The lock handle.
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- * specifies. This function converts the relative timeout to absolute timeout
- * required.
- *
- * \return \ref status_t.
- */
-status_t mt_rdwr_lock_timed_rd_enter(mt_rdwr_lock_t *const rdwr,
-                                     const struct timespec *const to);
 END_C_DECLS
-

@@ -19,16 +19,20 @@
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+using fifo_test_t = void(*)(int len, struct fifo_params *params);
+
+/*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-static void run_test(ds_test_t test) {
+static void run_test(fifo_test_t test) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_FIFO;
+  struct fifo_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<element8>;
@@ -37,11 +41,11 @@ static void run_test(ds_test_t test) {
 
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
   };
   for (int j = 1; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       params.max_elts = j;
       test(j, &params);
@@ -54,7 +58,7 @@ static void run_test(ds_test_t test) {
  * Test Functions
  ******************************************************************************/
 template<typename T>
-static void rdwr_test(int len, struct ds_params *  params) {
+static void rdwr_test(int len, struct fifo_params *  params) {
   struct fifo *fifo;
   struct fifo myfifo;
 
@@ -86,7 +90,7 @@ static void rdwr_test(int len, struct ds_params *  params) {
 } /* rdwr_test() */
 
 template<typename T>
-static void map_test(int, struct ds_params *  params) {
+static void map_test(int, struct fifo_params *  params) {
   struct fifo *fifo;
   struct fifo myfifo;
 
@@ -103,7 +107,7 @@ static void map_test(int, struct ds_params *  params) {
 } /* map_test() */
 
 template<typename T>
-static void inject_test(int, struct ds_params *  params) {
+static void inject_test(int, struct fifo_params *  params) {
   struct fifo *fifo;
   struct fifo myfifo;
 
@@ -120,7 +124,7 @@ static void inject_test(int, struct ds_params *  params) {
 } /* inject_test() */
 
 template<typename T>
-static void print_test(int len, struct ds_params *  params) {
+static void print_test(int len, struct fifo_params *  params) {
   struct fifo *fifo;
   struct fifo myfifo;
 

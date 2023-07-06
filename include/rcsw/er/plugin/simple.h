@@ -31,16 +31,16 @@
 #define RCSW_ER_PLUGIN_PRINTF stdio_printf
 
 #define RCSW_ER_PLUGIN_INIT(...)
-#define RCSW_ER_PLUGIN_SHUTDOWN(...)
+#define RCSW_ER_PLUGIN_DEINIT(...)
 
-#define RCSW_ER_PLUGIN_REPORT(lvl, logger,  id, name, msg, ...) \
+#define RCSW_ER_PLUGIN_REPORT(LVL, LOGGER,  ID, NAME, MSG, ...) \
   {                                                             \
-    RCSW_ER_PLUGIN_PRINTF(name " [" RCSW_XSTR(lvl) "] "  msg,   \
+    RCSW_ER_PLUGIN_PRINTF(NAME " [" RCSW_XSTR(LVL) "] "  MSG,   \
                           ## __VA_ARGS__);                      \
   }
 
-#define RCSW_ER_PLUGIN_INSMOD(id, name)
+#define RCSW_ER_PLUGIN_INSMOD(ID, NAME)
 
-#define RCSW_ER_PLUGIN_HANDLE(id, name)
+#define RCSW_ER_PLUGIN_HANDLE(ID, NAME)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(handle, lvl) true
+#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) true

@@ -20,6 +20,15 @@
  * Structure Definitions
  ******************************************************************************/
 /**
+ * \brief Static matrix initialization parameters.
+ */
+struct matrix_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  size_t n_rows;  /// # rows in matrix.
+  size_t n_cols;  /// # columns in matrix.
+};
+
+/**
  * \brief Representation of a fixed-size (static) matrix using a single
  * contiguous array and indexing said array in 2 dimensions.
  *
@@ -147,7 +156,7 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
  * \return The initialized matrix, or NULL if an error occurred.
  */
 struct matrix* matrix_init(struct matrix* matrix_in,
-                                         const struct ds_params* params);
+                           const struct matrix_params* params);
 
 /**
  * \brief Destroy a static matrix.

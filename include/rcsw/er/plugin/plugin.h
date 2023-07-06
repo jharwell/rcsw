@@ -26,16 +26,13 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
+
 #ifndef RCSW_ER_PLUGIN_PRINTF
 #error "RCSW_ER_PLUGIN_PRINTF() not defined"
 #endif
 
 #ifndef RCSW_ER_PLUGIN_INIT
 #error "RCSW_ER_PLUGIN_INIT() not defined"
-#endif
-
-#ifndef RCSW_ER_PLUGIN_SHUTDOWN
-#error "RCSW_ER_PLUGIN_SHUTDOWN() not defined"
 #endif
 
 #ifndef RCSW_ER_PLUGIN_REPORT

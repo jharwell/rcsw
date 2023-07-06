@@ -28,32 +28,30 @@ static void run_test(hashmap_test_t test) {
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_HASHMAP;
+  struct hashmap_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
-  params.type.hm.key_cmp = th_key_cmp;
-  params.type.hm.hash = hash_default;
-  params.type.hm.sort_thresh = -1;
-  params.type.hm.keysize = RCSW_HASHMAP_MAX_KEYSIZE;
+  params.hash = hash_default;
+  params.sort_thresh = -1;
+  params.keysize = RCSW_HASHMAP_MAX_KEYSIZE;
   params.printe = th_printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
     RCSW_DS_SORTED,
     RCSW_DS_HASHMAP_LINPROB
   };
 
-  for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (size_t j = 1; j < TH_NUM_ITEMS; ++j) {
       for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
         params.flags = flags[i];
-        params.type.hm.bsize = j;
-        params.type.hm.n_buckets = k;
+        params.bsize = j;
+        params.n_buckets = k;
         test(&params);
       } /* for(k..) */
     } /* for(j..) */
@@ -65,18 +63,18 @@ static void run_test(hashmap_test_t test) {
  * Test Functions
  ******************************************************************************/
 template<typename T>
-static void build_test(struct ds_params *  params) {
+static void build_test(struct hashmap_params *  params) {
   struct hashmap *map;
   struct hashmap mymap;
   size_t i, j;
   int failed_count = 0;
-  size_t attempts = params->type.hm.n_buckets * params->type.hm.bsize;
+  size_t attempts = params->n_buckets * params->bsize;
 
   struct hashnode nodes[TH_NUM_ITEMS* TH_NUM_ITEMS];
   T data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
   if (params->flags & RCSW_DS_SORTED) {
-    params->type.hm.sort_thresh = RCSW_MAX(attempts / 2, 1UL);
+    params->sort_thresh = RCSW_MAX(attempts / 2, 1UL);
   }
 
   map = hashmap_init(&mymap, params);
@@ -125,13 +123,13 @@ static void build_test(struct ds_params *  params) {
 } /* build_test() */
 
 template<typename T>
-static void stats_test(struct ds_params *  params) {
+static void stats_test(struct hashmap_params *  params) {
   struct hashmap *map;
   struct hashmap mymap;
   size_t i, j;
   int failed_count = 0;
 
-  params->type.hm.bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
+  params->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
 
   map = hashmap_init(&mymap, params);
   CATCH_REQUIRE(nullptr != map);
@@ -153,10 +151,10 @@ static void stats_test(struct ds_params *  params) {
 } /* stats_test() */
 
 template<typename T>
-static void linear_probing_test(struct ds_params *  params) {
+static void linear_probing_test(struct hashmap_params *  params) {
   struct hashmap *map;
   struct hashmap mymap;
-  int len = params->type.hm.n_buckets * params->type.hm.bsize;
+  int len = params->n_buckets * params->bsize;
   struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
   T data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
@@ -191,12 +189,12 @@ static void linear_probing_test(struct ds_params *  params) {
 } /* linear_probing_test() */
 
 template<typename T>
-static void remove_test(struct ds_params * params) {
+static void remove_test(struct hashmap_params * params) {
   struct hashmap *map;
   struct hashmap mymap;
   int i, j;
   int failed_count = 0;
-  int len = params->type.hm.n_buckets * params->type.hm.bsize;
+  int len = params->n_buckets * params->bsize;
   struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
   T data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
@@ -245,13 +243,13 @@ static void remove_test(struct ds_params * params) {
 } /* remove_test() */
 
 template<typename T>
-static void print_test(struct ds_params *  params) {
+static void print_test(struct hashmap_params *  params) {
   struct hashmap *map;
   struct hashmap mymap;
   size_t i, j;
   int failed_count = 0;
 
-  params->type.hm.bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
+  params->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
 
   hashmap_print(nullptr);
   map = hashmap_init(&mymap, params);

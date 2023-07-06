@@ -24,16 +24,15 @@ BEGIN_C_DECLS
  * API Functions
  ******************************************************************************/
 struct matrix* matrix_init(struct matrix* const matrix_in,
-                                         const struct ds_params* const params) {
+                           const struct matrix_params* const params) {
   RCSW_FPC_NV(NULL,
               NULL != params,
-              params->tag == ekRCSW_DS_MATRIX,
-              params->type.smat.n_rows > 0,
-              params->type.smat.n_cols > 0)
+              params->n_rows > 0,
+              params->n_cols > 0)
   RCSW_ER_MODULE_INIT();
 
   struct matrix* matrix = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(matrix_in);
     matrix = matrix_in;
   } else {
@@ -43,10 +42,10 @@ struct matrix* matrix_init(struct matrix* const matrix_in,
   matrix->flags = params->flags;
   matrix->elt_size = params->elt_size;
   matrix->printe = params->printe;
-  matrix->n_rows = params->type.smat.n_rows;
-  matrix->n_cols = params->type.smat.n_cols;
+  matrix->n_rows = params->n_rows;
+  matrix->n_cols = params->n_cols;
 
-  if (matrix->flags & RCSW_DS_NOALLOC_DATA) {
+  if (matrix->flags & RCSW_NOALLOC_DATA) {
     matrix->elements = params->elements;
   } else {
     matrix->elements = calloc(matrix->n_rows * matrix->n_cols,
@@ -63,10 +62,10 @@ error:
 void matrix_destroy(struct matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
 
-  if (!(matrix->flags & RCSW_DS_NOALLOC_DATA)) {
+  if (!(matrix->flags & RCSW_NOALLOC_DATA)) {
     free(matrix->elements);
   }
-  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* matrix_destroy() */

@@ -44,7 +44,7 @@ static void test_runner1(void (*test)(struct pulse_params* params)) {
   for (int i = 0; i < MAX_POOLS; ++i) {
     bus_params.pools[i].elements = (uint8_t*)malloc(pulse_pool_space(MAX_BUFFER_SIZE,
                                                                         1024));
-    bus_params.pools[i].nodes = (uint8_t*)malloc(pulse_node_space(1024));
+    bus_params.pools[i].nodes = (uint8_t*)malloc(pulse_meta_space(1024));
     CATCH_REQUIRE(NULL != bus_params.pools[i].elements);
     CATCH_REQUIRE(NULL != bus_params.pools[i].nodes);
     bus_params.pools[i].n_bufs = 1024;
@@ -98,7 +98,7 @@ static void subscribe_test(struct pulse_params * params) {
   pulse = pulse_init(&mypulse, params);
   CATCH_REQUIRE(NULL != pulse);
 
-  struct mt_queue * rxq = pulse_rxq_init(pulse, rxq_buf, RXQ_SIZE);
+  struct pcqueue * rxq = pulse_rxq_init(pulse, rxq_buf, RXQ_SIZE);
   CATCH_REQUIRE(NULL != rxq);
 
   int i;
@@ -120,8 +120,8 @@ static void fill_test(struct pulse_params * params) {
   pulse = pulse_init(&mypulse, params);
   CATCH_REQUIRE(NULL != pulse);
   uint8_t* buf = (uint8_t*)malloc(1024);
-  struct mt_queue * rxq = pulse_rxq_init(pulse, NULL, 1024);
-  struct mt_queue * rxq2 = pulse_rxq_init(pulse, NULL, 1024);
+  struct pcqueue * rxq = pulse_rxq_init(pulse, NULL, 1024);
+  struct pcqueue * rxq2 = pulse_rxq_init(pulse, NULL, 1024);
   CATCH_REQUIRE(NULL != rxq);
   CATCH_REQUIRE(NULL != rxq2);
   /*

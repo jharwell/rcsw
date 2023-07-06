@@ -80,7 +80,6 @@ void print_integer(struct printf_output_gadget* output,
       output, buf, len, negative, base, precision, width, flags);
 }
 
-
 void print_integer_finalization(struct printf_output_gadget* output,
                                 char* buf,
                                 printf_size_t len,

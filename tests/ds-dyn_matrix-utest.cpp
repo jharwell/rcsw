@@ -24,29 +24,28 @@
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-void run_test(void (*test)(struct ds_params *params)) {
+void run_test(void (*test)(struct dyn_matrix_params *params)) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_DYN_MATRIX,"DYN_MATRIX"); */
   /* dbg_mod_lvl_set(M_DS_DYN_MATRIX, DBG_V); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_DYN_MATRIX;
+  struct dyn_matrix_params params;
   params.elt_size = sizeof(T);
-  params.type.smat.n_cols = TH_NUM_ITEMS;
-  params.type.smat.n_rows = TH_NUM_ITEMS;
+  params.n_cols = TH_NUM_ITEMS;
+  params.n_rows = TH_NUM_ITEMS;
   params.printe = th_printe<T>;
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
     uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
   };
   for (size_t i = 1; i <= 10; ++i) {
     for (size_t j = 1; j <= 10; ++j) {
       for (size_t k = 0; k < RCSW_ARRAY_SIZE(flags); ++k) {
-      params.type.dmat.n_cols = i;
-      params.type.dmat.n_rows = j;
+      params.n_cols = i;
+      params.n_rows = j;
       params.flags = flags[k];
       test(&params);
       } /* for(k..) */
@@ -59,7 +58,7 @@ void run_test(void (*test)(struct ds_params *params)) {
  * Test Functions
  ******************************************************************************/
 template<typename T>
-static void addremove_test(struct ds_params* params) {
+static void addremove_test(struct dyn_matrix_params* params) {
   struct dyn_matrix *matrix;
   struct dyn_matrix mymatrix;
 
@@ -67,10 +66,10 @@ static void addremove_test(struct ds_params* params) {
 
   CATCH_REQUIRE(nullptr != matrix);
   element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->type.adjm.n_vertices);
+                         params->n_rows * params->n_cols);
 
-  for (size_t i = 0; i < params->type.smat.n_rows*4; ++i) {
-    for (size_t j = 0; j < params->type.smat.n_cols*4; ++j) {
+  for (size_t i = 0; i < params->n_rows; ++i) {
+    for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),
@@ -85,7 +84,7 @@ static void addremove_test(struct ds_params* params) {
 }
 
 template<typename T>
-static void transpose_test(struct ds_params* params) {
+static void transpose_test(struct dyn_matrix_params* params) {
   struct dyn_matrix *matrix;
   struct dyn_matrix mymatrix;
 
@@ -96,16 +95,16 @@ static void transpose_test(struct ds_params* params) {
    * If the # of rows and columns isn't equal, the transpose will fail, so
    * don't try
    */
-  if (params->type.smat.n_rows != params->type.smat.n_cols) {
+  if (params->n_rows != params->n_cols) {
     dyn_matrix_destroy(matrix);
     return;
   }
 
   element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->type.adjm.n_vertices);
+                         params->n_rows * params->n_cols);
 
-  for (size_t i = 0; i < params->type.smat.n_rows; ++i) {
-    for (size_t j = 0; j < params->type.smat.n_cols; ++j) {
+  for (size_t i = 0; i < params->n_rows; ++i) {
+    for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),
@@ -118,8 +117,8 @@ static void transpose_test(struct ds_params* params) {
 
   CATCH_REQUIRE(OK == dyn_matrix_transpose(matrix));
 
-  for (size_t i = 0; i < params->type.smat.n_rows; ++i) {
-    for (size_t j = 0; j < params->type.smat.n_cols; ++j) {
+  for (size_t i = 0; i < params->n_rows; ++i) {
+    for (size_t j = 0; j < params->n_cols; ++j) {
       T* e1 = (T*)dyn_matrix_access(matrix, i, j);
       T* e2 = (T*)dyn_matrix_access(matrix, j, i);
 
@@ -134,7 +133,7 @@ static void transpose_test(struct ds_params* params) {
 }
 
 template<typename T>
-static void print_test(struct ds_params* params) {
+static void print_test(struct dyn_matrix_params* params) {
   struct dyn_matrix *matrix;
   struct dyn_matrix mymatrix;
 
@@ -144,10 +143,10 @@ static void print_test(struct ds_params* params) {
 
   CATCH_REQUIRE(nullptr != matrix);
   element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->type.adjm.n_vertices);
+                         params->n_rows * params->n_cols);
 
-  for (size_t i = 0; i < params->type.smat.n_rows*4; ++i) {
-    for (size_t j = 0; j < params->type.smat.n_cols*4; ++j) {
+  for (size_t i = 0; i < params->n_rows; ++i) {
+    for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),

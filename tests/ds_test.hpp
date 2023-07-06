@@ -13,7 +13,21 @@
  ******************************************************************************/
 #include <vector>
 
+#define RCSW_ER_MODNAME "rcsw.ds.test"
+#define RCSW_ER_MODID M_TESTING
 #include "rcsw/er/client.h"
+#include "rcsw/ds/binheap.h"
+#include "rcsw/ds/bstree.h"
+#include "rcsw/ds/darray.h"
+#include "rcsw/ds/dyn_matrix.h"
+#include "rcsw/ds/fifo.h"
+#include "rcsw/ds/hashmap.h"
+#include "rcsw/ds/inttree.h"
+#include "rcsw/ds/llist.h"
+#include "rcsw/ds/ostree.h"
+#include "rcsw/ds/rbuffer.h"
+#include "rcsw/ds/adj_matrix.h"
+#include "rcsw/ds/matrix.h"
 
 /*******************************************************************************
  * Class Definitions
@@ -189,3 +203,137 @@ bool_t th_iter_func(void *e) {
   T* e1 = reinterpret_cast<T*>(e);
   return (bool_t)(e1->value1 % 2 == 0);
 } /* th_iter_func() */
+
+template<typename T>
+status_t th_ds_init(T *const params) {
+  RCSW_ER_MODULE_INIT();
+
+  /* finish initializing parameter struct */
+  params->elements = NULL;
+  params->nodes = NULL;
+  if constexpr(std::is_same<T,struct darray_params>::value) {
+      /* *2 is to allow the splice tests succeed without segfault */
+      params->elements = (uint8_t*)(malloc(darray_element_space(TH_NUM_ITEMS * 2,
+                                                                params->elt_size)));
+      params->max_elts = TH_NUM_ITEMS * 2;
+    } else if constexpr(std::is_same<T,struct rbuffer_params>::value) {
+      params->elements =
+          (uint8_t*)(malloc(rbuffer_element_space(params->elt_size,
+                                                  TH_NUM_ITEMS)));
+    } else if constexpr(std::is_same<T,struct fifo_params>::value) {
+      params->elements =
+          (uint8_t*)(malloc(fifo_element_space(params->elt_size, TH_NUM_ITEMS)));
+    } else if constexpr(std::is_same<T,struct llist_params>::value) {
+      /*  *2 is to allow the splice_tests() succeed without segfault */
+      params->max_elts = TH_NUM_ITEMS * 2;
+      params->nodes = (uint8_t*)(malloc(llist_meta_space(TH_NUM_ITEMS * 2)));
+      params->elements =
+          (uint8_t*)(malloc(llist_element_space(TH_NUM_ITEMS * 2,
+                                                params->elt_size)));
+      RCSW_CHECK_PTR(params->nodes);
+    } else if constexpr(std::is_same<T,struct binheap_params>::value) {
+      params->elements =
+          (uint8_t*)(malloc(binheap_element_space(TH_NUM_ITEMS, params->elt_size)));
+      memset(params->elements, 0,
+             binheap_element_space(TH_NUM_ITEMS, params->elt_size));
+    } else if constexpr(std::is_same<T,struct adj_matrix_params>::value) {
+      /* Just do weighted all the time--need the space.... */
+      params->elements = (uint8_t*)(malloc(adj_matrix_element_space(TH_NUM_ITEMS, true)));
+      memset(params->elements, 0, adj_matrix_element_space(TH_NUM_ITEMS, true));
+    } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
+      params->nodes = (uint8_t*)(malloc(hashmap_meta_space(TH_NUM_BUCKETS)));
+      params->elements = (uint8_t*)(malloc(hashmap_element_space(TH_NUM_BUCKETS,
+                                                                 TH_NUM_ITEMS * TH_NUM_ITEMS,
+                                                                 params->elt_size)));
+      RCSW_CHECK_PTR(params->nodes);
+    } else if constexpr(std::is_same<T,struct bstree_params>::value) {
+      if (params->flags & RCSW_DS_BSTREE_OS) {
+        params->nodes = (uint8_t*)(malloc(ostree_meta_space(TH_NUM_ITEMS)));
+        params->elements = (uint8_t*)(malloc(ostree_element_space(TH_NUM_ITEMS, params->elt_size)));
+        RCSW_CHECK_PTR(params->nodes);
+        RCSW_CHECK_PTR(params->elements);
+      } else {
+        params->nodes = (uint8_t*)(malloc(bstree_meta_space(TH_NUM_ITEMS)));
+        params->elements = (uint8_t*)(malloc(bstree_element_space(TH_NUM_ITEMS, params->elt_size)));
+        RCSW_CHECK_PTR(params->nodes);
+        RCSW_CHECK_PTR(params->elements);
+      }
+    } else if constexpr(std::is_same<T,struct matrix_params>::value) {
+      params->elements = (uint8_t*)(malloc(matrix_element_space(params->n_rows,
+                                                                params->n_cols,
+                                                                params->elt_size)));
+    } else if constexpr(std::is_same<T,struct dyn_matrix_params>::value) {
+      params->elements = (uint8_t*)(malloc(dyn_matrix_space(params->n_rows,
+                                                            params->n_cols,
+                                                            params->elt_size)));
+    } else {
+    ER_ERR("Unknown data structure!");
+  }
+  RCSW_CHECK_PTR(params->elements);
+  return OK;
+
+error:
+  return ERROR;
+} /* th_ds_init() */
+
+template<typename T>
+void th_ds_shutdown(const T *const params) {
+  if (params->elements) {
+    free(params->elements);
+  }
+  if (params->nodes) {
+    free(params->nodes);
+  }
+} /* th_ds_shutdown() */
+
+template<typename T>
+int th_leak_check_data(const T *params) {
+  int i;
+  int len;
+  if constexpr(std::is_same<T,struct bstree_params>::value) {
+    len = params->max_elts;
+  } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
+    len = params->bsize * params->n_buckets;
+  } else {
+    len = params->max_elts;
+  }
+  if (params->flags & RCSW_NOALLOC_DATA) {
+    for (i = 0; i < len; ++i) {
+      ER_CHECK(((struct allocm_entry*)(params->elements))[i].value == -1,
+               "Memory leak at index %d in data block area", i);
+    } /* for() */
+  }
+  return 0;
+
+error:
+  return 1;
+} /* th_leak_check_data() */
+
+template<typename T>
+int th_leak_check_nodes(const T *params) {
+  int i;
+  int len;
+  if constexpr(std::is_same<T,struct bstree_params>::value) {
+      len = params->max_elts;
+    } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
+      len = params->bsize * params->n_buckets;
+    } else {
+    len = params->max_elts;
+  }
+  /* It's not valid to check for leaks in this case, because you are sharing
+   * things between two or more lists
+   */
+  if (params->flags & RCSW_DS_LLIST_NO_DB) {
+    return 0;
+  }
+  if (params->flags & RCSW_NOALLOC_META) {
+    for (i = 0; i < len; ++i) {
+      ER_CHECK(((struct allocm_entry *)(params->nodes))[i].value == -1,
+               "Memory leak at index %d in node area", i);
+    }
+  }
+  return 0;
+
+error:
+  return 1;
+} /* th_leak_check_nodes() */

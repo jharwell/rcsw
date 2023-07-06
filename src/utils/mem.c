@@ -62,7 +62,6 @@ status_t mem_dump16(const void* const buf, size_t n_bytes) {
 } /* mem_dump16() */
 
 void mem_dump8(RCSW_UNUSED const void* const buf, size_t n_bytes) {
-
   for (uint32_t i = 0; i < n_bytes; i++) {
     DPRINTF("%02x ", ((const uint8_t*)buf)[i]);
     if ((i + 1) % 32 == 0) {

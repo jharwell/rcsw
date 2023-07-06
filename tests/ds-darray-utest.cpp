@@ -22,30 +22,29 @@
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-static void run_test(void (*test)(int len, struct ds_params *params)) {
+static void run_test(void (*test)(int len, struct darray_params *params)) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_DARRAY,"DARRAY"); */
 
-  struct ds_params params;
-  params.tag = ekRCSW_DS_DARRAY;
+  struct darray_params params;
   params.flags = 0;
   params.cmpe = th_cmpe<T>;
   params.printe = th_printe<T>;
   params.elt_size = sizeof(T);
-  params.type.da.init_size = 0;
+  params.init_size = 0;
 
   CATCH_REQUIRE(th_ds_init(&params) == OK);
 
   uint32_t flags[] = {
     RCSW_DS_SORTED,
     RCSW_DS_ORDERED,
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
   };
   /* test with defined sizes */
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       test(j, &params);
     } /* for(i...) */
@@ -57,11 +56,11 @@ static void run_test(void (*test)(int len, struct ds_params *params)) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void addremove_test(int len, struct ds_params *params) {
+static void addremove_test(int len, struct darray_params *params) {
   struct darray *_arr;
   struct darray my_arr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     CATCH_REQUIRE(nullptr == darray_init(nullptr, params));
     _arr = darray_init(&my_arr, params);
   } else {
@@ -90,7 +89,7 @@ static void addremove_test(int len, struct ds_params *params) {
 
   CATCH_REQUIRE(darray_n_elts(_arr) == (size_t)len);
 
-  if (!(_arr->flags & RCSW_DS_NOALLOC_DATA)) {
+  if (!(_arr->flags & RCSW_NOALLOC_DATA)) {
     CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr) * 2));
   }
 
@@ -105,11 +104,11 @@ static void addremove_test(int len, struct ds_params *params) {
 } /* addremove_test () */
 
 template <typename T>
-static void delete_test(int len, struct ds_params *params) {
+static void delete_test(int len, struct darray_params *params) {
   struct darray* _arr;
   struct darray my_arr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
   } else {
     _arr = darray_init(nullptr, params);
@@ -139,7 +138,7 @@ static void delete_test(int len, struct ds_params *params) {
   }
 
   if (len / 2 > 0) {
-    if (_arr->flags & RCSW_DS_NOALLOC_DATA) {
+    if (_arr->flags & RCSW_NOALLOC_DATA) {
       CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_n_elts(_arr)/ 2));
     } else {
       CATCH_REQUIRE(OK == darray_resize(_arr, darray_n_elts(_arr)/ 2));
@@ -153,13 +152,13 @@ static void delete_test(int len, struct ds_params *params) {
 } /* delete_test() */
 
 template <typename T>
-static void contains_test(int len, struct ds_params *params) {
+static void contains_test(int len, struct darray_params *params) {
   struct darray* _arr;
   struct darray my_arr;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
   } else {
     _arr = darray_init(nullptr, params);
@@ -182,13 +181,13 @@ static void contains_test(int len, struct ds_params *params) {
 } /* contains_test() */
 
 template <typename T>
-static void filter_test(int len, struct ds_params *params) {
+static void filter_test(int len, struct darray_params *params) {
   struct darray* _arr1, *_arr2;
   struct darray my_arr;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
     _arr1 = darray_init(nullptr, params);
@@ -203,35 +202,31 @@ static void filter_test(int len, struct ds_params *params) {
     CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   }
 
-  if (!(params->flags & (RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
-    _arr2 = darray_filter(_arr1, th_filter_func<T>, params);
-  } else {
-    _arr2 = darray_filter(_arr1, th_filter_func<T>, nullptr);
-  }
-  CATCH_REQUIRE(nullptr != _arr2);
-
-  for (int i = 0; i < len; i++) {
-    if (th_filter_func<T>(&arr[i])) {
-      CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) != -1);
-      CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) == -1);
-    } else {
-      CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) == -1);
-      CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
+  if ((params->flags & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_HANDLE))) {
+    _arr2 = darray_filter(_arr1, th_filter_func<T>, 0, nullptr);
+    CATCH_REQUIRE(nullptr != _arr2);
+    for (int i = 0; i < len; i++) {
+      if (th_filter_func<T>(&arr[i])) {
+        CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) != -1);
+        CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) == -1);
+      } else {
+        CATCH_REQUIRE(darray_idx_query(_arr2, &arr[i]) == -1);
+        CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
+      }
     }
+    darray_destroy(_arr2);
   }
-
   darray_destroy(_arr1);
-  darray_destroy(_arr2);
 } /* filter_test() */
 
 template <typename T>
-static void copy_test(int len, struct ds_params *params) {
+static void copy_test(int len, struct darray_params *params) {
   struct darray* _arr1, *_arr2;
   struct darray my_arr;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
     _arr1 = darray_init(nullptr, params);
@@ -246,7 +241,7 @@ static void copy_test(int len, struct ds_params *params) {
   }
 
 
-  if (!(params->flags & (RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_HANDLE))) {
+  if (!(params->flags & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_HANDLE))) {
     _arr2 = darray_copy(_arr1, params->flags, nullptr);
   } else {
     _arr2 = darray_copy(_arr1, 0x0, nullptr);
@@ -264,11 +259,11 @@ static void copy_test(int len, struct ds_params *params) {
 } /* copy_test() */
 
 template <typename T>
-static void sort_test(int len, struct ds_params *params) {
+static void sort_test(int len, struct darray_params *params) {
   struct darray* _arr1;
   struct darray my_arr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
     _arr1 = darray_init(nullptr, params);
@@ -299,13 +294,13 @@ static void sort_test(int len, struct ds_params *params) {
 } /* sort_test() */
 
 template <typename T>
-static void binarysearch_test(int len, struct ds_params *params) {
+static void binarysearch_test(int len, struct darray_params *params) {
   struct darray* _arr1;
   struct darray my_arr;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
   } else {
     _arr1 = darray_init(nullptr, params);
@@ -330,11 +325,11 @@ static void binarysearch_test(int len, struct ds_params *params) {
 } /* binarysearch_test() */
 
 template <typename T>
-static void inject_test(int len, struct ds_params * params) {
+static void inject_test(int len, struct darray_params * params) {
   struct darray *arr;
   struct darray myarr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
     arr = darray_init(nullptr, params);
@@ -358,11 +353,11 @@ static void inject_test(int len, struct ds_params * params) {
 } /* inject_test() */
 
 template <typename T>
-static void iter_test(int len, struct ds_params * params) {
+static void iter_test(int len, struct darray_params * params) {
   struct darray *arr;
   struct darray myarr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
     arr = darray_init(nullptr, params);
@@ -410,11 +405,11 @@ static void iter_test(int len, struct ds_params * params) {
 } /* iter_test() */
 
 template <typename T>
-static void map_test(int len, struct ds_params * params) {
+static void map_test(int len, struct darray_params * params) {
   struct darray *arr;
   struct darray myarr;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
   } else {
     arr = darray_init(nullptr, params);
@@ -439,13 +434,13 @@ static void map_test(int len, struct ds_params * params) {
 } /* map_test() */
 
 template <typename T>
-static void print_test(int len, struct ds_params *params) {
+static void print_test(int len, struct darray_params *params) {
   struct darray* _arr;
   struct darray my_arr;
 
   T arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
   } else {
     _arr = darray_init(nullptr, params);

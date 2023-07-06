@@ -13,9 +13,8 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
 #define RCSW_ER_MODID M_DS_LLIST
-#include "rcsw/er/client.h"
-
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
 
 /*******************************************************************************
@@ -25,15 +24,14 @@ BEGIN_C_DECLS
 
 struct llist_node* llist_node_alloc(struct llist* const list) {
   struct llist_node* node = NULL;
-  if (list->flags & RCSW_DS_NOALLOC_NODES) {
+  if (list->flags & RCSW_NOALLOC_META) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-    int alloc_idx = allocm_probe(list->space.node_map,
-                                 (size_t)list->max_elts,
-                                 list->current);
+    int alloc_idx =
+        allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
     node = list->space.nodes + alloc_idx;
 
@@ -53,7 +51,7 @@ error:
 } /* llist_node_alloc() */
 
 void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
-  if (list->flags & RCSW_DS_NOALLOC_NODES) {
+  if (list->flags & RCSW_NOALLOC_META) {
     int index = node - list->space.nodes;
 
     allocm_mark_free(list->space.node_map + index);
@@ -78,14 +76,16 @@ struct llist_node* llist_node_create(struct llist* const list,
   struct llist_node* node = llist_node_alloc(list);
   RCSW_CHECK_PTR(node);
 
-  /* get space for the datablock and copy the data, unless
-   * DS_LLIST_NO_DB or DS_LLIST_NO_DATA was passed */
-  if (!(list->flags & (RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP))) {
+  /*
+   * Get space for the datablock and copy the data, unless DS_LLIST_DB_DISOWN or
+   * DS_LLIST_NO_DATA was passed
+   */
+  if (list->flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
+    node->data = data_in;
+  } else {
     node->data = llist_node_datablock_alloc(list);
     RCSW_CHECK_PTR(node->data);
     ds_elt_copy(node->data, data_in, list->elt_size);
-  } else {
-    node->data = data_in;
   }
   return node;
 
@@ -105,11 +105,11 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
   }
 
   /* don't deallocate: we never allocated! */
-  if (list->flags & (RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP)) {
+  if (list->flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
     return;
   }
 
-  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+  if (list->flags & RCSW_NOALLOC_DATA) {
     size_t block_idx = (datablock - list->space.datablocks) / list->elt_size;
 
     /* mark data block as available */
@@ -124,7 +124,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
 void* llist_node_datablock_alloc(struct llist* const list) {
   void* datablock = NULL;
 
-  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+  if (list->flags & RCSW_NOALLOC_DATA) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the

@@ -11,8 +11,8 @@
  ******************************************************************************/
 #include "rcsw/multithread/omp_kernel2d.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * API Functions

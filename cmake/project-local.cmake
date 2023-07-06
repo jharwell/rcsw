@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 7)
+set(PROJECT_VERSION_PATCH 8)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -77,15 +77,19 @@ if (NOT RCSW_STDIO_PRINTF_CHECK_NULL)
   set(RCSW_STDIO_PRINTF_CHECK_NULL YES)
 endif()
 
+if(NOT RCSW_NO_GRIND)
+  set(RCSW_NO_GRIND NO)
+endif()
 
-set (RCSW_STDIO_ONOFF_CONFIG
+set (RCSW_ONOFF_CONFIG
   RCSW_STDIO_PRINTF_SUPPORT_DEC
   RCSW_STDIO_PRINTF_SUPPORT_EXP
   RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
   RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
   RCSW_STDIO_PRINTF_CHECK_NULL
+  RCSW_NO_GRIND
 )
-set (RCSW_STDIO_VALUE_CONFIG
+set (RCSW_VALUE_CONFIG
   RCSW_STDIO_PRINTF_BUFFER_SIZE
   RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC
   RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH
@@ -251,7 +255,7 @@ add_compile_definitions(${rcsw_LIBRARY}
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
 )
 
-foreach(config ${RCSW_STDIO_ONOFF_CONFIG})
+foreach(config ${RCSW_ONOFF_CONFIG})
   if(${config})
     add_compile_definitions(${rcsw_LIBRARY}
       PRIVATE
@@ -260,7 +264,7 @@ foreach(config ${RCSW_STDIO_ONOFF_CONFIG})
   endif()
 endforeach()
 
-foreach(config ${RCSW_STDIO_VALUE_CONFIG})
+foreach(config ${RCSW_VALUE_CONFIG})
   if(${config})
     add_compile_definitions(${rcsw_LIBRARY}
       PRIVATE
@@ -343,6 +347,7 @@ if(${LIBRA_SUMMARY})
     RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH
     RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
     RCSW_STDIO_PRINTF_CHECK_NULL
+    RCSW_NO_GRIND
   )
   libra_config_summary_prepare_fields("${fields}")
 
@@ -359,7 +364,7 @@ if(${LIBRA_SUMMARY})
   message(STATUS "stdio printf() decimal -> exp digit threshold : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH}${ColorReset} [RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH]")
   message(STATUS "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG}${ColorReset} [RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG]")
   message(STATUS "stdio printf() safety check in fmt strings    : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_STDIO_PRINTF_CHECK_NULL]")
-
+  message(STATUS "RCSW_GRIND_XX() macros                        : ${ColorBold}${EMIT_RCSW_NO_GRIND}${ColorReset} [RCSW_NO_GRIND]")
   message("")
   message("--------------------------------------------------------------------------------")
 

@@ -257,4 +257,17 @@ status_t string_gen(char * buf, size_t len);
  */
 uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
+/**
+ * \brief Utility function to check if an element is 0.
+ *
+ * If the element is larger than double, a for() loop is used. Otherwise
+ * pointers are used.
+ *
+ * \param elt Element to check.
+ * \param elt_size Size of element in bytes.
+ *
+ * \return \ref bool_t
+ */
+bool_t util_zchk(void *elt, size_t elt_size);
+
 END_C_DECLS
