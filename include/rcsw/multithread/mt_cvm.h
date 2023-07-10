@@ -41,7 +41,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize the signal condition (variable and mutex).
  *
- * \param cvm_in CVM to initialize. Can be NULL if \ref MT_APP_DOMAIN_MEM passed.
+ * \param cvm_in CVM to initialize. Can be NULL if \ref MT_APP_DOMAIN_MEM
+ *               passed.
+ *
  * \param flags Configuration flags.
  *
  * \return The initialized CVM, or NULL if an ERROR occurred.
@@ -90,13 +92,13 @@ status_t cvm_wait(mt_cvm_t * cvm);
  * \brief Timed wait on a condition variable while holding a mutex.
  *
  * \param cvm The CVM handle.
- * \param to  A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- * specifies. This function converts the relative timeout to absolute timeout
- * required.
+ *
+ * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
+ *            specifies. This function converts the relative timeout to absolute
+ *            timeout required.
  *
  * \return \ref status_t
  */
 status_t cvm_timedwait(mt_cvm_t * cvm, const struct timespec * to);
 
 END_C_DECLS
-
