@@ -189,7 +189,7 @@ void* ds_iter_next(struct ds_iterator* const iter) {
     case ekRCSW_DS_HASHMAP:
     case ekRCSW_DS_BSTREE:
     case ekRCSW_DS_FIFO:
-    case ekRCSW_DS_BIN_HEAP:
+    case ekRCSW_DS_BINHEAP:
     case ekRCSW_DS_ADJ_MATRIX:
     case ekRCSW_DS_MATRIX:
     case ekRCSW_DS_DYN_MATRIX:

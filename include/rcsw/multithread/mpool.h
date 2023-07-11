@@ -15,8 +15,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_csem.h"
-#include "rcsw/multithread/mt_mutex.h"
+#include "rcsw/multithread/csem.h"
+#include "rcsw/multithread/mutex.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 
@@ -24,15 +24,15 @@
  * Constant Definitions
  ******************************************************************************/
 /**
- * Passing this flag will cause the pool to keep track of how many things are
- * using a given piece of memory, so that \ref mpool_release() will only release
- * the memory after the reference count reaches 0.
+ * Tell the \ref mpool to keep track of how many things are using a given piece
+ * of memory, so that \ref mpool_release() will only release the memory after
+ * the reference count reaches 0.
  *
  * If you do not specify this flag you cannot rely on the results of \ref
  * mpool_ref_query(), and \ref mpool_ref_add()/\ref mpool_ref_remove() cannot be
  * used.
  */
-#define MPOOL_REF_COUNT_EN RCSW_DS_FLAGS_EXT
+#define RCSW_MPOOL_REFCOUNT (1 << (RCSW_DS_EXTFLAGS_START + 0))
 
 /*******************************************************************************
  * Structure Definitions
@@ -41,18 +41,7 @@
  * \brief Memory pool queue initialization parameters
  */
 struct mpool_params {
-    size_t elt_size;     /// Size of each element in bytes.
-    size_t max_elts;    /// # of elements the pool will hold.
-    uint8_t *nodes;     /// Space for linked list nodes.
-    uint8_t *elements;  /// Space for the actual elements.
-
-    /**
-     * Initialization flags. You can pass any of the following  DS flags:
-     * \ref RCSW_DS_NOALLOC_DATA, \ref RCSW_DS_NOALLOC_NODES, \ref
-     * RCSW_DS_NOALLOC_DATA, individually or in combination, or you can pass \ref
-     * MT_APP_DOMAIN_MEM which is equivalent to all 3.
-     */
-    uint32_t flags;
+  RCSW_DECLARE_DS_PARAMS_COMMON;
 };
 
 /**
@@ -61,19 +50,24 @@ struct mpool_params {
  * Memory chunks must be fixed size.
  */
 struct mpool {
-    uint8_t *elements;   /// The actual elements.
-    struct llist_node *nodes;      /// Space for the llist nodes.
-    struct llist free;   /// Pool free list.
-    struct llist alloc;  /// Pool allocated list.
+  /** The chunks of managed memory. */
+  uint8_t           *elements;
 
-    int *refs;         /// Pointer to array for reference counting
-    size_t n_free;     /// # elements in the pool currently free.
-    size_t n_alloc;    /// # elements in the pool currently allocated.
-    size_t elt_size;    /// Size of elements in the pool in bytes.
-    size_t max_elts;   /// Max # of elements in the pool.
-    mt_csem_t sem;     /// Semaphore used for waiting on free slots in pool.
-    mt_mutex_t mutex;  /// Mutex used to protect mpool integrity.
-    uint32_t flags;    /// Run time configuration flags.
+  /** Space for the llist nodes for both the free and allocated lists. */
+  struct llist_node *nodes;
+
+  /** List of free chunks of memory. */
+  struct llist      free;
+
+  /** List of free chunks of memory. */
+  struct llist      alloc;
+
+  int               *refs;       /// Pointer to array for reference counting
+  size_t            elt_size;    /// Size of elements in the pool in bytes.
+  size_t            max_elts;    /// Max # of elements in the pool.
+  struct csem       sem;         /// Semaphore used for waiting on free slots in pool.
+  struct mutex      mutex;       /// Mutex used to protect mpool integrity.
+  uint32_t          flags;       /// Run time configuration flags.
 };
 
 /*******************************************************************************
@@ -86,9 +80,9 @@ struct mpool {
  *
  * \return The # of bytes the application would need to allocate.
  */
-static inline size_t  mpool_node_space(size_t max_elts) {
+static inline size_t  mpool_meta_space(size_t max_elts) {
     /* x2 for free and alloc lists */
-    return 2 * llist_node_space(max_elts);
+    return 2 * llist_meta_space(max_elts);
 }
 
 /**
@@ -223,4 +217,3 @@ status_t mpool_ref_remove(struct mpool * the_pool,
 int mpool_ref_query(struct mpool * the_pool, const uint8_t* ptr);
 
 END_C_DECLS
-

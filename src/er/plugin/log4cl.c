@@ -49,12 +49,11 @@ status_t log4cl_init(void) {
   if (g_log4cl.initialized) {
     return OK;
   }
-  struct ds_params params = {
+  struct llist_params params = {
     .cmpe = log4cl_mod_cmp,
     .printe = NULL,
     .elt_size = sizeof(struct log4cl_module),
     .max_elts = -1,
-    .tag = ekRCSW_DS_LLIST,
     .flags = 0,
   };
   g_log4cl.modules = llist_init(NULL, &params);

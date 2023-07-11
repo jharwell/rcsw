@@ -33,17 +33,16 @@ BEGIN_C_DECLS
  * API Functions
  ******************************************************************************/
 struct bstree* bstree_init_internal(struct bstree* tree_in,
-                                    const struct ds_params* const params,
+                                    const struct bstree_params* const params,
                                     size_t node_size) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == ekRCSW_DS_BSTREE,
               params->cmpkey != NULL,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
   struct bstree* tree = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     tree = tree_in;
   } else {
     tree = malloc(sizeof(struct bstree));
@@ -54,7 +53,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   tree->root = NULL;
   tree->nil = NULL;
 
-  if (params->flags & RCSW_DS_NOALLOC_NODES) {
+  if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->nodes);
     ER_CHECK(params->max_elts != -1,
                   "Cannot have uncapped tree size with "
@@ -70,7 +69,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
         (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
   }
 
-  if (params->flags & RCSW_DS_NOALLOC_DATA) {
+  if (params->flags & RCSW_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
              "Cannot have uncapped tree size with "
@@ -132,7 +131,7 @@ void bstree_destroy(struct bstree* tree) {
    */
   bstree_node_destroy(tree, tree->nil);
 
-  if (!(tree->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(tree->flags & RCSW_NOALLOC_HANDLE)) {
     free(tree);
   }
 } /* bstree_destroy() */

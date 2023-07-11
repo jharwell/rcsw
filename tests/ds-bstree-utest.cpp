@@ -34,8 +34,7 @@ template<typename T>
 static void run_test(uint32_t extra_flags,
                      ds_bstree_test_t test,
                      bst_verify_cb verify_cb) {
-  struct ds_params params;
-  params.tag = ekRCSW_DS_BSTREE;
+  struct bstree_params params;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th_printe<T>;
@@ -47,9 +46,9 @@ static void run_test(uint32_t extra_flags,
   /* dbg_mod_lvl_set(M_DS_BSTREE,DBG_V); */
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
@@ -65,8 +64,7 @@ template<typename T>
 static void run_test_remove(uint32_t extra_flags,
                             ds_bstree_rm_test_t test,
                             bst_verify_cb verify_cb) {
-  struct ds_params params;
-  params.tag = ekRCSW_DS_BSTREE;
+  struct bstree_params params;
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th_printe<T>;
@@ -76,9 +74,9 @@ static void run_test_remove(uint32_t extra_flags,
   th_ds_init(&params);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
@@ -104,7 +102,7 @@ static void run_test_remove(uint32_t extra_flags,
  */
 template<typename T>
 static void insert_test(int len,
-                        struct ds_params *params,
+                        struct bstree_params *params,
                         bst_verify_cb verify_cb) {
   struct bstree* tree;
   struct bstree mytree;
@@ -112,7 +110,7 @@ static void insert_test(int len,
   T data_arr[TH_NUM_ITEMS];
   int key_arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     CATCH_REQUIRE(nullptr == bstree_init(nullptr, params));
   }
   tree = bstree_init(&mytree, params);
@@ -165,7 +163,7 @@ static void insert_test(int len,
  */
 template<typename T>
 static void print_test(int len,
-                       struct ds_params *params,
+                       struct bstree_params *params,
                        bst_verify_cb) {
   struct bstree* tree;
 
@@ -173,7 +171,7 @@ static void print_test(int len,
   int key_arr[TH_NUM_ITEMS];
 
   bstree_print(nullptr);
-  params->flags &= ~RCSW_DS_NOALLOC_HANDLE;
+  params->flags &= ~RCSW_NOALLOC_HANDLE;
   tree = bstree_init(nullptr, params);
   CATCH_REQUIRE(nullptr != tree);
   bstree_print(tree);
@@ -208,7 +206,7 @@ static void print_test(int len,
 template<typename T>
 static void remove_test(int len,
                         int remove_type,
-                        struct ds_params *params,
+                        struct bstree_params *params,
                         bst_verify_cb verify_cb) {
   struct bstree* tree;
   struct bstree mytree;

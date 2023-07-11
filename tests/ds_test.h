@@ -19,6 +19,10 @@
 
 #include "tests/element.h"
 
+#define RCSW_ER_MODNAME "rcsw.ds.test"
+#define RCSW_ER_MODID M_TESTING
+#include "rcsw/er/client.h"
+
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
@@ -35,13 +39,14 @@ enum gen_elt_type {
   ekRAND_VALS
 };
 
+struct hashmap_params;
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
-typedef void (*ds_test_t)(int len, struct ds_params *params);
-typedef void (*ds_test2_t)(int len1, int len2, struct ds_params *params);
+/* typedef void (*ds_test_t)(int len, struct ds_params *params); */
+/* typedef void (*ds_test2_t)(int len1, int len2, struct ds_params *params); */
 
-typedef void (*hashmap_test_t)(struct ds_params *params);
+typedef void (*hashmap_test_t)(struct hashmap_params *params);
 
 /*******************************************************************************
  * Function Prototypes
@@ -52,40 +57,6 @@ BEGIN_C_DECLS
  * \brief Print a hashnode
  */
 void th_printn(const void * node);
-
-/**
- * \brief Check for leaked memory within application allocated node memory
- *
- * This function checks for memory leaks within the application-allocated chunks
- * for nodes.
- *
- * \return if no leaks, non-zero otherwise
- */
-int th_leak_check_nodes(const struct ds_params * const params) RCSW_PURE;
-
-/**
- * \brief Check for leaked memory within application allocated data
- *
- * This function checks for memory leaks within the application-allocated chunks
- * for data. It is safe to call this function for BSTREE with all data in the DS
- * domain.
- *
- * \return 0 if no leaks, non-zero otherwise
- *
- */
-int th_leak_check_data(const struct ds_params * const params) RCSW_PURE;
-
-/**
- * \brief Initialize test harness
- *
- * \return \ref status_t
- */
-status_t th_ds_init(struct ds_params *const params);
-
-/**
- * \brief Shutdown the test harness
- */
-void th_ds_shutdown(const struct ds_params *const params);
 
 /**
  * \brief Compare the keys of two nodes (BSTREE, hashmap)

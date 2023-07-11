@@ -25,6 +25,26 @@
  * Structure Definitions
  ******************************************************************************/
 /**
+ * \brief Hashmap initialization parameters.
+ */
+struct hashmap_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /** Hashing function to use. Must be non-NULL. */
+  uint32_t (*hash)(const void *const key, size_t len);
+
+  size_t bsize;  /// Initial size of hash buckets
+  size_t n_buckets;  /// Fixed number of buckets for hashmap
+
+  /**
+   * # of inserts before automatically sorting. -1 = do not automatically
+   * sort.
+   */
+  int sort_thresh;
+
+  size_t keysize;  /// Size in bytes for hashnode keys
+};
+
+/**
  * \brief Hashmap statistics
  *
  * These DO take space as part of the main structure, but the tradeoff is worth
@@ -193,7 +213,7 @@ static inline size_t hashmap_element_space(size_t n_buckets,
  *
  * \return The # of bytes required
  */
-static inline size_t hashmap_node_space(size_t n_buckets) {
+static inline size_t hashmap_meta_space(size_t n_buckets) {
   return sizeof(struct darray) * n_buckets;
 }
 
@@ -213,7 +233,7 @@ BEGIN_C_DECLS
  * \return  The initialized hashmap, or NULL if an error occurred
  */
 struct hashmap *hashmap_init(struct hashmap *map_in,
-                             const struct ds_params * params) RCSW_CHECK_RET;
+                             const struct hashmap_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief destroy a hashmap. Any further use of the hashmap after calling this

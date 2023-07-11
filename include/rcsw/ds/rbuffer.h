@@ -20,6 +20,10 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+struct rbuffer_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+};
+
 /**
  * \brief Ringbuffer data structure. Implemented using a fixed-size array.
  */
@@ -150,7 +154,7 @@ BEGIN_C_DECLS
  * \return The initialized ringbuffer, or NULL if an error occurred.
  */
 struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
-                             const struct ds_params * params) RCSW_CHECK_RET;
+                             const struct rbuffer_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Delete a ringbuffer.

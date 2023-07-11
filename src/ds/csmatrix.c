@@ -75,7 +75,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   RCSW_ER_MODULE_INIT();
 
   struct csmatrix* matrix = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     matrix = matrix_in;
   } else {
     matrix = calloc(1, sizeof(struct csmatrix));
@@ -86,42 +86,31 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   matrix->n_cols = params->n_cols;
   matrix->n_eff_cols = 0;
 
-  struct ds_params inner_params = {
-      .type = {.da =
-                   {
-                       .init_size = params->n_nz_elts,
-                   }},
+  struct darray_params inner_params = {
+      .init_size = params->n_nz_elts,
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
       .elt_size = sizeof(int),
-      .tag = ekRCSW_DS_DARRAY,
-      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
+      .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->inner_indices, &inner_params));
-  struct ds_params count_params = {
-      .type = {.da =
-                   {
-                       .init_size = params->n_rows + 1,
-                   }},
+  struct darray_params count_params = {
+    .init_size = params->n_rows + 1,
+
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_rows + 1,
       .elt_size = sizeof(int),
-      .tag = ekRCSW_DS_DARRAY,
-      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
+      .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->outer_starts, &count_params));
   RCSW_CHECK(OK == darray_set_n_elts(&matrix->outer_starts, params->n_rows + 1));
-  struct ds_params coeff_params = {
-      .type = {.da =
-                   {
+  struct darray_params coeff_params = {
                        .init_size = params->n_nz_elts,
-                   }},
       .cmpe = NULL,
       .printe = NULL,
       .max_elts = params->n_nz_elts,
       .elt_size = csmatrix_type_size(matrix),
-      .tag = ekRCSW_DS_DARRAY,
-      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_ORDERED};
+      .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
 
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
   ER_DEBUG("n_rows=%zu n_nz_elts=%zu flags=0x%08x",
@@ -133,21 +122,22 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   RCSW_CHECK_PTR(matrix->csizes);
 
   /* size_t n_elts = params->n_nz_elts/params->n_cols*10; */
-  /* matrix->nodes = calloc(matrix->n_cols, llist_node_space(n_elts)); */
+  /* matrix->nodes = calloc(matrix->n_cols, llist_meta_space(n_elts)); */
   /* matrix->elts = calloc(matrix->n_cols, */
   /*                       llist_element_space(n_elts, sizeof(struct
    * col_pair))); */
   /* RCSW_CHECK_PTR(matrix->nodes); */
   /* RCSW_CHECK_PTR(matrix->elts); */
-  struct ds_params llist_params = { .cmpe = csmatrix_col_cmpe,
-                                    .printe = NULL,
-                                    .max_elts = -1,
-                                    .elt_size = sizeof(struct col_pair),
-                                    .tag = ekRCSW_DS_LLIST,
-                                    .flags = RCSW_DS_NOALLOC_HANDLE };
+  struct llist_params llist_params = {
+    .cmpe = csmatrix_col_cmpe,
+    .printe = NULL,
+    .max_elts = -1,
+    .elt_size = sizeof(struct col_pair),
+    .flags = RCSW_NOALLOC_HANDLE
+  };
   matrix->cols = calloc(matrix->n_cols, sizeof(struct llist));
   for (size_t i = 0; i < matrix->n_cols; ++i) {
-    /* llist_params.nodes = matrix->nodes + i* llist_node_space(n_elts); */
+    /* llist_params.nodes = matrix->nodes + i* llist_meta_space(n_elts); */
     /* llist_params.elements = matrix->elts + */
     /*     i*llist_element_space(n_elts, sizeof(struct col_pair)); */
     RCSW_CHECK(NULL != llist_init(matrix->cols + i, &llist_params));
@@ -180,7 +170,7 @@ void csmatrix_destroy(struct csmatrix* const matrix) {
   /* if (matrix->elts) { */
   /*     free(matrix->elts); */
   /* } */
-  if (!(matrix->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
     free(matrix);
   }
 } /* csmatrix_destroy() */

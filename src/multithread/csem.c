@@ -1,5 +1,5 @@
 /**
- * \file mt_csem.c
+ * \file csem.c
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -9,7 +9,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_csem.h"
+#include "rcsw/multithread/csem.h"
 
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
@@ -21,71 +21,70 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-mt_csem_t* mt_csem_init(mt_csem_t* const sem_in,
-                        bool_t shared,
-                        size_t value,
-                        uint32_t flags) {
-  mt_csem_t* sem = NULL;
-  if (flags & MT_APP_DOMAIN_MEM) {
+struct csem* csem_init(struct csem* const sem_in, size_t value, uint32_t flags) {
+  struct csem* sem = NULL;
+  if (flags & RCSW_NOALLOC_HANDLE) {
     sem = sem_in;
   } else {
-    sem = calloc(1, sizeof(mt_csem_t));
+    sem = calloc(1, sizeof(struct csem));
   }
   RCSW_CHECK_PTR(sem);
   sem->flags = flags;
-  RCSW_CHECK(0 == sem_init(&sem->sem, shared, (unsigned int)value));
+  RCSW_CHECK(0 == sem_init(&sem->impl,
+                           0, /* shared between threads */
+                           (unsigned int)value));
   return sem;
 
 error:
   return NULL;
-} /* mt_csem_init() */
+} /* csem_init() */
 
-void mt_csem_destroy(mt_csem_t* sem) {
+void csem_destroy(struct csem* sem) {
   RCSW_FPC_V(NULL != sem);
 
-  sem_destroy(&sem->sem);
-  if (sem->flags & MT_APP_DOMAIN_MEM) {
+  sem_destroy(&sem->impl);
+  if (sem->flags & RCSW_NOALLOC_HANDLE) {
     free(sem);
   }
-} /* mt_csem_destroy() */
+} /* csem_destroy() */
 
-status_t mt_csem_wait(mt_csem_t* sem) {
+status_t csem_wait(struct csem* sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
-  RCSW_CHECK(0 == sem_wait(&sem->sem));
+  RCSW_CHECK(0 == sem_wait(&sem->impl));
   return OK;
 
 error:
   return ERROR;
-} /* mt_csem_wait() */
+} /* csem_wait() */
 
-status_t mt_csem_trywait(mt_csem_t* sem) {
+status_t csem_trywait(struct csem* sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
-  RCSW_CHECK(0 == sem_trywait(&sem->sem));
+  RCSW_CHECK(0 == sem_trywait(&sem->impl));
   return OK;
 
 error:
   return ERROR;
-} /* mt_csem_wait() */
+} /* csem_wait() */
 
-status_t mt_csem_timedwait(mt_csem_t* const sem,
+status_t csem_timedwait(struct csem* const sem,
                            const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
   RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
-  RCSW_CHECK(0 == sem_timedwait(&sem->sem, &ts));
+  RCSW_CHECK(0 == sem_timedwait(&sem->impl, &ts));
 
   return OK;
 error:
   return ERROR;
-} /* mt_csem_timedwait() */
+} /* struct csemimedwait() */
 
-status_t mt_csem_post(mt_csem_t* sem) {
+status_t csem_post(struct csem* sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
-  RCSW_CHECK(0 == sem_post(&sem->sem));
+  RCSW_CHECK(0 == sem_post(&sem->impl));
   return OK;
 
 error:
   return ERROR;
-} /* mt_csem_post() */
+} /* csem_post() */
 
 END_C_DECLS

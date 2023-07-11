@@ -28,16 +28,15 @@
 BEGIN_C_DECLS
 
 struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
-                             const struct ds_params* const params) {
+                             const struct rbuffer_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == ekRCSW_DS_RBUFFER,
               params->max_elts > 0,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
   struct rbuffer* rb = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(rb_in);
     rb = rb_in;
   } else {
@@ -46,7 +45,7 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
   }
   rb->flags = params->flags;
 
-  if (params->flags & RCSW_DS_NOALLOC_DATA) {
+  if (params->flags & RCSW_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     rb->elements = params->elements;
   } else {
@@ -76,14 +75,14 @@ error:
 void rbuffer_destroy(struct rbuffer* rb) {
   RCSW_FPC_V(NULL != rb);
 
-  if (!(rb->flags & RCSW_DS_NOALLOC_DATA)) {
+  if (!(rb->flags & RCSW_NOALLOC_DATA)) {
     if (rb->elements) {
       free(rb->elements);
       rb->elements = NULL;
     }
   }
 
-  if (!(rb->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(rb->flags & RCSW_NOALLOC_HANDLE)) {
     free(rb);
   }
 } /* rbuffer_destroy() */

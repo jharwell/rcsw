@@ -41,6 +41,10 @@ enum bstree_traversal_type {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+struct bstree_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+};
+
 /**
  * \brief The base node for all binary search trees.
  *
@@ -168,7 +172,7 @@ BEGIN_C_DECLS
  * \return The initialized tree, or NULL if an error occurred
  */
 struct bstree *bstree_init_internal(struct bstree *tree_in,
-                                    const struct ds_params * params,
+                                    const struct bstree_params * params,
                                     size_t node_size) RCSW_CHECK_RET;
 
 /**
@@ -348,7 +352,7 @@ static inline size_t bstree_element_space(size_t max_elts, size_t elt_size) {
  *
  * \return The # of bytes required
  */
-static inline size_t bstree_node_space(size_t max_elts) {
+static inline size_t bstree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts+2) +
       ds_elt_space_simple(max_elts+2, sizeof(struct bstree_node));
 }
@@ -373,6 +377,6 @@ static inline status_t bstree_insert(struct bstree* tree,
  * \param params Initialization parameters
  */
 static inline struct bstree* bstree_init(struct bstree* tree_in,
-                                         const struct ds_params* const params) {
+                                         const struct bstree_params* const params) {
   return bstree_init_internal(tree_in, params, sizeof(struct bstree_node));
 }

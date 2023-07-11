@@ -9,7 +9,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/mt_mutex.h"
+#include "rcsw/multithread/mutex.h"
 
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
@@ -19,49 +19,49 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-mt_mutex_t* mt_mutex_init(mt_mutex_t* mutex_in, uint32_t flags) {
-  mt_mutex_t* mutex = NULL;
-  if (flags & MT_APP_DOMAIN_MEM) {
+struct mutex* mutex_init(struct mutex* mutex_in, uint32_t flags) {
+  struct mutex* mutex = NULL;
+  if (flags & RCSW_NOALLOC_HANDLE) {
     mutex = mutex_in;
   } else {
-    mutex = calloc(1, sizeof(mt_mutex_t));
+    mutex = calloc(1, sizeof(struct mutex));
   }
 
   RCSW_CHECK_PTR(mutex);
   mutex->flags = flags;
-  RCSW_CHECK(0 == pthread_mutex_init(&mutex->mutex, NULL));
+  RCSW_CHECK(0 == pthread_mutex_init(&mutex->impl, NULL));
   return mutex;
 
 error:
-  mt_mutex_destroy(mutex);
+  mutex_destroy(mutex);
   return NULL;
-} /* mt_mutex_init() */
+} /* mutex_init() */
 
-void mt_mutex_destroy(mt_mutex_t* mutex) {
+void mutex_destroy(struct mutex* mutex) {
   RCSW_FPC_V(NULL != mutex);
 
-  pthread_mutex_destroy(&mutex->mutex);
-  if (mutex->flags & MT_APP_DOMAIN_MEM) {
+  pthread_mutex_destroy(&mutex->impl);
+  if (mutex->flags & RCSW_NOALLOC_HANDLE) {
     free(mutex);
   }
-} /* mt_mutex_destroy() */
+} /* mutex_destroy() */
 
-status_t mt_mutex_lock(mt_mutex_t* mutex) {
+status_t mutex_lock(struct mutex* mutex) {
   RCSW_FPC_NV(ERROR, NULL != mutex);
-  RCSW_CHECK(0 == pthread_mutex_lock(&mutex->mutex));
+  RCSW_CHECK(0 == pthread_mutex_lock(&mutex->impl));
   return OK;
 
 error:
   return ERROR;
-} /* mt_mutex_lock() */
+} /* mutex_lock() */
 
-status_t mt_mutex_unlock(mt_mutex_t* mutex) {
+status_t mutex_unlock(struct mutex* mutex) {
   RCSW_FPC_NV(ERROR, NULL != mutex);
-  RCSW_CHECK(0 == pthread_mutex_unlock(&mutex->mutex));
+  RCSW_CHECK(0 == pthread_mutex_unlock(&mutex->impl));
   return OK;
 
 error:
   return ERROR;
-} /* mt_mutex_unlock() */
+} /* mutex_unlock() */
 
 END_C_DECLS

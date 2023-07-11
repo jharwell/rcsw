@@ -74,17 +74,16 @@ static int hashnode_cmp(const void* n1, const void* n2);
  * API Functions
  ******************************************************************************/
 struct hashmap* hashmap_init(struct hashmap* map_in,
-                             const struct ds_params* const params) {
+                             const struct hashmap_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->type.hm.hash != NULL,
               params->elt_size > 0,
-              params->type.hm.sort_thresh != 0,
-              params->type.hm.n_buckets > 0);
+              params->sort_thresh != 0,
+              params->n_buckets > 0);
   RCSW_ER_MODULE_INIT();
   struct hashmap* map = NULL;
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(map_in);
     map = map_in;
   } else {
@@ -93,41 +92,41 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   }
 
   map->flags = params->flags;
-  map->hash = params->type.hm.hash;
-  map->n_buckets = params->type.hm.n_buckets;
+  map->hash = params->hash;
+  map->n_buckets = params->n_buckets;
   map->elt_size = params->elt_size;
-  map->max_elts = params->type.hm.bsize * params->type.hm.n_buckets;
+  map->max_elts = params->bsize * params->n_buckets;
   map->stats.n_nodes = 0;
   map->stats.n_collisions = 0;
   map->stats.n_adds = 0;
   map->stats.n_addfails = 0;
-  map->sort_thresh = params->type.hm.sort_thresh;
+  map->sort_thresh = params->sort_thresh;
   map->sorted = false;
   map->space.elements = NULL;
   map->space.buckets = NULL;
 
-  if (params->flags & RCSW_DS_NOALLOC_NODES) {
+  if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->nodes);
     map->space.buckets = (struct darray*)params->nodes;
   } else {
-    map->space.buckets = calloc(params->type.hm.n_buckets, sizeof(struct darray));
+    map->space.buckets = calloc(params->n_buckets, sizeof(struct darray));
     RCSW_CHECK_PTR(map->space.buckets);
   }
 
   /* validate keysize */
-  ER_CHECK(params->type.hm.keysize <= RCSW_HASHMAP_MAX_KEYSIZE,
+  ER_CHECK(params->keysize <= RCSW_HASHMAP_MAX_KEYSIZE,
            "Keysize (%zu) > HASHMAP_MAX_KEYSIZE (%d)\n",
-           params->type.hm.keysize,
+           params->keysize,
            RCSW_HASHMAP_MAX_KEYSIZE);
-  map->keysize = params->type.hm.keysize;
+  map->keysize = params->keysize;
 
 
   /* Allocate space for hashnodes+datablocks+datablock alloc map */
-  if (params->flags & RCSW_DS_NOALLOC_DATA) {
+  if (params->flags & RCSW_NOALLOC_DATA) {
     map->space.elements = params->elements;
   } else {
     map->space.elements = malloc(hashmap_element_space(
-        map->n_buckets, params->type.hm.bsize, map->elt_size));
+        map->n_buckets, params->bsize, map->elt_size));
   }
   RCSW_CHECK_PTR(map->space.elements);
 
@@ -138,43 +137,41 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   } /* for() */
 
   /* initialize buckets */
-  struct ds_params da_params = {
-      .type = {.da =
-                   {
-                       .init_size = params->type.hm.bsize,
-                   }},
+  struct darray_params bucket_params = {
+    .init_size = params->bsize,
+
       .cmpe = hashnode_cmp,
       .printe = NULL,
-      .max_elts = (int)params->type.hm.bsize,
+      .max_elts = (int)params->bsize,
       .elt_size = sizeof(struct hashnode),
-      .tag = ekRCSW_DS_DARRAY,
-      .flags = RCSW_DS_NOALLOC_HANDLE | RCSW_DS_NOALLOC_DATA};
+
+      .flags = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA};
   if (params->flags & RCSW_DS_SORTED) {
-    da_params.flags |= RCSW_DS_SORTED;
+    bucket_params.flags |= RCSW_DS_SORTED;
   }
 
   map->space.datablocks =
-      map->space.elements + ds_meta_space(map->n_buckets * params->type.hm.bsize);
+      map->space.elements + ds_meta_space(map->n_buckets * params->bsize);
   size_t db_space_per_bucket =
-      darray_element_space(params->type.hm.bsize, params->elt_size);
+      darray_element_space(params->bsize, params->elt_size);
   map->space.hashnodes =
       (map->space.datablocks + db_space_per_bucket * map->n_buckets);
 
   size_t hn_space_per_bucket =
-      darray_element_space(params->type.hm.bsize, sizeof(struct hashnode));
+      darray_element_space(params->bsize, sizeof(struct hashnode));
   for (size_t i = 0; i < map->n_buckets; i++) {
     /*
      * Each bucket is given a bsize chunk of the allocated space for
      * hashnodes
      */
-    da_params.elements = map->space.hashnodes + hn_space_per_bucket * i;
-    RCSW_CHECK(darray_init(map->space.buckets + i, &da_params) != NULL);
+    bucket_params.elements = map->space.hashnodes + hn_space_per_bucket * i;
+    RCSW_CHECK(darray_init(map->space.buckets + i, &bucket_params) != NULL);
   } /* for() */
 
   ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu sort_thresh=%d flags=0x%08x",
        map->max_elts,
        map->n_buckets,
-       params->type.hm.bsize,
+       params->bsize,
        map->sort_thresh,
        map->flags);
   return map;
@@ -192,18 +189,18 @@ void hashmap_destroy(struct hashmap* map) {
     darray_destroy(map->space.buckets + i);
   }
 
-  if (!(map->flags & RCSW_DS_NOALLOC_DATA)) {
+  if (!(map->flags & RCSW_NOALLOC_DATA)) {
     if (NULL != map->space.elements) {
       free(map->space.elements);
     }
   }
 
-  if (!(map->flags & RCSW_DS_NOALLOC_NODES)) {
+  if (!(map->flags & RCSW_NOALLOC_META)) {
     if (NULL != map->space.buckets) {
       free(map->space.buckets);
     }
   }
-  if (!(map->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(map->flags & RCSW_NOALLOC_HANDLE)) {
     free(map);
   }
 } /* hashmap_destroy() */

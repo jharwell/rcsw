@@ -22,6 +22,18 @@
  * Structure Definitions
  ******************************************************************************/
 /**
+ * \brief Dynamic array (darray) initialization parameters.
+ */
+struct darray_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * Initial size of the array (must be < max_elts). Ignored if \ref
+   * RCSW_DS_NOALLOC_DATA is passed.
+   */
+  size_t init_size;
+};
+
+/**
  * \brief Dynamic array data structure.
  *
  * It follows the dynamic table resizing algorithm from
@@ -167,13 +179,14 @@ BEGIN_C_DECLS
  * It is valid to initialize the darray with an initial size of 0.
  *
  * \param arr_in The darray handle to be filled (can be NULL if
- * \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *               \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *
  * \param params Initialization parameters
  *
  * \return The initialized list, or NULL if an ERROR occurred
  */
 struct darray *darray_init(struct darray *arr_in,
-                           const struct ds_params * params) RCSW_CHECK_RET;
+                           const struct darray_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Delete a darray
@@ -382,16 +395,16 @@ status_t darray_inject(const struct darray * arr,
  *
  * \param arr The darray handle
  * \param pred The predicate
- * \param fparams Initialization parameters of new array. The flags and elements
- * fields are are used to determine how memory should be managed for the
- * filtered array; the values of the rest of the fields are inherited from the
- * parent darray.
+ * \param flags Initialization flags for the new \ref darray
+ *
+ * \param elements Space for the elements of the new \ref darray. Can be NULL.
  *
  * \return The filtered array, or NULL if an error occured.
  */
 struct darray *darray_filter(struct darray * arr,
                              bool_t (*pred)(const void * e),
-                             const struct ds_params * fparams);
+                             uint32_t flags,
+                             uint8_t* elements);
 
 /**
  * \brief Create a copy of a darray

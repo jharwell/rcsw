@@ -18,24 +18,24 @@
 
 #include "rcsw/ds/adj_matrix.h"
 #include "tests/ds_test.h"
+#include "tests/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-void run_test(void (*test)(struct ds_params *params)) {
+void run_test(void (*test)(struct adj_matrix_params *params)) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING, "Testing"); */
   /* dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix"); */
   /* dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V); */
-  struct ds_params params;
-  params.tag = ekRCSW_DS_ADJ_MATRIX;
+  struct adj_matrix_params params;
   params.flags = 0;
   params.elt_size = sizeof(T);
 
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
   };
 
   CATCH_REQUIRE(th_ds_init(&params) == OK);
@@ -46,9 +46,9 @@ void run_test(void (*test)(struct ds_params *params)) {
         if (k && !m) {
           continue;
         }
-        params.type.adjm.is_directed = (bool_t)m;
-        params.type.adjm.is_weighted = (bool_t)k;
-        params.type.adjm.n_vertices = TH_NUM_ITEMS;
+        params.is_directed = (bool_t)m;
+        params.is_weighted = (bool_t)k;
+        params.n_vertices = TH_NUM_ITEMS;
         params.flags = flags[i];
 
         test(&params);
@@ -62,14 +62,14 @@ void run_test(void (*test)(struct ds_params *params)) {
  * Test Functions
  ******************************************************************************/
 template<typename T>
-static void edge_add_test(struct ds_params* params) {
+static void edge_add_test(struct adj_matrix_params* params) {
   struct adj_matrix *matrix;
   struct adj_matrix mymatrix;
 
   matrix = adj_matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
-  for (size_t i = 1; i < params->type.adjm.n_vertices; ++i) {
+  for (size_t i = 1; i < params->n_vertices; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
       CATCH_REQUIRE(OK == adj_matrix_edge_addd(matrix, i-1, i, &val));
@@ -85,14 +85,14 @@ static void edge_add_test(struct ds_params* params) {
 }
 
 template<typename T>
-static void edge_remove_test(struct ds_params* params) {
+static void edge_remove_test(struct adj_matrix_params* params) {
   struct adj_matrix *matrix;
   struct adj_matrix mymatrix;
 
   matrix = adj_matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
-  size_t max = params->type.adjm.n_vertices;
+  size_t max = params->n_vertices;
   for (size_t i = 1; i < max; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
@@ -123,14 +123,14 @@ static void edge_remove_test(struct ds_params* params) {
 }
 
 template<typename T>
-static void transpose_test(struct ds_params* params) {
+static void transpose_test(struct adj_matrix_params* params) {
   struct adj_matrix *matrix;
   struct adj_matrix mymatrix;
 
   matrix = adj_matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
-  size_t max = params->type.adjm.n_vertices;
+  size_t max = params->n_vertices;
   for (size_t i = 1; i < max; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
@@ -149,7 +149,7 @@ static void transpose_test(struct ds_params* params) {
   adj_matrix_destroy(matrix);
 }
 template<typename T>
-static void print_test(struct ds_params* params) {
+static void print_test(struct adj_matrix_params* params) {
   struct adj_matrix *matrix;
   struct adj_matrix mymatrix;
 
@@ -158,7 +158,7 @@ static void print_test(struct ds_params* params) {
   CATCH_REQUIRE(nullptr != matrix);
   adj_matrix_print(matrix);
 
-  size_t max = params->type.adjm.n_vertices;
+  size_t max = params->n_vertices;
   for (size_t i = 1; i < max; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;

@@ -2,76 +2,9 @@
  * \file ds.h
  * \brief Common definitions for all data structures.
  *
- * Initialization parameters, common constant/type definitions, and run-time
- * configuration flags.
- *
- * \copyright 2017 John Harwell, All rights reserved.
- *
- * SPDX-License-Identifier: MIT
- */
-
-#pragma once
-
-/*******************************************************************************
- * Includes
- ******************************************************************************/
-#include "rcsw/rcsw.h"
-#include "rcsw/ds/allocm.h"
-
-/*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-/**
- * Tags for initialization parameter union. Not all data structures under DS
- * use the same initialization structure.
- */
-enum ds_tag {
-  ekRCSW_DS_DARRAY,
-  ekRCSW_DS_LLIST,
-  ekRCSW_DS_HASHMAP,
-  ekRCSW_DS_BSTREE,
-  ekRCSW_DS_RBUFFER,
-  ekRCSW_DS_BIN_HEAP,
-  ekRCSW_DS_FIFO,
-  ekRCSW_DS_MATRIX,
-  ekRCSW_DS_DYN_MATRIX,
-  ekRCSW_DS_ADJ_MATRIX
-};
-
-/**
- * Keep the data structure sorted after insertions/deletions. Also implies
- * maintaining the relative ordering of elements.
- *
- * Applies to:
- *
- * - \ref darray
- * - \ref llist
- * - \ref hashmap
- */
-#define RCSW_DS_SORTED 0x1
-
-/**
- * \brief Maintain the relative ordering between elements as they are inserted,
- * but not sort the elements.
- *
- * Applies to:
- *
- * - \ref darray
- */
-#define RCSW_DS_ORDERED 0x2
-
-/**
- * \brief Declare that space for the data structure handle is
- * provided by the application.
- *
- * The _in parameter is ignored if you do not pass this flag (even if it is
- * non-NULL). Applies to all data structures.
- */
-#define RCSW_DS_NOALLOC_HANDLE 0x4
-
-/**
- * \brief Declare that the space for datablocks/data the data structure will
- * manage is provided by the application.
+ * In this module \ref RCSW_NOALLOC_DATA declare that the space for
+ * datablocks/data the data structure will manage is provided by the
+ * application.
  *
  * Passing this flag causes the memory pointed to by the elements field of
  * ds_params to be used for storing the datablocks, instead of malloc()ing for
@@ -89,16 +22,10 @@ enum ds_tag {
  * value.
  *
  * The amount of space that must be allocated by the application for the data
- * elements can be calculated by using the appropriate sizing functions. Some
- * data structures use the generic ds_calc_element_space() function, and some
- * data structures require a more specialized macro which can be found in their
- * respective header file.
- */
-#define RCSW_DS_NOALLOC_DATA 0x8
-
-/**
- * \brief Declare that space for the nodes/metadata of the data
- * structure will use is provided by the application.
+ * elements can be calculated by using the appropriate sizing functions.
+ *
+ * In this module \ref RCSW_NOALLOC_META declares that space for the
+ * nodes/metadata of the data structure will use is provided by the application.
  *
  * Passing this flag causes the memory pointed to by the nodes field of
  * ds_params to be used for storing the data struct nodes/metadata, instead of
@@ -122,11 +49,65 @@ enum ds_tag {
  * value.
  *
  * The amount of space that must be allocated by the application for the nodes
- * can be calculated by the XX_node_space() function found in the header file
- * for the data structure. (i.e. \ref bstree_node_space() for the binary search
+ * can be calculated by the XX_meta_space() function found in the header file
+ * for the data structure. (i.e. \ref bstree_meta_space() for the binary search
  * tree).
+ *
+ * \copyright 2017 John Harwell, All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
  */
-#define RCSW_DS_NOALLOC_NODES 0x10
+
+#pragma once
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include "rcsw/rcsw.h"
+#include "rcsw/common/flags.h"
+
+#include "rcsw/ds/allocm.h"
+
+/*******************************************************************************
+ * Constant Definitions
+ ******************************************************************************/
+/**
+ * Tags for data structures for use in initializing iterators.
+ */
+enum ds_tag {
+  ekRCSW_DS_DARRAY,
+  ekRCSW_DS_LLIST,
+  ekRCSW_DS_HASHMAP,
+  ekRCSW_DS_BSTREE,
+  ekRCSW_DS_RBUFFER,
+  ekRCSW_DS_BINHEAP,
+  ekRCSW_DS_FIFO,
+  ekRCSW_DS_MATRIX,
+  ekRCSW_DS_DYN_MATRIX,
+  ekRCSW_DS_ADJ_MATRIX
+};
+
+/**
+ * Keep the data structure sorted after insertions/deletions. Also implies
+ * maintaining the relative ordering of elements.
+ *
+ * Applies to:
+ *
+ * - \ref darray
+ * - \ref llist
+ * - \ref hashmap
+ */
+#define RCSW_DS_SORTED (1 << (RCSW_MODFLAGS_START + 0))
+
+/**
+ * \brief Maintain the relative ordering between elements as they are inserted,
+ * but not sort the elements.
+ *
+ * Applies to:
+ *
+ * - \ref darray
+ */
+#define RCSW_DS_ORDERED (1 << (RCSW_MODFLAGS_START + 1))
 
 /**
  * \brief Indicate that the \ref hashmap should perform linear probing if the
@@ -135,14 +116,14 @@ enum ds_tag {
  * Results in greater hashmap utilization, but possibly longer
  * insert/remove/lookup times.
  */
-#define RCSW_DS_HASHMAP_LINPROB 0x20
+#define RCSW_DS_HASHMAP_LINPROB (1 << (RCSW_MODFLAGS_START + 2))
 
 /**
  * \brief Indicate that a \ref rbuffer should act as a FIFO (i.e., items are
  * never overrwritten/only added to ringbuffer when the ringbuffer is not
  * currently full.
  */
-#define RCSW_DS_RBUFFER_AS_FIFO 0x40
+#define RCSW_DS_RBUFFER_AS_FIFO  (1 << (RCSW_MODFLAGS_START + 3))
 
 /**
  * \brief Indicate that a \ref llist should NOT to allocate/deallocate a
@@ -161,7 +142,7 @@ enum ds_tag {
  *    copy)
  *
  */
-#define RCSW_DS_LLIST_NO_DB 0x80
+#define RCSW_DS_LLIST_NO_DB  (1 << (RCSW_MODFLAGS_START + 4))
 
 /**
  * \brief Indicate that a \ref llist should NOT use compare function when
@@ -172,13 +153,13 @@ enum ds_tag {
  *
  * This flag implies \ref RCSW_DS_LLIST_NO_DB.
  */
-#define RCSW_DS_LLIST_PTR_CMP 0x100
+#define RCSW_DS_LLIST_PTR_CMP  (1 << (RCSW_MODFLAGS_START + 5))
 
 /**
  * \brief Indicate that a \ref bstree should function as a red-black tree and
  * rebalance itself after insertions and deletions.
  */
-#define RCSW_DS_BSTREE_RB 0x200
+#define RCSW_DS_BSTREE_RB  (1 << (RCSW_MODFLAGS_START + 6))
 
 /**
  * \brief Indicate that a \ref bstree should function as an interval tree.
@@ -188,7 +169,7 @@ enum ds_tag {
  * must also specify the correct element size for an interval during
  * initialization (this is not done automatically).
  */
-#define RCSW_DS_BSTREE_INTERVAL 0x400
+#define RCSW_DS_BSTREE_INTERVAL  (1 << (RCSW_MODFLAGS_START + 7))
 
 /**
  * \brief Indicate that a \ref bstree should function as an Order
@@ -196,189 +177,90 @@ enum ds_tag {
  *
  * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed.
  */
-#define RCSW_DS_BSTREE_OS 0x800
+#define RCSW_DS_BSTREE_OS  (1 << (RCSW_MODFLAGS_START + 8))
 
 /**
  * \brief Indicate that a \ref bin_heap should function as a min heap. If you do
  * not pass this flag, all heaps will function as max heaps.
  */
-#define RCSW_DS_BINHEAP_MIN 0x1000
+#define RCSW_DS_BINHEAP_MIN  (1 << (RCSW_MODFLAGS_START + 9))
 
 /**
  * \brief If you want to define additional flags for derived data structures,
  * start with this one to ensure no conflicts.
  */
-#define RCSW_DS_FLAGS_EXT 0x2000
+#define RCSW_DS_EXTFLAGS_START 10
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-/**
- * \brief Dynamic array (darray) initialization parameters.
- */
-struct da_params {
-  /**
-   * Initial size of the array (must be < max_elts). Ignored if \ref
-   * RCSW_DS_NOALLOC_DATA is passed.
-   */
-  size_t init_size;
-};
-
-/**
- * \brief Hashmap initialization parameters.
- */
-struct hm_params {
-  /** Used by the hashmap darrays find elements. Must be non-NULL. */
-  int (*key_cmp)(const void *a, const void *b);
-
-  /** Hashing function to use. Must be non-NULL. */
-  uint32_t (*hash)(const void *const key, size_t len);
-
-  size_t bsize;  /// Initial size of hash buckets
-  size_t n_buckets;  /// Fixed number of buckets for hashmap
-
-  /**
-   * # of inserts before automatically sorting. -1 = do not automatically
-   * sort.
-   */
-  int sort_thresh;
-
-  size_t keysize;  /// Size in bytes for hashnode keys
-};
-
-/**
- * \brief Binary heap initialization parameters.
- */
-struct bhp_params {
-  size_t init_size;  /// Initial size of heap.
-};
-
-/**
- * \brief Static matrix initialization parameters.
- */
-struct matrix_params {
-  size_t n_rows;  /// # rows in matrix.
-  size_t n_cols;  /// # columns in matrix.
-};
-
-/**
- * \brief Dynamic matrix initialization parameters.
- */
-struct dyn_matrix_params {
-  size_t n_rows;  /// # rows in matrix.
-  size_t n_cols;  /// # columns in matrix.
-  uint8_t* rows;  /// Ptr to space for vector-of-row-vectors.
-};
-
-
-/**
- * \brief Adjacency matrix initialization parameters.
- */
-struct adj_matrix_params {
-  /**
-   * Initial # of vertices for graph, for space allocation.
-   */
-  size_t n_vertices;  /// Max # of vertices graph will hold.
-  bool_t is_directed;  /// Is the graph directed or undirected?
-  /**
-   * Are the graph edges weighted? If a graph is undirected it cannot be
-   * weighted.
-   */
-  bool_t is_weighted;
-};
-
 /**
  * \ref A single parameters structure for all general purpose data structures.
  *
  * Some data structures require additional parameters which are captured in the
  * union.
  */
-struct ds_params {
-  union {
-    struct da_params da;
-    struct hm_params hm;
-    struct bhp_params bhp;
-    struct adj_matrix_params adjm;
-    struct matrix_params smat;
-    struct dyn_matrix_params dmat;
-  } type;
 
-  /**
-   * Key for which member of union is valid. For data structures that do not
-   * require additional parameters, and have no entry in the union above, it
-   * serves as a sanity check for programmers to make sure the data structure
-   * they are initializing is the one they intended.
-   */
-  enum ds_tag tag;
-
-
-  /**
-   * For comparing elements.
-   *
-   * Cannot  be NULL for:
-   *
-   * \ref bin_heap
-   *
-   * For data structures for which this callback is optional, if NULL, some
-   * operations such as sorting will be disabled.
-   */
-  int (*cmpe)(const void *const e1, const void *const e2);
-
-  /**
-   * For comparing keys associated with elements.
-   *
-   * Cannot be NULL for:
-   *
-   * - \ref bstree (and data structures derived from binary search tree)
-   * - \ref bin_heap
-   */
-  int (*cmpkey)(const void *const e1, const void *const e2);
-
-  /**
-   * For printing an element. Can be NULL for any data structure; only used
-   * for diagnostic purposes.
-   */
-  void (*printe)(const void *e);
-
-  /**
-   * Pointer to space the application has allocated for the data structure to
-   * reside in. This is NOT the same as space for the data that the data
-   * structure is taking care of. For example, if a linked list is used, then
-   * this is a pointer to a block of memory that the linked list data
-   * structure will use to store its nodes in, instead of malloc()ing for
-   * them. Ignored unless \ref RCSW_DS_NOALLOC_NODES is passed.
-   *
-   * Used by linked list, binary search tree (and derived structures), hashmap.
-   */
-  uint8_t *nodes;
-
-  /**
-   * Pointer to space the application has allocated for storing the actual
-   * data that the data structure will be managing. This is NOT the same
-   * as the space for the data structure itself. Ignored unless \ref
-   * RCSW_DS_APP_NOALLOC_DATA is passed.
-   *
-   * Used by all data structures.
-   */
-  uint8_t *elements;
-
-  /**
-   * size of elements in bytes.
-   */
-  size_t elt_size;
-
-  /**
-   * Maximum # of elements allowed. -1 = no upper limit.
-   *
-   * Used by all data structures except hashmap.
-   */
-  int max_elts;
-
-  /**
-   * Initialization flags
-   */
+#define RCSW_DECLARE_DS_PARAMS_COMMON \
+  /**                         \
+   * For comparing elements.  \
+   *                          \
+   * Cannot be NULL for: \
+   * \
+   * \ref bin_heap \
+   * \
+   * For data structures for which this callback is optional, if NULL, some \
+   * operations such as sorting will be disabled. \
+   */ \
+  int (*cmpe)(const void *const e1, const void *const e2); \
+  /** \
+   * For comparing keys associated with elements. \
+   * \
+   * Cannot be NULL for: \
+   * \
+   * - \ref bstree (and data structures derived from binary search tree) \
+   * - \ref bin_heap \
+   */ \
+  int (*cmpkey)(const void *const e1, const void *const e2); \
+  /** \
+   * For printing an element. Can be NULL for any data structure; only used \
+   * for diagnostic purposes. \
+   */ \
+  void (*printe)(const void *e); \
+  /** \
+   * Pointer to space the application has allocated for the data structure to \
+   * reside in. This is NOT the same as space for the data that the data \
+   * structure is taking care of. For example, if a linked list is used, then \
+   * this is a pointer to a block of memory that the linked list data \
+   * structure will use to store its nodes in, instead of malloc()ing for \
+   * them. Ignored unless \ref RCSW_DS_NOALLOC_NODES is passed. \
+   * \
+   * Used by linked list, binary search tree (and derived structures), hashmap. \
+   */ \
+  uint8_t *nodes; \
+  /** \
+   * Pointer to space the application has allocated for storing the actual \
+   * data that the data structure will be managing. This is NOT the same \
+   * as the space for the data structure itself. Ignored unless \ref \
+   * RCSW_DS_APP_NOALLOC_DATA is passed. \
+   * \
+   * Used by all data structures. \
+   */ \
+  uint8_t *elements; \
+  /** \
+   * size of elements in bytes. \
+   */ \
+  size_t elt_size; \
+  /** \
+   * Maximum # of elements allowed. -1 = no upper limit. \
+   * \
+   * Used by all data structures except hashmap. \
+   */ \
+  int max_elts; \
+  /** \
+   * Initialization flags \
+   */ \
   uint32_t flags;
-};
 
 /*******************************************************************************
  * Inline Functions

@@ -17,12 +17,25 @@
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-
-/*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Adjacency matrix initialization parameters.
+ */
+struct adj_matrix_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * Initial # of vertices for graph, for space allocation.
+   */
+  size_t n_vertices;  /// Max # of vertices graph will hold.
+  bool_t is_directed;  /// Is the graph directed or undirected?
+  /**
+   * Are the graph edges weighted? If a graph is undirected it cannot be
+   * weighted.
+   */
+  bool_t is_weighted;
+};
+
 /**
  * \ingroup ds
  * \brief Implementation of adjacency matrix representation of a "static" graph.
@@ -194,7 +207,7 @@ static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
  * \return The initialized adjacency matrix, or NULL if an error occurred.
  */
 struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
-                                     const struct ds_params* params) RCSW_CHECK_RET;
+                                     const struct adj_matrix_params* params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy an adjacency matrix. Any further use of the provided handle is

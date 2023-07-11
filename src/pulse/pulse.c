@@ -58,7 +58,7 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
   } else {
     pulse = calloc(1, sizeof(struct pulse_inst));
   }
-  RCSW_CHECK_PTR(mt_mutex_init(&pulse->mutex, MT_APP_DOMAIN_MEM));
+  RCSW_CHECK_PTR(mutex_init(&pulse->mutex, RCSW_NOALLOC_HANDLE));
   memcpy(pulse->name, params->name, PULSE_MAX_NAMELEN);
   pulse->flags = params->flags;
   pulse->n_rxqs = 0;
@@ -75,7 +75,7 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
 
   uint32_t flags = 0;
   if (!(pulse->flags & PULSE_APP_DOMAIN_POOLS)) {
-    flags = RCSW_DS_NOALLOC_DATA | RCSW_DS_NOALLOC_NODES;
+    flags = RCSW_NOALLOC_DATA | RCSW_NOALLOC_META;
   }
 
   for (i = 0; i < pulse->n_pools; i++) {
@@ -83,10 +83,10 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
                                          .max_elts = params->pools[i].n_bufs,
                                          .nodes = params->pools[i].nodes,
                                          .elements = params->pools[i].elements,
-                                         .flags = flags | RCSW_DS_NOALLOC_HANDLE |
-                                                  MPOOL_REF_COUNT_EN };
+                                         .flags = flags | RCSW_NOALLOC_HANDLE |
+                                                  RCSW_MPOOL_REFCOUNT };
     RCSW_CHECK_PTR(
-        mt_mutex_init(&pulse->buffer_pools[i].mutex, MT_APP_DOMAIN_MEM));
+        mutex_init(&pulse->buffer_pools[i].mutex, RCSW_NOALLOC_HANDLE));
     RCSW_CHECK(NULL != mpool_init(&pulse->buffer_pools[i].pool, &mpool_params));
   } /* for() */
 
@@ -95,16 +95,15 @@ struct pulse_inst* pulse_init(struct pulse_inst* pulse_in,
        pulse->max_subs);
 
   /* Initialize receive queues */
-  pulse->rx_queues = calloc(pulse->max_rxqs, sizeof(struct mt_queue));
+  pulse->rx_queues = calloc(pulse->max_rxqs, sizeof(struct pcqueue));
   RCSW_CHECK_PTR(pulse->rx_queues);
 
   /* initialize subscriber list */
-  struct ds_params llist_params = { .max_elts = (int)pulse->max_subs,
+  struct llist_params llparams = { .max_elts = (int)pulse->max_subs,
                                     .elt_size = sizeof(struct pulse_sub_ent),
                                     .cmpe = pulse_sub_ent_cmp,
-                                    .tag = ekRCSW_DS_LLIST,
                                     .flags = RCSW_DS_SORTED };
-  pulse->sub_list = llist_init(NULL, &llist_params);
+  pulse->sub_list = llist_init(NULL, &llparams);
   RCSW_CHECK_PTR(pulse->sub_list);
 
   return pulse;
@@ -125,7 +124,7 @@ void pulse_destroy(struct pulse_inst* pulse) {
   }
   if (pulse->rx_queues) {
     for (size_t i = 0; i < pulse->n_rxqs; ++i) {
-      mt_queue_destroy(pulse->rx_queues + i);
+      pcqueue_destroy(pulse->rx_queues + i);
     } /* for(i..) */
     free(pulse->rx_queues);
   }
@@ -180,13 +179,13 @@ status_t pulse_publish_release(struct pulse_inst* pulse,
   rxq_entry.pid = pid;
 
   ER_TRACE("Releasing receive queue entry on bus %s", pulse->name);
-  mt_mutex_lock(&pulse->mutex);
+  mutex_lock(&pulse->mutex);
 
   struct pulse_sub_ent* sub = NULL;
 
   /* Keep application threads from servicing until all subscribers notified */
   if (!(pulse->flags & PULSE_SERVICE_ASYNC)) {
-    mt_mutex_lock(&bp_ent->mutex);
+    mutex_lock(&bp_ent->mutex);
   }
 
   LLIST_FOREACH(pulse->sub_list, next, node) {
@@ -215,46 +214,46 @@ status_t pulse_publish_release(struct pulse_inst* pulse,
 error:
   /* all users counted now */
   if (!(pulse->flags & PULSE_SERVICE_ASYNC)) {
-    mt_mutex_unlock(&bp_ent->mutex);
+    mutex_unlock(&bp_ent->mutex);
   }
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return rstat;
 } /* pulse_publish_release() */
 
-struct mt_queue*
+struct pcqueue*
 pulse_rxq_init(struct pulse_inst* pulse, void* buf_p, uint32_t n_entries) {
   RCSW_FPC_NV(NULL, pulse != NULL);
 
   ER_DEBUG("Initializing new receive queue");
-  mt_mutex_lock(&(pulse->mutex));
+  mutex_lock(&(pulse->mutex));
 
   /* If max number rxqs has not been reached then allocate one */
   ER_CHECK(pulse->n_rxqs < pulse->max_rxqs,
                 "Cannot allocate receive queue (no space)");
-  struct mt_queue* rxq = pulse->rx_queues + pulse->n_rxqs;
+  struct pcqueue* rxq = pulse->rx_queues + pulse->n_rxqs;
 
   /* create FIFO */
-  struct mt_queue_params params = { .elt_size = sizeof(struct pulse_rxq_ent),
+  struct pcqueue_params params = { .elt_size = sizeof(struct pulse_rxq_ent),
                                     .max_elts = n_entries,
                                     .elements = buf_p,
-                                    .flags = RCSW_DS_NOALLOC_HANDLE };
-  params.flags |= (buf_p != NULL) ? RCSW_DS_NOALLOC_DATA : 0;
-  RCSW_CHECK(NULL != mt_queue_init(rxq, &params));
+                                    .flags = RCSW_NOALLOC_HANDLE };
+  params.flags |= (buf_p != NULL) ? RCSW_NOALLOC_DATA : 0;
+  RCSW_CHECK(NULL != pcqueue_init(rxq, &params));
 
   pulse->n_rxqs++;
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return rxq;
 
 error:
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return NULL;
 } /* pulse_rxq_init() */
 
 status_t
-pulse_subscribe(struct pulse_inst* pulse, struct mt_queue* queue, uint32_t pid) {
+pulse_subscribe(struct pulse_inst* pulse, struct pcqueue* queue, uint32_t pid) {
   RCSW_FPC_NV(ERROR, pulse != NULL, queue != NULL);
 
-  mt_mutex_lock(&pulse->mutex);
+  mutex_lock(&pulse->mutex);
   ER_CHECK(llist_n_elts(pulse->sub_list) < pulse->max_subs,
                 "Cannot subscribe--all subscribers allocated");
 
@@ -268,20 +267,20 @@ pulse_subscribe(struct pulse_inst* pulse, struct mt_queue* queue, uint32_t pid) 
   RCSW_CHECK(OK == llist_append(pulse->sub_list, &sub));
   ER_DEBUG(
       "Subscribed RXQ %zu to PID 0x%08x on bus", queue - pulse->rx_queues, pid);
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return OK;
 
 error:
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return ERROR;
 } /* pulse_subscribe() */
 
 status_t pulse_unsubscribe(struct pulse_inst* pulse,
-                           struct mt_queue* queue,
+                           struct pcqueue* queue,
                            uint32_t pid) {
   RCSW_FPC_NV(ERROR, pulse != NULL, queue != NULL);
   status_t rstat = ERROR;
-  mt_mutex_lock(&pulse->mutex);
+  mutex_lock(&pulse->mutex);
 
   /* find index for insertion of new subscription */
   struct pulse_sub_ent sub = { .pid = pid, .subscriber = queue };
@@ -295,37 +294,37 @@ status_t pulse_unsubscribe(struct pulse_inst* pulse,
   rstat = OK;
 
 error:
-  mt_mutex_unlock(&pulse->mutex);
+  mutex_unlock(&pulse->mutex);
   return rstat;
 } /* pulse_unsubscribe() */
 
-void* pulse_wait_front(struct mt_queue* queue) {
+void* pulse_wait_front(struct pcqueue* queue) {
   RCSW_FPC_NV(NULL, NULL != queue);
   uint8_t* pkt = NULL;
   struct pulse_rxq_ent ent;
-  RCSW_CHECK(OK == mt_queue_pop(queue, &ent));
+  RCSW_CHECK(OK == pcqueue_pop(queue, &ent));
   pkt = ent.buf;
 
 error:
   return pkt;
 } /* pulse_wait_front() */
 
-void* pulse_timedwait_front(struct mt_queue* queue, struct timespec* to) {
+void* pulse_timedwait_front(struct pcqueue* queue, struct timespec* to) {
   RCSW_FPC_NV(NULL, NULL != queue, NULL != to);
   uint8_t* pkt = NULL;
   struct pulse_rxq_ent ent;
-  RCSW_CHECK(OK == mt_queue_timed_pop(queue, to, &ent));
+  RCSW_CHECK(OK == pcqueue_timed_pop(queue, to, &ent));
   pkt = ent.buf;
 
 error:
   return pkt;
 } /* pulse_timedwait_front() */
 
-status_t pulse_pop_front(struct mt_queue* queue) {
+status_t pulse_pop_front(struct pcqueue* queue) {
   RCSW_FPC_NV(ERROR, queue != NULL);
 
   status_t rstat = ERROR;
-  struct pulse_rxq_ent* ent = mt_queue_peek(queue);
+  struct pulse_rxq_ent* ent = pcqueue_peek(queue);
 
   /* If the application did not use the release() function directly. */
   if (ent->bp_ent) {
@@ -387,15 +386,15 @@ status_t pulse_subscriber_notify(struct pulse_bp_ent* bp_ent,
   status_t rstat = ERROR;
 
   /* add entry to subscriber rx queue and signal */
-  mt_mutex_lock(&(sub->subscriber->mutex));
-  if (OK == mt_queue_push(sub->subscriber, &rxq_ent)) {
+  mutex_lock(&(sub->subscriber->mutex));
+  if (OK == pcqueue_push(sub->subscriber, &rxq_ent)) {
     /*
      * Add a reference. This is not done during the reserve step as no
      * one is actually using the memory at that time.
      */
     RCSW_CHECK(OK == mpool_ref_add(&bp_ent->pool, rxq_ent->buf));
   }
-  mt_mutex_unlock(&(sub->subscriber->mutex));
+  mutex_unlock(&(sub->subscriber->mutex));
 
   rstat = OK;
 error:

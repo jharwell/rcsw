@@ -22,6 +22,12 @@
 #include "tests/ds_bstree_test.hpp"
 
 /*******************************************************************************
+ * Namespaces/Decls
+ ******************************************************************************/
+using ostree_test_t = void(*)(int len,
+                              struct bstree_params *params);
+
+/*******************************************************************************
  * Global Variables
  ******************************************************************************/
 int n_elements; /* global var for # elements in RBTREE */
@@ -29,9 +35,8 @@ int n_elements; /* global var for # elements in RBTREE */
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-static void run_test(ds_test_t test) {
-  struct ds_params params;
-  params.tag = ekRCSW_DS_BSTREE;
+static void run_test(ostree_test_t test) {
+  struct bstree_params params;
   params.flags = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
   params.elt_size = sizeof(struct element8);
   params.max_elts = TH_NUM_ITEMS;
@@ -39,9 +44,9 @@ static void run_test(ds_test_t test) {
 
   th_ds_init(&params);
   uint32_t flags[] = {
-    RCSW_DS_NOALLOC_HANDLE,
-    RCSW_DS_NOALLOC_DATA,
-    RCSW_DS_NOALLOC_NODES,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
@@ -58,12 +63,12 @@ static void run_test(ds_test_t test) {
 /**
  * \brief Test rank for OStrees.
  */
-static void ostree_select_test(int len, struct ds_params *params) {
+static void ostree_select_test(int len, struct bstree_params *params) {
   struct bstree* tree;
   struct bstree mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     tree = ostree_init(&mytree, params);
   } else {
     tree = ostree_init(NULL, params);
@@ -114,7 +119,7 @@ static void ostree_select_test(int len, struct ds_params *params) {
 /**
  * \brief Test select for OStrees.
  */
-static void ostree_rank_test(int len, struct ds_params *params) {
+static void ostree_rank_test(int len, struct bstree_params *params) {
   struct bstree* tree;
   struct bstree mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];

@@ -1,5 +1,5 @@
 /**
- * \file bin_heap.h
+ * \file binheap.h
  * \ingroup ds
  * \brief Implementation of binary heap using a dynamic array (\ref darray).
  *
@@ -14,6 +14,7 @@
  * Includes
  ******************************************************************************/
 #include <math.h>
+
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/darray.h"
 #include "rcsw/common/fpc.h"
@@ -21,13 +22,21 @@
 /*******************************************************************************
  * Macro Definitions
  ******************************************************************************/
-#define RCSW_BIN_HEAP_LCHILD(i) (2*(i))
-#define RCSW_BIN_HEAP_RCHILD(i) (2*(i)+1)
-#define RCSW_BIN_HEAP_PARENT(i) ((i)/2)
+#define RCSW_BINHEAP_LCHILD(i) (2*(i))
+#define RCSW_BINHEAP_RCHILD(i) (2*(i)+1)
+#define RCSW_BINHEAP_PARENT(i) ((i)/2)
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Binary heap initialization parameters.
+ */
+struct binheap_params {
+  RCSW_DECLARE_DS_PARAMS_COMMON;
+  size_t init_size;  /// Initial size of heap.
+};
+
 /**
  * \brief Binary heap structure.
  *
@@ -36,7 +45,7 @@
  *
  * Implemented using a binary tree inside a \ref darray.
  */
-struct bin_heap {
+struct binheap {
   /**
    * The underlying array with the actual data.
    *
@@ -59,7 +68,7 @@ struct bin_heap {
  *
  * \return \ref bool_t
  */
-static inline bool_t bin_heap_isfull(const struct bin_heap* const heap) {
+static inline bool_t binheap_isfull(const struct binheap* const heap) {
     RCSW_FPC_NV(false, NULL != heap);
     return darray_isfull(&heap->arr);
 }
@@ -71,7 +80,7 @@ static inline bool_t bin_heap_isfull(const struct bin_heap* const heap) {
  *
  * \return \ref bool_t
  */
-static inline bool_t bin_heap_isempty(const struct bin_heap* const heap) {
+static inline bool_t binheap_isempty(const struct binheap* const heap) {
     RCSW_FPC_NV(false, NULL != heap);
     return (bool_t)(darray_n_elts(&heap->arr) == 1);
 }
@@ -83,7 +92,7 @@ static inline bool_t bin_heap_isempty(const struct bin_heap* const heap) {
  *
  * \return # elements in heap, or 0 on ERROR.
  */
-static inline size_t bin_heap_n_elts(const struct bin_heap* const heap) {
+static inline size_t binheap_n_elts(const struct binheap* const heap) {
     RCSW_FPC_NV(0, NULL != heap);
     return darray_n_elts(&heap->arr) - 1; /* -1 for tmp element */
 }
@@ -95,7 +104,7 @@ static inline size_t bin_heap_n_elts(const struct bin_heap* const heap) {
  *
  * \return # of free elements
  */
-static inline size_t bin_heap_n_free(struct bin_heap * heap) {
+static inline size_t binheap_n_free(struct binheap * heap) {
     return darray_capacity(&heap->arr) - darray_n_elts(&heap->arr);
 }
 
@@ -109,7 +118,7 @@ static inline size_t bin_heap_n_free(struct bin_heap * heap) {
  *
  * \return The total # of bytes the application would need to allocate
  */
-static inline size_t bin_heap_element_space(size_t max_elts, size_t elt_size) {
+static inline size_t binheap_element_space(size_t max_elts, size_t elt_size) {
   /* +1 is for the tmp element at index 0 */
   return darray_element_space(max_elts, elt_size) + elt_size;
 }
@@ -120,7 +129,7 @@ static inline size_t bin_heap_element_space(size_t max_elts, size_t elt_size) {
  * \param heap The heap handle.
  * \return \ref status_t.
  */
-static inline status_t bin_heap_clear(struct bin_heap * heap) {
+static inline status_t binheap_clear(struct binheap * heap) {
     RCSW_FPC_NV(ERROR, heap != NULL);
     return darray_clear(&heap->arr);
 }
@@ -132,13 +141,13 @@ static inline status_t bin_heap_clear(struct bin_heap * heap) {
  *
  * \return Reference to top element on heap, or NULL if an error occurred.
  */
-static inline void* bin_heap_peek(const struct bin_heap * heap) {
-    RCSW_FPC_NV(NULL, heap != NULL, !bin_heap_isempty(heap));
+static inline void* binheap_peek(const struct binheap * heap) {
+    RCSW_FPC_NV(NULL, heap != NULL, !binheap_isempty(heap));
     return darray_data_get(&heap->arr, 1);
 }
 
-static inline size_t bin_heap_height(const struct bin_heap * heap) {
-  return (size_t)(log10(bin_heap_n_elts(heap)) / log10(2));
+static inline size_t binheap_height(const struct binheap * heap) {
+  return (size_t)(log10(binheap_n_elts(heap)) / log10(2));
 }
 
 /*******************************************************************************
@@ -149,15 +158,15 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a heap.
  *
- * \param bin_heap_in The heap handle to be filled (can be NULL if
+ * \param binheap_in The heap handle to be filled (can be NULL if
  *                    \ref RCSW_DS_NOALLOC_HANDLE not passed).
  *
  * \param params Initialization parameters.
  *
  * \return The initialized heap, or NULL if an error occurred.
  */
-struct bin_heap *bin_heap_init(struct bin_heap *bin_heap_in,
-                               const struct ds_params * params) RCSW_CHECK_RET;
+struct binheap *binheap_init(struct binheap *heap_in,
+                             const struct binheap_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a heap. Any further use of the heap handle after calling this
@@ -165,7 +174,7 @@ struct bin_heap *bin_heap_init(struct bin_heap *bin_heap_in,
  *
  * \param heap The heap handle.
  */
-void bin_heap_destroy(struct bin_heap *heap);
+void binheap_destroy(struct binheap *heap);
 
 /**
  * \brief Add element to heap
@@ -175,7 +184,7 @@ void bin_heap_destroy(struct bin_heap *heap);
  *
  * \return OK, if successful, ERROR otherwise.
  */
-status_t bin_heap_insert(struct bin_heap * heap, const void * e);
+status_t binheap_insert(struct binheap * heap, const void * e);
 
 /**
  * \brief Convert an unordered array into a heap (presumably after you have
@@ -189,7 +198,7 @@ status_t bin_heap_insert(struct bin_heap * heap, const void * e);
  *
  * \return \ref status_t
  */
-status_t bin_heap_make(struct bin_heap * heap, const void* data,
+status_t binheap_make(struct binheap * heap, const void* data,
                        size_t n_elts);
 
 /**
@@ -202,7 +211,7 @@ status_t bin_heap_make(struct bin_heap * heap, const void* data,
  *
  * \return \ref status_t.
  */
-status_t bin_heap_extract(struct bin_heap * heap, void * e);
+status_t binheap_extract(struct binheap * heap, void * e);
 
 
 /**
@@ -219,7 +228,7 @@ status_t bin_heap_extract(struct bin_heap * heap, void * e);
  *
  * \return \ref status_t.
  */
-status_t bin_heap_delete_key(struct bin_heap* heap, size_t index,
+status_t binheap_delete_key(struct binheap* heap, size_t index,
                              const void* minmax);
 
 /**
@@ -232,7 +241,7 @@ status_t bin_heap_delete_key(struct bin_heap* heap, size_t index,
  *
  * \return \ref status_t.
  */
-status_t bin_heap_update_key(struct bin_heap* heap, size_t index,
+status_t binheap_update_key(struct binheap* heap, size_t index,
                                const void* new_val);
 
 /**
@@ -240,6 +249,6 @@ status_t bin_heap_update_key(struct bin_heap* heap, size_t index,
  *
  * \param heap The heap handle.
  */
-void bin_heap_print(const struct bin_heap * heap);
+void binheap_print(const struct binheap * heap);
 
 END_C_DECLS

@@ -1,5 +1,5 @@
 /**
- * \file bin_heap.c
+ * \file binheap.c
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -9,10 +9,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/bin_heap.h"
+#include "rcsw/ds/binheap.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.bin_heap"
-#define RCSW_ER_MODID M_DS_BIN_HEAP
+#define RCSW_ER_MODNAME "rcsw.ds.binheap"
+#define RCSW_ER_MODID M_DS_BINHEAP
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
@@ -29,7 +29,7 @@ BEGIN_C_DECLS
  * \param heap The heap handle.
  * \param m The index of the element to sift.
  */
-static void bin_heap_sift_down(struct bin_heap* heap, size_t m);
+static void binheap_sift_down(struct binheap* heap, size_t m);
 
 /**
  * \brief Sift nth element up to correct place in heap after insertion.
@@ -37,7 +37,7 @@ static void bin_heap_sift_down(struct bin_heap* heap, size_t m);
  * \param heap The heap handle.
  * \param n The index of the element to sift.
  */
-static void bin_heap_sift_up(struct bin_heap* heap, size_t i);
+static void binheap_sift_up(struct binheap* heap, size_t i);
 
 /**
  * \brief Swap two elements in the heap using the temporary slot.
@@ -46,52 +46,48 @@ static void bin_heap_sift_up(struct bin_heap* heap, size_t i);
  * \param i1 Index of element #1
  * \param i2 Index of element #2
  */
-static void bin_heap_swap(struct bin_heap* heap, size_t i1, size_t i2);
+static void binheap_swap(struct binheap* heap, size_t i1, size_t i2);
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
-                               const struct ds_params* const params) {
+struct binheap* binheap_init(struct binheap* heap_in,
+                             const struct binheap_params* const params) {
   RCSW_FPC_NV(NULL,
-              params != NULL,
-              params->tag == ekRCSW_DS_BIN_HEAP,
+              NULL != params,
               params->max_elts > 0,
               params->elt_size > 0,
-              params->cmpe != NULL);
+              NULL != params->cmpe);
   RCSW_ER_MODULE_INIT();
 
-  struct bin_heap* heap = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(bin_heap_in);
-    heap = bin_heap_in;
+  struct binheap* heap = NULL;
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
+    RCSW_CHECK_PTR(heap_in);
+    heap = heap_in;
   } else {
-    heap = malloc(sizeof(struct bin_heap));
+    heap = malloc(sizeof(struct binheap));
     RCSW_CHECK_PTR(heap);
   }
   heap->flags = params->flags;
 
-  struct ds_params darray_params = {
-      .type = {.da =
-               {
-                 /* +1 is for the tmp element at index 0 */
-                 .init_size =
-                 RCSW_MAX((size_t)1, params->type.bhp.init_size + 1),
-               }},
+  struct darray_params dparams = {
+      /* +1 is for the tmp element at index 0 */
+    .init_size =
+    RCSW_MAX((size_t)1, params->init_size + 1),
       .printe = params->printe,
       .cmpe = params->cmpe,
       .elt_size = params->elt_size,
       .max_elts = params->max_elts,
-      .tag = ekRCSW_DS_DARRAY,
       .elements = params->elements,
-      .flags = (params->flags & ~RCSW_DS_NOALLOC_HANDLE)};
-  darray_params.flags |= RCSW_DS_NOALLOC_HANDLE;
-  darray_params.max_elts += (darray_params.max_elts == -1) ? 0 : 1;
-  RCSW_CHECK(NULL != darray_init(&heap->arr, &darray_params));
+      .flags = (params->flags & ~RCSW_NOALLOC_HANDLE)};
+  dparams.flags |= RCSW_NOALLOC_HANDLE;
+  dparams.max_elts += (dparams.max_elts == -1) ? 0 : 1;
+
+  RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));
   RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, 1));
 
   ER_DEBUG("init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
-             params->type.bhp.init_size,
+             params->init_size,
              params->max_elts,
              params->elt_size,
              params->flags);
@@ -99,33 +95,33 @@ struct bin_heap* bin_heap_init(struct bin_heap* bin_heap_in,
   return heap;
 
 error:
-  bin_heap_destroy(heap);
+  binheap_destroy(heap);
   errno = EAGAIN;
   return NULL;
-} /* bin_heap_init() */
+} /* binheap_init() */
 
-void bin_heap_destroy(struct bin_heap* heap) {
+void binheap_destroy(struct binheap* heap) {
   RCSW_FPC_V(NULL != heap);
   darray_destroy(&heap->arr);
-  if (!(heap->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(heap->flags & RCSW_NOALLOC_HANDLE)) {
     free(heap);
   }
-} /* bin_heap_destroy() */
+} /* binheap_destroy() */
 
-status_t bin_heap_insert(struct bin_heap* const heap, const void* const e) {
-  RCSW_FPC_NV(ERROR, heap != NULL, e != NULL, !bin_heap_isfull(heap));
+status_t binheap_insert(struct binheap* const heap, const void* const e) {
+  RCSW_FPC_NV(ERROR, heap != NULL, e != NULL, !binheap_isfull(heap));
 
   RCSW_CHECK(OK == darray_insert(&heap->arr, e, heap->arr.current));
 
   /* Sift last element up to its correct position in the heap. */
-  bin_heap_sift_up(heap, bin_heap_n_elts(heap));
+  binheap_sift_up(heap, binheap_n_elts(heap));
   return OK;
 
 error:
   return ERROR;
-} /* bin_heap_insert() */
+} /* binheap_insert() */
 
-status_t bin_heap_make(struct bin_heap* const heap,
+status_t binheap_make(struct binheap* const heap,
                        const void* const data,
                        size_t n_elts) {
   RCSW_FPC_NV(ERROR, NULL != heap, NULL != data, n_elts > 0);
@@ -140,21 +136,21 @@ status_t bin_heap_make(struct bin_heap* const heap,
   } /* for(i..) */
   RCSW_CHECK(OK == darray_set_n_elts(&heap->arr, n_elts + 1));
   /* Find median element, (n / 2) */
-  size_t k = (bin_heap_n_elts(heap) / 2) + 1;
+  size_t k = (binheap_n_elts(heap) / 2) + 1;
 
   /* Sift each element preceding the median down to its correct position. */
   while (k > 1) {
     k--;
-    bin_heap_sift_down(heap, k);
+    binheap_sift_down(heap, k);
   } /* while() */
   return OK;
 
 error:
   return ERROR;
-} /* bin_heap_make() */
+} /* binheap_make() */
 
-status_t bin_heap_extract(struct bin_heap* const heap, void* const e) {
-  RCSW_FPC_NV(ERROR, heap != NULL, !bin_heap_isempty(heap));
+status_t binheap_extract(struct binheap* const heap, void* const e) {
+  RCSW_FPC_NV(ERROR, heap != NULL, !binheap_isempty(heap));
 
   if (e) {
     ds_elt_copy(e, darray_data_get(&heap->arr, 1), heap->arr.elt_size);
@@ -164,54 +160,54 @@ status_t bin_heap_extract(struct bin_heap* const heap, void* const e) {
   RCSW_CHECK(OK == darray_remove(&heap->arr,
                                  darray_data_get(&heap->arr, 1),
                                  darray_n_elts(&heap->arr) - 1));
-  bin_heap_sift_down(heap, 1);
+  binheap_sift_down(heap, 1);
 
   return OK;
 
 error:
   return ERROR;
-} /* bin_heap_extract() */
+} /* binheap_extract() */
 
-status_t bin_heap_update_key(struct bin_heap* const heap,
+status_t binheap_update_key(struct binheap* const heap,
                              size_t index,
                              const void* const new_val) {
   RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != new_val);
   RCSW_CHECK(OK == darray_data_set(&heap->arr, index, new_val));
-  bin_heap_sift_up(heap, index);
+  binheap_sift_up(heap, index);
 
   return OK;
 
 error:
   return ERROR;
-} /* bin_heap_update_key() */
+} /* binheap_update_key() */
 
-status_t bin_heap_delete_key(struct bin_heap* const heap,
+status_t binheap_delete_key(struct binheap* const heap,
                              size_t index,
                              const void* const minmax) {
   RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != minmax);
-  RCSW_CHECK(OK == bin_heap_update_key(heap, index, minmax));
-  RCSW_CHECK(OK == bin_heap_extract(heap, NULL));
+  RCSW_CHECK(OK == binheap_update_key(heap, index, minmax));
+  RCSW_CHECK(OK == binheap_extract(heap, NULL));
   return OK;
 
 error:
   return ERROR;
-} /* bin_heap_delete_key() */
+} /* binheap_delete_key() */
 
-void bin_heap_print(const struct bin_heap* const heap) {
+void binheap_print(const struct binheap* const heap) {
   if (heap == NULL) {
     DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
   return darray_print(&heap->arr);
-} /* bin_heap_print() */
+} /* binheap_print() */
 
 /*******************************************************************************
  * Static Functions
  ******************************************************************************/
-static void bin_heap_sift_down(struct bin_heap* const heap, size_t m) {
-  size_t l_child = RCSW_BIN_HEAP_LCHILD(m);
-  size_t r_child = RCSW_BIN_HEAP_RCHILD(m);
-  size_t n_elts = bin_heap_n_elts(heap);
+static void binheap_sift_down(struct binheap* const heap, size_t m) {
+  size_t l_child = RCSW_BINHEAP_LCHILD(m);
+  size_t r_child = RCSW_BINHEAP_RCHILD(m);
+  size_t n_elts = binheap_n_elts(heap);
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     size_t smallest = m;
@@ -232,8 +228,8 @@ static void bin_heap_sift_down(struct bin_heap* const heap, size_t m) {
                l_child,
                r_child);
     if (smallest != m) {
-      bin_heap_swap(heap, m, smallest);
-      bin_heap_sift_down(heap, smallest);
+      binheap_swap(heap, m, smallest);
+      binheap_sift_down(heap, smallest);
     }
   } else {
     size_t largest = m;
@@ -255,13 +251,13 @@ static void bin_heap_sift_down(struct bin_heap* const heap, size_t m) {
                r_child);
 
     if (largest != m) {
-      bin_heap_swap(heap, m, largest);
-      bin_heap_sift_down(heap, largest);
+      binheap_swap(heap, m, largest);
+      binheap_sift_down(heap, largest);
     }
   }
-} /* bin_heap_sift_down() */
+} /* binheap_sift_down() */
 
-static void bin_heap_sift_up(struct bin_heap* const heap, size_t i) {
+static void binheap_sift_up(struct binheap* const heap, size_t i) {
   /*
    *  While child has higher priority than parent, replace child with parent.
    *  Set child index to parent.  Get next parent, and repeat until top of
@@ -269,22 +265,22 @@ static void bin_heap_sift_up(struct bin_heap* const heap, size_t i) {
    */
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BIN_HEAP_PARENT(i)),
+           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
                           darray_data_get(&heap->arr, i)) > 0) {
-      bin_heap_swap(heap, i, RCSW_BIN_HEAP_PARENT(i));
-      i = RCSW_BIN_HEAP_PARENT(i);
+      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
+      i = RCSW_BINHEAP_PARENT(i);
     } /* while() */
   } else {
     while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BIN_HEAP_PARENT(i)),
+           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
                           darray_data_get(&heap->arr, i)) < 0) {
-      bin_heap_swap(heap, i, RCSW_BIN_HEAP_PARENT(i));
-      i = RCSW_BIN_HEAP_PARENT(i);
+      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
+      i = RCSW_BINHEAP_PARENT(i);
     } /* while() */
   }
-} /* bin_heap_sift_up() */
+} /* binheap_sift_up() */
 
-static void bin_heap_swap(struct bin_heap* const heap, size_t i1, size_t i2) {
+static void binheap_swap(struct binheap* const heap, size_t i1, size_t i2) {
   /*
    * Don't swap if one of the indices is the tmp element. Only happens edge
    * case when the heap is empty you are adding 1st element and sifting up.
@@ -301,6 +297,6 @@ static void bin_heap_swap(struct bin_heap* const heap, size_t i1, size_t i2) {
   ds_elt_copy(darray_data_get(&heap->arr, i2),
               darray_data_get(&heap->arr, 0),
               heap->arr.elt_size);
-} /* bin_heap_swap() */
+} /* binheap_swap() */
 
 END_C_DECLS

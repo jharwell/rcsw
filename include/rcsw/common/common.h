@@ -179,7 +179,7 @@
 #define RCSW_IS_BETWEENHO(n, low, high) ((n) >= (low) && (n) < (high))
 
 /*******************************************************************************
- * Other Macros
+ * Misc. Macros
  ******************************************************************************/
 /**
  * \def RCSW_LIKELY(x)
@@ -196,6 +196,13 @@
  * taken, for optimization purposes.
  */
 #define RCSW_UNLIKELY(x) __builtin_expect((x), 0)
+
+/**
+ * \def RCSW_CLAMP(val, min, max)
+ *
+ * Clamp a value between two setpoints.
+ */
+#define RCSW_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max): (val)))
 
 /**
  * \def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer

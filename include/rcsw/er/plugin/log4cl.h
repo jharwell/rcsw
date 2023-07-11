@@ -64,7 +64,7 @@
     M_PULSE,                                    \
     M_STDIO,                                    \
     M_DS_CORE,                                  \
-    M_DS_BIN_HEAP,                              \
+    M_DS_BINHEAP,                              \
     M_DS_CSMATRIX,                              \
     M_COMMON,                                   \
     M_DS_FIFO,                                  \
@@ -77,8 +77,10 @@
     M_DS_ADJ_MATRIX,                            \
     M_DS_MATRIX,                                \
     M_DS_DYN_MATRIX,                            \
-    M_MULTITHREAD,                              \
+    M_MT_RDWRLOCK,                              \
+    M_MT_RADIX,                                 \
     M_MULTIPROCESS,                             \
+    M_CTRL_PID,                                 \
     M_EXTERNAL
 
 enum log4cl_module_codes {RCSW_XGEN_ENUMS(RCSW_LOG4CL_MODULES)};

@@ -14,7 +14,7 @@
 #include <omp.h>
 
 #define RCSW_ER_MODNAME "rcsw.mt"
-#define RCSW_ER_MODID M_MULTITHREAD
+#define RCSW_ER_MODID M_MT_RADIX
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
@@ -67,21 +67,19 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
   sorter->data = malloc(sizeof(size_t) * sorter->n_elts);
   RCSW_CHECK_PTR(sorter->data);
 
-  struct ds_params fifo_params = { .elt_size = sizeof(size_t),
+  struct fifo_params impl_params = { .elt_size = sizeof(size_t),
                                    .max_elts = sorter->chunk_size,
-                                   .tag = ekRCSW_DS_FIFO,
                                    .nodes = NULL,
                                    .elements = NULL,
-                                   .flags = RCSW_DS_NOALLOC_HANDLE };
+                                   .flags = RCSW_NOALLOC_HANDLE };
   for (size_t i = 0; i < sorter->n_threads; ++i) {
     for (size_t j = 0; j < sorter->base; ++j) {
       RCSW_CHECK(NULL !=
-                 fifo_init(&sorter->bins[i * sorter->base + j], &fifo_params));
+                 fifo_init(&sorter->bins[i * sorter->base + j], &impl_params));
     } /* for(j..) */
   } /* for(i..) */
 
-  sorter->cum_prefix_sums =
-      malloc(sizeof(size_t) * sorter->base * sorter->n_threads);
+  sorter->cum_prefix_sums = malloc(sizeof(size_t) * sorter->base * sorter->n_threads);
   RCSW_CHECK_PTR(sorter->cum_prefix_sums);
 
   /* perform first touch allocation */

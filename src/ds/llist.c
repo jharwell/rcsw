@@ -23,16 +23,15 @@
 BEGIN_C_DECLS
 
 struct llist* llist_init(struct llist* list_in,
-                         const struct ds_params* const params) {
+                         const struct llist_params* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
-              params->tag == ekRCSW_DS_LLIST,
               params->max_elts != 0,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
   struct llist* list = NULL;
-  if (params->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (params->flags & RCSW_NOALLOC_HANDLE) {
     RCSW_CHECK_PTR(list_in);
     list = list_in;
   } else {
@@ -43,7 +42,7 @@ struct llist* llist_init(struct llist* list_in,
   list->flags = params->flags;
   list->first = NULL;
 
-  if (params->flags & RCSW_DS_NOALLOC_NODES) {
+  if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->nodes);
     ER_CHECK(params->max_elts != -1,
                   "Cannot have uncapped list length with "
@@ -56,7 +55,7 @@ struct llist* llist_init(struct llist* list_in,
     allocm_init(list->space.node_map, params->max_elts);
   }
 
-  if (params->flags & RCSW_DS_NOALLOC_DATA) {
+  if (params->flags & RCSW_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
                   "Cannot have uncapped list length with "
@@ -106,7 +105,7 @@ void llist_destroy(struct llist* list) {
     --list->current;
   } /* while() */
 
-  if (!(list->flags & RCSW_DS_NOALLOC_HANDLE)) {
+  if (!(list->flags & RCSW_NOALLOC_HANDLE)) {
     free(list);
   }
 } /* llist_destroy() */
@@ -337,18 +336,19 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
 } /* llist_sort() */
 
 struct llist* llist_copy(struct llist* const list,
-                         const struct ds_params* const cparams) {
-  RCSW_FPC_NV(NULL, list != NULL);
+                         uint32_t flags,
+                         uint8_t* elements,
+                         uint8_t* nodes) {
+  RCSW_FPC_NV(NULL, list != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct ds_params params = {
+  struct llist_params params = {
     .cmpe = list->cmpe,
     .printe = list->printe,
     .elt_size = list->elt_size,
     .max_elts = list->max_elts,
-    .tag = ekRCSW_DS_LLIST,
-    .flags = (cparams == NULL) ? 0 : cparams->flags,
-    .elements = (cparams == NULL) ? NULL : cparams->elements,
-    .nodes = (cparams == NULL) ? NULL : cparams->nodes
+    .flags = flags,
+    .elements = elements,
+    .nodes = nodes,
   };
 
   struct llist* clist = llist_init(NULL, &params);
@@ -363,18 +363,22 @@ error:
 
 struct llist* llist_copy2(struct llist* const list,
                           bool_t (*pred)(const void* const e),
-                          const struct ds_params* const cparams) {
-  RCSW_FPC_NV(NULL, list != NULL, pred != NULL);
+                          uint32_t flags,
+                          uint8_t* elements,
+                          uint8_t* nodes) {
+  RCSW_FPC_NV(NULL,
+              list != NULL,
+              pred != NULL,
+              !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct ds_params params = {
+  struct llist_params params = {
     .cmpe = list->cmpe,
     .printe = list->printe,
     .elt_size = list->elt_size,
     .max_elts = list->max_elts,
-    .tag = ekRCSW_DS_LLIST,
-    .flags = (cparams == NULL) ? 0 : cparams->flags,
-    .elements = (cparams == NULL) ? NULL : cparams->elements,
-    .nodes = (cparams == NULL) ? NULL : cparams->nodes
+    .flags = flags,
+    .elements = elements,
+    .nodes = nodes,
   };
 
   struct llist* clist = llist_init(NULL, &params);
@@ -396,18 +400,22 @@ error:
 
 struct llist* llist_filter(struct llist* list,
                            bool_t (*pred)(const void* const e),
-                           const struct ds_params* const fparams) {
-  RCSW_FPC_NV(NULL, list != NULL, pred != NULL);
+                           uint32_t flags,
+                           uint8_t* elements,
+                           uint8_t* nodes) {
+  RCSW_FPC_NV(NULL,
+              list != NULL,
+              pred != NULL,
+              !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct ds_params params = {
+  struct llist_params params = {
     .cmpe = list->cmpe,
     .printe = list->printe,
     .elt_size = list->elt_size,
     .max_elts = list->max_elts,
-    .tag = ekRCSW_DS_LLIST,
-    .flags = (fparams == NULL) ? 0 : fparams->flags,
-    .elements = (fparams == NULL) ? NULL : fparams->elements,
-    .nodes = (fparams == NULL) ? NULL : fparams->nodes
+    .flags = flags,
+    .elements = nodes,
+    .nodes = elements,
   };
 
   struct llist* flist = llist_init(NULL, &params);
@@ -537,7 +545,7 @@ status_t llist_splice(struct llist* list1,
       list1->current += list2->current;
     }
 
-    if (!(list2->flags & RCSW_DS_NOALLOC_HANDLE)) {
+    if (!(list2->flags & RCSW_NOALLOC_HANDLE)) {
       free(list2);
     }
     break;
@@ -576,14 +584,14 @@ size_t llist_heap_footprint(const struct llist* const list) {
   RCSW_FPC_NV(0, NULL != list);
 
   size_t size = 0;
-  if (list->flags & RCSW_DS_NOALLOC_HANDLE) {
+  if (list->flags & RCSW_NOALLOC_HANDLE) {
     size += sizeof(struct llist);
   }
-  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+  if (list->flags & RCSW_NOALLOC_DATA) {
     size += llist_element_space((size_t)list->max_elts, list->elt_size);
   }
-  if (list->flags & RCSW_DS_NOALLOC_NODES) {
-    size += llist_node_space((size_t)list->max_elts);
+  if (list->flags & RCSW_NOALLOC_META) {
+    size += llist_meta_space((size_t)list->max_elts);
   }
 
   return size;

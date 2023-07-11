@@ -79,4 +79,3 @@ void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter);
 status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter);
 
 END_C_DECLS
-

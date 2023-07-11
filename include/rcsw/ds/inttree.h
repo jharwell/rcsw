@@ -29,6 +29,7 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+
 /**
  * A simple representation of an interval for use in a \ref inttree.
  */
@@ -116,8 +117,8 @@ static inline size_t inttree_element_space(size_t max_elts) {
  *
  * \return The # of bytes required
  */
-static inline size_t inttree_node_space(size_t max_elts) {
-    return bstree_node_space(max_elts);
+static inline size_t inttree_meta_space(size_t max_elts) {
+    return bstree_meta_space(max_elts);
 }
 
 static inline status_t inttree_insert(struct bstree* tree,
@@ -129,7 +130,7 @@ static inline status_t inttree_insert(struct bstree* tree,
 }
 
 static inline struct bstree* inttree_init(struct bstree* const tree_in,
-                                          const struct ds_params* const params) {
+                                          const struct bstree_params* const params) {
   return bstree_init_internal(tree_in, params, sizeof(struct inttree_node));
 }
 

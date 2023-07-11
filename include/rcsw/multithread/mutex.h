@@ -1,7 +1,6 @@
 /**
- * \file mt_mutex.h
+ * \file mutex.h
  * \ingroup multithread
- * \brief Wrapper for pthread_mutex_lock.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -15,19 +14,21 @@
  ******************************************************************************/
 #include <pthread.h>
 #include "rcsw/rcsw.h"
-#include "rcsw/multithread/mt.h"
 
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
 /**
- * \brief Wrapper around POSIX pthread mutexes variables. In the future, this
- * may incorporate mutexes from other operating systems.
+ * \brief Wrapper around mutexes from various implementations.
+ *
+ * Currently supports:
+ *
+ * - POSIX mutexes
  */
-typedef struct {
-    pthread_mutex_t mutex;
+struct mutex {
+    pthread_mutex_t impl;
     uint32_t flags;
-} mt_mutex_t;
+};
 
 /*******************************************************************************
  * Function Prototypes
@@ -38,19 +39,20 @@ BEGIN_C_DECLS
  * \brief Initialize a mutex.
  *
  * \param mutex_in The mutex to initialize. Can be NULL if \ref
- * MT_APP_DOMAIN_MEM is not passed.
+ *                 RCSW_NOALLOC_HANDLE is not passed.
+ *
  * \param flags Configuration flags.
  *
  * \return The initialized mutex, or NULL if an ERROR occurred.
  */
-mt_mutex_t* mt_mutex_init(mt_mutex_t *mutex_in, uint32_t flags);
+struct mutex* mutex_init(struct mutex *mutex_in, uint32_t flags);
 
 /**
  * \brief Destroy a mutex.
  *
  * \param mutex The mutex handle.
  */
-void mt_mutex_destroy(mt_mutex_t *mutex);
+void mutex_destroy(struct mutex *mutex);
 
 /**
  * \brief Acquire the lock.
@@ -59,7 +61,7 @@ void mt_mutex_destroy(mt_mutex_t *mutex);
  *
  * \return \ref status_t.
  */
-status_t mt_mutex_lock(mt_mutex_t *mutex);
+status_t mutex_lock(struct mutex *mutex);
 
 /**
  * \brief Release the lock.
@@ -68,7 +70,6 @@ status_t mt_mutex_lock(mt_mutex_t *mutex);
  *
  * \return \ref status_t.
  */
-status_t mt_mutex_unlock(mt_mutex_t *mutex);
+status_t mutex_unlock(struct mutex *mutex);
 
 END_C_DECLS
-

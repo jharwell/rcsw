@@ -25,7 +25,7 @@ BEGIN_C_DECLS
 
 struct llist_node* llist_node_alloc(struct llist* const list) {
   struct llist_node* node = NULL;
-  if (list->flags & RCSW_DS_NOALLOC_NODES) {
+  if (list->flags & RCSW_NOALLOC_META) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the
@@ -53,7 +53,7 @@ error:
 } /* llist_node_alloc() */
 
 void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
-  if (list->flags & RCSW_DS_NOALLOC_NODES) {
+  if (list->flags & RCSW_NOALLOC_META) {
     int index = node - list->space.nodes;
 
     allocm_mark_free(list->space.node_map + index);
@@ -109,7 +109,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
     return;
   }
 
-  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+  if (list->flags & RCSW_NOALLOC_DATA) {
     size_t block_idx = (datablock - list->space.datablocks) / list->elt_size;
 
     /* mark data block as available */
@@ -124,7 +124,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
 void* llist_node_datablock_alloc(struct llist* const list) {
   void* datablock = NULL;
 
-  if (list->flags & RCSW_DS_NOALLOC_DATA) {
+  if (list->flags & RCSW_NOALLOC_DATA) {
     /*
      * Try to find an available data block. Start searching at the index
      * corresponding to the element after that current # of elements in the
