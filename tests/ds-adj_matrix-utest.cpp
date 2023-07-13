@@ -41,7 +41,7 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
   CATCH_REQUIRE(th_ds_init(&params) == OK);
   for (size_t m = 0; m < 2; ++m) {
     for (size_t k = 0; k < 2; ++k) {
-      for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+      for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
         /* cannot have matrix that is weighted but undirected */
         if (k && !m) {
           continue;

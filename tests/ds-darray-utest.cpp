@@ -44,7 +44,7 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
   };
   /* test with defined sizes */
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       test(j, &params);
     } /* for(i...) */

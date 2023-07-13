@@ -50,7 +50,7 @@ static void run_test(llist_test1_t test) {
     RCSW_NOALLOC_META,
   };
   for (size_t j = 3; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
         params.flags = flags[i];
         params.max_elts = j;
         test(j, &params);
@@ -80,7 +80,7 @@ static void run_test2(llist_test2_t test) {
 
   for (size_t k = 2; k <= TH_NUM_ITEMS; ++k) {
     for (size_t j = 1; j <= TH_NUM_ITEMS; ++j) {
-      for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+      for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
         params.flags = flags[i];
         params.max_elts = j+k;
         test(k, j, &params);
@@ -532,7 +532,7 @@ static void pool_test(int len, struct llist_params * params) {
     return;
   }
 
-  params->flags |= RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP;
+  params->flags |= RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR;
   params->flags &= ~RCSW_NOALLOC_HANDLE;
 
   list1 = llist_init(nullptr, params);
@@ -587,7 +587,7 @@ static void pool_test(int len, struct llist_params * params) {
   llist_destroy(list1);
   llist_destroy(list2);
 
-  params->flags &= ~RCSW_DS_LLIST_NO_DB;
+  params->flags &= ~RCSW_DS_LLIST_DB_DISOWN;
 
   /* verify all DS_APP_DOMAIN data deallocated */
   CATCH_REQUIRE(th_leak_check_data(params) == 0);

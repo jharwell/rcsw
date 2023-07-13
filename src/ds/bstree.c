@@ -16,12 +16,11 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.bstree"
 #define RCSW_ER_MODID M_DS_BSTREE
-#include "rcsw/er/client.h"
-
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/ds/rbtree.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
 
 /*******************************************************************************
@@ -56,8 +55,8 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->nodes);
     ER_CHECK(params->max_elts != -1,
-                  "Cannot have uncapped tree size with "
-                  "RCSW_DS_NOALLOC_NODES");
+             "Cannot have uncapped tree size with "
+             "RCSW_DS_NOALLOC_NODES");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal

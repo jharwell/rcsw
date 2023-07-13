@@ -15,10 +15,10 @@
 
 #define RCSW_ER_MODNAME "rcsw.mp"
 #define RCSW_ER_MODID M_MULTIPROCESS
-#include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -76,11 +76,11 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   RCSW_CHECK_PTR(sorter->data);
 
   ER_DEBUG("Rank %d: n_elts=%zu chunk_size=%zu base=%zu world_size=%d",
-       sorter->mpi_rank,
-       sorter->n_elts,
-       sorter->chunk_size,
-       sorter->base,
-       sorter->mpi_world_size);
+           sorter->mpi_rank,
+           sorter->n_elts,
+           sorter->chunk_size,
+           sorter->base,
+           sorter->mpi_world_size);
   return sorter;
 
 error:
@@ -150,9 +150,8 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                         MPI_INT,
                                         0,
                                         MPI_COMM_WORLD));
-  ER_TRACE("Rank %d: All data received (%zu bytes)",
-       sorter->mpi_rank,
-       sorter->n_elts);
+  ER_TRACE(
+      "Rank %d: All data received (%zu bytes)", sorter->mpi_rank, sorter->n_elts);
   radix_counting_sort(
       sorter->data, sorter->tmp_arr, sorter->chunk_size, digit, sorter->base);
 
@@ -193,8 +192,8 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                           0,
                                           MPI_COMM_WORLD));
     ER_TRACE("Rank %d: Received prefixes for value %zu at master",
-         sorter->mpi_rank,
-         i);
+             sorter->mpi_rank,
+             i);
     /* Only the master needs to compute recv counts/displacements  */
     if (0 == sorter->mpi_rank) {
       for (size_t j = 0; j < (size_t)sorter->mpi_world_size; ++j) {
@@ -227,7 +226,8 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                            MPI_INT,
                            0,
                            MPI_COMM_WORLD));
-    ER_TRACE("Rank %d: Received data for value %zu to master", sorter->mpi_rank, i);
+    ER_TRACE(
+        "Rank %d: Received data for value %zu to master", sorter->mpi_rank, i);
     prev_total = total;
   } /* for(i..) */
   return OK;

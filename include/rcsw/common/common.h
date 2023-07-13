@@ -205,10 +205,13 @@
 #define RCSW_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max): (val)))
 
 /**
- * \def RCSW_ARRAY_SIZE(arr) Get the size of an array (NOT a pointer
+ * \def RCSW_ARRAY_ELTS(arr) Get the size of an array (NOT a pointer
  * to an array) in units (not bytes).
+ *
+ * \note If you try this on arrays allocated dynamically (VLAs, heap,...) it
+ * will not work.
  */
-#define RCSW_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define RCSW_ARRAY_ELTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define RCSW_CONTAINER_OF(ptr, type, member) ({                      \
         const typeof(((type *)0)->member) *__mptr = (ptr);      \

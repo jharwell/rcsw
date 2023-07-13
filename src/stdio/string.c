@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #endif
 
-#include "rcsw/stdio/string.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/stdio/string.h"
 
 /*******************************************************************************
  * API Functions
@@ -139,8 +139,7 @@ char* stdio_strncpy(char* const __restrict__ dest,
   return dest;
 } /* stdio_strncpy() */
 
-char* stdio_strcpy(char* __restrict__ dest,
-                   const char* const __restrict__ src) {
+char* stdio_strcpy(char* __restrict__ dest, const char* const __restrict__ src) {
   RCSW_FPC_NV(dest, NULL != dest, NULL != src);
 
   size_t i;

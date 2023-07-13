@@ -12,6 +12,7 @@
 #include "rcsw/multithread/cvm.h"
 
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/time.h"
 
 /*******************************************************************************

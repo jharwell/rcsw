@@ -52,7 +52,7 @@ static void run_test(uint32_t extra_flags,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i] | extra_flags;
       test(j, &params, verify_cb);
     } /* for(i..) */
@@ -80,7 +80,7 @@ static void run_test_remove(uint32_t extra_flags,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       for (int k = 0; k < 2; ++k) {
         params.flags = flags[i] | extra_flags;
         test(j, k, &params, verify_cb);

@@ -88,9 +88,9 @@ mpi_spmv_mult_init(const struct mpi_spmv_mult_params* const params) {
   RCSW_CHECK_PTR(mult->row_owners);
 
   ER_DEBUG("Rank%d: world_size=%d n_rows_init=%d",
-       mult->mpi_rank,
-       mult->mpi_world_size,
-       mult->n_rows_init);
+           mult->mpi_rank,
+           mult->mpi_world_size,
+           mult->n_rows_init);
   return mult;
 
 error:
@@ -140,10 +140,10 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult) {
 
   if (0 != mult->mpi_rank) {
     ER_DEBUG("Rank%d: Initialize sparse matrix (%d x %d, %d elts)",
-         mult->mpi_rank,
-         mult->n_rows_alloc,
-         mult->n_rows_init,
-         mult->n_elts_alloc);
+             mult->mpi_rank,
+             mult->n_rows_alloc,
+             mult->n_rows_init,
+             mult->n_elts_alloc);
     /* initialize sparse matrix */
     struct csmatrix_params matrix_params = { .n_rows = mult->n_rows_alloc,
                                              .n_nz_elts = mult->n_elts_alloc,
@@ -156,9 +156,9 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult) {
 
   /* Initialize input/output vector at all nodes */
   ER_TRACE("Rank%d: Initialize input/output vector (%d/%d elts)",
-       mult->mpi_rank,
-       mult->n_cols_init,
-       mult->n_rows_alloc);
+           mult->mpi_rank,
+           mult->n_cols_init,
+           mult->n_rows_alloc);
   struct ds_params vector_params = {.type = {.da =
                                                  {
                                                      .init_size =
@@ -234,10 +234,10 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
 
       /* Note the +1 for the extra element at the end of outer_starts */
       ER_DEBUG("Send outer_starts[%d-%d] (%d)to rank %d",
-           row_accum,
-           row_accum + mult->rank_alloc_rows[i],
-           mult->rank_alloc_rows[i] + 1,
-           i);
+               row_accum,
+               row_accum + mult->rank_alloc_rows[i],
+               mult->rank_alloc_rows[i] + 1,
+               i);
       MPI_Request req;
 
       RCSW_CHECK(MPI_SUCCESS ==
@@ -250,10 +250,10 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                            &req));
 
       ER_DEBUG("Send inner_indices[%d-%d]  (%d) to rank %d",
-           elt_accum,
-           elt_accum + mult->rank_alloc_elts[i] - 1,
-           mult->rank_alloc_elts[i],
-           i);
+               elt_accum,
+               elt_accum + mult->rank_alloc_elts[i] - 1,
+               mult->rank_alloc_elts[i],
+               i);
       RCSW_CHECK(MPI_SUCCESS ==
                  MPI_Isend(csmatrix_inner_indices(mult->matrix) + elt_accum,
                            mult->rank_alloc_elts[i],
@@ -264,10 +264,10 @@ status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
                            &req));
 
       ER_DEBUG("Send values[%d-%d] (%d) to rank %d ",
-           elt_accum,
-           elt_accum + mult->rank_alloc_elts[i] - 1,
-           mult->rank_alloc_elts[i],
-           i);
+               elt_accum,
+               elt_accum + mult->rank_alloc_elts[i] - 1,
+               mult->rank_alloc_elts[i],
+               i);
 
       RCSW_CHECK(MPI_SUCCESS ==
                  MPI_Isend(csmatrix_values(mult->matrix) + elt_accum,
@@ -358,11 +358,11 @@ struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult) {
    */
   darray_set_n_elts(mult->vector_out, mult->n_rows_alloc);
   ER_DEBUG("Rank%d: Multiply: [%zu x %zu] x [%zu x 1] = [%zu x 1]",
-       mult->mpi_rank,
-       csmatrix_n_rows(mult->matrix),
-       csmatrix_n_cols(mult->matrix),
-       darray_n_elts(mult->vector_in),
-       darray_n_elts(mult->vector_out));
+           mult->mpi_rank,
+           csmatrix_n_rows(mult->matrix),
+           csmatrix_n_cols(mult->matrix),
+           darray_n_elts(mult->vector_in),
+           darray_n_elts(mult->vector_out));
   RCSW_CHECK(OK ==
              csmatrix_vmult(mult->matrix, mult->vector_in, mult->vector_out));
 
@@ -400,9 +400,9 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
   if (0 == mult->mpi_rank) {
     size_t target_size = csmatrix_n_elts(mult->matrix) / mult->mpi_world_size;
     ER_DEBUG("Allocate ~ %zu/%zu elts to %d ranks",
-         target_size,
-         csmatrix_n_elts(mult->matrix),
-         mult->mpi_world_size);
+             target_size,
+             csmatrix_n_elts(mult->matrix),
+             mult->mpi_world_size);
     int curr_row = 0;
     size_t curr_size = 0;
     for (int j = 0; j < mult->mpi_world_size; ++j) {
@@ -416,11 +416,11 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
         mult->rank_alloc_rows[j]++;
 
         ER_TRACE("Rank%d owns row %d (%zu/%zu): %d alloc()ed",
-             j,
-             curr_row,
-             curr_size,
-             target_size,
-             mult->rank_alloc_elts[j]);
+                 j,
+                 curr_row,
+                 curr_size,
+                 target_size,
+                 mult->rank_alloc_elts[j]);
         curr_row++;
       } /* while() */
     } /* for(j..) */
@@ -465,9 +465,9 @@ static status_t mpi_spmv_alloc_init(struct mpi_spmv_mult* const mult) {
       MPI_SUCCESS ==
       MPI_Bcast(mult->row_owners, mult->n_rows_init, MPI_INT, 0, MPI_COMM_WORLD));
   ER_DEBUG("Rank%d: Received allocation parameters: n_rows=%d n_elts=%d",
-       mult->mpi_rank,
-       mult->n_rows_alloc,
-       mult->n_elts_alloc);
+           mult->mpi_rank,
+           mult->n_rows_alloc,
+           mult->n_elts_alloc);
   return OK;
 
 error:

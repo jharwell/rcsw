@@ -11,8 +11,8 @@
  ******************************************************************************/
 #include "rcsw/utils/hash.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Constant Definitions

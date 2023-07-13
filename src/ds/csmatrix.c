@@ -13,9 +13,9 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.csmat"
 #define RCSW_ER_MODID M_DS_CSMATRIX
-#include "rcsw/er/client.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Structure Definitions
@@ -114,9 +114,9 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
 
   RCSW_CHECK(NULL != darray_init(&matrix->values, &coeff_params));
   ER_DEBUG("n_rows=%zu n_nz_elts=%zu flags=0x%08x",
-       csmatrix_n_rows(matrix),
-       darray_n_elts(&matrix->outer_starts),
-       matrix->flags);
+           csmatrix_n_rows(matrix),
+           darray_n_elts(&matrix->outer_starts),
+           matrix->flags);
 
   matrix->csizes = calloc(params->n_cols, sizeof(int));
   RCSW_CHECK_PTR(matrix->csizes);
@@ -201,11 +201,11 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
   } /* while() */
 
   ER_TRACE("Add entry [%zu, %zu]: (rstart=%d,rsize=%zu,inner_index=%zu)",
-       row,
-       col,
-       row_start[0],
-       csmatrix_rsize(matrix, row),
-       row_start[0] + j);
+           row,
+           col,
+           row_start[0],
+           csmatrix_rsize(matrix, row),
+           row_start[0] + j);
   RCSW_CHECK(OK == darray_insert(&matrix->inner_indices, &col, row_start[0] + j));
   RCSW_CHECK(OK == darray_insert(&matrix->values, e, row_start[0] + j));
 
@@ -349,13 +349,13 @@ status_t csmatrix_vmult(const struct csmatrix* const matrix,
       res += csmatrix_entry_mult(
           matrix, vals + j, darray_data_get(vector_in, cols[j]));
       ER_TRACE("Multiply in[(%zu, %d) -> %zu]=%f * vector[%d]=%f = %f",
-           i,
-           cols[j],
-           vals + j - csmatrix_values(matrix),
-           vals[j],
-           cols[j],
-           *(double*)darray_data_get(vector_in, cols[j]),
-           res);
+               i,
+               cols[j],
+               vals + j - csmatrix_values(matrix),
+               vals[j],
+               cols[j],
+               *(double*)darray_data_get(vector_in, cols[j]),
+               res);
     } /* for(j..) */
     RCSW_CHECK(OK == darray_data_set(vector_out, i, &res));
   } /* for(i..) */

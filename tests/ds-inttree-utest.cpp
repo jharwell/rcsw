@@ -54,7 +54,7 @@ static void run_test(inttree_test_t test) {
   /* dbg_insmod(M_DS_BSTREE, "BSTree"); */
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INTERVAL;
       test(j, &params);
     } /* for(i..) */

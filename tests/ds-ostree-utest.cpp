@@ -49,7 +49,7 @@ static void run_test(ostree_test_t test) {
     RCSW_NOALLOC_META,
   };
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags |= flags[i];
       test(j, &params);
     } /* for(i..) */

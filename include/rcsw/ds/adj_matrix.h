@@ -15,6 +15,7 @@
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/matrix.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/utils/utils.h"
 
 /*******************************************************************************
  * Structure Definitions
@@ -141,8 +142,8 @@ static inline bool_t adj_matrix_edge_query(struct adj_matrix* const matrix,
   if (matrix->is_weighted) {
     return (bool_t)(!isnan(*(double*)adj_matrix_access(matrix, u, v)));
   } else {
-    return (bool_t)!ds_elt_zchk(adj_matrix_access(matrix, u, v),
-                                matrix->elt_size);
+    return (bool_t)!util_zchk(adj_matrix_access(matrix, u, v),
+                              matrix->elt_size);
   }
 }
 

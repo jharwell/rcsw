@@ -193,11 +193,11 @@ CATCH_TEST_CASE("mem_bswap Test", "[utils]") {
     0x67450000
   };
 
-  CATCH_REQUIRE(OK == mem_bswap16(in16, RCSW_ARRAY_SIZE(in16)));
-  CATCH_REQUIRE(0 == memcmp(in16, out16, RCSW_ARRAY_SIZE(in16)));
+  CATCH_REQUIRE(OK == mem_bswap16(in16, RCSW_ARRAY_ELTS(in16)));
+  CATCH_REQUIRE(0 == memcmp(in16, out16, RCSW_ARRAY_ELTS(in16)));
 
-  CATCH_REQUIRE(OK == mem_bswap32(in32, RCSW_ARRAY_SIZE(in32)));
-  CATCH_REQUIRE(0 == memcmp(in32, out32, RCSW_ARRAY_SIZE(in32)));
+  CATCH_REQUIRE(OK == mem_bswap32(in32, RCSW_ARRAY_ELTS(in32)));
+  CATCH_REQUIRE(0 == memcmp(in32, out32, RCSW_ARRAY_ELTS(in32)));
 }
 
 CATCH_TEST_CASE("time Test", "[utils]") {
@@ -260,20 +260,20 @@ CATCH_TEST_CASE("misc Test", "[utils]") {
 
   uint8_t arr[5] = {0x5, 0x1, 0x2, 0x3, 0x4};
 
-  arr8_reverse(arr, RCSW_ARRAY_SIZE(arr));
+  arr8_reverse(arr, RCSW_ARRAY_ELTS(arr));
 
   uint8_t ret[5] = {0x4, 0x3, 0x2, 0x1, 0x5};
-  CATCH_REQUIRE(memcmp(arr, ret, RCSW_ARRAY_SIZE(arr)) == 0);
+  CATCH_REQUIRE(memcmp(arr, ret, RCSW_ARRAY_ELTS(arr)) == 0);
 
   uint32_t arr2[4] = {0x4, 0x1, 0x2, 0x3};
   arr32_elt_swap(arr2, 0, 1);
   arr32_elt_swap(arr2, 2, 3);
 
   uint32_t ret2[4] = {0x1, 0x4, 0x3, 0x2};
-  CATCH_REQUIRE(memcmp(arr2, ret2, RCSW_ARRAY_SIZE(arr)) == 0);
+  CATCH_REQUIRE(memcmp(arr2, ret2, RCSW_ARRAY_ELTS(arr)) == 0);
 
   uint32_t arr3[4] = {0x4, 0x1, 0x2, 0x3};
-  arr32_permute(arr3, RCSW_ARRAY_SIZE(arr3), 0, arr32_permute_cb);
+  arr32_permute(arr3, RCSW_ARRAY_ELTS(arr3), 0, arr32_permute_cb);
 
   CATCH_REQUIRE(arr32_permute_count == 24);
 }

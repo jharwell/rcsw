@@ -45,7 +45,7 @@ static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *para
     RCSW_DS_BINHEAP_MIN
   };
   for (int j = 1; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       params.max_elts = j;
       params.init_size = 0;

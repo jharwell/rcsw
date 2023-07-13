@@ -323,7 +323,7 @@ int th_leak_check_nodes(const T *params) {
   /* It's not valid to check for leaks in this case, because you are sharing
    * things between two or more lists
    */
-  if (params->flags & RCSW_DS_LLIST_NO_DB) {
+  if (params->flags & RCSW_DS_LLIST_DB_DISOWN) {
     return 0;
   }
   if (params->flags & RCSW_NOALLOC_META) {

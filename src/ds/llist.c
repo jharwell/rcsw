@@ -13,8 +13,8 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
 #define RCSW_ER_MODID M_DS_LLIST
-#include "rcsw/er/client.h"
 #include "rcsw/ds/llist_node.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
 
 /*******************************************************************************
@@ -45,8 +45,8 @@ struct llist* llist_init(struct llist* list_in,
   if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->nodes);
     ER_CHECK(params->max_elts != -1,
-                  "Cannot have uncapped list length with "
-                  "RCSW_DS_NOALLOC_NODES");
+             "Cannot have uncapped list length with "
+             "RCSW_DS_NOALLOC_NODES");
 
     /* initialize free list of llist_nodes */
     list->space.node_map = (struct allocm_entry*)params->nodes;
@@ -58,8 +58,8 @@ struct llist* llist_init(struct llist* list_in,
   if (params->flags & RCSW_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
-                  "Cannot have uncapped list length with "
-                  "RCSW_DS_NOALLOC_DATA");
+             "Cannot have uncapped list length with "
+             "RCSW_DS_NOALLOC_DATA");
 
     /* initialize free list of data elements */
     list->space.db_map = (struct allocm_entry*)params->elements;
@@ -67,9 +67,9 @@ struct llist* llist_init(struct llist* list_in,
     allocm_init(list->space.db_map, params->max_elts);
   }
 
-  if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_PTR_CMP)) {
+  if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_DB_PTR)) {
     ER_WARN("No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
-         "passed\n");
+            "passed\n");
   }
 
   list->first = NULL;
@@ -81,9 +81,9 @@ struct llist* llist_init(struct llist* list_in,
   list->sorted = false;
 
   ER_DEBUG("elt_size=%zu max_elts=%d flags=0x%08x",
-       list->elt_size,
-       list->max_elts,
-       list->flags);
+           list->elt_size,
+           list->max_elts,
+           list->flags);
   return list;
 
 error:
@@ -262,7 +262,7 @@ void llist_print(struct llist* const list) {
 void* llist_data_query(struct llist* const list, const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
+  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_DB_PTR)) {
     ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
@@ -275,14 +275,14 @@ struct llist_node* llist_node_query(struct llist* const list,
                                     const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_PTR_CMP)) {
+  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_DB_PTR)) {
     ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
 
   void* match = NULL;
   LLIST_FOREACH(list, next, curr) {
-    if (list->flags & RCSW_DS_LLIST_PTR_CMP) {
+    if (list->flags & RCSW_DS_LLIST_DB_PTR) {
       if (curr->data == e) {
         match = curr;
         break;
@@ -391,8 +391,8 @@ struct llist* llist_copy2(struct llist* const list,
     llist_append(clist, curr->data);
   }
   ER_DEBUG("Copied list: %zu %zu-byte elements matched copy predicate",
-       clist->current,
-       clist->elt_size);
+           clist->current,
+           clist->elt_size);
 
 error:
   return clist;
@@ -445,10 +445,10 @@ struct llist* llist_filter(struct llist* list,
   }
 
   ER_DEBUG("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-       "remain.",
-       flist->current,
-       flist->elt_size,
-       list->current);
+           "remain.",
+           flist->current,
+           flist->elt_size,
+           list->current);
 
 error:
   return flist;
@@ -467,8 +467,7 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
       count++;
-      ER_CHECK(llist_remove(list, match->data) == OK,
-                    "Llist_Node remove failed");
+      ER_CHECK(llist_remove(list, match->data) == OK, "Llist_Node remove failed");
       match = NULL;
     }
     if (pred(curr->data)) {
@@ -478,16 +477,15 @@ status_t llist_filter2(struct llist* list, bool_t (*pred)(const void* const e)) 
 
   /* catch corner case where last item in list matched */
   if (match != NULL) {
-    ER_CHECK(llist_remove(list, match->data) == OK,
-                  "Llist_Node remove failed");
+    ER_CHECK(llist_remove(list, match->data) == OK, "Llist_Node remove failed");
   }
 
   rval = OK;
   ER_DEBUG("Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-       "remain.",
-       count,
-       list->elt_size,
-       list->current);
+           "remain.",
+           count,
+           list->elt_size,
+           list->current);
 
 error:
   return rval;
@@ -501,9 +499,9 @@ status_t llist_splice(struct llist* list1,
   if (list1->current + list2->current > (size_t)list1->max_elts &&
       list1->max_elts != -1) {
     ER_ERR("Cannot splice: %zu + %zu > %d (max elements exceeded)",
-         list1->current,
-         list2->current,
-         list1->max_elts);
+           list1->current,
+           list2->current,
+           list1->max_elts);
     errno = ENOSPC;
     return ERROR;
   } else if (list1->current == 0 || list2->current == 0) {

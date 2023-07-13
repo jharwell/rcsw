@@ -11,8 +11,8 @@
  ******************************************************************************/
 #include "rcsw/utils/checksum.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
 
 /*******************************************************************************

@@ -13,8 +13,8 @@
 
 #include <math.h>
 
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * API Functions
@@ -55,8 +55,11 @@ status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) 
 } /* ds_elt_copy() */
 
 status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
-  RCSW_FPC_NV(
-      ERROR, NULL != elt1, NULL != elt2, elt_size > 0, elt_size <= sizeof(double));
+  RCSW_FPC_NV(ERROR,
+              NULL != elt1,
+              NULL != elt2,
+              elt_size > 0,
+              elt_size <= sizeof(double));
   double tmp;
   switch (elt_size) {
     case sizeof(uint8_t):
@@ -125,37 +128,5 @@ status_t ds_elt_clear(void* const elt, size_t elt_size) {
 
   return OK;
 } /* ds_elt_clear() */
-
-bool_t ds_elt_zchk(void* const elt, size_t elt_size) {
-  RCSW_FPC_NV(false, NULL != elt, elt_size > 0);
-  int sum = 0;
-
-  switch (elt_size) {
-    case sizeof(uint8_t):
-      return *((uint8_t*)(elt)) == 0;
-    case sizeof(uint16_t):
-      return *((uint16_t*)(elt)) == 0;
-    case sizeof(uint32_t):
-      return *((uint32_t*)(elt)) == 0;
-
-/*
- * sizeof(float) is the same as sizeof(uint32_t) on most platforms, but
- * not all.
- */
-#if __SIZEOF_FLOAT__ != 4
-    case sizeof(float):
-      return fabs(*((double *)(elt)) <= RCSW_FLOAT_EPSILON;
-        break;
-#endif
-    case sizeof(double):
-        return fabs(*((double *)(elt))) <= RCSW_DOUBLE_EPSILON;
-        break;
-    default:
-        for (size_t i = 0; i < elt_size; ++i) {
-        sum |= ((int*)elt)[i];
-        } /* for(i..) */
-        return sum == 0;
-  } /* switch() */
-} /* ds_elt_zchk() */
 
 END_C_DECLS

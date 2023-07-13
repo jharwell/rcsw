@@ -45,7 +45,7 @@ static void run_test(rbuffer_test_t test) {
   };
 
   for (size_t j = 3; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
       params.flags = flags[i];
       params.max_elts = j;
       test(j, &params);

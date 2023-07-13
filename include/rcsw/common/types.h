@@ -36,6 +36,11 @@ typedef char int8_t;
 #define NULL ((void *)0)
 #endif /* NULL */
 
+#if defined(true) || defined(false)
+#undef true
+#undef false
+#endif
+
 typedef enum {
   false = 0,
   true  = 1
@@ -43,7 +48,6 @@ typedef enum {
 
 extern uint32_t errno;
 
-/* includes */
 #elif defined(__linux__)
 
 #include <errno.h>

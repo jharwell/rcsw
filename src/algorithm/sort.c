@@ -12,10 +12,10 @@
 #include "rcsw/algorithm/sort.h"
 
 #include "rcsw/algorithm/algorithm.h"
-#include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Static Functions

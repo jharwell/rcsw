@@ -16,7 +16,7 @@
 #include <time.h>
 
 #include "rcsw/rcsw.h"
-#include "rcsw/flags.h"
+#include "rcsw/common/flags.h"
 
 /*******************************************************************************
  * Macros

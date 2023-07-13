@@ -46,7 +46,7 @@ static void run_test(hashmap_test_t test) {
     RCSW_DS_HASHMAP_LINPROB
   };
 
-  for (size_t i = 0; i < RCSW_ARRAY_SIZE(flags); ++i) {
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (size_t j = 1; j < TH_NUM_ITEMS; ++j) {
       for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
         params.flags = flags[i];

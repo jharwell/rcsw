@@ -13,8 +13,8 @@
 
 #define RCSW_ER_MODID M_DS_RBUFFER
 #define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
-#include "rcsw/er/client.h"
 #include "rcsw/ds/ds.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Macros

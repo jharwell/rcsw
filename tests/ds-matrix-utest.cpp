@@ -43,7 +43,7 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
   };
   for (size_t i = 1; i <= 10; ++i) {
     for (size_t j = 1; j <= 10; ++j) {
-      for (size_t k = 0; k < RCSW_ARRAY_SIZE(flags); ++k) {
+      for (size_t k = 0; k < RCSW_ARRAY_ELTS(flags); ++k) {
       params.n_cols = i;
       params.n_rows = j;
       params.flags = flags[k];
@@ -80,7 +80,7 @@ static void addremove_test(struct matrix_params* params) {
                                 matrix_access(matrix, i, j),
                                 sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(ds_elt_zchk(matrix_access(matrix, i, j),
+      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j),
                                         sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
@@ -106,7 +106,7 @@ static void transpose_test(struct matrix_params* params) {
       CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j),
                                 sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(ds_elt_zchk(matrix_access(matrix, i, j),
+      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j),
                                 sizeof(T)));
     } /* for(j..) */
   } /* for(..) */

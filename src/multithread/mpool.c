@@ -58,7 +58,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     .elt_size = params->elt_size,
     .cmpe = NULL,
     .nodes = params->nodes,
-    .flags = RCSW_DS_LLIST_NO_DB | RCSW_DS_LLIST_PTR_CMP |
+    .flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
              RCSW_NOALLOC_HANDLE | (params->flags & RCSW_NOALLOC_META),
   };
   /* initialize free/alloc lists */

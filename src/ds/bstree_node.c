@@ -11,9 +11,9 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
-#include "rcsw/er/client.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
+#include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
 
 BEGIN_C_DECLS

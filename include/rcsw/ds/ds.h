@@ -142,7 +142,7 @@ enum ds_tag {
  *    copy)
  *
  */
-#define RCSW_DS_LLIST_NO_DB  (1 << (RCSW_MODFLAGS_START + 4))
+#define RCSW_DS_LLIST_DB_DISOWN  (1 << (RCSW_MODFLAGS_START + 4))
 
 /**
  * \brief Indicate that a \ref llist should NOT use compare function when
@@ -151,9 +151,9 @@ enum ds_tag {
  * lists as free/alloc lists which don't point to actual data, but only carve up
  * a chunk of memory.
  *
- * This flag implies \ref RCSW_DS_LLIST_NO_DB.
+ * This flag implies \ref RCSW_DS_LLIST_DB_DISOWN.
  */
-#define RCSW_DS_LLIST_PTR_CMP  (1 << (RCSW_MODFLAGS_START + 5))
+#define RCSW_DS_LLIST_DB_PTR  (1 << (RCSW_MODFLAGS_START + 5))
 
 /**
  * \brief Indicate that a \ref bstree should function as a red-black tree and
@@ -194,13 +194,6 @@ enum ds_tag {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-/**
- * \ref A single parameters structure for all general purpose data structures.
- *
- * Some data structures require additional parameters which are captured in the
- * union.
- */
-
 #define RCSW_DECLARE_DS_PARAMS_COMMON \
   /**                         \
    * For comparing elements.  \
@@ -354,19 +347,6 @@ status_t ds_elt_copy(void *elt1, const void *elt2, size_t elt_size);
  * \return \ref status_t
  */
 status_t ds_elt_clear(void *elt, size_t elt_size);
-
-/**
- * \brief Utility function to check if an element is 0.
- *
- * If the element is larger than double, a for() loop is used. Otherwise
- * pointers are used.
- *
- * \param elt Element to check.
- * \param elt_size Size of element in bytes.
- *
- * \return \ref bool_t
- */
-bool_t ds_elt_zchk(void *elt, size_t elt_size);
 
 /**
  * \brief Utility function to swap two elements.
