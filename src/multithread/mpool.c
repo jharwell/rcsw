@@ -12,7 +12,7 @@
 #include "rcsw/multithread/mpool.h"
 
 #define RCSW_ER_MODNAME "rcsw.mt.mpool"
-#define RCSW_ER_MODID M_MT_MPOOL
+#define RCSW_ER_MODID ekLOG4CL_MT_MPOOL
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/rcsw.h"
@@ -54,8 +54,8 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   }
 
   if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->nodes);
-    the_pool->nodes = (struct llist_node*)params->nodes;
+    RCSW_CHECK_PTR(params->meta);
+    the_pool->nodes = (struct llist_node*)params->meta;
   } else {
     the_pool->nodes = calloc(params->max_elts, sizeof(struct llist_node));
     RCSW_CHECK_PTR(the_pool->nodes);
@@ -66,14 +66,14 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     .max_elts = params->max_elts,
     .elt_size = params->elt_size,
     .cmpe = NULL,
-    .nodes = params->nodes,
+    .meta = params->meta,
     .flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
              RCSW_NOALLOC_HANDLE | (params->flags & RCSW_NOALLOC_META),
   };
 
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
-  llist_params.nodes = params->nodes + llist_meta_space(params->max_elts);
+  llist_params.meta = params->meta + llist_meta_space(params->max_elts);
   RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
 
   for (size_t i = 0; i < (size_t)params->max_elts; ++i) {

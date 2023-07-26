@@ -11,6 +11,7 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
+/* \cond INTERNAL */
 #define LIBRA_ERL_NONE  0 /* No event reporting */
 #define LIBRA_ERL_FATAL 1 /* Fatal events only */
 #define LIBRA_ERL_ERROR 2 /* Fatal, error events only */
@@ -41,7 +42,11 @@
 #if !defined(LIBRA_ERL)
 #define LIBRA_ERL LIBRA_ERL_ALL
 #endif
+/* \endcond */
 
+/**
+ * \brief The configured event reporting level.
+ */
 #define RCSW_ERL LIBRA_ERL
 
 /**

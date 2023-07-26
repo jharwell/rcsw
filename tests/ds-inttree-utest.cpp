@@ -39,6 +39,7 @@ int n_elements; /* global var for # elements in RBTREE */
  ******************************************************************************/
 static void run_test(inttree_test_t test) {
   struct bstree_params params;
+  memset(&params, 0, sizeof(bstree_params));
   params.flags = 0;
   params.elt_size = sizeof(struct interval_data);
   params.max_elts = TH_NUM_ITEMS;
@@ -56,7 +57,7 @@ static void run_test(inttree_test_t test) {
   for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
     /* DBGN("Testing with %d items\n", j); */
     for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      params.flags = flags[i] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INTERVAL;
+      params.flags = flags[i] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
       test(j, &params);
     } /* for(i..) */
   } /* for(j..) */
@@ -144,7 +145,7 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
     n_elements = tree->current;
     CATCH_REQUIRE(bstree_traverse(tree,
                                   (th::bst::bst_verify_cb)th::bst::verify_nodes_int,
-                                  ekBSTREE_TRAVERSE_INORDER) == OK);
+                                  ekTRAVERSE_INORDER) == OK);
   } /* for() */
 
   bstree_destroy(tree);

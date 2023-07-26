@@ -26,12 +26,24 @@ BEGIN_C_DECLS
 #ifndef RCSW_STDIO_PUTCHAR
 #define RCSW_STDIO_PUTCHAR_UNDEF
 #else
+/**
+ * \brief RCSW_STDIO_PUTCHAR
+ *
+ * The name of the putchar()-like function to send a character to stdout in some
+ * way.
+ */
 int RCSW_STDIO_PUTCHAR(int c);
 #endif
 
 #ifndef RCSW_STDIO_GETCHAR
 #define RCSW_STDIO_GETCHAR_UNDEF
 #else
+/**
+ * \brief RCSW_STDIO_GETCHAR
+ *
+ * The name of the getchar()-like function to get a character from stdout in
+ * some way.
+ */
 int RCSW_STDIO_GETCHAR(void);
 #endif
 

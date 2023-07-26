@@ -12,7 +12,7 @@
 #include "rcsw/ds/fifo.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.fifo"
-#define RCSW_ER_MODID M_DS_FIFO
+#define RCSW_ER_MODID ekLOG4CL_DS_FIFO
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
@@ -39,7 +39,7 @@ struct fifo* fifo_init(struct fifo* fifo_in,
   fifo->flags = params->flags;
 
   struct rbuffer_params rb_params = { .printe = params->printe,
-                                 .cmpe = params->cmpe,
+                                 .cmpe = NULL,
                                  .elt_size = params->elt_size,
                                  .max_elts = params->max_elts,
                                  .elements = params->elements,

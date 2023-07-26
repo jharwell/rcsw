@@ -24,12 +24,32 @@
  * \brief Adjacency matrix initialization parameters.
  */
 struct adj_matrix_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * Pointer to application-allocated space for storing the \ref adj_matrix
+   * data. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+  */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Configuration flags. See \ref adj_matrix.flags for valid flags.
+   */
+  uint32_t flags;
+
   /**
    * Initial # of vertices for graph, for space allocation.
    */
-  size_t n_vertices;  /// Max # of vertices graph will hold.
-  bool_t is_directed;  /// Is the graph directed or undirected?
+  size_t n_vertices;
+
+  /**
+   * Is the graph directed or undirected?
+   */
+  bool_t is_directed;
+
   /**
    * Are the graph edges weighted? If a graph is undirected it cannot be
    * weighted.
@@ -64,8 +84,7 @@ struct adj_matrix {
   /** Is the graph weighted? */
   bool_t        is_weighted;
 
-  /** # edges currently in the graph? */
-
+  /** Number of edges currently in the graph */
   size_t        n_edges;
 
   /**
@@ -73,13 +92,20 @@ struct adj_matrix {
    */
   size_t        elt_size;
 
-  /** # vertices in the graph */
+  /** Numer of vertices in the graph */
   size_t        n_vertices;
 
   /** Underlying matrix implementation handle. */
   struct matrix matrix;
 
-  /** Configuration flags. */
+  /**
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags are ignored.
+   */
   uint32_t      flags;
 };
 
@@ -198,7 +224,7 @@ static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
  * \brief Initialize an adjacency matrix.
  *
  * \param matrix_in The matrix handle to be filled (can be NULL if
- * \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ * \ref RCSW_NOALLOC_HANDLE not passed).
  * \param params Initialization parameters.
  *
  * \return The initialized adjacency matrix, or NULL if an error occurred.

@@ -37,10 +37,11 @@ using pulse_test = void(*)(const struct pulse_params* const params,
  ******************************************************************************/
 static void run_test(pulse_test test, size_t n_threads = 1) {
   RCSW_ER_INIT();
-  RCSW_ER_INSMOD(M_PULSE, "rcsw.pulse");
-  RCSW_ER_INSMOD(M_MT_MPOOL, "rcsw.mt.mpool");
-  log4cl_mod_lvl_set(M_PULSE, RCSW_ERL_DEBUG);
-  log4cl_mod_lvl_set(M_MT_MPOOL, RCSW_ERL_INFO);
+  RCSW_ER_INSMOD(ekLOG4CL_PULSE, "rcsw.pulse");
+  RCSW_ER_INSMOD(ekLOG4CL_MT_MPOOL, "rcsw.mt.mpool");
+  /* log4cl_mod_lvl_set(ekLOG4CL_PULSE, RCSW_ERL_DEBUG); */
+  /* log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_INFO); */
+
   struct pulse_params bus_params;
   bus_params.max_pools = TH_MAX_POOLS;
   bus_params.max_rxqs = TH_MAX_RXQS;
@@ -49,11 +50,11 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
   strncpy(bus_params.name, "TESTBUS", sizeof(bus_params.name));
 
   for (size_t i = 0; i < TH_MAX_POOLS; ++i) {
-    bus_params.pools[i].elements = (uint8_t*)malloc(pulse_pool_space(TH_MAX_BUFSIZE,
+    bus_params.pools[i].elements = (uint8_t*)malloc(mpool_element_space(TH_MAX_BUFSIZE,
                                                                      TH_RXQ_SIZE));
-    bus_params.pools[i].nodes = (uint8_t*)malloc(pulse_meta_space(TH_RXQ_SIZE));
+    bus_params.pools[i].meta = (uint8_t*)malloc(mpool_meta_space(TH_RXQ_SIZE));
     CATCH_REQUIRE(nullptr != bus_params.pools[i].elements);
-    CATCH_REQUIRE(nullptr != bus_params.pools[i].nodes);
+    CATCH_REQUIRE(nullptr != bus_params.pools[i].meta);
     bus_params.pools[i].max_elts = TH_RXQ_SIZE;
     bus_params.pools[i].elt_size = TH_MAX_BUFSIZE / (TH_MAX_POOLS - i);
     bus_params.pools[i].flags = RCSW_NONE;
@@ -73,7 +74,7 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
 
   for (size_t i = 0; i < TH_MAX_POOLS; ++i) {
     free(bus_params.pools[i].elements);
-    free(bus_params.pools[i].nodes);
+    free(bus_params.pools[i].meta);
   } /* for() */
 
   RCSW_ER_DEINIT();

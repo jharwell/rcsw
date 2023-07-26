@@ -20,11 +20,22 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
+/**
+ * \brief \see RCSW_BSTREE_ROOT()
+ */
 #define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \struct ostree
+ *
+ * \brief An Order Statistics tree (specialized \ref bstree)
+ *
+ * \copydoc bstree
+ */
+
 /**
  * \brief A node in an \ref ostree, derived from a \ref bstree_node (share
  * common fields).
@@ -52,40 +63,75 @@ struct ostree_node {
  ******************************************************************************/
 BEGIN_C_DECLS
 
+
+/**
+ * \brief \see bstree_element_space()
+ */
 static inline size_t ostree_element_space(size_t max_elts, size_t elt_size) {
   return bstree_element_space(max_elts, elt_size);
 }
 
+
+/**
+ * \brief Calculate the space needed for the nodes in a \ref ostree.
+ *
+ * Used in conjunction with \ref RCSW_NOALLOC_META. The +2 is for the root and
+ * nil nodes.
+ *
+ * \param max_elts Max # of elements the tree will hold.
+ *
+ * \return The # of bytes required.
+ */
 static inline size_t ostree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts + 2) +
       ds_elt_space_simple(max_elts+2, sizeof(struct ostree_node));
 }
 
+/**
+ * \brief \see bstree_init_internal()
+ */
 static inline struct bstree* ostree_init(struct bstree* tree_in,
                                          const struct bstree_params* params) {
   return bstree_init_internal(tree_in, params, sizeof(struct ostree_node));
 }
 
+
+/**
+ * \brief \see bstree_insert_internal()
+ */
 static inline status_t ostree_insert(struct bstree* tree,
                                      void* const key,
                                      void* const data) {
   return bstree_insert_internal(tree, key, data, sizeof(struct ostree_node));
 }
 
+
+/**
+ * \brief \see bstree_delete()
+ */
 static inline status_t ostree_delete(struct bstree* tree,
                                      struct ostree_node* victim,
                                      void* elt) {
   return bstree_delete(tree, (struct bstree_node*)victim, elt);
 }
 
+/**
+ * \brief \see bstree_remove()
+ */
 static inline status_t ostree_remove(struct bstree* tree, const void* key) {
   return bstree_remove(tree, key);
 }
 
+/**
+ * \brief \see bstree_destroy()
+ */
 static inline void ostree_destroy(struct bstree* tree) {
   return bstree_destroy(tree);
 }
 
+/**
+ * \brief \see bstree_node_query()
+ */
 static inline struct ostree_node* ostree_node_query(const struct bstree* const tree,
                                                     struct ostree_node* search_root,
                                                     const void* const key) {
@@ -108,7 +154,9 @@ static inline struct ostree_node* ostree_node_query(const struct bstree* const t
  * \brief Select the ith smallest element in the \ref ostree.
  *
  * \param tree The ostree handle.
- * \param node The node to start searching at (should probably be the root).
+ *
+ * \param node_in The node to start searching at (should probably be the root).
+ *
  * \param i The element rank to select.
  *
  * \return The ith smallest element, or NULL if no such element or an error

@@ -17,7 +17,7 @@ facilities. Important aspects/terminology:
 Usage
 -----
 
-To use one of the existing RCSW ER plugins in your code, you need to::
+To use one of the existing RCSW ER plugins in your code, you need to:
 
 #. ``#define RCSW_ER_MODID`` and/or ``#define RCSW_ER_MODNAME`` to be the
    numeric UUID and string UUID for a module in your code and then ``#include
@@ -63,42 +63,24 @@ To use one of the existing RCSW ER plugins in your code, you need to::
 Plugins
 -------
 
-The following plugins are currently supported/implemented:
+.. tabs::
 
-.. list-table::
-   :header-rows: 1
-   :widths: 25 50 25
+   .. tab:: Simple
 
-   * - Plugin
-     - Description
-     - Configuration Settings
 
-   * - `<ln-rcsw-er-plugin-log4cl>`_
+      .. include:: plugin/simple.rst
 
-     - A "light" version of :ref:`LOG4C` with no filesystem requirements or
-       external dependencies.
+   .. tab:: LOG4CL
 
-     - ``-DRCSW_ER_PLUGIN=LOG4CL``
 
-   * - `<ln-rcsw-er-plugin-simple>`_
+      .. include:: plugin/log4cl.rst
 
-     - A super-simple plugin suitable for use in bare-metal environments without
-       stdlib.
+   .. tab:: Custom
 
-     - ``-DRCSW_ER_PLUGIN=SIMPLE``
+      .. include:: plugin/custom.rst
 
-   * - `<ln-rcsw-er-plugin-custom>`_
 
-     - A custom plugin defined outside RCSW for tighter integration with other
-       applications via an ``-include``\d file.
-
-     -
-
-       - ``-DRCSW_ER_PLUGIN=CUSTOM``
-
-       - ``-DRCSW_ER_CUSTOM_PATH=/path/to/include/file``
-
-.. _ln-rsw-er-levels:
+.. _ln-rcsw-er-levels:
 
 Levels
 ------
@@ -115,8 +97,8 @@ levels are, ordered from most to least severe:
 - ``TRACE`` - [FATAL, ERROR, INFO, DEBUG, TRACE] events emitted
 - ``ALL`` - All events emitted
 
-A somewhat unique feature: because RCSW works with :ref:`ln-libra`, you can set
-the levels for modules in two ways:
+A somewhat unique feature: because RCSW works with :ref:`LIBRA
+<libra:usage-capabilities>`, you can set the levels for modules in two ways:
 
 - At compile-time, effectively disabling any events are lower severity levels;
   i.e., they will be compiled out.

@@ -12,7 +12,7 @@
 #include "rcsw/ds/matrix.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.matrix"
-#define RCSW_ER_MODID M_DS_MATRIX
+#define RCSW_ER_MODID ekLOG4CL_DS_MATRIX
 #include "rcsw/er/client.h"
 
 /*******************************************************************************

@@ -18,8 +18,8 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-/** Max size of keys for hashmap */
-#define RCSW_HASHMAP_MAX_KEYSIZE 64
+/** Size of keys for hashmap */
+#define RCSW_HASHMAP_KEYSIZE 64
 
 /*******************************************************************************
  * Structure Definitions
@@ -28,35 +28,62 @@
  * \brief Hashmap initialization parameters.
  */
 struct hashmap_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * Pointer to application-allocated space for storing the \ref hashmap
+   * buckets. Ignored unless \ref RCSW_NOALLOC_META is passed.
+   */
+  uint8_t *meta;
+
+  /**
+   * Pointer to application-allocated space for storing data managed by the \ref
+   * hashmap. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Configuration flags. See \ref hashmap.flags for valid flags.
+   */
+  uint32_t flags;
+
   /** Hashing function to use. Must be non-NULL. */
   uint32_t (*hash)(const void *const key, size_t len);
 
-  size_t bsize;  /// Initial size of hash buckets
-  size_t n_buckets;  /// Fixed number of buckets for hashmap
+  /**
+   * Initial size of hash buckets; passed to \ref darray_init() as \ref
+   * darray_params.init_size; this is also used as \ref darray_params.max_elts ;
+   * that is, fixed size hash buckets.
+   */
+  size_t bsize;
 
   /**
-   * # of inserts before automatically sorting. -1 = do not automatically
+   * Number of buckets for hashmap.
+   */
+  size_t n_buckets;
+
+  /**
+   * Number of inserts before automatically sorting. -1 = do not automatically
    * sort.
    */
   int sort_thresh;
-
-  size_t keysize;  /// Size in bytes for hashnode keys
 };
 
 /**
- * \brief Hashmap statistics
+ * \brief Hashmap statistics.
  *
- * These DO take space as part of the main structure, but the tradeoff is worth
- * it (imo) for getting good info about how well the hashmap is working.
+ * Provides detailed info about how well the hashmap is working.
  */
 struct hashmap_stats {
-  size_t n_buckets;        /// # buckets in hashmap
-  size_t n_nodes;          /// # hashnodes in hashmap. Updated on add/remove.
-  size_t n_adds;           /// # adds to hashmap since last reset
-  size_t n_addfails;       /// # of failures to add to hashmap since last reset
-  size_t n_collisions;     /// # of collisions when adding since last reset
-  double collision_ratio;  /// ratio of colliding/non-colliding adds
+  size_t n_buckets;        /// Number of buckets in hashmap
+  size_t n_nodes;          /// Number of hashnodes in hashmap. Updated on add/remove.
+  size_t n_adds;           /// Number of adds to hashmap since last reset
+  size_t n_addfails;       /// Number of failures to add to hashmap since last reset
+  size_t n_collisions;     /// Number of collisions when adding since last reset
+  double collision_ratio;  /// Ratio of colliding/non-colliding adds
   bool_t sorted;           /// Is the hashmap sorted?
   double max_util;         /// Max bucket utilization
   double min_util;         /// Min bucket utilization
@@ -72,7 +99,8 @@ struct hashmap_stats {
  * - Datablock array (max_elts * elt_size)
  * - Metadata array of \ref hashnode
  *
- * Node space is used for the \ref darray handles (buckets).
+ * Meta space from \ref hashmap_params.meta is used for the \ref darray handles
+ * (buckets).
  */
 struct hashmap_space_mgmt {
   /**
@@ -96,7 +124,7 @@ struct hashmap_space_mgmt {
 };
 
 /**
- * \brief The hashmap data structure.
+ * \brief The hashmap data structure (an associative array).
  *
  * The elements in this data structure are \ref hashnode objects, and the nodes
  * are the dynamic arrays (\ref darray) used to implement the buckets.
@@ -123,12 +151,12 @@ struct hashmap {
   size_t elt_size;
 
   /**
-   * Max # of elements allowed in the hashmap.
+   * Max number of of elements allowed in the hashmap.
    */
   size_t max_elts;
 
   /**
-   * # of buckets in the hashmap. Does not change after initialization.
+   * Number of of buckets in the hashmap. Does not change after initialization.
    */
   size_t n_buckets;
 
@@ -139,17 +167,11 @@ struct hashmap {
 
 
   /**
-   * # of successful adds to wait before automatically sorting hashmap. -1 =
-   * do not automatically sort hashmap (sorting must be done manually) via \ref
-   * hashmap_sort().
+   * Number of of successful adds to wait before automatically sorting
+   * hashmap. -1 = do not automatically sort hashmap (sorting must be done
+   * manually) via \ref hashmap_sort().
    */
   int sort_thresh;
-
-  /**
-   * Size in bytes of hashnode keys
-   */
-
-  size_t keysize;
 
   /**
    * Is the hashmap currently sorted?
@@ -162,17 +184,39 @@ struct hashmap {
   uint32_t flags;
 };
 
-/** Nodes within the hashmap (each bucket is filled with these) */
+/**
+ * Nodes within the hashmap (each bucket is filled with these).
+ *
+ * As you woulde xpect for an associative array element,this isa key-value
+ * pair.
+ */
 struct hashnode {
-  uint8_t key[RCSW_HASHMAP_MAX_KEYSIZE];  /// Key for key-value pair
-  void *data;                             /// Value for key-value pair
-  uint32_t hash;                          /// Calculated hash
+  /**
+   * Key for key-value pair.
+   */
+  uint8_t key[RCSW_HASHMAP_KEYSIZE];
+
+  /**
+   * Value for key-value pair.
+   */
+  void *data;
+
+  /**
+   * Calculated hash. Not used at runtime, but useful when printing elements for
+   * debugging.
+   */
+  uint32_t hash;
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
-/* Get a bucket index from a reference to a bucket */
+BEGIN_C_DECLS
+/**
+ * \brief Get a bucket index from a reference to a bucket.
+ *
+ * Not really necessary to be a function, but helps with readability.
+ */
 static inline size_t hashmap_bucket_index(const struct hashmap* const map,
                                           const struct darray* const bucket) {
   return (bucket - map->space.buckets) % sizeof(struct darray);
@@ -180,7 +224,7 @@ static inline size_t hashmap_bucket_index(const struct hashmap* const map,
 
 /**
  * \brief Calculate the # of bytes that the hashmap will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param n_buckets The # buckets in the hashmap.
@@ -207,7 +251,7 @@ static inline size_t hashmap_element_space(size_t n_buckets,
 /**
  * \brief Calculate the space needed for the nodes in the hashmap
  *
- * Used in conjunction with \ref RCSW_DS_NOALLOC_NODES.
+ * Used in conjunction with \ref RCSW_NOALLOC_META.
  *
  * \param n_buckets # of desired buckets in the hashmap
  *
@@ -217,16 +261,12 @@ static inline size_t hashmap_meta_space(size_t n_buckets) {
   return sizeof(struct darray) * n_buckets;
 }
 
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
 
 /**
  * \brief Initialize a hashmap.
  *
  * \param map_in The hashmap handle to be filled (can be NULL if
- *               \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *               \ref RCSW_NOALLOC_HANDLE not passed).
  *
  * \param params Initialization parameters
  *

@@ -12,7 +12,7 @@
 #include "rcsw/ds/csmatrix.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.csmat"
-#define RCSW_ER_MODID M_DS_CSMATRIX
+#define RCSW_ER_MODID ekLOG4CL_DS_CSMATRIX
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
@@ -410,7 +410,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
 
   ER_DEBUG("TRANSPOSE: Sorting column lists");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {
-    RCSW_CHECK(OK == llist_sort(matrix->cols + i, ekMSORT_REC));
+    RCSW_CHECK(OK == llist_sort(matrix->cols + i, ekEXEC_REC));
   } /* for(i..) */
   ER_DEBUG("TRANSPOSE: Begin");
   for (size_t i = 0; i < csmatrix_n_cols(matrix); ++i) {
@@ -474,13 +474,13 @@ void csmatrix_print(const struct csmatrix* matrix) {
 static void csmatrix_entry_print(const struct csmatrix* const matrix,
                                  const void* const e1) {
   switch (matrix->type) {
-    case CSMATRIX_INT:
+    case ekCSMATRIX_INT:
       DPRINTF("%d", *(const int*)e1);
       break;
-    case CSMATRIX_FLOAT:
+    case ekCSMATRIX_FLOAT:
       DPRINTF("%f", *(const float*)e1);
       break;
-    case CSMATRIX_DOUBLE:
+    case ekCSMATRIX_DOUBLE:
       DPRINTF("%f", *(const double*)e1);
       break;
     default:
@@ -492,13 +492,13 @@ static double csmatrix_entry_mult(const struct csmatrix* const matrix,
                                   const void* const e1,
                                   const void* const e2) {
   switch (matrix->type) {
-    case CSMATRIX_INT:
+    case ekCSMATRIX_INT:
       return *(const int*)e1 * *(const int*)e2;
       break;
-    case CSMATRIX_FLOAT:
+    case ekCSMATRIX_FLOAT:
       return *(const float*)e1 * *(const float*)e2;
       break;
-    case CSMATRIX_DOUBLE:
+    case ekCSMATRIX_DOUBLE:
       return *(const double*)e1 * *(const double*)e2;
       break;
     default:
@@ -510,13 +510,13 @@ static double csmatrix_entry_div(const struct csmatrix* const matrix,
                                  const void* const e1,
                                  const void* const e2) {
   switch (matrix->type) {
-    case CSMATRIX_INT:
+    case ekCSMATRIX_INT:
       return *(const int*)e1 / *(const int*)e2;
       break;
-    case CSMATRIX_FLOAT:
+    case ekCSMATRIX_FLOAT:
       return *(const float*)e1 / *(const float*)e2;
       break;
-    case CSMATRIX_DOUBLE:
+    case ekCSMATRIX_DOUBLE:
       return *(const double*)e1 / *(const double*)e2;
       break;
     default:

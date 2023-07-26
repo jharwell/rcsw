@@ -31,11 +31,13 @@ void run_test(void (*test)(struct dyn_matrix_params *params)) {
   /* dbg_mod_lvl_set(M_DS_DYN_MATRIX, DBG_V); */
 
   struct dyn_matrix_params params;
+  memset(&params, 0, sizeof(dyn_matrix_params));
   params.elt_size = sizeof(T);
   params.n_cols = TH_NUM_ITEMS;
   params.n_rows = TH_NUM_ITEMS;
   params.printe = th::printe<T>;
   CATCH_REQUIRE(th::ds_init(&params) == OK);
+
 
   uint32_t flags[] = {
     RCSW_NONE,

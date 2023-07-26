@@ -331,7 +331,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
       case 's': {
         const char* p = va_arg(args, char*);
         if (p == NULL) {
-          out_rev_(output, ")llun(", 6, width, flags);
+          out_reversed(output, ")llun(", 6, width, flags);
         } else {
           printf_size_t l =
               stdio_strnlen(p, precision ? precision : PRINTF_MAX_BUF_SIZE);
@@ -364,7 +364,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         width = sizeof(void*) * 2U + 2; // 2 hex chars per byte + the "0x" prefix
         flags |= FLAGS_ZEROPAD | FLAGS_POINTER;
         uintptr_t value = (uintptr_t)va_arg(args, void*);
-        (value == (uintptr_t)NULL) ? out_rev_(output, ")lin(", 5, width, flags)
+        (value == (uintptr_t)NULL) ? out_reversed(output, ")lin(", 5, width, flags)
                                    : print_integer(output,
                                                    (printf_unsigned_value_t)value,
                                                    false,

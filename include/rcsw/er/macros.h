@@ -26,7 +26,14 @@
 
 #if (RCSW_ERL >= RCSW_ERL_FATAL)
 
+/**
+ * \brief Initialize the defined ER plugin.
+ */
 #define RCSW_ER_INIT(...) RCSW_ER_PLUGIN_INIT(__VA_ARGS__)
+
+/**
+ * \brief Uninitialize/shutdown the defined ER plugin.
+ */
 #define RCSW_ER_DEINIT(...) RCSW_ER_PLUGIN_DEINIT(__VA_ARGS__)
 
 /**
@@ -36,23 +43,32 @@
 #define DPRINTF(...) PRINTF(__VA_ARGS__)
 
 /**
- * \brief Print a token AND it's value. Useful for debugging. Comes in the
- * following flavors:
- *
- * TOK  - decimal/hexadecimal
- * TOKD - decimal
- * TOKX - hexadecimal
- * TOKF - float
+ * \brief Print a token AND it's value in decimal/hexadecimal.
  */
-#define DPRINT_TOK(tok) DPRINTF(STR(tok) ": %d 0x%x\n", (int)(tok), (int)(tok));
+#define DPRINT_TOK(tok) DPRINTF(STR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok));
+
+/**
+ * \brief Print a token AND it's value in decimal.
+ */
 #define DPRINT_TOKD(tok) DPRINTF(STR(tok) ": %d\n", (int)(tok));
+
+/**
+ * \brief Print a token AND it's value in hexadecimal.
+ */
 #define DPRINT_TOKX(tok) DPRINTF(STR(tok) ": 0x%x\n", (int)(tok));
+
+/**
+ * \brief Print a token AND it's value in floating point.
+ */
 #define DPRINT_TOKF(tok) DPRINTF(STR(tok) ": %.8f\n", (float)(tok));
 
 #endif /* RCSW_ERL >= RCSW_ERL_FATAL */
 
 #if (RCSW_ERL == RCSW_ERL_FATAL)
 
+/**
+ * \brief Emit a FATAL message. Does NOT use the ER plugin; uses \ref DPRINTF().
+ */
 #define ER_FATAL(msg, ...)                                              \
     {                                                                   \
       DPRINTF(RCSW_ER_MODNAME " [FATAL]: " msg, ## __VA_ARGS__);        \
@@ -66,11 +82,13 @@
                                                            RCSW_ER_MODNAME), \
                                  __VA_ARGS__)
 
+/* \cond INTERNAL */
 #define ER_FATAL_IMPL(handle, ...) {                                    \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_FATAL)) {             \
       ER_REPORT(FATAL, handle, __VA_ARGS__)                             \
     }                                                                   \
   }
+/* \endcond */
 #endif
 
 /*******************************************************************************
@@ -91,11 +109,27 @@
                                                        RCSW_ER_MODNAME), \
                                  __VA_ARGS__)
 
+/* \cond INTERNAL */
 #define ER_ERR_IMPL(handle, ...) {                                      \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_ERROR)) {       \
       ER_REPORT(ERROR, handle, __VA_ARGS__)                             \
     }                                                                   \
   }
+/* \endcond */
+
+/**
+ * \brief The name of an ER module. If not specified, use \a __FILE_NAME__.
+ */
+#if !defined(RCSW_ER_MODNAME)
+#define RCSW_ER_MODNAME __FILE_NAME__
+#endif
+
+/**
+ * \brief The ID of an ER module. If not specified, use -1.
+ */
+#if !defined(RCSW_ER_MODID)
+#define RCSW_ER_MODID (-1)
+#endif
 
 /**
  * \def RCSW_ER_MODULE_INIT()
@@ -103,15 +137,15 @@
  * Initialize a module in the currently selected ER plugin.
  *
  * Installation is idempotent. Requires that \ref RCSW_ER_MODID and \ref
- * RCSW_ER_MODNAME if they are used by the plugin; otherwise, they can be
- * undefined.
+ * RCSW_ER_MODNAME are defined if they are used by the plugin; otherwise, they
+ * can be undefined and will get default values.
  */
-#if !defined(RCSW_ER_MODNAME)
-#define RCSW_ER_MODNAME __FILE_NAME__
-#endif
-
 #define RCSW_ER_MODULE_INIT(...)                        \
   RCSW_ER_PLUGIN_INSMOD(RCSW_ER_MODID, RCSW_ER_MODNAME)
+
+/**
+ * \brief Install/enable an event report module in the current plugin.
+ */
 
 #define RCSW_ER_INSMOD(ID, NAME) RCSW_ER_PLUGIN_INSMOD(ID, NAME)
 
@@ -136,11 +170,14 @@
                                                          RCSW_ER_MODNAME), \
                                    __VA_ARGS__)
 
+
+/* \cond INTERNAL */
 #define ER_WARN_IMPL(handle, ...) {                                     \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_WARN)) {        \
       ER_REPORT(WARN, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
+/* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_WARN */
 
 /*******************************************************************************
@@ -162,11 +199,13 @@
                                                          RCSW_ER_MODNAME), \
                                    __VA_ARGS__)
 
+/* \cond INTERNAL */
 #define ER_INFO_IMPL(handle, ...) {                                     \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_INFO)) {        \
       ER_REPORT(INFO, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
+/* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_INFO */
 
 /*******************************************************************************
@@ -188,11 +227,13 @@
                                                          RCSW_ER_MODNAME), \
                                    __VA_ARGS__)
 
+/* \cond INTERNAL */
 #define ER_DEBUG_IMPL(handle, ...) {                                     \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_DEBUG)) {        \
       ER_REPORT(DEBUG, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
+/* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_DEBUG */
 
 /*******************************************************************************
@@ -214,11 +255,13 @@
                                                          RCSW_ER_MODNAME), \
                                    __VA_ARGS__)
 
+/* \cond INTERNAL */
 #define ER_TRACE_IMPL(handle, ...) {                                     \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_TRACE)) {        \
       ER_REPORT(TRACE, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
+/* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_TRACE */
 
 

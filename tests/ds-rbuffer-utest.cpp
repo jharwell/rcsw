@@ -32,6 +32,7 @@ static void run_test(rbuffer_test_t test) {
   log4cl_init();
 
   struct rbuffer_params params;
+  memset(&params, 0, sizeof(rbuffer_params));
   params.flags = 0;
   params.cmpe = th::cmpe<T>;
   params.printe = th::printe<T>;
@@ -119,7 +120,7 @@ static void overwrite_test(int len, struct rbuffer_params *  params) {
     T * ep = nullptr;
     struct ds_iterator *iter = ds_iter_init(rb,
                                             ekRCSW_DS_RBUFFER,
-                                            ekRCSW_DS_ITER_FORWARD);
+                                            ekITER_FORWARD);
     while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
       CATCH_REQUIRE(memcmp(ep,
                            &arr[tail+count+rb->start],
@@ -261,7 +262,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   /*
    * Forward iteration
    */
-  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_FORWARD);
+  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
   CATCH_REQUIRE(iter);
   size_t count = 0;
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
@@ -273,7 +274,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   /*
    * Backward iteration
    */
-  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_BACKWARD);
+  iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_BACKWARD);
   CATCH_REQUIRE(nullptr != iter);
   count = 0;
   while ((e = (T*)ds_iter_next(iter)) != nullptr) {
@@ -300,7 +301,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
     /* verify iteration */
     count = 0;
     T* ep = nullptr;
-    iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekRCSW_DS_ITER_FORWARD);
+    iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
     while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
       CATCH_REQUIRE(ep->value1 == arr[tail+count+rb->start]);
       count++;

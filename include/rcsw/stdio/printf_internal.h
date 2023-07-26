@@ -23,12 +23,9 @@
 #endif
 
 /*******************************************************************************
- * Structure Definitions
- ******************************************************************************/
-
-/*******************************************************************************
  * Macros
  ******************************************************************************/
+/* \cond INTERNAL */
 /*
  * Note in particular the behavior here on LONG_MIN or LLONG_MIN; it is valid
  * and well-defined, but if you're not careful you can easily trigger undefined
@@ -46,10 +43,10 @@ BEGIN_C_DECLS
 /**
  * Output the specified string in reverse, taking care of any zero-padding
  */
-void out_rev_(struct printf_output_gadget* output,
-              const char* buf, printf_size_t len,
-              printf_size_t width,
-              printf_flags_t flags);
+void out_reversed(struct printf_output_gadget* output,
+                  const char* buf, printf_size_t len,
+                  printf_size_t width,
+                  printf_flags_t flags);
 
 /**
  * An internal itoa-like function
@@ -75,5 +72,7 @@ void print_integer_finalization(struct printf_output_gadget* output,
                                 printf_size_t precision,
                                 printf_size_t width,
                                 printf_flags_t flags);
+
+/* \endcond */
 
 END_C_DECLS

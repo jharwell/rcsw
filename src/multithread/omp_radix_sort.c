@@ -14,7 +14,7 @@
 #include <omp.h>
 
 #define RCSW_ER_MODNAME "rcsw.mt"
-#define RCSW_ER_MODID M_MT_RADIX
+#define RCSW_ER_MODID ekLOG4CL_MT_RADIX
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
@@ -69,7 +69,6 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
 
   struct fifo_params impl_params = { .elt_size = sizeof(size_t),
                                    .max_elts = sorter->chunk_size,
-                                   .nodes = NULL,
                                    .elements = NULL,
                                    .flags = RCSW_NOALLOC_HANDLE };
   for (size_t i = 0; i < sorter->n_threads; ++i) {

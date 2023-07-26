@@ -20,48 +20,29 @@
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Constant definitions
- ******************************************************************************/
-/* used by macros to translate binary to hex */
-#define B0000 0
-#define B0001 1
-#define B0010 2
-#define B0011 3
-#define B0100 4
-#define B0101 5
-#define B0110 6
-#define B0111 7
-#define B1000 8
-#define B1001 9
-#define B1010 a
-#define B1011 b
-#define B1100 c
-#define B1101 d
-#define B1110 e
-#define B1111 f
-
-/*******************************************************************************
  * Bit Manipulation Macros
  ******************************************************************************/
 /**
- * \def RCSW_MASK32_U16(v) - Get the upper 16 bits of a 32 bit integer.
+ * \def RCSW_M32U16(v) - Get the upper 16 bits of a 32 bit integer in a 32-bit
+ * integer.
  */
-#define RCSW_MASK32_U16(v) ((v) & 0xFFFF0000)
+#define RCSW_M32U16(v) ((uint32_t)((v) & 0xFFFF0000))
 
 /**
- * \def RCSW_MASK32_U16(v) - Get the lower 16 bits of a 32 bit integer.
+ * \def RCSW_M32L16(v) - Get the lower 16 bits of a 32 bit integer.
  */
-#define RCSW_MASK32_L16(v) ((v) & 0x0000FFFF)
+#define RCSW_M32L16(v) ((uint32_t)((v) & 0x0000FFFF))
 
 /**
- * \def RCSW_MASK64_U32(v) - Get the upper 32 bits of a 64 bit integer.
+ * \def RCSW_M64U32(v) - Get the upper 32 bits of a 64 bit integer as a 64-bit
+ * integer.
  */
-#define RCSW_MASK64_U32(v) ((v) & 0xFFFFFFFF00000000)
+#define RCSW_M64U32(v) ((uint64_t)(((v) & 0xFFFFFFFF00000000)))
 
 /**
- * \def RCSW_MASK64_U32(v) - Get the lower 32 bits of a 64 bit integer.
+ * \def RCSW_M64L32(v) - Get the lower 32 bits of a 64 bit integer.
  */
-#define RCSW_MASK64_L32(v) ((v) & 0x00000000FFFFFFFF)
+#define RCSW_M64L32(v) (((uint64_t)((v) & 0x00000000FFFFFFFF)))
 
 /**
  * Reversal macros (MSB becomes LSB and vice versa) This is NOT the same as
@@ -80,7 +61,7 @@
                                  (RCSW_REV16((((v) >> 16) & 0xFFFF)))))
 
 /** Reversal using a lookup table */
-#define RCSW_REVL8(v) ((uint8_t)(util_revtable[v]))
+#define RCSW_REVL8(v) ((uint8_t)(rcsw_util_revtable[v]))
 #define RCSW_REVL16(v) ((uint16_t)((RCSW_REVL8(((v) & 0xFF)) << 8) | \
                                    RCSW_REVL8((((v) >> 8) & 0xFF))))
 #define RCSW_REVL32(v) ((uint32_t)(((RCSW_REVL16(((v) & 0xFFFF))) << 16) | \
@@ -92,29 +73,41 @@
 #define RCSW_REFL32(v) ((uint32_t)reflect(((v)), 32))
 
 /**
- * Conversion of binary to hexadecimal. Use \ref RCSW_BIN8(), \ref RCSW_BIN16(),
- * and \ref RCSW_BIN32(), not the helper macros.
+ * Convert 8-bit binary to hexadecimal.
  */
+#define RCSW_BIN8(b) (RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b)))
+
+/**
+ * Convert 16-bit binary to hexadecimal.
+ */
+#define RCSW_BIN16(b1, b0)                                              \
+  (((BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_HEXIFY(b0))
+
+/**
+ * Convert 32-bit binary to hexadecimal.
+ */
+#define RCSW_BIN32(b3, b4, b1, b0)                                      \
+  ((((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b4))) << 8) +          \
+    RCSW_BIN8(b3))(((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_BIN8(b0)))
+
+/* \cond INTERNAL */
 #define RCSW_HEXIFY (n)(0x##n##LU)
-#define RCSW_BIN8_HEXIFY(x)                                                  \
+
+#define RCSW_BIN8_HEXIFY(x)                                             \
   ((((x) & 0x0000000FLU) ? 1 : 0) + (((x) & 0x000000F0LU) ? 2 : 0) +    \
    (((x) & 0x00000F00LU) ? 4 : 0) + (((x) & 0x0000F000LU) ? 8 : 0) +    \
    (((x) & 0x000F0000LU) ? 16 : 0) + (((x) & 0x00F00000LU) ? 32 : 0) +  \
    (((x) & 0x0F000000LU) ? 64 : 0) + (((x) & 0xF0000000LU) ? 128 : 0))
 
-#define RCSW_BIN8(b) (RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b)))
-#define RCSW_BIN16(b1, b0)                                           \
-    (((BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_HEXIFY(b0))
-#define RCSW_BIN32(b3, b4, b1, b0)                                           \
-  ((((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b4))) << 8) +          \
-    RCSW_BIN8(b3))(((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_BIN8(b0)))
+/* \endcond */
+
 
 /** Miscellaneous bit manipulation */
 #define RCSW_BIT_WIDTH(t) (sizeof(t) * 8)
 #define RCSW_TOPBIT(t) (1 << (BIT_WIDTH(t) - 1))
 
-#define RCSW_GEN_BITMASK32(name, num) name = (1 << (num)),
-#define RCSW_GEN_BITMASK64(name, num) name = ((long long int)1 << (num)),
+#define RCSW_GEN_M32(name, num) name = (1 << (num)),
+#define RCSW_GEN_M64(name, num) name = ((long long int)1 << (num)),
 
 /*******************************************************************************
  * Alignment Macros
@@ -132,10 +125,18 @@
 /*******************************************************************************
  * Endianness Macros
  ******************************************************************************/
-/** Test if the architecture is little endian */
+/**
+ * \brief Test if the architecture is little endian without relying on compiler.
+ *
+ * Cons: run-time determination.
+ */
 #define RCSW_IS_LITTLE_ENDIAN() (((*(short *)"21") & 0xFF) == '2')
 
-/** Test if the architecture is big endian */
+/**
+ * Test if the architecture is big endian without relying on compiler macros.
+ *
+ * Cons: run-time determination.
+ */
 #define RCSW_IS_BIG_ENDIAN() (((*(short *)"21") & 0xFF) == '1')
 
 /** Explicitly change the endianness of a 16-bit number. */
@@ -148,20 +149,8 @@
 
 /** Explicit change the endianness of a 64-bit number */
 #define RCSW_BSWAP64(w64)                                                    \
-    (((uint64_t)RCSW_BSWAP32(RCSW_LOWER32(w64)) << 32) | \
-     (RCSW_BSWAP32(RCSW_UPPER32(w64))))
-
-/**
- * Change the endianness of a float. You can't use \ref RCSW_BSWAP16(), etc. because
- * you can't use binary & with floats.
- */
-#define RCSW_BSWAP_FLOAT(f) reverse_byte_array((&(f)), sizeof(f))
-
-/**
- * Change the endianness of a double. You can't use \ref RCSW_BSWAP16(), etc. because
- * you can't use binary & with floats.
- */
-#define RCSW_BSWAP_DOUBLE(d) reverse_byte_array((&(d)), sizeof(d))
+    (((uint64_t)RCSW_BSWAP32(RCSW_M64L32(w64)) << 32) | \
+     ((uint64_t)(RCSW_BSWAP32(RCSW_M64U32(w64) >> 32))))
 
 /** Not an endianness change, but still useful sometimes */
 #define RCSW_BSWAP32_16(w32) ((((w32)&0xFFFF0000) >> 16) | (((w32)&0xFFFF) << 16))
@@ -171,10 +160,10 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-extern const uint8_t util_revtable[];
+extern const uint8_t rcsw_util_revtable[];
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Ensure a value is in the range [0, 255]. Value may be nearby after
@@ -193,10 +182,6 @@ extern const uint8_t util_revtable[];
     }
     return v;
 } /* utils_clam_f255() */
-
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
 
 /**
  * \brief Reverse the bytes an array.

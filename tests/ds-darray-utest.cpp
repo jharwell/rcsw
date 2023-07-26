@@ -28,13 +28,14 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
   /* dbg_insmod(M_DS_DARRAY,"DARRAY"); */
 
   struct darray_params params;
+  memset(&params, 0, sizeof(darray_params));
   params.flags = 0;
   params.cmpe = th::cmpe<T>;
   params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   params.init_size = 0;
-
   CATCH_REQUIRE(th::ds_init(&params) == OK);
+
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -280,9 +281,9 @@ static void sort_test(int len, struct darray_params *params) {
   }
 
   if (rand() %2) {
-    darray_sort(_arr1, ekQSORT_ITER);
+    darray_sort(_arr1, ekEXEC_ITER);
   } else {
-    darray_sort(_arr1, ekQSORT_REC);
+    darray_sort(_arr1, ekEXEC_REC);
   }
 
   /* validate sorting */
@@ -316,7 +317,7 @@ static void binarysearch_test(int len, struct darray_params *params) {
     CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   } /* for() */
 
-  darray_sort(_arr1, ekQSORT_ITER);
+  darray_sort(_arr1, ekEXEC_ITER);
 
   for (int i = 0; i < len; i++) {
     CATCH_REQUIRE(darray_idx_query(_arr1, &arr[i]) != -1);
@@ -382,7 +383,7 @@ static void iter_test(int len, struct darray_params * params) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
-  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekRCSW_DS_ITER_FORWARD);
+  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekITER_FORWARD);
   CATCH_REQUIRE(nullptr != iter);
 
   size_t count = 0;
@@ -392,7 +393,7 @@ static void iter_test(int len, struct darray_params * params) {
   }
   CATCH_REQUIRE(count == darray_size(arr));
 
-  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekRCSW_DS_ITER_BACKWARD);
+  iter = ds_iter_init(arr, ekRCSW_DS_DARRAY, ekITER_BACKWARD);
   CATCH_REQUIRE(nullptr != iter);
 
   count = 0;

@@ -21,26 +21,97 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Parameters for \ref llist.
+ */
 struct llist_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For comparing elements. If NULL, then \ref llist querying, sorting,
+   * etc. are disabled.
+   */
+  int (*cmpe)(const void *const e1, const void *const e2);
+
+  /**
+   * For printing an element. Can be NULL. If NULL, \ref llist_print() cannot be
+   * called.
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing the nodes managed by the
+   * \ref llist. Ignored unless \ref RCSW_NOALLOC_META is passed.
+   */
+  uint8_t *meta;
+
+  /**
+   * Pointer to application-allocated space for storing the datablocks managed
+   * by the \ref llist. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum Number of elements allowed. -1 = no upper limit.
+   */
+  int max_elts;
+
+  /**
+   * Configuration flags. See \ref llist.flags for valid flags.
+   */
+  uint32_t flags;
 };
 
 /**
- * \brief Linked list node structure (note that this is for a doubly linked
- * list).
+ * \brief Linked list node for \ref llist.
  */
 struct llist_node {
-  struct llist_node *next;  /// next node in the list
-  struct llist_node *prev;  /// previous node in the list
-  uint8_t *data;            /// the actual data for this node
+  /**
+   * Next node in the list.
+   */
+  struct llist_node *next;
+
+  /**
+   * Previous node in the list.
+   */
+  struct llist_node *prev;
+
+  /**
+   * Actual data associated with this node
+   */
+  uint8_t *data;
 };
 
+/**
+ * \brief Container for all memory (space) used by a \ref llist.
+ */
 struct llist_space_mgmt {
-  uint8_t*             datablocks;  /// Ptr to space for the data elements.
+  /**
+   * Space for the data elements. Used if \ref RCSW_NOALLOC_DATA passed in \ref
+   * llist_params.flags.
+   */
+  uint8_t*             datablocks;
+
+  /**
+   * Space for the allocation map for datablocks. Used if \ref RCSW_NOALLOC_DATA
+   * passed in \ref llist_params.flags.
+   */
   struct allocm_entry* db_map;
 
-  struct llist_node*   nodes;  /// Ptr to space for the nodes in the list.
-  struct allocm_entry* node_map;     /// Ptr to space for the nodes in the list.
+  /**
+   * Space for \ref llist_node objects. Used if \ref RCSW_NOALLOC_META
+   * passed in \ref llist_params.flags.
+   */
+  struct llist_node*   nodes;
+
+  /**
+   * Space for the allocation map for \ref llist_node objects. Used if \ref
+   * RCSW_NOALLOC_META passed in \ref llist_params.flags.
+   */
+  struct allocm_entry* node_map;
 };
 
 /**
@@ -54,11 +125,24 @@ struct llist {
   size_t current;     /// number of nodes currently in the list.
   int max_elts;       /// Maximum # of allowed elements. -1 = no upper limit.
   size_t elt_size;     /// Size in bytes of an element.
-  uint32_t flags;     /// Runtime configuration flags.
   bool_t sorted;      /// If true, list is currently sorted.
   struct llist_node *first;  /// First node in the list (for easy prepending)
   struct llist_node *last;   /// Last node in the list (for easy appending)
   struct ds_iterator iter;   /// iterator
+
+  /**
+   *
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_DS_LLIST_DB_DISOWN
+   * - \ref RCSW_DS_LLIST_DB_PTR
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 
@@ -68,8 +152,8 @@ struct llist {
 /**
  * \brief Iterate over a \ref llist.
  *
- * To go forward, pass 'next' as the 'N' field; to iterate through the list
- * backward, pass 'prev' in the 'N' field.
+ * To go forward, pass 'next' as the \p DIR field; to iterate through the list
+ * backward, pass 'prev' in the \p DIR field.
  *
  * You cannot use this macro directly if you are manipulating the next/prev
  * fields. You cannot call this macro on a NULL/unitialized list.
@@ -88,8 +172,8 @@ struct llist {
     for ((VAR) = _node = (LIST)->first; _node != NULL; (VAR) = _node = _node->DIR)
 
 /**
- * \brief Same as \ref LLIST_FOREACH(). but the 'S' parameter allows you to
- * start at an arbitrary location in the list. Pass list->first as the 'S'
+ * \brief Same as \ref LLIST_FOREACH(). but the \p START parameter allows you to
+ * start at an arbitrary location in the list. Pass list->first as the \p START
  * parameter to make it the same as \ref LLIST_FOREACH().
  *
  * You cannot use this macro directly if you are manipulating the next/prev
@@ -155,7 +239,7 @@ static inline size_t llist_size(const struct llist* const list) {
 
 /**
  * \brief Calculate the # of bytes that the \ref llist will require if
- * \ref RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * \ref RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param max_elts # of desired elements the linked list will hold.
@@ -171,7 +255,7 @@ static inline size_t llist_element_space(size_t max_elts, size_t elt_size) {
  * \brief Calculate the space needed for the nodes in the \ref llist, given a
  * max # of elements.
  *
- * Used in conjunction with \ref RCSW_DS_NOALLOC_NODES.
+ * Used in conjunction with \ref RCSW_NOALLOC_META.
  *
  * \param max_elts # of desired elements the linked list will hold.
  *
@@ -185,7 +269,7 @@ static inline size_t llist_meta_space(size_t max_elts) {
  * \brief Initialize a llist.
  *
  * \param list_in The llist handle to be filled (can be NULL if
- *                \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *                \ref RCSW_NOALLOC_HANDLE not passed).
  *
  * \param params The initialization parameters.
  *
@@ -307,11 +391,11 @@ struct llist_node* llist_node_query(struct llist *list,
  * memory is at a premium.
  *
  * \param list The linked list handle.
- * \param type The sort method.
+ * \param type \ref exec_type.
  *
  * \return \ref status_t.
  */
-status_t llist_sort(struct llist *list, enum alg_sort_type type);
+status_t llist_sort(struct llist *list, enum exec_type type);
 
 /**
  * \brief Create a copy of a \ref llist.
@@ -319,7 +403,16 @@ status_t llist_sort(struct llist *list, enum alg_sort_type type);
  * The flags,elements, and nodes fields of cparams are used to determine how
  * memory should be managed for the new list;
  *
- * \param list The linked list handle
+ * \param list The linked list handle.
+ *
+ * \param flags Initialization flags for the new list.
+ *
+ * \param elements Space for elements in the new list. Must be non-NULL if \ref
+ *                 RCSW_NOALLOC_DATA is passed in \p flags; can be NULL
+ *                 otherwise.
+ *
+ * \param nodes Space for nodes in the new list. Must be non-NULL if \ref
+ *              RCSW_NOALLOC_META is passed in \p flags; can be NULL otherwise.
  *
  * \return The new list, or NULL if an error occurred..
  */
@@ -340,6 +433,15 @@ struct llist* llist_copy(struct llist *list,
  *
  * \param pred The predicate for determining element membership in the new list
  *
+ * \param flags Initialization flags for the new list.
+ *
+ * \param elements Space for elements in the new list. Must be non-NULL if \ref
+ *                 RCSW_NOALLOC_DATA is passed in \p flags; can be NULL
+ *                 otherwise.
+ *
+ * \param nodes Space for nodes in the new list. Must be non-NULL if \ref
+ *              RCSW_NOALLOC_META is passed in \p flags; can be NULL otherwise.
+
  * \return The new list, or NULL if an error occurred.
  */
 struct llist *llist_copy2(struct llist *list,
@@ -357,6 +459,15 @@ struct llist *llist_copy2(struct llist *list,
  * list is returned.
  *
  * \param list The linked list handle
+ *
+ * \param flags Initialization flags for the new list.
+ *
+ * \param elements Space for elements in the new list. Must be non-NULL if \ref
+ *                 RCSW_NOALLOC_DATA is passed in \p flags; can be NULL
+ *                 otherwise.
+ *
+ * \param nodes Space for nodes in the new list. Must be non-NULL if \ref
+ *              RCSW_NOALLOC_META is passed in \p flags; can be NULL otherwise.
  *
  * \param pred The predicate for determining element membership in the new list
  *
@@ -385,7 +496,7 @@ struct llist *llist_filter(struct llist *list,
 status_t llist_filter2(struct llist *list, bool_t (*pred)(const void * e));
 
 /**
- * \brief Splice two \ref llists together.
+ * \brief Splice two \ref llist objects together.
  *
  * This function inserts the second list at the position of the specified node
  * in list1. To append list2 to list1, pass list1->last as the node. To prepend

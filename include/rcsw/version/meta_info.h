@@ -22,11 +22,18 @@
  * \struct meta_info
  * \ingroup version
  *
- * \brief Metadata information (duh).
+ * \brief Metadata information about the project, defined as version+build info.
  */
 struct meta_info {
   /* clang-format off */
+  /**
+   * Version information for the project.
+   */
   struct version_info version;
+
+  /**
+   * Build information for the project.
+   */
   struct build_info   build;
   /* clang-format on */
 };

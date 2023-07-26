@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/rbuffer.h"
 
-#define RCSW_ER_MODID M_DS_RBUFFER
+#define RCSW_ER_MODID ekLOG4CL_DS_RBUFFER
 #define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
 #include "rcsw/ds/ds.h"
 #include "rcsw/er/client.h"

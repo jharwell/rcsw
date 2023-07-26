@@ -15,6 +15,7 @@
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
+#include "rcsw/ds/allocm.h"
 
 BEGIN_C_DECLS
 
@@ -74,10 +75,8 @@ int bstree_node_destroy(const struct bstree* const tree,
   return 0;
 } /* bstree_node_destroy() */
 
-void bstree_node_datablock_dealloc(const struct bstree* const tree, /* parent tree
-                                                                     */
-                                   uint8_t* datablock) { /* datablock to
-                                                            deallocate */
+void bstree_node_datablock_dealloc(const struct bstree* const tree,
+                                   uint8_t* datablock) {
   if (datablock == NULL) {
     return;
   }
@@ -281,7 +280,7 @@ void bstree_node_rotate_left(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+  if (tree->flags & RCSW_DS_BSTREE_INT) {
     inttree_node_update_max((struct inttree_node*)node);
     inttree_node_update_max((struct inttree_node*)child);
   } else if (tree->flags & RCSW_DS_BSTREE_OS) {
@@ -320,7 +319,7 @@ void bstree_node_rotate_right(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+  if (tree->flags & RCSW_DS_BSTREE_INT) {
     inttree_node_update_max((struct inttree_node*)node);
     inttree_node_update_max((struct inttree_node*)child);
   } else if (tree->flags & RCSW_DS_BSTREE_OS) {

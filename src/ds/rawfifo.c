@@ -26,7 +26,7 @@ status_t rawfifo_init(struct rawfifo* const fifo,
                       uint8_t* const buf,
                       size_t max_elts,
                       size_t elt_size) {
-  RCSW_FPC_NV(ERROR, NULL != fifo, NULL != buf);
+  RCSW_FPC_NV(ERROR, NULL != fifo, NULL != buf, elt_size <= 4);
   fifo->elements = buf;
   fifo->max_elts = max_elts; /* fifo elts + 1 */
   fifo->elt_size = elt_size;

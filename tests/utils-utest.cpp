@@ -101,11 +101,11 @@ CATCH_TEST_CASE("Bitmask Test", "[utils]") {
   uint32_t foo32 = 0x34567890;
   uint64_t foo64 = 0xFFAABBEE00112233;
 
-  CATCH_REQUIRE(RCSW_MASK32_U16(foo32) == 0x34560000);
-  CATCH_REQUIRE(RCSW_MASK32_L16(foo32) == 0x7890);
+  CATCH_REQUIRE(RCSW_M32U16(foo32) == 0x34560000);
+  CATCH_REQUIRE(RCSW_M32L16(foo32) == 0x7890);
 
-  CATCH_REQUIRE(RCSW_MASK64_U32(foo64) == 0xFFAABBEE00000000);
-  CATCH_REQUIRE(RCSW_MASK64_L32(foo64) == 0x00112233);
+  CATCH_REQUIRE(RCSW_M64U32(foo64) == 0xFFAABBEE00000000);
+  CATCH_REQUIRE(RCSW_M64L32(foo64) == 0x00112233);
 };
 
 CATCH_TEST_CASE("Comparison Test", "[utils]") {
@@ -228,7 +228,7 @@ CATCH_TEST_CASE("time Test", "[utils]") {
   CATCH_REQUIRE(t3.tv_sec == 4);
   CATCH_REQUIRE(t3.tv_nsec == 700);
 
-  CATCH_REQUIRE(time_ts_ref_conv(&t1, &t2) == OK);
+  CATCH_REQUIRE(time_ts_make_abs(&t1, &t2) == OK);
 
   double m1 = time_monotonic_sec();
   sleep(1);

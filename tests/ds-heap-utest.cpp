@@ -33,6 +33,7 @@ static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *para
   /* dbg_mod_lvl_set(M_DS_BINHEAP, DBG_V); */
   /* dbg_mod_lvl_set(M_DS_DARRAY, DBG_V); */
   struct binheap_params params;
+  memset(&params, 0, sizeof(binheap_params));
   params.flags = 0;
   params.cmpe = th::cmpe<T>;
   params.printe = th::printe<T>;
@@ -105,7 +106,7 @@ static void insert_test(enum gen_elt_type type, struct binheap_params * params) 
 
   th::element_generator<T> g(type, params->max_elts);
 
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     T e = g.next();
     CATCH_REQUIRE(binheap_insert(heap, &e) == OK);
     CATCH_REQUIRE(binheap_insert(nullptr, nullptr) == ERROR);
@@ -133,7 +134,7 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
 
   th::element_generator<T> g(type, params->max_elts);
 
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     T e = g.next();
     CATCH_REQUIRE(binheap_insert(heap, &e) == OK);
   } /* for() */
@@ -178,7 +179,7 @@ static void make_test(gen_elt_type type, struct binheap_params * params) {
 
 
   th::element_generator<T> g(type, params->max_elts);
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();
   } /* for() */
 
@@ -204,7 +205,7 @@ static void structure_test(enum gen_elt_type type, struct binheap_params * param
   T arr[TH_NUM_ITEMS];
 
   th::element_generator<T> g(type, params->max_elts);
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();
   } /* for() */
 
@@ -212,7 +213,7 @@ static void structure_test(enum gen_elt_type type, struct binheap_params * param
   CATCH_REQUIRE(OK == binheap_make(heap, arr, params->max_elts));
   verify_heap<T>(heap);
 
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     T e;
     CATCH_REQUIRE(OK == binheap_extract(heap, &e));
 
@@ -241,7 +242,7 @@ static void print_test(gen_elt_type type, struct binheap_params * params) {
   T arr[TH_NUM_ITEMS];
   th::element_generator<T> g(type, params->max_elts);
 
-  for (int i = 0; i < params->max_elts; ++i) {
+  for (size_t i = 0; i < params->max_elts; ++i) {
     arr[i] = g.next();
   } /* for() */
 

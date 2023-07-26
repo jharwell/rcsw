@@ -23,9 +23,38 @@
  * \brief Static matrix initialization parameters.
  */
 struct matrix_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
-  size_t n_rows;  /// # rows in matrix.
-  size_t n_cols;  /// # columns in matrix.
+  /**
+   * For printing an element. Can be NULL. If NULL, \ref matrix_print() is
+   * disabled.
+   */
+  void (*printe)(const void *e);
+
+
+  /**
+   * Pointer to application-allocated space for storing the data managed by the
+   * \ref matrix. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Configuration flags. See \ref matrix.flags for valid flags.
+   */
+  uint32_t flags;
+
+  /**
+   * Number of rows in matrix.
+   */
+  size_t n_rows;
+
+  /**
+   * Number of columns in matrix.
+   */
+  size_t n_cols;
 };
 
 /**
@@ -50,7 +79,14 @@ struct matrix {
   /** Matrix data. */
   uint8_t* elements;
 
-  /** Run-time configuration flags. */
+  /**
+   * Run-time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags ignored.
+   */
   uint32_t flags;
 
   /** Size of matrix elements in bytes. */
@@ -138,6 +174,9 @@ static inline status_t matrix_set(struct matrix* const matrix,
   return OK;
 } /* matrix_set() */
 
+/**
+ * \brief Return if the \ref matrix is square or not.
+ */
 static inline bool_t matrix_issquare(const struct matrix* const matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
   return matrix->n_cols == matrix->n_rows;
@@ -149,7 +188,7 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
  * \brief Initialize a static matrix.
  *
  * \param matrix_in An application allocated handle for the static matrix. Can
- *                  be NULL if \ref RCSW_DS_NOALLOC_HANDLE is passed as a flag..
+ *                  be NULL if \ref RCSW_NOALLOC_HANDLE is passed as a flag..
  *
  * \param params The initialization parameters.
  *

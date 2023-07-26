@@ -28,27 +28,35 @@
 /** 1E3 */
 #define ONEE3 1000
 
-/** RCSW_FLOAT_EPSILON Epsilon for comparison with 0.0 for floats */
+/**
+ * \brief For comparison with 0.0 for floats which gives reasonable results.
+ */
 #define RCSW_FLOAT_EPSILON 0.00000001
 
-/** RCSW_DOUBLE_EPSILON Epsilon for comparison with 0.0 for doubles */
+/**
+ * \brief For comparison with 0.0 for doubles which gives reasonable results.
+ */
 #define RCSW_DOUBLE_EPSILON 0.00000000001
 
 /*******************************************************************************
  * String Macros
  ******************************************************************************/
+/* \cond INTERNAL */
 #define RCSW_XSTR_(x) #x /* don't use this one */
 #define RCSW_JOIN_(x, y) x##y /* don't use this one */
+/* \endcond */
 
 /**
- * \def RCSW_XSTR(X) Stringification. Use when you need to stringify the result
- * of a macro expansion.
+ * \def RCSW_XSTR(X) Stringification.
+ *
+ * Use when you need to stringify the result of a macro expansion.
  */
 #define RCSW_XSTR(X) RCSW_XSTR_(X)
 
 /**
- * \def RCSW_JOIN(x, y) Stringification. Use when you need to join two tokens
- * ``x`` and ``y`` together.
+ * \def RCSW_JOIN(x, y) Stringification.
+ *
+ * Use when you need to join two tokens ``x`` and ``y`` together.
  */
 #define RCSW_JOIN(x, y) RCSW_JOIN_(x, y)
 
@@ -95,8 +103,10 @@
       (max1) > (max2) ? (max1) : (max2); })
 
 /**
- * \def RCSW_MIN(a, b) Returns a type-same minimum of its arguments (compiler
- * warnings for unsafe comparisons of different types).
+ * \def RCSW_MIN(a, b)
+ *
+ * Returns a type-same minimum of its arguments (compiler warnings for unsafe
+ * comparisons of different types).
  */
 #define RCSW_MIN(a, b)                          \
   RCSW_MIN_(typeof(a), typeof(b),               \
@@ -104,14 +114,18 @@
         a, b)
 
 /**
- * \def RCSW_MIN(a, b, c) Returns a type-same minimum of its arguments (compiler
- * warnings for unsafe comparisons of different types).
+ * \def RCSW_MIN3(a, b, c)
+ *
+ * Returns a type-same minimum of its arguments (compiler warnings for unsafe
+ * comparisons of different types).
  */
 #define RCSW_MIN3(a, b, c) RCSW_MIN((typeof(a))RCSW_MIN(a, b), c)
 
 /**
- * \def RCSW_MAX(a, b) Returns a type-same maximum of its arguments (compiler
- * warnings for unsafe comparisons of different types).
+ * \def RCSW_MAX(a, b)
+ *
+ * Returns a type-same maximum of its arguments (compiler warnings for unsafe
+ * comparisons of different types).
  */
 #define RCSW_MAX(a, b)                                    \
   RCSW_MAX_(typeof(a), typeof(b),                         \
@@ -120,8 +134,10 @@
 
 
 /**
- * \def RCSW_MAX(a, b, c) Returns a type-same maximum of its arguments (compiler
- * warnings for unsafe comparisons of different types).
+ * \def RCSW_MAX3(a, b, c)
+ *
+ * Returns a type-same maximum of its arguments (compiler warnings for unsafe
+ * comparisons of different types).
  */
 #define RCSW_MAX3(a, b, c) RCSW_MAX((typeof(a))RCSW_MAX(a, b), c)
 
@@ -205,14 +221,21 @@
 #define RCSW_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max): (val)))
 
 /**
- * \def RCSW_ARRAY_ELTS(arr) Get the size of an array (NOT a pointer
- * to an array) in units (not bytes).
+ * \def RCSW_ARRAY_ELTS(arr)
+ *
+ * Get the size of an array (NOT a pointer to an array) in units (not bytes).
  *
  * \note If you try this on arrays allocated dynamically (VLAs, heap,...) it
  * will not work.
  */
 #define RCSW_ARRAY_ELTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+/**
+ * \def RCSW_CONTAINER_OF(ptr, type, member)
+ *
+ * Mostly stolen from the linux kernel. VERY cool macro for getting a pointer to
+ * a struct given a pointer to a member within the struct.
+ */
 #define RCSW_CONTAINER_OF(ptr, type, member) ({                      \
         const typeof(((type *)0)->member) *__mptr = (ptr);      \
         (type *)( (char *)__mptr - offsetof(type, member) );})
@@ -222,18 +245,6 @@
  * Get the size of a field in a struct \a t named \a f.
  */
 #define RCSW_FIELD_SIZEOF(t, f) (sizeof(((t *)0)->f))
-
-/**
- * \brief Masking macros. Get the upper/lower 16 or 32 bits of a 32 or 64 bit
- * number, respectively.
- *
- * Note that these macros cast their arguments as UNSIGNED integers, so using
- * negative ints will likely behave oddly.
- */
-#define RCSW_UPPER16(n) ((uint32_t)((n) >> 16))
-#define RCSW_LOWER16(n) ((uint16_t)((n)))
-#define RCSW_UPPER32(n) ((uint64_t)((n) >> 32))
-#define RCSW_LOWER32(n) ((uint32_t)((n)))
 
 /**
  * \def RCSW_CHECK(cond) Check a condition in a function.
@@ -255,10 +266,11 @@
 #define RCSW_CHECK_PTR(ptr) RCSW_CHECK(NULL != (ptr))
 
 /**
- * \def RCSW_CHECK_FD(fd) Check a file descriptor \a fdin a function.
+ * \def RCSW_CHECK_FD(fd) Check a file descriptor \a fd in a function.
  *
- * If the descriptor \a fdis invalid (i.e. < 0), go to the error/bailout section
- * for function (you must have a label called \c error in your function).
+ * If the descriptor \a fd is invalid (i.e. < 0), go to the error/bailout
+ * section for function (you must have a label called \c error in your
+ * function).
  */
 #define RCSW_CHECK_FD(fd) RCSW_CHECK((fd) >= 0)
 
@@ -266,7 +278,6 @@
  * Tricky Variadac Macro Manipulation
  ******************************************************************************/
 /* \cond INTERNAL */
-/* 3 Helper macros--don't use them */
 #define RCSW_VAR_NARG_(...) VAR_ARG_N(__VA_ARGS__)
 #define RCSW_VAR_ARG_N(                                                      \
     _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, \
@@ -285,13 +296,6 @@
         31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, \
         14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-/**
- * \brief XFOR_EACH() macro helpers. (You should never ever use these)
- *
- * WHAT is the name of the macro/function that each arg of __VA_ARGS__ is
- * successively passed to.
- * RCSW_XFE1 = X For Each that for which the macro/function takes 1 argument.
- */
 #define RCSW_XFE1_1(WHAT, X) WHAT(X)
 #define RCSW_XFE1_2(WHAT, X, ...) WHAT(X) RCSW_XFE1_1(WHAT, __VA_ARGS__)
 #define RCSW_XFE1_3(WHAT, X, ...) WHAT(X) RCSW_XFE1_2(WHAT, __VA_ARGS__)
@@ -343,13 +347,6 @@
 #define RCSW_XFE1_49(WHAT, X, ...) WHAT(X) RCSW_XFE1_48(WHAT, __VA_ARGS__)
 #define RCSW_XFE1_50(WHAT, X, ...) WHAT(X) RCSW_XFE1_49(WHAT, __VA_ARGS__)
 
-/**
- * \brief XFOR_EACH2() macro helpers. (You should never ever use these)
- *
- * WHAT is the name of the macro/function that each arg of __VA_ARGS__ is
- * successively passed to.
- * RCSW_XFE2 = X For Each for which the macro/function takes 2 arguments.
- */
 #define RCSW_XFE2_1(WHAT, v, X) WHAT(X, v)
 #define RCSW_XFE2_2(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_1(WHAT, v, __VA_ARGS__)
 #define RCSW_XFE2_3(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_2(WHAT, v, __VA_ARGS__)
@@ -400,10 +397,11 @@
 #define RCSW_XFE2_48(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_47(WHAT, v, __VA_ARGS__)
 #define RCSW_XFE2_49(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_48(WHAT, v, __VA_ARGS__)
 #define RCSW_XFE2_50(WHAT, v, X, ...) WHAT(X, v) RCSW_XFE2_49(WHAT, v, __VA_ARGS__)
+/* \endcond */
 
 /**
- * \brief Helper macro to get the name of the XFOR_EACH[1,2]() helper macro for the
- * current iteration. Don't ever use it.
+ * \brief Helper macro to get the name of the RCSW_XFE[1,2]() helper
+ * macro for the current iteration. Don't ever use it.
  */
 #define RCSW_XGET_MACRO(                                                     \
     _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,                            \
@@ -413,6 +411,17 @@
     _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, NAME, ...)        \
     NAME
 
+/**
+ * \brief Call \p action on the current THING passed in the varargs list.
+ *
+ * \p action needs to have the following signature (as a macro or function):
+ *
+ * \code
+ * mymacro(X)
+ * \endcode
+ *
+ * where \p X is the current THING passed in varargs.
+ */
 #define RCSW_XFOR_EACH1(action, ...)                                         \
     RCSW_XGET_MACRO(                                                         \
         __VA_ARGS__,                                                    \
@@ -428,6 +437,19 @@
         RCSW_XFE1_5, RCSW_XFE1_4, RCSW_XFE1_3, RCSW_XFE1_2, RCSW_XFE1_1) \
     (action, __VA_ARGS__)
 
+/**
+ * \brief Call \p action on the current THING passed in the varargs list.
+ *
+ * An additional argument \p is passed to each invocation, so \p action needs to
+ * have the following signature (as a macro or function):
+ *
+ * \code
+ * mymacro(X,V)
+ * \endcode
+ *
+ * where \p X is the current THING passed in varargs, and \p v is the additional
+ * parameter.
+ */
 #define RCSW_XFOR_EACH2(action, v, ...)                                      \
   RCSW_XGET_MACRO(                                                           \
       __VA_ARGS__,                                                      \
@@ -442,7 +464,6 @@
       RCSW_XFE2_10, RCSW_XFE2_9, RCSW_XFE2_8, RCSW_XFE2_7, RCSW_XFE2_6, \
       RCSW_XFE2_5, RCSW_XFE2_4, RCSW_XFE2_3, RCSW_XFE2_2, RCSW_XFE2_1)  \
       (action, v, __VA_ARGS__)
-/* \endcond */
 
 /**
  * \brief Tricky preprocessor awesomeness to get the # of arguments passed to a
@@ -455,48 +476,100 @@
 #define RCSW_VAR_NARG(...) RCSW_VAR_NARG_(__VA_ARGS__, RCSW_VAR_RSEQ_N())
 
 /*******************************************************************************
- * Enum Generation Macros
+ * Table Generation Macros
  ******************************************************************************/
 /**
- * \brief RCSW_XTABLE_STR(X) is a string representation of a token passed to
- * RCSW_XFOR_EACH().  An \ref RCSW_XTABLE_ENUM is just an entry within an enum.
+ * \brief RCSW_XGEN_STR(X)
  *
- * Don't use these.
+ * A string repr of a token passed to \ref RCSW_XFOR_EACH1(). Used by \ref
+ * RCSW_XTABLE_STR(). Don't use this directly.
  */
-#define RCSW_XTABLE_STR(X) STR(X),
-#define RCSW_XTABLE_ENUM(X) X,
+#define RCSW_XGEN_STR(X) STR(X),
 
 /**
- * \brief RCSW_XGEN_STRS(...) The actual table generation macros. These are VERY
- * useful if you want to generate a table of strings from a set of tokens and/or
- * a table of enums from a set of tokens.
+ * \brief RCSW_XGEN_SEQ_ENUM(X)
+ *
+ * Passed to \ref RCSW_XFOR_EACH1() by \ref RCSW_XTABLE_SEQ_ENUM. Don't use this
+ * directly.
+ */
+#define RCSW_XGEN_SEQ_ENUM(X) X,
+
+/**
+ * \def RCSW_XTABLE_STR(...) Generate arrays of strings from tokens.
  *
  * If you have a define like this:
- * \#define myents A,B,C,D,E,F,G,H
  *
- * Then you can use it to generate either of the two table types like so:
+ * \code
+ * #define myents A,B,C,D,E,F,G,H
+ * \endcode
  *
- * char * foo [] { XGEN_STRS(myents) };
- * enum foo2  {XGEN_ENUMS(myents) };
+ * Then you can use this macro to generate an array/table of strings like so:
  *
+ * \code
+ * char * foo [] = { RCSW_XTABLE_STR(myents) };
+ * \endcode
+ *
+ * which will result in:
+ *
+ * \code
+ * char* foo[] = {"A", "B", "C", "D", "E", "F", "G", "H"}
+ * \endcode
+
  * If you need more than 50 entries in a table, then you can do:
  *
- * char * foo [] {XGEN_STRS(myents1) XGEN_STRS(myents2) XGEN_STRS(myents3) };
+ * \code
+ * char * foo [] = {
+ *                   RCSW_XTABLE_STR(myents1)
+ *                   RCSW_XTABLE_STR(myents2)
+ *                   RCSW_XTABLE_STR(myents3)
+ *                   ...
+ *                 };
+ * \endcode
  *
- * in order to get the # of entries you needsize of the table you need
- *
- * Pretty neat, huh?
+ * in order to get the # of entries you need.
  */
-#define RCSW_XGEN_STRS(...) RCSW_XFOR_EACH1(RCSW_XTABLE_STR, __VA_ARGS__)
-#define RCSW_XGEN_ENUMS(...) RCSW_XFOR_EACH1(RCSW_XTABLE_ENUM, __VA_ARGS__)
-#define RCSW_XGEN_MASKABLE_ENUMS(...) \
-  RCSW_XFOR_EACH1(RCSW_XTABLE_MASKABLE_ENUM, __VAR_ARGS__)
+#define RCSW_XTABLE_STR(...) RCSW_XFOR_EACH1(RCSW_XGEN_STR, __VA_ARGS__)
+
+/**
+ * \def RCSW_XTABLE_SEQ_ENUM(...) Generate sequential enums from tokens.
+ *
+ * If you have a define like this:
+ *
+ * \code
+ * #define myents A,B,C,D,E,F,G,H
+ * \endcode
+ *
+ * Then you can use this macro to generate an enum like so:
+ *
+ * \code
+ * enum foo {RCSW_XTABLE_SEQ_ENUM(myents) };
+ * \endcode
+ *
+ * which will result in:
+ *
+ * \code
+ * enum foo {A = 0, B = 1, C = 2, D = 3, E = 4, F = 5, G = 6, H = 7}
+ * \endcode
+ *
+ * If you need more than 50 entries, then you can do:
+ *
+ * \code
+ * enum foo {
+ *            RCSW_XTABLE_SEQ_ENUM(myents1)
+ *            RCSW_XTABLE_SEQ_ENUM(myents2)
+ *            RCSW_XTABLE_SEQ_ENUM(myents3)
+ * };
+ * \endcode
+ *
+ * in order to get the # of entries you need.
+ */
+#define RCSW_XTABLE_SEQ_ENUM(...) \
+  RCSW_XFOR_EACH1(RCSW_XGEN_SEQ_ENUM, __VA_ARGS__)
 
 /*******************************************************************************
  * Other Macros
  ******************************************************************************/
 #ifndef __cplusplus
-
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 

@@ -52,4 +52,9 @@
 #define RCSW_NOALLOC_META 0x4
 
 
+/**
+ * \brief Used by modules in RCSW to start their list of bitmask flags
+ *
+ * Prevents conflicts with common flags broadly applicable everywhere.
+ */
 #define RCSW_MODFLAGS_START (3)

@@ -12,7 +12,7 @@
 #include "rcsw/ds/binheap.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.binheap"
-#define RCSW_ER_MODID M_DS_BINHEAP
+#define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 
@@ -86,7 +86,7 @@ struct binheap* binheap_init(struct binheap* heap_in,
   RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));
   RCSW_CHECK(OK == darray_set_size(&heap->arr, 1));
 
-  ER_DEBUG("init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
+  ER_DEBUG("init_size=%zu max_elts=%zu elt_size=%zu flags=0x%08x",
              params->init_size,
              params->max_elts,
              params->elt_size,

@@ -16,7 +16,7 @@
 #include <string.h>
 
 #define RCSW_ER_MODNAME "rcsw.ds.darray"
-#define RCSW_ER_MODID M_DS_DARRAY
+#define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
@@ -44,7 +44,7 @@ static status_t darray_extend(struct darray* arr, size_t size);
  * darray would become size 0, the underlying array is NOT free()ed, and the
  * darray's size is set to 0.
  *
- * This function will always fail if \ref RCSW_DS_NOALLOC_DATA was passed during
+ * This function will always fail if \ref RCSW_NOALLOC_DATA was passed during
  * initialization.
  *
  * \param arr The darray handle
@@ -188,7 +188,7 @@ darray_insert(struct darray* const arr, const void* const e, size_t index) {
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = false;
-    darray_sort(arr, ekQSORT_ITER);
+    darray_sort(arr, ekEXEC_ITER);
   }
   return OK;
 
@@ -309,7 +309,7 @@ void darray_print(const struct darray* const arr) {
   DPRINTF("\n");
 } /* darray_print() */
 
-status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
+status_t darray_sort(struct darray* const arr, enum exec_type type) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != arr->cmpe);
 
   /*
@@ -319,9 +319,9 @@ status_t darray_sort(struct darray* const arr, enum alg_sort_type type) {
   if (arr->current <= 1 || arr->sorted) {
     ER_DEBUG("Already sorted: nothing to do\n");
   } else {
-    if (type == ekQSORT_REC) {
+    if (type == ekEXEC_REC) {
       qsort_rec(arr->elements, 0, arr->current - 1, arr->elt_size, arr->cmpe);
-    } else if (type == ekQSORT_ITER) {
+    } else if (type == ekEXEC_ITER) {
       qsort_iter(arr->elements, arr->current - 1, arr->elt_size, arr->cmpe);
     } else {
       return ERROR; /* bad sort type */
@@ -443,7 +443,7 @@ status_t darray_inject(const struct darray* const arr,
  ******************************************************************************/
 static status_t darray_extend(struct darray* const arr, size_t size) {
   if (arr->flags & RCSW_NOALLOC_DATA) {
-    ER_ERR("Cannot extend array: RCSW_DS_NOALLOC_DATA");
+    ER_ERR("Cannot extend array: RCSW_NOALLOC_DATA");
     errno = EAGAIN;
     return ERROR;
   }
@@ -474,7 +474,7 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
 
   if (arr->capacity > 0) {
     ER_CHECK(!(arr->flags & RCSW_NOALLOC_DATA),
-             "Cannot shrink array: RCSW_DS_NOALLOC_DATA");
+             "Cannot shrink array: RCSW_NOALLOC_DATA");
     void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
     RCSW_CHECK_PTR(tmp);
     arr->elements = tmp;

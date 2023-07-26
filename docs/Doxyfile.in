@@ -475,7 +475,7 @@ NUM_PROC_THREADS       = 1
 # normally produced when WARNINGS is set to YES.
 # The default value is: NO.
 
-EXTRACT_ALL            = YES
+EXTRACT_ALL            = NO
 
 # If the EXTRACT_PRIVATE tag is set to YES, all private members of a class will
 # be included in the documentation.
@@ -2182,7 +2182,7 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           =
+INCLUDE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@/include
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
@@ -2211,7 +2211,12 @@ PREDEFINED             = __cplusplus= \
                          RCSW_PURE= \
                          RCSW_CONST= \
                          RCSW_EXPORT= \
+                         RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_LOG4CL\
+                         RCSW_STDIO_PUTCHAR=RCSW_STDIO_PUTCHAR \
+                         RCSW_STDIO_GETCHAR=RCSW_STDIO_GETCHAR \
                          BEGIN_C_DECLS= \
+                         LIBRA_ERL_LVL=LIBRA_ERL_ALL\
+                         LIBRA_FPC=LIBRA_FPC_RETURN\
                          __restrict__= \
                          END_C_DECLS= \
                          RCSW_WARNING_DISABLE_POP= \

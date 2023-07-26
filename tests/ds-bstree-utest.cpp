@@ -35,6 +35,7 @@ static void run_test(uint32_t extra_flags,
                      th::bst::test_t test,
                      th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
+  memset(&params, 0, sizeof(bstree_params));
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th::printe<T>;
@@ -66,12 +67,12 @@ static void run_test_remove(uint32_t extra_flags,
                             th::bst::rm_test_t test,
                             th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
+  memset(&params, 0, sizeof(bstree_params));
   params.flags = 0;
   params.cmpkey = th_key_cmp;
   params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_ITEMS;
-
   th::ds_init(&params);
 
   uint32_t flags[] = {
@@ -148,9 +149,9 @@ static void insert_test(int len,
   /* verify BSTREE structure */
   n_elements = tree->current;
   CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                ekBSTREE_TRAVERSE_PREORDER) == OK);
+                                ekTRAVERSE_PREORDER) == OK);
   CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                ekBSTREE_TRAVERSE_POSTORDER) == OK);
+                                ekTRAVERSE_POSTORDER) == OK);
 
 
   bstree_destroy(tree);
@@ -255,7 +256,7 @@ static void remove_test(int len,
     }
     n_elements = tree->current;
     CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                  ekBSTREE_TRAVERSE_INORDER) == OK);
+                                  ekTRAVERSE_INORDER) == OK);
   } /* for() */
 
   /* check the trees are now empty */

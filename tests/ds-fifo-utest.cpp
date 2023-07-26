@@ -33,8 +33,8 @@ static void run_test(fifo_test_t test) {
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
   struct fifo_params params;
+  memset(&params, 0, sizeof(fifo_params));
   params.flags = 0;
-  params.cmpe = th::cmpe<T>;
   params.printe = th::printe<element8>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);

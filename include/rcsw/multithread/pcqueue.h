@@ -29,11 +29,30 @@
  * ends of a FIFO.
  */
 struct pcqueue {
-  struct fifo fifo;    /// The underlying FIFO.
-  struct mutex mutex;  /// Mutex protecting fifo.
-  struct csem slots_avail;   /// Semaphore counting empty slots in buffer.
-  struct csem slots_inuse;    /// Semaphore counting full slots in buffer.
-  uint32_t flags;      /// Configuration flags.
+  /**
+   * The underlying FIFO.
+   */
+  struct fifo fifo;
+  /**
+   * Mutex protecting fifo.
+   */
+
+  struct mutex mutex;
+
+  /**
+   * Semaphore counting empty slots in FIFO.
+   */
+  struct csem slots_avail;
+
+  /**
+   * Semaphore counting occupied/allocated slots in FIFO.
+   */
+  struct csem slots_inuse;
+
+  /**
+   * \brief Configuration flags--same as \ref fifo.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************
@@ -174,7 +193,11 @@ status_t pcqueue_timedpop(struct pcqueue * pcqueue,
  * \note The filled value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
- * \param pcqueue The queue handle.
+ * \param queue The queue handle.
+ *
+ * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
+ *           specifies. This function converts the relative timeout to absolute
+ *           timeout required.
  *
  * \param e To be filled with the address of the first element, if it exists,
  *          and set to NULL otherwise.
@@ -190,7 +213,7 @@ status_t pcqueue_timedpeek(struct pcqueue* const queue,
  * \note The filled value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
- * \param pcqueue The queue handle.
+ * \param queue The queue handle.
  *
  * \param e To be filled with the address of the first element, if it exists,
  *          and set to NULL otherwise.

@@ -12,7 +12,7 @@
 #include "rcsw/ds/adj_matrix.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.adj_matrix"
-#define RCSW_ER_MODID M_DS_ADJ_MATRIX
+#define RCSW_ER_MODID ekLOG4CL_DS_ADJ_MATRIX
 #include "rcsw/er/client.h"
 
 /*******************************************************************************

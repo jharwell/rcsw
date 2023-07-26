@@ -23,6 +23,8 @@
 /*******************************************************************************
  * RCSW ER Plugin Definitions
  ******************************************************************************/
+/* \cond INTERNAL */
+
 #define RCSW_ER_PLUGIN_PRINTF printf
 
 #define RCSW_ER_PLUGIN_INIT(...) log4cl_init(__VA_ARGS__)
@@ -38,77 +40,91 @@
 
 #define RCSW_ER_PLUGIN_HANDLE(ID, NAME) log4cl_mod_query(ID)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) log4cl_mod_enabled(HANDLE, LVL)
+#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) log4cl_mod_emit(HANDLE, LVL)
 
-#define RCSW_LOG4CL_MODNAME_LEN 32
+#define RCSW_LOG4CL_NAMELEN 32
 
 /*******************************************************************************
  * Module codes
  ******************************************************************************/
 /**
- * \brief The debug module codes used by rcsw.
+ * \brief The LOG4CL module codes used by RCSW.
  *
  * When defining your own module codes, you should always start them with
- * M_EXTERNAL, so as to not conflict with the internal codes in rcsw.
+ * ekLOG4CL_EXTERNAL, so as to not conflict with the internal codes in RCSW.
  */
-#define RCSW_LOG4CL_MODULES                        \
-  M_LOG4CL,                                        \
-    M_DS_BSTREE,                                \
-    M_DS_DARRAY,                                \
-    M_DS_LLIST,                                 \
-    M_DS_HASHMAP,                               \
-    M_DS_RBUFFER,                               \
-    M_MT_PCQUEUE,                               \
-    M_MT_MPOOL,                                 \
-    M_UTILS,                                    \
-    M_PULSE,                                    \
-    M_STDIO,                                    \
-    M_GRIND,                                    \
-    M_DS_CORE,                                  \
-    M_DS_BINHEAP,                              \
-    M_DS_CSMATRIX,                              \
-    M_COMMON,                                   \
-    M_DS_FIFO,                                  \
-    M_DS_RAWFIFO,                               \
-    M_ALGORITHM,                                \
-    M_DS_RBTREE,                                \
-    M_TESTING,                                  \
-    M_DS_INT_TREE,                              \
-    M_DS_OSTREE,                                \
-    M_DS_ADJ_MATRIX,                            \
-    M_DS_MATRIX,                                \
-    M_DS_DYN_MATRIX,                            \
-    M_MT_RDWRLOCK,                              \
-    M_MT_RADIX,                                 \
-    M_MULTIPROCESS,                             \
-    M_CTRL_PID,                                 \
-    M_EXTERNAL
+#define RCSW_LOG4CL_MODULES                     \
+  ekLOG4CL_SELF,                                \
+    ekLOG4CL_DS_BSTREE,                         \
+    ekLOG4CL_DS_DARRAY,                         \
+    ekLOG4CL_DS_LLIST,                          \
+    ekLOG4CL_DS_HASHMAP,                        \
+    ekLOG4CL_DS_RBUFFER,                        \
+    ekLOG4CL_MT_PCQUEUE,                        \
+    ekLOG4CL_MT_MPOOL,                          \
+    ekLOG4CL_UTILS,                             \
+    ekLOG4CL_PULSE,                             \
+    ekLOG4CL_STDIO,                             \
+    ekLOG4CL_GRIND,                             \
+    ekLOG4CL_DS_CORE,                           \
+    ekLOG4CL_DS_BINHEAP,                        \
+    ekLOG4CL_DS_CSMATRIX,                       \
+    ekLOG4CL_COMMON,                            \
+    ekLOG4CL_DS_FIFO,                           \
+    ekLOG4CL_DS_RAWFIFO,                        \
+    ekLOG4CL_ALGORITHM,                         \
+    ekLOG4CL_DS_RBTREE,                         \
+    ekLOG4CL_TESTING,                           \
+    ekLOG4CL_DS_INT_TREE,                       \
+    ekLOG4CL_DS_OSTREE,                         \
+    ekLOG4CL_DS_ADJ_MATRIX,                     \
+    ekLOG4CL_DS_MATRIX,                         \
+    ekLOG4CL_DS_DYN_MATRIX,                     \
+    ekLOG4CL_MT_RDWRLOCK,                       \
+    ekLOG4CL_MT_RADIX,                          \
+    ekLOG4CL_MULTIPROCESS,                      \
+    ekLOG4CL_CTRL_PID,                          \
+    ekLOG4CL_EXTERNAL
 
-enum log4cl_module_codes {RCSW_XGEN_ENUMS(RCSW_LOG4CL_MODULES)};
+enum log4cl_module_codes {RCSW_XTABLE_SEQ_ENUM(RCSW_LOG4CL_MODULES)};
+/* \endcond */
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief Representation of a module for debugging.
+ * \brief Representation of a module in the LOG4CL plugin.
  *
  * A module is defined on a per file basis (multiple modules in the same file
  * are disallowed).
  */
 struct log4cl_module {
-  int64_t id; /* id must be the first field for comparisons to work */
-  uint8_t lvl; /* The current debugging level */
-  char name[RCSW_LOG4CL_MODNAME_LEN]; /* The name of the module */
+  /**
+   * UUID for the module. Must
+   *
+   * Be the first field for comparisons to work
+   */
+  int64_t id;
+
+  /**
+   * The current reporting level for the module.
+   */
+  uint8_t lvl;
+
+  /**
+   * name of the module.
+   */
+  char name[RCSW_LOG4CL_NAMELEN];
 };
 
 /**
- * \brief The debugging framework
+ * \brief The LOG4CL plugin.
  *
- * The list of modules currently enabled is maintained by a linked list, and the
+ * The list of modules currently enabled is maintained by a \ref llist, and the
  * framework also contains a default level that can be set so that all future
  * modules will be installed with that level by default.
  */
-struct log4cl_frmwk {
+struct log4cl_plugin {
   struct llist *modules;
   uint8_t default_lvl;
   bool_t initialized;
@@ -129,11 +145,14 @@ BEGIN_C_DECLS
  */
 struct log4cl_module* log4cl_mod_query(uint64_t id) RCSW_CONST;
 
-bool_t log4cl_mod_enabled(const struct log4cl_module* module,
-                          uint8_t lvl) RCSW_PURE;
+/**
+ * \brief Check if a message with the specified level should be emitted.
+ */
+bool_t log4cl_mod_emit(const struct log4cl_module* module,
+                       uint8_t lvl) RCSW_PURE;
 
 /**
- * \brief Initialize Debugging Framework
+ * \brief Initialize LOG4CL plugin
  *
  * This function is idempotent.
  *
@@ -142,9 +161,9 @@ bool_t log4cl_mod_enabled(const struct log4cl_module* module,
 status_t log4cl_init(void);
 
 /**
- * \brief Shutdown the debugging framework, deallocating memory.
+ * \brief Shutdown LOG4CL plugin.
  *
- * The framework can be re-initialized later without error.
+ * The plugin can be re-initialized later without error.
  */
 void log4cl_shutdown(void);
 
@@ -154,26 +173,30 @@ void log4cl_shutdown(void);
  * If the module already exists, ERROR is returned.
  *
  * \param id A UUID for the module to be installed
- * \param name The name of the debugging module. This will be prepended to all
- * debug printing messages. Names do not necessarily have to be unique within
- * the application, though it's a good idea to make them that way.
+ *
+ * \param name The name of the debugging module. Names do not necessarily have
+ *             to be unique within the application, though it's a good idea to
+ *             make them that way.
  *
  * \return \ref status_t
  */
 status_t log4cl_insmod(int64_t id, const char *name);
 
 /**
- * \brief Remove a module from the active list by id. If the module is not in
- * the list success, not failure, is returned.
+ * \brief Remove a module from the active list by ID.
+ *
+ * If the module is not in the list success, not failure, is returned.
  *
  * \param id The UUID of the module to remove
+ *
  * \return \ref status_t
  */
 status_t log4cl_rmmod(int64_t id);
 
 /**
- * \brief Remove a module from the active list by name. If the module is not in
- * the list success, not failure, is returned.
+ * \brief Remove a module from the active list by name.
+ *
+ * If the module is not in the list success, not failure, is returned.
  *
  * \param name The name of the module to remove
  * \return \ref status_t
@@ -181,27 +204,26 @@ status_t log4cl_rmmod(int64_t id);
 status_t log4cl_rmmod2(const char *name);
 
 /**
- * \brief Set the debugging level for a module
+ * \brief Set the reporting level for a module
  *
  * \return \ref status_t
  */
 status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
 
 /**
- * \brief Set the default debugging level for the debugging framework.
+ * \brief Set the default reporting level for the plugin.
  *
  * All modules installed after calling this function will have the specified
  * level set by default.
  *
- * \param lvl The new default level (one of LOG4CL_OFF, LOG4CL_E, LOG4CL_W, etc.)
- *
+ * \param lvl The new default level.
  */
 void log4cl_default_lvl_set(uint8_t lvl);
 
 /**
- * \brief Get the ID of a module from its name
+ * \brief Get the ID of a module from its name.
  *
- * \param name The name of the module to retrieve the UUID for
+ * \param name The name of the module to retrieve the UUID for.
  *
  * \return The ID, or -1 if an error occurred.
  */

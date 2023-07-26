@@ -30,6 +30,14 @@
  */
 struct condv {
   pthread_cond_t impl;
+
+  /**
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
   uint32_t flags;
 };
 
@@ -44,7 +52,11 @@ BEGIN_C_DECLS
  * \param cv_in cv to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
  *              passed.
  *
- * \param flags Configuration flags.
+ * \param flags Configuration flags.Valid flags are:
+ *
+ *              - \ref RCSW_NOALLOC_HANDLE
+ *
+ *              All other flags are ignored.
  *
  * \return The initialized signal condition, or NULL if an ERROR occurred.
  */
@@ -83,7 +95,7 @@ status_t condv_broadcast(struct condv * cv);
  * \brief Unconditional wait on a condition variable.
  *
  * \param cv The cv handle.
- * \param mutex The mutex the wait pairs with.
+ * \param mtx The mutex the wait pairs with.
  *
  * \return \ref status_t.
  */
@@ -93,7 +105,7 @@ status_t condv_wait(struct condv * cv, struct mutex * mtx);
  * \brief Timed wait on a condition variable.
  *
  * \param cv The cv handle.
- * \param mutex The mutex the wait pairs with.
+ * \param mtx The mutex the wait pairs with.
  *
  * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
  *           specifies. This function converts the relative timeout to absolute

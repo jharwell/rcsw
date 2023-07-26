@@ -14,7 +14,8 @@
 #include <vector>
 
 #define RCSW_ER_MODNAME "rcsw.ds.test"
-#define RCSW_ER_MODID M_TESTING
+#define RCSW_ER_MODID ekLOG4CL_TESTING
+
 #include "rcsw/er/client.h"
 #include "rcsw/ds/binheap.h"
 #include "rcsw/ds/bstree.h"
@@ -35,6 +36,21 @@
  * Namespaces/Decls
  ******************************************************************************/
 namespace th {
+
+/*******************************************************************************
+ * Templates
+ ******************************************************************************/
+template <typename T, typename = int>
+struct has_meta : std::false_type { };
+
+template <typename T>
+struct has_meta <T, decltype((void) T::meta, 0)> : std::true_type { };
+
+template <typename T, typename = int>
+struct has_elements : std::false_type { };
+
+template <typename T>
+struct has_elements <T, decltype((void) T::elements, 0)> : std::true_type { };
 
 /*******************************************************************************
  * Class Definitions
@@ -216,85 +232,29 @@ bool_t iter_func(void *e) {
   return (e1->value1 % 2 == 0);
 }
 
-template<typename T>
-status_t ds_init(T *const params) {
-  RCSW_ER_MODULE_INIT();
+status_t ds_init(darray_params *const params);
+status_t ds_init(rbuffer_params *const params);
+status_t ds_init(fifo_params *const params);
+status_t ds_init(llist_params *const params);
+status_t ds_init(binheap_params *const params);
+status_t ds_init(adj_matrix_params *const params);
+status_t ds_init(hashmap_params *const params);
+status_t ds_init(bstree_params *const params);
+status_t ds_init(matrix_params *const params);
+status_t ds_init(dyn_matrix_params *const params);
 
-  /* finish initializing parameter struct */
-  params->elements = NULL;
-  params->nodes = NULL;
-  if constexpr(std::is_same<T,struct darray_params>::value) {
-      /* *2 is to allow the splice tests succeed without segfault */
-      params->elements = reinterpret_cast<uint8_t*>(malloc(darray_element_space(TH_NUM_ITEMS * 2,
-                                                                params->elt_size)));
-      params->max_elts = TH_NUM_ITEMS * 2;
-    } else if constexpr(std::is_same<T,struct rbuffer_params>::value) {
-      params->elements =
-          reinterpret_cast<uint8_t*>(malloc(rbuffer_element_space(params->elt_size,
-                                                  TH_NUM_ITEMS)));
-    } else if constexpr(std::is_same<T,struct fifo_params>::value) {
-      params->elements =
-          reinterpret_cast<uint8_t*>(malloc(fifo_element_space(params->elt_size, TH_NUM_ITEMS)));
-    } else if constexpr(std::is_same<T,struct llist_params>::value) {
-      /*  *2 is to allow the splice_tests() succeed without segfault */
-      params->max_elts = TH_NUM_ITEMS * 2;
-      params->nodes = reinterpret_cast<uint8_t*>(malloc(llist_meta_space(TH_NUM_ITEMS * 2)));
-      params->elements =
-          reinterpret_cast<uint8_t*>(malloc(llist_element_space(TH_NUM_ITEMS * 2,
-                                                params->elt_size)));
-      RCSW_CHECK_PTR(params->nodes);
-    } else if constexpr(std::is_same<T,struct binheap_params>::value) {
-      params->elements =
-          reinterpret_cast<uint8_t*>(malloc(binheap_element_space(TH_NUM_ITEMS, params->elt_size)));
-      memset(params->elements, 0,
-             binheap_element_space(TH_NUM_ITEMS, params->elt_size));
-    } else if constexpr(std::is_same<T,struct adj_matrix_params>::value) {
-      /* Just do weighted all the time--need the space.... */
-      params->elements = reinterpret_cast<uint8_t*>(malloc(adj_matrix_element_space(TH_NUM_ITEMS, true)));
-      memset(params->elements, 0, adj_matrix_element_space(TH_NUM_ITEMS, true));
-    } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
-      params->nodes = reinterpret_cast<uint8_t*>(malloc(hashmap_meta_space(TH_NUM_BUCKETS)));
-      params->elements = reinterpret_cast<uint8_t*>(malloc(hashmap_element_space(TH_NUM_BUCKETS,
-                                                                 TH_NUM_ITEMS * TH_NUM_ITEMS,
-                                                                 params->elt_size)));
-      RCSW_CHECK_PTR(params->nodes);
-    } else if constexpr(std::is_same<T,struct bstree_params>::value) {
-      if (params->flags & RCSW_DS_BSTREE_OS) {
-        params->nodes = reinterpret_cast<uint8_t*>(malloc(ostree_meta_space(TH_NUM_ITEMS)));
-        params->elements = reinterpret_cast<uint8_t*>(malloc(ostree_element_space(TH_NUM_ITEMS, params->elt_size)));
-        RCSW_CHECK_PTR(params->nodes);
-        RCSW_CHECK_PTR(params->elements);
-      } else {
-        params->nodes = reinterpret_cast<uint8_t*>(malloc(bstree_meta_space(TH_NUM_ITEMS)));
-        params->elements = reinterpret_cast<uint8_t*>(malloc(bstree_element_space(TH_NUM_ITEMS, params->elt_size)));
-        RCSW_CHECK_PTR(params->nodes);
-        RCSW_CHECK_PTR(params->elements);
-      }
-    } else if constexpr(std::is_same<T,struct matrix_params>::value) {
-      params->elements = reinterpret_cast<uint8_t*>(malloc(matrix_element_space(params->n_rows,
-                                                                params->n_cols,
-                                                                params->elt_size)));
-    } else if constexpr(std::is_same<T,struct dyn_matrix_params>::value) {
-      params->elements = reinterpret_cast<uint8_t*>(malloc(dyn_matrix_space(params->n_rows,
-                                                            params->n_cols,
-                                                            params->elt_size)));
-    } else {
-    ER_ERR("Unknown data structure!");
-  }
-  RCSW_CHECK_PTR(params->elements);
-  return OK;
-
-error:
-  return ERROR;
-}
 
 template<typename T>
 void ds_shutdown(const T *const params) {
-  if (params->elements) {
-    free(params->elements);
+  if constexpr(has_elements<T>::value) {
+     if (params->elements) {
+       free(params->elements);
+      }
   }
-  if (params->nodes) {
-    free(params->nodes);
+  if constexpr (has_meta<T>::value) {
+    if (params->meta) {
+      free(params->meta);
+    }
   }
 }
 
@@ -340,8 +300,8 @@ int leak_check_nodes(const T *params) {
   }
   if (params->flags & RCSW_NOALLOC_META) {
     for (i = 0; i < len; ++i) {
-      ER_CHECK((reinterpret_cast< allocm_entry *>(params->nodes))[i].value == -1,
-               "Memory leak at index %d in node area", i);
+      ER_CHECK((reinterpret_cast< allocm_entry *>(params->meta))[i].value == -1,
+               "Memory leak at index %d in meta area", i);
     }
   }
   return 0;

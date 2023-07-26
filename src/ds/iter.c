@@ -34,18 +34,18 @@ ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
       struct darray* da = ds;
       iter = &da->iter;
       iter->arr = ds;
-      if (ekRCSW_DS_ITER_FORWARD == type) {
+      if (ekITER_FORWARD == type) {
         iter->index = 0;
-      } else if (ekRCSW_DS_ITER_BACKWARD == type) {
+      } else if (ekITER_BACKWARD == type) {
         iter->index = darray_size(da) - 1;
       }
     } break;
     case ekRCSW_DS_LLIST: {
       struct llist* list = ds;
       iter = &list->iter;
-      if (ekRCSW_DS_ITER_FORWARD == type) {
+      if (ekITER_FORWARD == type) {
         iter->curr = list->first;
-      } else if (ekRCSW_DS_ITER_BACKWARD == type) {
+      } else if (ekITER_BACKWARD == type) {
         iter->curr = list->last;
       }
       iter->index = 0;
@@ -54,9 +54,9 @@ ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
       struct rbuffer* rb = ds;
       iter = &rb->iter;
       iter->rb = ds;
-      if (ekRCSW_DS_ITER_FORWARD == type) {
+      if (ekITER_FORWARD == type) {
         iter->index = rb->start;
-      } else if (ekRCSW_DS_ITER_BACKWARD == type) {
+      } else if (ekITER_BACKWARD == type) {
         iter->index = -1;
       }
     } break;
@@ -103,7 +103,7 @@ ds_filter_init(void* const ds, enum ds_tag tag, bool_t (*f)(void* e)) {
 
   iter->classify = f;
   iter->tag = tag;
-  iter->type = ekRCSW_DS_ITER_FORWARD;
+  iter->type = ekITER_FORWARD;
 
   return iter;
 } /* ds_filter_init() */
@@ -118,7 +118,7 @@ void* ds_iter_next(struct ds_iterator* const iter) {
           continue;
         }
 
-        if (ekRCSW_DS_ITER_FORWARD == iter->type) {
+        if (ekITER_FORWARD == iter->type) {
           iter->curr = curr->next;
         } else {
           iter->curr = curr->prev;
@@ -127,7 +127,7 @@ void* ds_iter_next(struct ds_iterator* const iter) {
       } /* LLIST_ITER() */
     } break;
     case ekRCSW_DS_DARRAY:
-      if (ekRCSW_DS_ITER_FORWARD == iter->type) {
+      if (ekITER_FORWARD == iter->type) {
         while ((size_t)iter->index < iter->arr->current) {
           if (iter->classify &&
               !iter->classify(darray_data_get(iter->arr, iter->index))) {
@@ -148,7 +148,7 @@ void* ds_iter_next(struct ds_iterator* const iter) {
       }
       break;
     case ekRCSW_DS_RBUFFER:
-      if (ekRCSW_DS_ITER_FORWARD == iter->type) {
+      if (ekITER_FORWARD == iter->type) {
         size_t idx = (iter->rb->start + iter->index) % iter->rb->max_elts;
 
         while ((size_t)iter->index < iter->rb->current) {
@@ -175,13 +175,6 @@ void* ds_iter_next(struct ds_iterator* const iter) {
         } /* while() */
       }
       break;
-    case ekRCSW_DS_HASHMAP:
-    case ekRCSW_DS_BSTREE:
-    case ekRCSW_DS_FIFO:
-    case ekRCSW_DS_BINHEAP:
-    case ekRCSW_DS_ADJ_MATRIX:
-    case ekRCSW_DS_MATRIX:
-    case ekRCSW_DS_DYN_MATRIX:
     default:
       break;
   } /* switch() */

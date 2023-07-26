@@ -4,11 +4,12 @@
  * \brief Function precondition/post-condition definitions (very useful!).
  *
  * Allows you to define a set of conditions that must be met for a function to
- * proceed/must be true when it returns. If any of the conditions fails, the
- * function will return the specified return value if RCSW_FPC_RETURN=\ref
- * RCSW_FPC_RETURN is passed at compile time. Otherwise, RCSW_FPC_RETURN=\ref
- * RCSW_FPC_ABORT is assumed, and the failure of any condition will cause the
- * program to halt.
+ * proceed (preconditions) or that must be true when it returns (post
+ * conditions). If a condition is not met:
+ *
+ * - Return a specified return value if \ref RCSW_FPC=\ref RCSW_FPC_RETURN
+ * - Abort if \ref RCSW_FPC=\ref RCSW_FPC_ABORT
+ * - Ignore if \ref RCSW_FPC=\ref RCSW_FPC_NONE
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -26,6 +27,7 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
+/* \cond INTERNAL */
 #define LIBRA_FPC_NONE 0
 #define LIBRA_FPC_ABORT 1
 #define LIBRA_FPC_RETURN 2
@@ -42,12 +44,26 @@
 #if !defined(LIBRA_FPC)
 #define LIBRA_FPC LIBRA_FPC_RETURN
 #endif
+/* \endcond */
 
-
+/**
+ * \brief The configured FPC definition.
+ */
 #define RCSW_FPC LIBRA_FPC
 
+/**
+ * \brief Indicate that failure of FPC should cause a return of an error value.
+ */
 #define RCSW_FPC_RETURN LIBRA_FPC_RETURN
+
+/**
+ * \brief Indicate that failure of FPC should cause program abort.
+ */
 #define RCSW_FPC_ABORT LIBRA_FPC_ABORT
+
+/**
+ * \brief Indicate that failure of FPC should be ignored.
+ */
 #define RCSW_FPC_NONE LIBRA_FPC_NONE
 
 /*******************************************************************************
@@ -162,6 +178,7 @@
 
 #define RCSW_FPC_NV(v, ...)                                     \
   { RCSW_XFOR_EACH2(RCSW_FPC_ABORT_NV, v, __VA_ARGS__); }
+
 #define RCSW_FPC_V(...)                                 \
     { RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__); }
 

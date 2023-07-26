@@ -20,8 +20,42 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Parameters for \ref rbuffer.
+ */
 struct rbuffer_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For comparing elements. Can be NULL. If NULL, \ref rbuffer_index_query() is
+   * disabled.
+   */
+  int (*cmpe)(const void *const e1, const void *const e2);
+
+  /**
+   * For printing an element. Can be NULL. If NULL, \ref rbuffer_print() is
+   * disabled.
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing the elements managed by
+   * the \ref rbuffer. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum number of elements allowed.
+   */
+  size_t max_elts;
+
+  /**
+   * Configuration flags. See \ref rbuffer.flags for valid flags.
+   */
+  uint32_t flags;
 };
 
 /**
@@ -53,12 +87,12 @@ struct rbuffer {
   size_t current;
 
   /**
-   * Maximum # of elements in buffer.
+   * Maximum number of elements in buffer.
    */
   size_t max_elts;
 
   /**
-   * Size of an element in the buffer.
+   * Size of an element in bytes
    */
   size_t elt_size;
 
@@ -68,7 +102,15 @@ struct rbuffer {
   size_t start;
 
   /**
-   * Run-time configuration parameters.
+   * \brief Run-time configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_DS_RBUFFER_AS_FIFO
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -132,7 +174,7 @@ static inline size_t rbuffer_capacity(const struct rbuffer* const rb) {
 
 /**
  * \brief Calculate the # of bytes that the ringbuffer will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param max_elts # of desired elements the ringbuffer will hold.
@@ -148,7 +190,7 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
  * \brief Initialize a ringbuffer.
  *
  * \param rb_in An application allocated handle for the ringbuffer. Can be NULL,
- *        depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
+ *        depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
  *
  * \param params The initialization parameters.
  *

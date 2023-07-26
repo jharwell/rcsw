@@ -13,7 +13,7 @@
 #include <math.h>
 
 #define RCSW_ER_MODNAME "rcsw.ds.hm"
-#define RCSW_ER_MODID M_DS_HASHMAP
+#define RCSW_ER_MODID ekLOG4CL_DS_HASHMAP
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
@@ -106,27 +106,20 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   map->space.buckets = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->nodes);
-    map->space.buckets = (struct darray*)params->nodes;
+    RCSW_CHECK_PTR(params->meta);
+    map->space.buckets = (struct darray*)params->meta;
   } else {
     map->space.buckets = calloc(params->n_buckets, sizeof(struct darray));
     RCSW_CHECK_PTR(map->space.buckets);
   }
 
-  /* validate keysize */
-  ER_CHECK(params->keysize <= RCSW_HASHMAP_MAX_KEYSIZE,
-           "Keysize (%zu) > HASHMAP_MAX_KEYSIZE (%d)\n",
-           params->keysize,
-           RCSW_HASHMAP_MAX_KEYSIZE);
-  map->keysize = params->keysize;
-
-
   /* Allocate space for hashnodes+datablocks+datablock alloc map */
   if (params->flags & RCSW_NOALLOC_DATA) {
     map->space.elements = params->elements;
   } else {
-    map->space.elements = malloc(hashmap_element_space(
-        map->n_buckets, params->bsize, map->elt_size));
+    map->space.elements = malloc(hashmap_element_space(map->n_buckets,
+                                                       params->bsize,
+                                                       map->elt_size));
   }
   RCSW_CHECK_PTR(map->space.elements);
 
@@ -210,7 +203,7 @@ struct darray* hashmap_query(const struct hashmap* const map,
                              uint32_t* const hash_out) {
   RCSW_FPC_NV(NULL, map != NULL, key != NULL);
 
-  uint32_t hash = map->hash(key, map->keysize);
+  uint32_t hash = map->hash(key, RCSW_HASHMAP_KEYSIZE);
   uint32_t bucket_n = hash % map->n_buckets;
 
   if (hash_out != NULL) {
@@ -228,7 +221,7 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
 
   /* memset() needed to make hashnode_cmp() work */
   memset(node.key, 0, sizeof(node.key));
-  memcpy(node.key, key, map->keysize);
+  memcpy(node.key, key, RCSW_HASHMAP_KEYSIZE);
 
   struct darray* bucket = hashmap_query(map, key, &hash);
 
@@ -318,7 +311,7 @@ status_t hashmap_add(struct hashmap* const map,
   struct hashnode node = { .data = datablock, .hash = hash };
   /* memset() needed to make hashnode_cmp() work */
   memset(node.key, 0, sizeof(node.key));
-  memcpy(node.key, key, map->keysize);
+  memcpy(node.key, key, RCSW_HASHMAP_KEYSIZE);
 
   /* check for duplicates */
   if (darray_idx_query(bucket, &node) != -1) {
@@ -363,7 +356,7 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
   struct hashnode node = { .hash = hash, .data = NULL };
   /* memset() needed to make hashnode_cmp() work */
   memset(node.key, 0, sizeof(node.key));
-  memcpy(&node.key, key, map->keysize);
+  memcpy(&node.key, key, RCSW_HASHMAP_KEYSIZE);
 
   int node_index = darray_idx_query(bucket, &node);
   int bucket_index = hashmap_bucket_index(map, bucket);
@@ -403,7 +396,7 @@ status_t hashmap_sort(struct hashmap* const map) {
   RCSW_FPC_NV(ERROR, map != NULL);
 
   for (size_t i = 0; i < map->n_buckets; i++) {
-    darray_sort(&map->space.buckets[i], ekQSORT_ITER);
+    darray_sort(&map->space.buckets[i], ekEXEC_ITER);
   } /* for() */
 
   map->sorted = true;
@@ -526,7 +519,7 @@ void hashmap_print_dist(const struct hashmap* const map) {
 static int hashnode_cmp(const void* const n1, const void* const n2) {
   return memcmp(((const struct hashnode*)n1)->key,
                 ((const struct hashnode*)n2)->key,
-                RCSW_HASHMAP_MAX_KEYSIZE);
+                RCSW_HASHMAP_KEYSIZE);
 } /* hashnode_cmp() */
 
 static void hashmap_linear_probe(const struct hashmap* const map,

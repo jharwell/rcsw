@@ -73,7 +73,7 @@ void time_ts_diff(const struct timespec* const start,
   }
 } /* time_ts_diff() */
 
-status_t time_ts_ref_conv(const struct timespec* const in,
+status_t time_ts_make_abs(const struct timespec* const in,
                           struct timespec* const out) {
   /* Get current time */
   RCSW_CHECK(0 == clock_gettime(CLOCK_REALTIME, out));

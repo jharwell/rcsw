@@ -19,20 +19,6 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-/**
- * \brief The different types flavors of each sort that are available
- *
- */
-enum alg_sort_type {
-    ekQSORT_ITER,  /// Iterative quicksort (arrays only).
-    ekQSORT_REC,   /// Recursive quicksort (arrays only).
-    ekMSORT_ITER,  /// Iterative mergesort (linked lists only).
-    ekMSORT_REC    /// Recursive mergesort (linked lists only).
-};
-
-/*******************************************************************************
  * Function prototypes
  ******************************************************************************/
 BEGIN_C_DECLS
@@ -135,17 +121,41 @@ void radix_sort(size_t *arr, size_t *tmp, size_t n_elts, size_t base);
  * sort
  *
  * \param arr The array to sort
+ *
  * \param tmp Temporary array to hold elements as they are sorted. Must be at
- *            least as large as the array to sort
- * \param digit Current digit being processed
- * \param base The base of the #s to be sorted (10, 16, etc.)
+ *            least as large as \p arr.
+ *
+ * \param n_elts # elements in \p arr and \p tmp.
+ *
+ * \param digit Current digit being processed.
+ *
+ * \param base The base of the numbers to be sorted; must be <= 16.
  *
  * \return \ref status_t
  */
-status_t radix_counting_sort(size_t *arr, size_t* tmp,
-                             size_t n_elts, size_t digit, size_t base);
+status_t radix_counting_sort(size_t *arr,
+                             size_t* tmp,
+                             size_t n_elts,
+                             size_t digit,
+                             size_t base);
 
-status_t radix_sort_prefix_sum(const size_t* arr, size_t n_elts,
-                               size_t base, size_t digit,
+/**
+ * \brief Count how many values are less than \p arr[i] for \p digit.
+ *
+ * \param arr The array to sort.
+ *
+ * \param n_elts # elements in \p arr.
+ *
+ * \param digit Current digit being processed.
+ *
+ * \param base The base of the numbers to be sorted; must be <= 16.
+ *
+ * \param prefix_sums Empty array of same cardinality as \p arr to store prefix
+ *                    sums in.
+ */
+status_t radix_sort_prefix_sum(const size_t* arr,
+                               size_t n_elts,
+                               size_t digit,
+                               size_t base,
                                size_t* prefix_sums);
 END_C_DECLS

@@ -18,16 +18,18 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
+/**
+ * \brief The size of the node keys in a \ref bstree.
+ */
 #define RCSW_BSTREE_NODE_KEYSIZE sizeof(int32_t)
 
 /**
- * \brief The different traversal types the tree supports. Pretty
- * self-explanatory.
+ * \brief The different traversal types the tree supports.
  */
 enum bstree_traversal_type {
-  ekBSTREE_TRAVERSE_PREORDER,
-  ekBSTREE_TRAVERSE_INORDER,
-  ekBSTREE_TRAVERSE_POSTORDER,
+  ekTRAVERSE_PREORDER,
+  ekTRAVERSE_INORDER,
+  ekTRAVERSE_POSTORDER,
 };
 
 /*******************************************************************************
@@ -41,8 +43,46 @@ enum bstree_traversal_type {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Parameters for \ref bstree.
+ */
 struct bstree_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For comparing keys associated with elements. Cannot be NULL.
+   */
+  int (*cmpkey)(const void *const e1, const void *const e2);
+
+  /**
+   * For printing an element. Can be NULL.
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing the \ref bstree
+   * nodes. Ignored unless \ref RCSW_NOALLOC_META is passed.
+   */
+  uint8_t *meta;
+
+  /**
+   * Pointer to application-allocated space for storing data managed by the \ref
+   * bstree. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum number of elements allowed. -1 = no upper limit.
+   */
+  int max_elts;
+
+  /**
+   * Configuration flags. See \ref bstree.flags for valid flags.
+   */
+  uint32_t flags;
 };
 
 /**
@@ -73,26 +113,37 @@ struct bstree_node {
   bool_t red;
 };
 
+/**
+ * \brief Container for all memory (space) used by a \ref bstree.
+ */
 struct bstree_space_mgmt {
   /**
-   * Application-allocated space for elements. Only used if
-   * \ref RCSW_DS_NOALLOC_DATA passed during initialization.
+   * Space for the data elements. Used if \ref RCSW_NOALLOC_DATA passed in \ref
+   * bstree_params.flags.
    */
-  uint8_t *datablocks;
+  uint8_t*             datablocks;
+
+  /**
+   * Space for the allocation map for datablocks. Used if \ref RCSW_NOALLOC_DATA
+   * passed in \ref bstree_params.flags.
+   */
   struct allocm_entry* db_map;
 
   /**
-   * Application-allocation space for nodes. Only used if
-   * \ref RCSW_DS_NOALLOC_NODES passed during initialization.
+   * Space for \ref bstree_node objects. Used if \ref RCSW_NOALLOC_META
+   * passed in \ref bstree_params.flags.
    */
-  struct bstree_node* nodes;
+  struct bstree_node*   nodes;
+
+  /**
+   * Space for the allocation map for \ref bstree_node objects. Used if \ref
+   * RCSW_NOALLOC_META passed in \ref bstree_params.flags.
+   */
   struct allocm_entry* node_map;
 };
 
 /**
- * \brief The main binary search tree handle.
- *
- * Uses the approach outlined in Introduction to Algorithms.
+ * \brief Binary Search Tree using  approach from Introduction to Algorithms.
  */
 struct bstree {
   /**
@@ -121,9 +172,17 @@ struct bstree {
   size_t depth;
 
   /**
-   * Run-time configuration flags.
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   * - \ref RCSW_DS_BSTREE_INT
+   * - \ref RCSW_DS_BSTREE_OS
+   * - \ref RCSW_DS_BSTREE_RB
+   *
+   * All other flags are ignored.
    */
-
   uint32_t flags;
 
   /**
@@ -162,8 +221,8 @@ BEGIN_C_DECLS
  *
  * This should NEVER be called by an application--for internal use only.
  *
- * \param tree_in The BST handle to be filled (can be NULL if
- *                \ref RCSW_NO_ALLOC_HANDLE not passed).
+ * \param tree_in The BST handle to be filled. Must be non-NULL if \ref
+ *                RCSW_NOALLOC_HANDLE passed in \p params->flags.
  *
  * \param params Initialization parameters
  *
@@ -255,8 +314,9 @@ struct bstree_node *bstree_node_query(const struct bstree* tree,
 void *bstree_data_query(const struct bstree * tree, const void * key);
 
 /**
- * \brief Traverse a binary search tree and operate on each node's data in a
- * pre-order, post-order, or in-order way.
+ * \brief Traverse a binary search tree and operate on each node's data.
+ *
+ * Can traverse in a pre-order, post-order, or in-order way.
  *
  * If the callback returns nonzero on a given node, then the traversal is
  * aborted.
@@ -266,6 +326,7 @@ void *bstree_data_query(const struct bstree * tree, const void * key);
  * \param cb Callback called on each node in the tree, and passed the BST
  *           handle. Cannot be used to modify the BST handle, but CAN modify the
  *           node.
+ *
  * \param type The type of traversal to perform.
  *
  * \return Return code of last callback that was non-zero, or 0 if callback
@@ -288,7 +349,7 @@ void bstree_print(struct bstree * tree);
  * Inline Functions
  ******************************************************************************/
 /**
- * \brief Determine if the BST is currently full
+ * \brief Determine if a \ref bstree is currently full.
  *
  * \param bst The BST handle
  *
@@ -300,7 +361,7 @@ static inline bool_t bstree_isfull(const struct bstree* const bst) {
 }
 
 /**
- * \brief Determine if the BST is currently empty
+ * \brief Determine if a \ref bstree is currently empty.
  *
  * \param bst The BST handle
  *
@@ -312,7 +373,7 @@ static inline bool_t bstree_isempty(const struct bstree* const bst) {
 }
 
 /**
- * \brief Determine # elements currently in the BST
+ * \brief Determine # elements currently a \ref bstree.
  *
  * \param bst The BST handle
  *
@@ -326,7 +387,7 @@ static inline size_t bstree_size(const struct bstree* const bst) {
 
 /**
  * \brief Calculate the # of bytes that the BST will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * The +2 is for the root and nil nodes.
@@ -341,15 +402,14 @@ static inline size_t bstree_element_space(size_t max_elts, size_t elt_size) {
 }
 
 /**
- * \brief Calculate the space needed for the nodes in the bst, given a
- * max # of elements
+ * \brief Calculate the space needed for the nodes in a \ref bstree.
  *
- * Used in conjunction with \ref RCSW_DS_NOALLOC_NODES. The +2 is for the root
- * and nil nodes.
+ * Used in conjunction with \ref RCSW_NOALLOC_META. The +2 is for the root and
+ * nil nodes.
  *
- * \param max_elts # of desired elements the BST will hold
+ * \param max_elts Max # of elements the BST will hold.
  *
- * \return The # of bytes required
+ * \return The # of bytes required.
  */
 static inline size_t bstree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts+2) +
@@ -357,10 +417,12 @@ static inline size_t bstree_meta_space(size_t max_elts) {
 }
 
 /**
- * \brief Insert an item into a BST
+ * \brief Insert an item into a \ref bstree
  *
  * \param tree The BST handle
+
  * \param key The key for the data to insert
+ *
  * \param data The data to insert
  */
 static inline status_t bstree_insert(struct bstree* tree,
@@ -370,9 +432,10 @@ static inline status_t bstree_insert(struct bstree* tree,
 }
 
 /**
- * \brief Initialize a BST
+ * \brief Initialize a \ref bstree.
  *
- * \param tree The BST handle
+ * \param tree_in The BST handle
+ *
  * \param params Initialization parameters
  */
 static inline struct bstree* bstree_init(struct bstree* tree_in,

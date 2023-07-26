@@ -20,6 +20,8 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
+/* \cond INTERNAL */
+
 #define PRINTF_PREFER_DECIMAL     false
 #define PRINTF_PREFER_EXPONENTIAL true
 
@@ -71,3 +73,5 @@ typedef unsigned int printf_size_t;
 // If we were to nitpick, this would actually be INT_MAX + 1,
 // since INT_MAX is the maximum return value, which excludes the
 // trailing '\0'.
+
+/* \endcond */

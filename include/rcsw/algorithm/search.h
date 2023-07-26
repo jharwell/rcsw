@@ -18,18 +18,6 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Constant Definitions
- ******************************************************************************/
-/**
- * \brief The runtime implementation method to use for the binary search
- * algorithm.
- */
-enum search_types {
-  ekBSEARCH_ITER,  /// Use a recursive runtime implementation
-  ekBSEARCH_REC    /// Use a iterative runtime implementation
-};
-
-/*******************************************************************************
  * Function prototypes
  ******************************************************************************/
 BEGIN_C_DECLS
@@ -62,10 +50,13 @@ int bsearch_iter(const void * a,
 /**
  * \brief Search a sorted array of data using binary search, recursive version
  *
- * \param in The array to search
- * \param elt The element to search for
- * \param cmpe Callback to compare two elements
- * \param el_size Size of elements in bytes
+ * \param arr The array to search.
+ *
+ * \param e The element to search for.
+ *
+ * \param cmpe Callback to compare two elements.
+ *
+ * \param elt_size Size of elements in bytes.
  *
  * \param low Lowest index in the array to consider when searching. This should
  *            usually be 0.
@@ -79,7 +70,7 @@ int bsearch_iter(const void * a,
 int bsearch_rec(const void * arr,
                 const void * e,
                 int (*cmpe)(const void * e1, const void * e2),
-                size_t el_size,
+                size_t elt_size,
                 int low,
                 int high);
 END_C_DECLS

@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multithread/rdwrlock.h"
 
-#define RCSW_ER_MODID M_MT_RDWRLOCK
+#define RCSW_ER_MODID ekLOG4CL_MT_RDWRLOCK
 #define RCSW_ER_MODNAME "rcsw.mt.rdwrl"
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"

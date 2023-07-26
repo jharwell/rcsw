@@ -22,7 +22,21 @@
  * \brief Dynamic matrix initialization parameters.
  */
 struct dyn_matrix_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For printing an element. Can be NULL.
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Configuration flags. See \ref dyn_matrix.flags for valid flags.
+   */
+  uint32_t flags;
+
   size_t n_rows;  /// # rows in matrix.
   size_t n_cols;  /// # columns in matrix.
   uint8_t* rows;  /// Ptr to space for vector-of-row-vectors.
@@ -49,13 +63,39 @@ struct dyn_matrix_params {
  * The matrix is never resized autonomously.
  */
 struct dyn_matrix {
-  struct darray* rows;  /// Vector of row vectors.
-  size_t n_rows;        /// # of rows in matrix.
-  size_t n_cols;        /// # of columns in matrix.
-  uint32_t flags;       /// Run-time configuration flags.
-  size_t elt_size;       /// Size of matrix elements in bytes.
+  /**
+   * Vector of row vectors.
+   */
+  struct darray* rows;
 
-  /** For printing an element. Can be NULL. */
+  /**
+   * Number of rows in matrix.
+   */
+  size_t n_rows;
+
+  /**
+   * Number of columns in matrix.
+   */
+  size_t n_cols;
+
+  /**
+   * Size of matrix elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
+
+  /**
+   * For printing an element. Can be NULL. If NULL, then \ref
+   * dyn_matrix_print() is disabled.
+   */
   void (*printe)(const void *const e);
 };
 
@@ -121,6 +161,9 @@ static inline status_t dyn_matrix_clear(struct dyn_matrix* const matrix,
     return OK;
 }
 
+/**
+ * \brief Return if the \ref dyn_matrix is square or not.
+ */
 static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
 
@@ -134,7 +177,7 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
  * \brief Initialize a dynamic matrix.
  *
  * \param matrix_in An application allocated handle for the dynamic matrix. Can
- *                  be NULL if \ref RCSW_DS_NOALLOC_HANDLE is passed as a flag.
+ *                  be NULL if \ref RCSW_NOALLOC_HANDLE is passed as a flag.
  *
  * \param params The initialization parameters.
  *

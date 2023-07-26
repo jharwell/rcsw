@@ -139,7 +139,9 @@
 #else
 
 /**
- * \def RCSW_ATTR for attaching a list of attributes to a function/variable/etc.
+ * \def RCSW_ATTR(...)
+ *
+ * For attaching a list of attributes to a function/variable/etc.
  */
 #define RCSW_ATTR(...) __attribute__((__VA_ARGS__))
 
@@ -151,8 +153,10 @@
 #else
 
 /**
- * \def RCSW_CONST Shorthand for marked a function as purely function of its
- * input parameters only (no global memory access allowed).
+ * \def RCSW_CONST
+ *
+ * Mark a function as a function of its inputs only (i.e., no global memory
+ * access allowed).
  */
 #define RCSW_CONST __attribute__((const))
 
@@ -322,13 +326,16 @@
 #ifdef __cplusplus
 
 #ifndef BEGIN_C_DECLS
+
 /**
  * \def BEGIN_C_DECLS Standard C++ compatability wrapper for C code (start)
  */
 #define BEGIN_C_DECLS extern "C" {
+
 #endif /* BEGIN_C_DECLS */
 
 #ifndef END_C_DECLS
+
 /**
  * \def END_C_DECLS Standard C++ compatability wrapper for C code (end)
  */

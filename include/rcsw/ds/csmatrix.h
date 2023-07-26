@@ -23,9 +23,9 @@
  * The valid types of data that the sparse matrix will hold.
  */
 enum csmatrix_type {
-    CSMATRIX_INT,
-    CSMATRIX_FLOAT,
-    CSMATRIX_DOUBLE
+    ekCSMATRIX_INT,
+    ekCSMATRIX_FLOAT,
+    ekCSMATRIX_DOUBLE
 };
 
 /*******************************************************************************
@@ -35,11 +35,30 @@ enum csmatrix_type {
  * \brief Sparse matrix initialization parameters.
  */
 struct csmatrix_params {
-    size_t n_rows;     /// # of initial rows in the matrix.
-    size_t n_nz_elts;  /// Total # of non-zero entries in the matrix.
-    size_t n_cols;     /// # columns in the matrix
-    uint32_t flags;    /// Initialization flags
-    enum csmatrix_type type;  /// What type of numbers the matrix will contain
+  /**
+   * Initial number of rows in the matrix.
+   */
+  size_t n_rows;
+
+  /**
+   * Initial number of columns in the matrix
+   */
+  size_t n_cols;
+
+  /**
+   * Number of non-zero entries in the matrix.
+   */
+  size_t n_nz_elts;
+
+  /**
+   * Configuration flags. See \ref csmatrix.flags for valid flags.
+   */
+  uint32_t flags;
+
+  /**
+   * What type of numbers the matrix will contain
+   */
+  enum csmatrix_type type;
 };
 
 /**
@@ -51,51 +70,70 @@ struct csmatrix_params {
  * licensing, etc.), hence this module. It assumes row-major ordering.
  */
 struct csmatrix {
-    /**
-     * Holds the row indices of the non-zero entries in the matrix.
-     */
-    struct darray inner_indices;
+  /**
+   * Holds the row indices of the non-zero entries in the matrix.
+   */
+  struct darray inner_indices;
 
-    /**
-     * Holds the index of first nonzero in the inner_indices array for each row.
-     */
-    struct darray outer_starts;
+  /**
+   * Holds the index of first nonzero in the inner_indices array for each row.
+   */
+  struct darray outer_starts;
 
-    /**
-     * Holds the coefficient values of the non-zeros.
-     */
-    struct darray values;
+  /**
+   * Holds the coefficient values of the non-zeros.
+   */
+  struct darray values;
 
-    size_t n_rows;      /// # rows in the matrix
-    size_t n_cols;      /// # columns in the matrix
-    size_t n_eff_cols;  /// # effective columns in the matrix
-    uint32_t flags;     /// Configuration flags
-    enum csmatrix_type type;  /// What type of data the matrix holds
+  /**
+   * Initial number of rows in the matrix.
+   */
+  size_t n_rows;
 
-    /**
-     * Array of linked lists, one per column, containing the row indices that
-     * for that column. Necessary for transposes so things don't take FOREVER.
-     */
-    struct llist *cols;
+  /**
+   * Initial number of columns in the matrix
+   */
+  size_t n_cols;
+
+  /**
+   * Number of non-zero entries in the matrix.
+   */
+  size_t n_nz_elts;
+
+  /**
+   * Configuration flags. See \ref csmatrix.flags for valid flags.
+   */
+  uint32_t flags;
+
+  /**
+   * What type of numbers the matrix will contain
+   */
+  enum csmatrix_type type;
+
+  /**
+   * Array of linked lists, one per column, containing the row indices that
+   * for that column. Necessary for transposes so things don't take FOREVER.
+   */
+  struct llist *cols;
 
 
-    /**
-     * Space for link list nodes (use one contiguous block to improve cache
-     * performance)
-     */
-    uint8_t * nodes;
+  /**
+   * Space for link list nodes (use one contiguous block to improve cache
+   * performance)
+   */
+  uint8_t * nodes;
 
-    /**
-     * Space for link list elements (use one contiguous block to improve cache
-     * performance)
-     */
-    uint8_t * elts;
+  /**
+   * Space for link list elements (use one contiguous block to improve cache
+   * performance)
+   */
+  uint8_t * elts;
 
-    int* csizes;
+  int* csizes;
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -110,13 +148,13 @@ static inline size_t csmatrix_type_size(const struct csmatrix* const matrix) {
   RCSW_FPC_NV(0, NULL != matrix);
 
   switch (matrix->type) {
-    case CSMATRIX_INT:
+    case ekCSMATRIX_INT:
         return sizeof(int);
         break;
-    case CSMATRIX_FLOAT:
+    case ekCSMATRIX_FLOAT:
         return sizeof(float);
         break;
-    case CSMATRIX_DOUBLE:
+    case ekCSMATRIX_DOUBLE:
         return sizeof(double);
         break;
     default:
@@ -174,6 +212,9 @@ static inline size_t csmatrix_n_cols(const struct csmatrix* const matrix) {
     return matrix->n_cols;
 } /* csmatrix_n_eff_cols() */
 
+/**
+ * \brief Get the current # elements in a \ref csmatrix,
+ */
 static inline size_t csmatrix_size(
     const struct csmatrix* const matrix) {
     RCSW_FPC_NV(0, NULL != matrix);
@@ -181,6 +222,9 @@ static inline size_t csmatrix_size(
                                           darray_size(&matrix->outer_starts)-1);
 } /* csmatrix_size() */
 
+/**
+ * \brief Get a row in \ref matrix.
+ */
 static inline int* csmatrix_row(const struct csmatrix* const matrix,
                                 size_t row) {
     RCSW_FPC_NV(0, NULL != matrix);
@@ -280,7 +324,7 @@ static inline double* csmatrix_values(
  * \brief Initialize a compressed, sparse matrix. It should be noted that once
  * initialized, the row/column dimensions of the matrix cannot be modified.
  *
- * \param matrix_in The matrix handle. Ignored unless \ref RCSW_DS_NOALLOC_DATA
+ * \param matrix_in The matrix handle. Ignored unless \ref RCSW_NOALLOC_DATA
  *                  is passed, in which it is used instead of the matrix
  *                  allocated memory for its own handle.
  *
@@ -342,12 +386,13 @@ status_t csmatrix_entry_delete(struct csmatrix* matrix,
  * \param matrix The matrix handle.
  * \param row The row for the entry to set.
  * \param col The column for the entry to set.
- * \param data The new entry.
+ * \param e The new entry.
  *
  * \return \ref status_t.
  */
 status_t csmatrix_entry_set(struct csmatrix* matrix,
-                            size_t row, size_t col,
+                            size_t row,
+                            size_t col,
                             const void* e);
 
 /**
@@ -452,4 +497,3 @@ status_t csmatrix_calc_clists(struct csmatrix* matrix);
 void csmatrix_print(const struct csmatrix* matrix);
 
 END_C_DECLS
-

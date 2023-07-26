@@ -17,7 +17,7 @@
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-void out_rev_(struct printf_output_gadget* output,
+void out_reversed(struct printf_output_gadget* output,
               const char* buf,
               printf_size_t len,
               printf_size_t width,
@@ -152,5 +152,5 @@ void print_integer_finalization(struct printf_output_gadget* output,
     }
   }
 
-  out_rev_(output, buf, len, width, flags);
+  out_reversed(output, buf, len, width, flags);
 }

@@ -33,11 +33,10 @@ using llist_test2_t = void(*)(int len1,
  ******************************************************************************/
 template<typename T>
 static void run_test(llist_test1_t test) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING, "Testing"); */
-  /* dbg_insmod(M_DS_LLIST, "LLIST"); */
+  RCSW_ER_INIT();
 
   struct llist_params params;
+  memset(&params, 0, sizeof(llist_params));
   params.flags = 0;
   params.cmpe = th::cmpe<T>;
   params.printe = th::printe<T>;
@@ -58,6 +57,7 @@ static void run_test(llist_test1_t test) {
     } /* for(i..) */
   } /* for(j..) */
   th::ds_shutdown(&params);
+  RCSW_ER_DEINIT();
 } /* run_test() */
 
 template<typename T>
@@ -67,6 +67,7 @@ static void run_test2(llist_test2_t test) {
   /* dbg_insmod(M_DS_LLIST,"LLIST"); */
 
   struct llist_params params;
+  memset(&params, 0, sizeof(llist_params));
   params.flags = 0;
   params.cmpe = th::cmpe<T>;
   params.printe = th::printe<T>;
@@ -395,7 +396,7 @@ static void sort_test(int len, struct llist_params * params) {
     CATCH_REQUIRE(llist_append(list1, &e) == OK);
   } /* for() */
 
-  llist_sort(list1, (enum alg_sort_type)(rand() % 2 + 2));
+  CATCH_REQUIRE(OK == llist_sort(list1, (exec_type)(rand() % 2)));
 
   T *e;
   int val = -1;
@@ -661,7 +662,7 @@ static void iter_test(int len, struct llist_params * params) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
-  iter = ds_iter_init(list, ekRCSW_DS_LLIST, ekRCSW_DS_ITER_FORWARD);
+  iter = ds_iter_init(list, ekRCSW_DS_LLIST, ekITER_FORWARD);
   CATCH_REQUIRE(nullptr != iter);
   size_t count = 0;
 
@@ -671,7 +672,7 @@ static void iter_test(int len, struct llist_params * params) {
   }
   CATCH_REQUIRE(count == list->current);
 
-  iter = ds_iter_init(list, ekRCSW_DS_LLIST, ekRCSW_DS_ITER_BACKWARD);
+  iter = ds_iter_init(list, ekRCSW_DS_LLIST, ekITER_BACKWARD);
   CATCH_REQUIRE(nullptr != iter);
 
   count = 0;

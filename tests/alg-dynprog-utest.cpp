@@ -139,8 +139,8 @@ CATCH_TEST_CASE("Edit Distance","[alg][Dynamic Programming]") {
 
   CATCH_REQUIRE(OK == edit_dist_init(&finder, x, y, sizeof(char),
                                th_char_cmp, (size_t(*)(const void*))strlen));
-  size_t res1 = edit_dist_find(&finder, EDIT_DIST_ITER);
-  size_t res2 = edit_dist_find(&finder, EDIT_DIST_REC);
+  size_t res1 = edit_dist_find(&finder, ekEXEC_ITER);
+  size_t res2 = edit_dist_find(&finder, ekEXEC_REC);
   CATCH_REQUIRE(res1 == 4);
   CATCH_REQUIRE(res2 == 4);
   edit_dist_destroy(&finder);

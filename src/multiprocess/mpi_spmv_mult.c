@@ -12,7 +12,7 @@
 #include "rcsw/multiprocess/mpi_spmv_mult.h"
 
 #define RCSW_ER_MODNAME "rcsw.mp"
-#define RCSW_ER_MODID M_MULTIPROCESS
+#define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/er/client.h"
 
 /*******************************************************************************

@@ -12,7 +12,7 @@
 #include "rcsw/ds/llist.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
-#define RCSW_ER_MODID M_DS_LLIST
+#define RCSW_ER_MODID ekLOG4CL_DS_LLIST
 #include "rcsw/ds/llist_node.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
@@ -43,13 +43,13 @@ struct llist* llist_init(struct llist* list_in,
   list->first = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->nodes);
+    RCSW_CHECK_PTR(params->meta);
     ER_CHECK(params->max_elts != -1,
              "Cannot have uncapped list length with "
-             "RCSW_DS_NOALLOC_NODES");
+             "RCSW_NOALLOC_META");
 
     /* initialize free list of llist_nodes */
-    list->space.node_map = (struct allocm_entry*)params->nodes;
+    list->space.node_map = (struct allocm_entry*)params->meta;
     list->space.nodes =
         (struct llist_node*)(list->space.node_map + params->max_elts);
     allocm_init(list->space.node_map, params->max_elts);
@@ -59,7 +59,7 @@ struct llist* llist_init(struct llist* list_in,
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
              "Cannot have uncapped list length with "
-             "RCSW_DS_NOALLOC_DATA");
+             "RCSW_NOALLOC_DATA");
 
     /* initialize free list of data elements */
     list->space.db_map = (struct allocm_entry*)params->elements;
@@ -196,7 +196,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   list->current++;
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = false;
-    llist_sort(list, ekMSORT_REC);
+    llist_sort(list, ekEXEC_REC);
   }
   rval = OK;
 
@@ -232,7 +232,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
 
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = false;
-    llist_sort(list, ekMSORT_REC);
+    llist_sort(list, ekEXEC_REC);
   }
   rval = OK;
 
@@ -297,7 +297,7 @@ struct llist_node* llist_node_query(struct llist* const list,
   return match;
 } /* llist_node_query() */
 
-status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
+status_t llist_sort(struct llist* const list, enum exec_type type) {
   RCSW_FPC_NV(ERROR, list != NULL, list->cmpe != NULL);
 
   status_t rval = OK;
@@ -309,10 +309,13 @@ status_t llist_sort(struct llist* const list, enum alg_sort_type type) {
   if (list->current <= 1 || list->sorted) {
     ER_DEBUG("Already sorted: nothing to do");
   } else {
-    if (type == ekMSORT_REC) {
+    if (type == ekEXEC_REC) {
       list->first = mergesort_rec(list->first, list->cmpe, true);
-    } else if (type == ekMSORT_ITER) {
+    } else if (type == ekEXEC_ITER) {
       list->first = mergesort_iter(list->first, list->cmpe, true);
+    } else {
+      ER_ERR("Bad exec_type for sort '%d'", type);
+      return ERROR;
     }
 
     /* find new list->last */
@@ -348,7 +351,7 @@ struct llist* llist_copy(struct llist* const list,
     .max_elts = list->max_elts,
     .flags = flags,
     .elements = elements,
-    .nodes = nodes,
+    .meta = nodes,
   };
 
   struct llist* clist = llist_init(NULL, &params);
@@ -378,7 +381,7 @@ struct llist* llist_copy2(struct llist* const list,
     .max_elts = list->max_elts,
     .flags = flags,
     .elements = elements,
-    .nodes = nodes,
+    .meta = nodes,
   };
 
   struct llist* clist = llist_init(NULL, &params);
@@ -415,7 +418,7 @@ struct llist* llist_filter(struct llist* list,
     .max_elts = list->max_elts,
     .flags = flags,
     .elements = nodes,
-    .nodes = elements,
+    .meta = elements,
   };
 
   struct llist* flist = llist_init(NULL, &params);

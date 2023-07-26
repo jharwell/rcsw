@@ -12,7 +12,7 @@
 #include "rcsw/ds/dyn_matrix.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.dyn_matrix"
-#define RCSW_ER_MODID M_DS_DYN_MATRIX
+#define RCSW_ER_MODID ekLOG4CL_DS_DYN_MATRIX
 #include "rcsw/er/client.h"
 
 BEGIN_C_DECLS
@@ -45,7 +45,6 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
   struct darray_params handle_params = { .init_size = matrix->n_rows ,
                                      .cmpe = NULL,
                                      .printe = NULL,
-                                     .nodes = NULL,
                                      .elements = NULL,
                                      .elt_size = sizeof(struct darray),
                                      .max_elts = -1,
@@ -57,7 +56,6 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
                                    matrix->n_cols ,
                                   .cmpe = NULL,
                                   .printe = NULL,
-                                  .nodes = NULL,
                                   .elements = NULL,
                                   .elt_size = matrix->elt_size,
                                   .max_elts = -1,
@@ -118,7 +116,6 @@ status_t dyn_matrix_resize(struct dyn_matrix* const matrix,
     struct darray_params row_params = {  .init_size = matrix->n_cols ,
                                     .cmpe = NULL,
                                     .printe = NULL,
-                                    .nodes = NULL,
                                     .elements = NULL,
                                     .elt_size = matrix->elt_size,
                                     .max_elts = -1,

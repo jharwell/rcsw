@@ -381,7 +381,10 @@ void insertion_sort(void* arr,
 } /* insertion_sort() */
 RCSW_WARNING_DISABLE_POP()
 
-void radix_sort(size_t* const arr, size_t* const tmp, size_t n_elts, size_t base) {
+void radix_sort(size_t* const arr,
+                size_t* const tmp,
+                size_t n_elts,
+                size_t base) {
   /* get largest # in array to get total # of digits */
   size_t m = alg_arr_largest_num(arr, n_elts);
 
@@ -393,8 +396,8 @@ void radix_sort(size_t* const arr, size_t* const tmp, size_t n_elts, size_t base
 
 status_t radix_sort_prefix_sum(const size_t* const arr,
                                size_t n_elts,
-                               size_t base,
                                size_t digit,
+                               size_t base,
                                size_t* const prefix_sums) {
   RCSW_FPC_NV(ERROR, NULL != arr, n_elts > 0, base > 0, NULL != prefix_sums);
   memset(prefix_sums, 0, sizeof(size_t) * base);
@@ -414,8 +417,6 @@ status_t radix_sort_prefix_sum(const size_t* const arr,
   return OK;
 } /* radix_sort_prefix_sum() */
 
-RCSW_WARNING_DISABLE_PUSH()
-RCSW_WARNING_DISABLE_VLA()
 status_t radix_counting_sort(size_t* const arr,
                              size_t* const tmp,
                              size_t n_elts,
@@ -423,12 +424,12 @@ status_t radix_counting_sort(size_t* const arr,
                              size_t base) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != tmp, n_elts > 0, digit > 0, base > 0);
 
-  size_t prefix_sums[base];
+  size_t prefix_sums[16];
   memset(prefix_sums, 0, sizeof(prefix_sums));
   memset(tmp, 0, sizeof(size_t) * n_elts);
 
   /* compute prefix sums for current digit */
-  radix_sort_prefix_sum(arr, n_elts, base, digit, prefix_sums);
+  radix_sort_prefix_sum(arr, n_elts, digit, base, prefix_sums);
 
   /* Sort elements */
   for (size_t i = n_elts - 1; i != 0; i--) {
@@ -443,6 +444,5 @@ status_t radix_counting_sort(size_t* const arr,
 
   return OK;
 } /* counting_sort() */
-RCSW_WARNING_DISABLE_POP()
 
 END_C_DECLS

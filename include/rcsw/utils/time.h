@@ -55,7 +55,12 @@ void time_ts_diff(const struct timespec * __restrict__ start,
                   const struct timespec * __restrict__ end,
                   struct timespec * __restrict__ diff);
 
-status_t time_ts_ref_conv(const struct timespec * __restrict__ in,
+/**
+ * \brief Convert a relative timeout to an absolute one.
+ *
+ * Required for many POSIX functions. Uses the system realtime clock.
+ */
+status_t time_ts_make_abs(const struct timespec * __restrict__ in,
                           struct timespec * __restrict__ out);
 
 /**

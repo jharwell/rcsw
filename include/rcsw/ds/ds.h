@@ -77,14 +77,7 @@
 enum ds_tag {
   ekRCSW_DS_DARRAY,
   ekRCSW_DS_LLIST,
-  ekRCSW_DS_HASHMAP,
-  ekRCSW_DS_BSTREE,
   ekRCSW_DS_RBUFFER,
-  ekRCSW_DS_BINHEAP,
-  ekRCSW_DS_FIFO,
-  ekRCSW_DS_MATRIX,
-  ekRCSW_DS_DYN_MATRIX,
-  ekRCSW_DS_ADJ_MATRIX
 };
 
 /**
@@ -169,7 +162,7 @@ enum ds_tag {
  * must also specify the correct element size for an interval during
  * initialization (this is not done automatically).
  */
-#define RCSW_DS_BSTREE_INTERVAL  (1 << (RCSW_MODFLAGS_START + 7))
+#define RCSW_DS_BSTREE_INT  (1 << (RCSW_MODFLAGS_START + 7))
 
 /**
  * \brief Indicate that a \ref bstree should function as an Order
@@ -180,8 +173,8 @@ enum ds_tag {
 #define RCSW_DS_BSTREE_OS  (1 << (RCSW_MODFLAGS_START + 8))
 
 /**
- * \brief Indicate that a \ref bin_heap should function as a min heap. If you do
- * not pass this flag, all heaps will function as max heaps.
+ * \brief Indicate that a \ref binheap should function as a min heap. If you do
+ * not pass this flag, \ref binheap will function as a max heap.
  */
 #define RCSW_DS_BINHEAP_MIN  (1 << (RCSW_MODFLAGS_START + 9))
 
@@ -194,66 +187,20 @@ enum ds_tag {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-#define RCSW_DECLARE_DS_PARAMS_COMMON \
-  /**                         \
-   * For comparing elements.  \
-   *                          \
-   * Cannot be NULL for: \
-   * \
-   * \ref bin_heap \
-   * \
-   * For data structures for which this callback is optional, if NULL, some \
-   * operations such as sorting will be disabled. \
-   */ \
+#if !defined(DOXYGEN_DOCUMENTATION_BUILD)
+/**
+ * \brief The common set of parameters used by all data structures.
+ */
+#define RCSW_DECLARE_DS_PARAMS_COMMON  \
   int (*cmpe)(const void *const e1, const void *const e2); \
-  /** \
-   * For comparing keys associated with elements. \
-   * \
-   * Cannot be NULL for: \
-   * \
-   * - \ref bstree (and data structures derived from binary search tree) \
-   * - \ref bin_heap \
-   */ \
   int (*cmpkey)(const void *const e1, const void *const e2); \
-  /** \
-   * For printing an element. Can be NULL for any data structure; only used \
-   * for diagnostic purposes. \
-   */ \
   void (*printe)(const void *e); \
-  /** \
-   * Pointer to space the application has allocated for the data structure to \
-   * reside in. This is NOT the same as space for the data that the data \
-   * structure is taking care of. For example, if a linked list is used, then \
-   * this is a pointer to a block of memory that the linked list data \
-   * structure will use to store its nodes in, instead of malloc()ing for \
-   * them. Ignored unless \ref RCSW_DS_NOALLOC_NODES is passed. \
-   * \
-   * Used by linked list, binary search tree (and derived structures), hashmap. \
-   */ \
-  uint8_t *nodes; \
-  /** \
-   * Pointer to space the application has allocated for storing the actual \
-   * data that the data structure will be managing. This is NOT the same \
-   * as the space for the data structure itself. Ignored unless \ref \
-   * RCSW_DS_APP_NOALLOC_DATA is passed. \
-   * \
-   * Used by all data structures. \
-   */ \
+  uint8_t *meta; \
   uint8_t *elements; \
-  /** \
-   * size of elements in bytes. \
-   */ \
   size_t elt_size; \
-  /** \
-   * Maximum # of elements allowed. -1 = no upper limit. \
-   * \
-   * Used by all data structures except hashmap. \
-   */ \
   int max_elts; \
-  /** \
-   * Initialization flags \
-   */ \
   uint32_t flags;
+#endif
 
 /*******************************************************************************
  * Inline Functions
@@ -264,8 +211,8 @@ BEGIN_C_DECLS
  * \brief Calculate how large the chunk of memory for the metadata for a data
  * structure needs to be, given a max # of elements.
  *
- * Used in conjunction with \ref RCSW_DS_NOALLOC_DATA and/or \ref
- * RCSW_DS_NOALLOC_NODES for data structures requiring metadata.
+ * Used in conjunction with \ref RCSW_NOALLOC_DATA and/or \ref
+ * RCSW_NOALLOC_META for data structures requiring metadata.
  *
  * You really shouldn't use this function.
  *
@@ -287,7 +234,7 @@ static inline size_t ds_meta_space(size_t max_elts) {
  *
  * You really shouldn't use this function--use the specific calculation
  * functions for each data structure found in their respective header
- * files. Used in conjunction with \ref RCSW_DS_NOALLOC_DATA.
+ * files. Used in conjunction with \ref RCSW_NOALLOC_DATA.
  *
  * \param max_elts Max # elements the structure will manage
  * \param elt_size Size of each element in bytes
@@ -307,7 +254,7 @@ static inline size_t ds_elt_space_simple(size_t max_elts, size_t elt_size) {
  *
  * You really shouldn't use this function--use the specific calculation
  * functions for each data structure found in their respective header
- * files. Used in conjunction with \ref RCSW_DS_NOALLOC_DATA.
+ * files. Used in conjunction with \ref RCSW_NOALLOC_DATA.
  *
  * \param max_elts Max # elements the structure will manage
  * \param elt_size Size of each element in bytes

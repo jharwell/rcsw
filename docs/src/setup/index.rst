@@ -12,9 +12,8 @@ Setting Up RCSW
 Developer Setup
 ===============
 
-#. RCSW uses `LIBRA <https://libra2.readthedocs.io>`_ so go to
-   :ref:`ln-libra-req` and install any needed packages.
-
+#. RCSW uses :ref:`libra:main` so go to :ref:`libra:usage-req` and install any
+   needed packages.
 
 #. Clone RCSW and init LIBRA::
 
@@ -36,4 +35,4 @@ Developer Setup
 
 
    You can pass any option as part of ``<ARGS>`` that LIBRA supports (see
-   :ref:`ln-libra-capabilities`).
+   :ref:`libra:usage-capabilities`).

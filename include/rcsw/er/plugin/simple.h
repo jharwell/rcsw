@@ -28,6 +28,7 @@
 /*******************************************************************************
  * RCSW ER Plugin Definitions
  ******************************************************************************/
+/* \cond INTERNAL */
 #define RCSW_ER_PLUGIN_PRINTF stdio_printf
 
 #define RCSW_ER_PLUGIN_INIT(...)
@@ -44,3 +45,5 @@
 #define RCSW_ER_PLUGIN_HANDLE(ID, NAME)
 
 #define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) true
+
+/* \endcond */

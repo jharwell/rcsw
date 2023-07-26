@@ -24,7 +24,7 @@ struct allocm_entry {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Mark an entry in the datablock map as available.
@@ -34,15 +34,12 @@ static inline void allocm_mark_free(struct allocm_entry* entry) {
 }
 
 /**
- * \brief Mark an entry in the datablock map as available.
+ * \brief Mark an etry in the datablock mark as in use.
  */
 static inline void allocm_mark_inuse(struct allocm_entry* entry) {
   entry->value = 0;
 }
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
 /**
  * \brief Search a metadata area for a free datablock/node
  *

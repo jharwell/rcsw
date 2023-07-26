@@ -85,7 +85,7 @@ exhale_args = {
     # These arguments are required
     "containmentFolder":     "./_api",
     "rootFileName":          "api.rst",
-    "rootFileTitle":         "RCSW API",
+    "rootFileTitle":         "Detailed APIs",
     "afterTitleDescription": textwrap.dedent('''
        .. note::
 
@@ -110,6 +110,7 @@ extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.coverage',
               'sphinx.ext.mathjax',
               'sphinx.ext.ifconfig',
+              'sphinx_tabs.tabs',
               'breathe',
               'exhale',
               'sphinx_last_updated_by_git']
@@ -124,7 +125,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 cpp_id_attributes = ['RCSW_PURE', 'RCSW_CONST',
                      '__restrict__', 'BEGIN_C_DECLS', 'END_C_DECLS']
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -151,5 +151,5 @@ html_sidebars = {
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/en/master/',
+intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/en/devel/',
                                  None)}

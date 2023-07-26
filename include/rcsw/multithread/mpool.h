@@ -3,8 +3,6 @@
  * \ingroup multithread
  * \brief Implementation of memory/buffer pool of memory chunks.
  *
- * Sort of a malloc() approximation.
- *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
@@ -24,10 +22,36 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief Memory pool queue initialization parameters.
+ * \brief Memory pool initialization parameters.
  */
 struct mpool_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * Pointer to application-allocated space for storing the \ref llist_node
+   * objects used to carve up \ref mpool_params.elements. Ignored unless \ref
+   * RCSW_NOALLOC_META is passed.
+   */
+  uint8_t *meta;
+
+  /**
+   * Pointer to application-allocated space for the pool.Ignored unless \ref
+   * RCSW_NOALLOC_META is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Number of elements in the pool.
+   */
+  size_t max_elts;
+
+  /**
+   * Configuration flags. See \ref mpool.flags for valid flags.
+   */
+  uint32_t flags;
 };
 
 /**
@@ -57,13 +81,22 @@ struct mpool {
   /** Max # of elements in the pool. Must be > 0. */
   size_t            max_elts;
 
-  /** Used to wait for a chunk to become free in \ref mpool_req(). */
+  /**
+   * Used to wait for a chunk to become free in \ref mpool_req().
+   */
   struct csem       slots_avail;
 
   /** Lock around most operations for concurrency safety. */
   struct mutex      mutex;
 
-  /** Run time configuration flags. */
+  /**
+   * Run time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   *
+   */
   uint32_t          flags;
 };
 
@@ -113,7 +146,7 @@ static inline bool_t mpool_isfull(const struct mpool* const pool) {
 }
 
 /**
- * \brief Determine if the memory pool is currently empty.
+ * \brief Determine if the \ref mpool is currently empty.
  *
  * \note The returned value cannot be relied upon in concurrent contexts without
  * additional synchronization.

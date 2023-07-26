@@ -26,8 +26,16 @@
  * - POSIX mutexes
  */
 struct mutex {
-    pthread_mutex_t impl;
-    uint32_t flags;
+  pthread_mutex_t impl;
+
+  /**
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************

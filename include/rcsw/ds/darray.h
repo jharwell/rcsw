@@ -25,10 +25,42 @@
  * \brief Dynamic array (darray) initialization parameters.
  */
 struct darray_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For comparing elements. Can be NULL. If NULL, sorting the \ref darray is
+   * disabled.
+   */
+  int (*cmpe)(const void *const e1, const void *const e2);
+
+  /**
+   * For printing an element. Can be NULL. If NULL, you can't use \ref
+   * darray_print().
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing data managed by the \ref
+   * darray. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum number of elements allowed. -1 = no upper limit.
+   */
+  int max_elts;
+
+  /**
+   * Configuration flags. See \ref darray.flags for valid flags.
+   */
+  uint32_t flags;
+
   /**
    * Initial size of the array (must be < max_elts). Ignored if \ref
-   * RCSW_DS_NOALLOC_DATA is passed.
+   * RCSW_NOALLOC_DATA is passed.
    */
   size_t init_size;
 };
@@ -42,50 +74,58 @@ struct darray_params {
  * any time.
  */
 struct darray {
-    /** The array that holds the actual data */
-    uint8_t *elements;
+  /** The array that holds the actual data */
+  uint8_t *elements;
 
-    struct ds_iterator iter;
+  struct ds_iterator iter;
 
-    /**
-     * Next item in the darray will be inserted here (also # of elements in
-     * darray).
-     */
-    size_t current;
+  /**
+   * Next item in the darray will be inserted here (also # of elements in
+   * darray).
+   */
+  size_t current;
 
-    /**
-     * Current capacity of array in # slots
-     */
-    size_t capacity;
+  /**
+   * Current capacity of array in # slots
+   */
+  size_t capacity;
 
-    /**
-     * Size in bytes of an element
-     **/
-    size_t elt_size;
+  /**
+   * Size in bytes of an element
+   **/
+  size_t elt_size;
 
-    /**
-     * Is the array is currently sorted?
-     */
-    bool_t sorted;
+  /**
+   * Is the array is currently sorted?
+   */
+  bool_t sorted;
 
-    /**
-     * Maximum number of elements allowed in the array (-1 for no limit)
-     */
-    int max_elts;
+  /**
+   * Maximum number of elements allowed in the array (-1 for no limit)
+   */
+  int max_elts;
 
-    /**
-     * Runtime configuration flags
-     */
-    uint32_t flags;
+  /**
+   * \brief Run-time configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 
-    /**
-     * For comparing elements for <,=,>. Can be NULL. If NULL, certain darray
-     * operations aren't allowed (like sorting).
-     */
-    int (*cmpe)(const void *const e1, const void *const e2);
+  /**
+   * For comparing elements for <,=,>. Can be NULL. If NULL, certain darray
+   * operations aren't allowed (like sorting).
+   */
+  int (*cmpe)(const void *const e1, const void *const e2);
 
-    /** For printing an element (can be NULL) */
-    void (*printe)(const void *e);
+  /** For printing an element (can be NULL) */
+  void (*printe)(const void *e);
 };
 
 /*******************************************************************************
@@ -118,7 +158,7 @@ static inline bool_t darray_isempty(const struct darray* const arr) {
 }
 
 /**
- * \brief Determine # elements currently in the arr
+ * \brief Determine # elements currently in the \ref darray.
  *
  * \param arr The dynamic array handle
  *
@@ -142,9 +182,11 @@ static inline size_t darray_capacity(const struct darray* const arr) {
 }
 
 /**
- * \brief Set # elements currently in the arr. You can't set the # elements to
- * greater than the current capacity, even if the max # of elements for the
- * array is greater.
+ * \brief Set # elements currently in the \ref darray.
+ *
+ * You can't use this function to the # elements to greater than the current
+ * capacity, even if the max # of elements for the array is greater. Use \ref
+ * darray_resize() if you need that.
  *
  * \param arr The dynamic array handle.
  * \param n_elts The new # of elements in the array.
@@ -176,7 +218,7 @@ static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
  * It is valid to initialize the darray with an initial size of 0.
  *
  * \param arr_in The darray handle to be filled (can be NULL if
- *               \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ *               \ref RCSW_NOALLOC_HANDLE not passed).
  *
  * \param params Initialization parameters
  *
@@ -222,7 +264,7 @@ status_t darray_data_clear(struct darray * arr);
  * Inserts an item into the given position in the darray. If the array currently
  * full, it will be extended to accomodate the new element, unless doing so
  * would cause the max_elts for the darray to be exceeded. If \ref
- * DS_KEEP_SORTED was passed during initialization, the darray is resorted after
+ * RCSW_DS_SORTED was passed during initialization, the darray is resorted after
  * insertion.
  *
  * If the array was initialized with an unlimited maximum # of elements, then
@@ -242,12 +284,12 @@ status_t darray_insert(struct darray * arr, const void * e,
 /**
  * \brief Remove an item from an darray
  *
- * If \ref DS_KEEP_SORTED was passed during initialization, then the remaining
+ * If \ref RCSW_DS_SORTED was passed during initialization, then the remaining
  * elements in the list are shifted to close the empty slot and preserve the
- * sort order (inefficient). If \ref DS_KEEP_SORTED was not passed during
+ * sort order (inefficient). If \ref RCSW_DS_SORTED was not passed during
  * initialization, then the last element in the array is simply used to
  * overwrite the element to be removed, which is a much faster operation.
- *p
+ *
  * If the darray was initialized with an unlimited capacity, then the darray is
  * shrunk to 1/2 its current size whenever the current deletion brought its
  * utilization down at or below 25% (for amortized O(1) deletions).
@@ -350,12 +392,12 @@ status_t darray_data_copy(const struct darray* arr1,
  * Can only be called if \ref darray.cmpe was non-NULL during initialization.
  *
  * \param arr The darray handle
- * \param type The type of sort to perform. Only quicksort flavors are valid for
- * this data structure.
+ *
+ * \param type \ref exec_type.
  *
  * \return \ref status_t.
  */
-status_t darray_sort(struct darray * arr, enum alg_sort_type type);
+status_t darray_sort(struct darray * arr, enum exec_type type);
 
 /**
  * \brief Apply a function to all elements in the darray.

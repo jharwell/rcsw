@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #define RCSW_ER_MODNAME "rcsw.ds.bstree"
-#define RCSW_ER_MODID M_DS_BSTREE
+#define RCSW_ER_MODID ekLOG4CL_DS_BSTREE
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree_node.h"
@@ -53,16 +53,16 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   tree->nil = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->nodes);
+    RCSW_CHECK_PTR(params->meta);
     ER_CHECK(params->max_elts != -1,
              "Cannot have uncapped tree size with "
-             "RCSW_DS_NOALLOC_NODES");
+             "RCSW_NOALLOC_META");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
      * nodes for root and nil, hence the +2.
      */
-    tree->space.node_map = (struct allocm_entry*)params->nodes;
+    tree->space.node_map = (struct allocm_entry*)params->meta;
     allocm_init(tree->space.node_map, params->max_elts + 2);
     tree->space.nodes =
         (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
@@ -72,7 +72,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
              "Cannot have uncapped tree size with "
-             "RCSW_DS_NOALLOC_DATA");
+             "RCSW_NOALLOC_DATA");
 
     /*
      * Initialize free list of bstree_nodes. The bstree requires 2 internal
@@ -100,7 +100,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
   tree->root->parent = tree->root->left = tree->root->right = tree->nil;
   tree->root->red = false;
 
-  if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+  if (tree->flags & RCSW_DS_BSTREE_INT) {
     inttree_init_helper(tree);
   } else if (tree->flags & RCSW_DS_BSTREE_OS) {
     ostree_init_helper(tree);
@@ -162,11 +162,11 @@ int bstree_traverse(struct bstree* const tree,
                     enum bstree_traversal_type type) {
   RCSW_FPC_NV(ERROR, tree != NULL, cb != NULL);
 
-  if (ekBSTREE_TRAVERSE_PREORDER == type) {
+  if (ekTRAVERSE_PREORDER == type) {
     return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
-  } else if (ekBSTREE_TRAVERSE_INORDER == type) {
+  } else if (ekTRAVERSE_INORDER == type) {
     return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
-  } else if (ekBSTREE_TRAVERSE_POSTORDER == type) {
+  } else if (ekTRAVERSE_POSTORDER == type) {
     return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
   }
   return -1;
@@ -212,7 +212,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
      * red-black fixup process will cause at most 3 rotations, simply fixing
      * up the auxiliary field during rotations is not enough.
      */
-    if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+    if (tree->flags & RCSW_DS_BSTREE_INT) {
       inttree_high_fixup(tree, (struct inttree_node*)node);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
       ostree_count_fixup(tree, (struct ostree_node*)node, ekOSTREE_FIXUP_INSERT);
@@ -295,7 +295,7 @@ status_t bstree_delete(struct bstree* const tree,
      * red-black fixup process will cause at most 3 rotations, simply fixing
      * up the auxiliary field during rotations is not enough.
      */
-    if (tree->flags & RCSW_DS_BSTREE_INTERVAL) {
+    if (tree->flags & RCSW_DS_BSTREE_INT) {
       inttree_high_fixup(tree, (struct inttree_node*)x);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
       ostree_count_fixup(tree, (struct ostree_node*)x, ekOSTREE_FIXUP_DELETE);

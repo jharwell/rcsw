@@ -3,9 +3,6 @@
  * \ingroup ds
  * \brief Implementation of simple FIFO.
  *
- * This implementation is more full-featured than the "raw" FIFO, but may not be
- * safe to use in ISRs.
- *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
@@ -22,12 +19,44 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \brief Parameters for \ref fifo.
+ */
 struct fifo_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
+  /**
+   * For printing an element. Can be NULL. If NULL, you can't use \ref
+   * fifo_print().
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing data managed by the \ref
+   * fifo. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum number of elements allowed
+   * fifo).
+   */
+  size_t max_elts;
+
+  /**
+   * Configuration flags. See \ref fifo.flags for valid flags.
+   */
+  uint32_t flags;
 };
 
 /**
- * \brief FIFO: First In First Out general purpose FIFO.
+ * \brief Out general purpose FIFO.
+ *
+ * This implementation is more full-featured than \ref rawfifo, but is not safe
+ * to use in ISRs.
  */
 struct fifo {
   /**
@@ -36,7 +65,12 @@ struct fifo {
   struct rbuffer rb;
 
   /**
-   * Run-time configuration parameters.
+   * Run-time configuration parameters. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -110,7 +144,7 @@ static inline void* fifo_front(const struct fifo* const fifo) {
 
 /**
  * \brief Calculate the # of bytes that the FIFO will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size
  *
  * \param max_elts # of desired elements the FIFO will hold
@@ -129,7 +163,7 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
  * \brief Initialize a FIFO.
  *
  * \param fifo_in An application allocated handle for the FIFO. Can be NULL,
- * depending on if \ref RCSW_DS_NOALLOC_HANDLE is passed or not.
+ * depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
  * \param params The initialization parameters.
  *
  * \return The initialized FIFO, or NULL if an error occurred.

@@ -22,19 +22,69 @@
 /*******************************************************************************
  * Macro Definitions
  ******************************************************************************/
+/**
+ * \brief Get the index of the left child of an element in a \ref binheap.
+ */
 #define RCSW_BINHEAP_LCHILD(i) (2*(i))
+
+/**
+ * \brief Get the index of the right child of an element in a \ref binheap.
+ */
 #define RCSW_BINHEAP_RCHILD(i) (2*(i)+1)
+
+/**
+ * \brief Get the index of the parent of an element in a \ref binheap.
+ */
 #define RCSW_BINHEAP_PARENT(i) ((i)/2)
 
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief Binary heap initialization parameters.
+ * \brief \ref binheap initialization parameters.
  */
 struct binheap_params {
-  RCSW_DECLARE_DS_PARAMS_COMMON;
-  size_t init_size;  /// Initial size of heap.
+  /**
+   * For comparing elements. Cannot be NULL.
+   */
+  int (*cmpe)(const void *const e1, const void *const e2);
+
+  /**
+   * For comparing keys associated with elements. Cannot be NULL.
+   */
+  int (*cmpkey)(const void *const e1, const void *const e2);
+
+  /**
+   * For printing an element. Can be NULL. If NULL, you can't use \ref
+   * binheap_print().
+   */
+  void (*printe)(const void *e);
+
+  /**
+   * Pointer to application-allocated space for storing the \ref binheap
+   * data. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
+   */
+  uint8_t *elements;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
+
+  /**
+   * Maximum number of elements allowed.
+   */
+  size_t max_elts;
+
+  /**
+   * Configuration flags. See \ref binheap.flags for valid flags.
+   */
+  uint32_t flags;
+
+  /**
+   * Initial size of heap.
+   */
+  size_t init_size;
 };
 
 /**
@@ -53,7 +103,13 @@ struct binheap {
   struct darray arr;
 
   /**
-   * Configuration flags.
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_DS_BINHEAP_MIN
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -112,7 +168,7 @@ static inline size_t binheap_n_free(struct binheap * heap) {
 
 /**
  * \brief Calculate the # of bytes that the heap will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param max_elts # of desired elements the heap will hold
@@ -148,6 +204,9 @@ static inline void* binheap_peek(const struct binheap * heap) {
     return darray_data_get(&heap->arr, 1);
 }
 
+/**
+ * \brief Get the current height of a \ref binheap
+ */
 static inline size_t binheap_height(const struct binheap * heap) {
   return (size_t)(log10(binheap_size(heap)) / log10(2));
 }
@@ -155,8 +214,8 @@ static inline size_t binheap_height(const struct binheap * heap) {
 /**
  * \brief Initialize a heap.
  *
- * \param binheap_in The heap handle to be filled (can be NULL if
- *                    \ref RCSW_DS_NOALLOC_HANDLE not passed).
+ * \param heap_in The heap handle to be filled (can be NULL if
+ *                    \ref RCSW_NOALLOC_HANDLE not passed).
  *
  * \param params Initialization parameters.
  *

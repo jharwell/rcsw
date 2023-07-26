@@ -20,8 +20,8 @@
  * \brief The type of iteration to perform.
  */
 enum ds_iter_type {
-  ekRCSW_DS_ITER_FORWARD,
-  ekRCSW_DS_ITER_BACKWARD,
+  ekITER_FORWARD,
+  ekITER_BACKWARD,
 };
 
 /*******************************************************************************
@@ -46,7 +46,7 @@ struct ds_iterator {
 
   /**
    * Classification function. Used to determine which elements are returned
-   * during iteration for \ref ekRCSW_DS_ITER_CUSTOM;
+   * during iteration if non-NULL.
    */
   bool_t (*classify)(void *e);
 };

@@ -14,6 +14,14 @@
  * Basic Type Definitions
  ******************************************************************************/
 /*
+ * Necessary because (apparently putting __linux__=1 in the PREDEFINED list in
+ * the doxyfile doesn't work with nested #if statements).
+ */
+#if defined(DOXYGEN_DOCUMENTATION_BUILD)
+#define __linux__ 1
+#endif
+
+/*
  * The OS preprocessor macros are defined automatically by the compiler. To see
  * what the default macros for a gcc-like compiler are, issue the command:
  *
@@ -46,6 +54,7 @@ typedef enum {
   true  = 1
 } bool_t;
 
+
 extern uint32_t errno;
 
 #elif defined(__linux__)
@@ -60,10 +69,25 @@ extern uint32_t errno;
 #include <limits.h>
 #include <stdbool.h>
 
+#if defined(DOXYGEN_DOCUMENTATION_BUILD)
+
+#undef true
+#undef false
+
 /**
  * \brief A C boolean type.
+ *
+ * In linux, this is the same as bool; on embedded/baremetal platforms it maybe
+ * defined differently.
  */
+typedef enum {
+  false = 0,
+  true  = 1
+} bool_t;
+#else
 #define bool_t bool
+#endif
+
 
 #else
 #error UNKNOWN OS: __nos__, __linux__ suppored
@@ -73,7 +97,9 @@ extern uint32_t errno;
  * Custom Type Definitions
  ******************************************************************************/
 /**
- * \brief The basic unit of determining if a function has succeeded or not.
+ * \brief A C status type.
+ *
+ * The basic unit of determining if a function has succeeded or not.
  */
 #if defined(OK) || defined(ERROR)
 #undef OK
@@ -85,3 +111,18 @@ typedef enum {
     /** Return this when a function fails. */
     ERROR    = -1,
 } status_t;
+
+
+/**
+ * \brief A runtime exec method switch for SOMETHING.
+ */
+enum exec_type {
+  /**
+   * Use a recursive runtime implementation.
+   */
+  ekEXEC_REC,
+  /**
+   * Use an iterative runtime implementation.
+   */
+  ekEXEC_ITER,
+};

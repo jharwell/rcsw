@@ -38,7 +38,7 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   params.printe = NULL;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_MT_ITEMS;
-  params.nodes = (uint8_t*)malloc(mpool_meta_space(params.max_elts));
+  params.meta = (uint8_t*)malloc(mpool_meta_space(params.max_elts));
   params.elements = (uint8_t*)malloc(mpool_element_space(params.max_elts,
                                                          params.elt_size));
 
@@ -54,7 +54,7 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
     test(&params, n_threads);
   }
 
-  free(params.nodes);
+  free(params.meta);
   free(params.elements);
 } /* test_runner() */
 

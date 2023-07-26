@@ -29,12 +29,10 @@ static void run_test(hashmap_test_t test) {
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
   struct hashmap_params params;
+  memset(&params, 0, sizeof(hashmap_params));
   params.flags = 0;
-  params.cmpe = th::cmpe<T>;
   params.hash = hash_default;
   params.sort_thresh = -1;
-  params.keysize = RCSW_HASHMAP_MAX_KEYSIZE;
-  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);
 
@@ -83,10 +81,10 @@ static void build_test(struct hashmap_params *  params) {
 
   /* attempt to fill hashmap */
   for (i = 0; i < attempts; i++) {
-    char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    char rand_key[RCSW_HASHMAP_KEYSIZE];
+    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = i;
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
     int rval = hashmap_add(map, nodes[i].key, data+i);
 
@@ -138,11 +136,11 @@ static void stats_test(struct hashmap_params *  params) {
   /* fill hashmap */
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
-    char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    char rand_key[RCSW_HASHMAP_KEYSIZE];
+    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T e = g.next();
     struct hashnode n;
-    memcpy(n.key, rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
     /* we don't care how many things are in the hashmap */
     hashmap_add(map, n.key, &e);
@@ -165,10 +163,10 @@ static void linear_probing_test(struct hashmap_params *  params) {
 
   /* fill hashmap */
   for (int i = 0; i < len; i++) {
-    char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    char rand_key[RCSW_HASHMAP_KEYSIZE];
+    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i+1);
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
     CATCH_REQUIRE(hashmap_add(map, nodes[i].key, data+i) == OK);
 
@@ -204,11 +202,11 @@ static void remove_test(struct hashmap_params * params) {
 
   /* attempt to fill hashmap */
   for (i = 0; i < len; i++) {
-    char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    char rand_key[RCSW_HASHMAP_KEYSIZE];
+    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i+1);
 
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
     int rval = hashmap_add(map, nodes[i].key, data+i);
     if (OK != rval) {
@@ -262,11 +260,11 @@ static void print_test(struct hashmap_params *  params) {
   /* fill hashmap */
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
-    char rand_key[RCSW_HASHMAP_MAX_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    char rand_key[RCSW_HASHMAP_KEYSIZE];
+    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T e = g.next();
     struct hashnode n;
-    memcpy(n.key, rand_key, RCSW_HASHMAP_MAX_KEYSIZE);
+    memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
     /* we don't care how many things are in the hashmap */
     hashmap_add(map, n.key, &e);

@@ -32,18 +32,28 @@ struct rdwrlock {
   /** Exclusive access semaphore */
   struct csem access;
 
-  /** semaphore for updating n_readers */
+  /** Semaphore for updating n_readers */
   struct csem read;
 
-  /** # of readers currently accessing resource */
+  /** Number of readers currently accessing resource */
   size_t n_readers;
 
-  /** Configuration flags */
+  /**
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
   uint32_t flags;
 };
 
 /**
- * \brief The scope of privileges requested for something: reading or writing.
+ * \brief The scope of privileges requested for a critical section of code:
+ * reading or writing.
+ *
+ * For use with \ref rdwrlock, in which there can be multiple concurrent readers
+ * OR a single writer in a critical section at a given time.
  */
 enum rdwrlock_scope {
   ekSCOPE_RD,

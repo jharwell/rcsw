@@ -29,10 +29,18 @@
  * - Non-POSIX (not part of POSIX standard for various reasons)
  */
 struct bsem {
-    struct mutex mtx;
-    struct condv cv;
-    bool_t val;
-    uint32_t flags;
+  struct mutex mtx;
+  struct condv cv;
+  bool_t val;
+
+  /**
+   * \brief Configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************

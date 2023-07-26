@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 9)
+set(PROJECT_VERSION_PATCH 10)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -252,6 +252,10 @@ add_compile_definitions(${rcsw_LIBRARY}
 )
 add_compile_definitions(${rcsw_LIBRARY}
   INTERFACE
+  RCSW_ER_PLUGIN_PATH=RCSW_ER_PLUGIN_PATH
+)
+add_compile_definitions(${rcsw_LIBRARY}
+  INTERFACE
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
 )
 
@@ -336,6 +340,7 @@ if(${LIBRA_SUMMARY})
   set(fields
     rcsw_VERSION
     RCSW_ER_PLUGIN
+    RCSW_ER_PLUGIN_PATH
     RCSW_STDIO_GETCHAR
     RCSW_STDIO_PUTCHAR
     RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS
@@ -353,6 +358,7 @@ if(${LIBRA_SUMMARY})
 
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
   message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_ER_PLUGIN}${ColorReset} [RCSW_ER_PLUGIN]")
+  message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_ER_PLUGIN_PATH}${ColorReset} [RCSW_ER_PLUGIN_PATH]")
   message(STATUS "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_GETCHAR}${ColorReset} [RCSW_STDIO_GETCHAR]")
   message(STATUS "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_PUTCHAR}${ColorReset} [RCSW_STDIO_PUTCHAR]")
   message(STATUS "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS}${ColorReset} [RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS]")

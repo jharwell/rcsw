@@ -30,8 +30,10 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
   /* dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix"); */
   /* dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V); */
   struct adj_matrix_params params;
+  memset(&params, 0, sizeof(adj_matrix_params));
   params.flags = 0;
   params.elt_size = sizeof(T);
+  CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -39,7 +41,6 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
     RCSW_NOALLOC_DATA,
   };
 
-  CATCH_REQUIRE(th::ds_init(&params) == OK);
   for (size_t m = 0; m < 2; ++m) {
     for (size_t k = 0; k < 2; ++k) {
       for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {

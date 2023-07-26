@@ -5,8 +5,7 @@
 # First, RCSW_ATTR variadic macros
 tmp=$(cat "$1" | sed -E 's/RCSW_ATTR\((.*)\)/;/g')
 
-# First, RCSW_ATTR_PRINTF variadic macros
-tmp=$(cat "$1" | sed -E 's/RCSW_ATTR_PRINTF\((.*)\)/;/g')
+# Next, RCSW_ATTR_PRINTF variadic macros
+tmp=$(echo "$tmp" | sed -E 's/RCSW_ATTR_PRINTF\((.*)\)/;/g')
 
 echo "$tmp"
-

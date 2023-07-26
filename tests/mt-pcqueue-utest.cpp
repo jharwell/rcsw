@@ -36,7 +36,6 @@ template<typename T>
 static void run_test(pcqueue_test test, size_t n_prod = 1, size_t n_cons = 1) {
   struct pcqueue_params params;
   params.flags = 0;
-  params.cmpe = NULL;
   params.printe = NULL;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_MT_ITEMS * 10;

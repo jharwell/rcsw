@@ -19,7 +19,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct log4cl_frmwk g_log4cl;
+struct log4cl_plugin g_log4cl;
 
 /*******************************************************************************
  * Private Functions
@@ -90,7 +90,7 @@ struct log4cl_module* log4cl_mod_query(uint64_t id) {
   return NULL;
 }
 
-bool_t log4cl_mod_enabled(const struct log4cl_module* module, uint8_t lvl) {
+bool_t log4cl_mod_emit(const struct log4cl_module* module, uint8_t lvl) {
   if (module) {
     return module->lvl >= lvl;
   }

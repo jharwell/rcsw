@@ -22,16 +22,25 @@
  * Type Definitions
  ******************************************************************************/
 /**
- * \brief Wrapper around counting semaphores from various implementations.
+ * \brief Convenience wrapper \ref condv and \ref mutex, because they often used
+ * together.
  *
  * Currently supports:
  *
  * - POSIX
  */
 struct cvm {
-    struct mutex mtx;
-    struct condv cv;
-    uint32_t flags;
+  struct mutex mtx;
+  struct condv cv;
+
+  /**
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************

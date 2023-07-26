@@ -14,7 +14,7 @@
 #include <mpi.h>
 
 #define RCSW_ER_MODNAME "rcsw.mp"
-#define RCSW_ER_MODID M_MULTIPROCESS
+#define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"

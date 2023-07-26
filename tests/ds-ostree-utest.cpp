@@ -37,12 +37,13 @@ int n_elements; /* global var for # elements in RBTREE */
  ******************************************************************************/
 static void run_test(ostree_test_t test) {
   struct bstree_params params;
+  memset(&params, 0, sizeof(bstree_params));
   params.flags = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
   params.elt_size = sizeof(struct element8);
   params.max_elts = TH_NUM_ITEMS;
   params.cmpkey = th::cmpe<element8>;
-
   th::ds_init(&params);
+
   uint32_t flags[] = {
     RCSW_NONE,
     RCSW_NOALLOC_HANDLE,

@@ -70,7 +70,7 @@ status_t cvm_timedwait(struct cvm* const cvm, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cvm, NULL != to);
   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
 
-  RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
+  RCSW_CHECK(OK == time_ts_make_abs(to, &ts));
   RCSW_CHECK(0 == condv_timedwait(&cvm->cv, &cvm->mtx, &ts));
   return OK;
 

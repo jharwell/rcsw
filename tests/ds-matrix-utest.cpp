@@ -31,6 +31,7 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
   /* dbg_mod_lvl_set(M_DS_MATRIX, DBG_V); */
 
   struct matrix_params params;
+  memset(&params, 0, sizeof(matrix_params));
   params.elt_size = sizeof(T);
   params.n_cols = TH_NUM_ITEMS;
   params.n_rows = TH_NUM_ITEMS;

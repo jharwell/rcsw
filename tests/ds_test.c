@@ -27,7 +27,7 @@
 #include "rcsw/utils/utils.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.test"
-#define RCSW_ER_MODID M_TESTING
+#define RCSW_ER_MODID ekLOG4CL_TESTING
 #include "rcsw/er/client.h"
 
 /*******************************************************************************

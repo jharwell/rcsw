@@ -47,7 +47,7 @@
  * Structure Definitions
  ******************************************************************************/
 /**
- * \brief PULSE framework initialization parameters.
+ * \brief PULSE initialization parameters.
  */
 struct pulse_params {
   /**
@@ -66,7 +66,17 @@ struct pulse_params {
   /** Max # of subscribers to a particular packet ID. */
   size_t max_subs;
 
-  /** Configuration flags. */
+  /**
+   * Configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_PULSE_NOALLOC_POOLS
+   * - \ref RCSW_PULSE_ASYNC
+   *
+   * All other flags are ignored.
+   */
   uint32_t flags;
 
   /**
@@ -77,7 +87,7 @@ struct pulse_params {
 };
 
 /**
- * \brief \ref pulse receive queue entry.
+ * \brief PULSE receive queue (RXQ) entry.
  *
  * When a packet is published to the bus, a receive queue entry for the packet
  * is placed in each subscribed receive queue.
@@ -96,6 +106,25 @@ struct pulse_rxq_ent {
   struct mpool *bp;
 };
 
+/**
+ * \brief A reservation which can later be used to publish some data.
+ *
+ * Can be used in 3 ways:
+ *
+ * - Internally when \ref pulse_publish() is called by the API.
+ *
+ * - Received by the application when \ref pulse_publish_reserve() is called,
+ *   and should eventually be passed to \ref
+ *   pulse_publish_release(). Reservation is good indefinitely.
+ *
+ * - Manually created by the application with \ref pulse_rsrvn.data pointing to
+ *   data the application is already filling to avoid the mempy() which happens
+ *   if you just \ref pulse_publish() directly. In this case \ref pulse_rsrvn.bp
+ *   should be NULL.
+ *
+ * All of the pulse_rxq_XX() functions can be used regardless of which way is
+ * chosen.
+ */
 struct pulse_rsrvn {
   /** Pointer to the buffer with the actual data. */
   uint8_t* data;
@@ -103,20 +132,27 @@ struct pulse_rsrvn {
   /** Received packet size in bytes. */
   size_t pkt_size;
 
-  /** The buffer pool entry that the data resides in. */
+  /** The \ref mpool that the actual data resides in. */
   struct mpool *bp;
 };
 
 /**
- * \brief \ref pulse subscription (maps a PID to a rxqueue).
+ * \brief PULSE subscription (maps a PID to an RXQ).
  *
  * Every time a task/thread subscribes to a packet ID, they get an subscription
  * entry, which is inserted into the sorted subscriber array for the pulse
  * instance.
  */
 struct pulse_sub {
-  uint32_t pid;                 /// ID of subscribed packet.
-  struct pcqueue *subscriber;  /// Pointer to receive queue of subscriber.
+  /**
+   * ID of subscribed packet.
+   */
+  uint32_t pid;
+
+  /**
+   * The \ref pcqueue (RXQ) subscriber.
+   */
+  struct pcqueue *subscriber;
 };
 
 /**
@@ -129,19 +165,29 @@ struct pulse {
   /** # buffer pools (static during lifetime). */
   size_t n_pools;
 
-  /** # active receive queues (dynamic during lifetime). */
+  /** Number of active receive queues (dynamic during lifetime). */
   size_t n_rxqs;
 
-  /** Max # of receive queues allowed. */
+  /** Max number of receive queues allowed. */
   size_t max_rxqs;
 
-  /** Max # of subscribers (rxq-pid pairs) allowed. */
+  /** Max number of subscribers (RXQ-pid pairs) allowed. */
   size_t max_subs;
 
   /** Mutex to protect access to bus metadata. */
   struct mutex mutex;
 
-  /** Run-time configuration flags. */
+  /**
+   * Configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_PULSE_NOALLOC_POOLS
+   * - \ref RCSW_PULSE_ASYNC
+   *
+   * All other flags are ignored.
+   */
   uint32_t flags;
 
   /**
@@ -192,15 +238,6 @@ BEGIN_C_DECLS
  * \return The top of the queue, or NULL if no such packet or an error occurred.
  */
 struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue);
-
-static inline size_t pulse_pool_space(size_t elt_size, size_t max_elts) {
-  return mpool_element_space(elt_size, max_elts);
-}
-
-static inline size_t pulse_meta_space(size_t max_elts) {
-  return mpool_meta_space(max_elts);
-}
-
 
 /**
  * \brief Initialize a \ref pulse instance.
@@ -314,10 +351,6 @@ status_t pulse_publish_reserve(struct pulse* pulse,
  * \param pulse The pulse handle.
  *
  * \param pid The packet ID.
- *
- * \param bp The buffer pool entry reserved for the packet, as a result of \ref
- *           pulse_publish_reserve(). Should be NULL if called directly by
- *           application.
  *
  * \param res The space reserved for the packet in a particular buffer
  *            pool. The pointed-to value must have been the result of a

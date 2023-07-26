@@ -24,7 +24,7 @@ BEGIN_C_DECLS
 int bsearch_iter(const void* const a,
                  const void* const e,
                  int (*cmpe)(const void* const e1, const void* const e2),
-                 size_t el_size,
+                 size_t elt_size,
                  int low,
                  int high) {
   RCSW_FPC_NV(-1, NULL != a, NULL != e, NULL != cmpe);
@@ -32,9 +32,9 @@ int bsearch_iter(const void* const a,
   const uint8_t* const arr = a;
   while (low <= high) {
     int index = (low + high) / 2;
-    if (cmpe(arr + (index * el_size), e) == 0) { /* found a match */
+    if (cmpe(arr + (index * elt_size), e) == 0) { /* found a match */
       return (int)index;
-    } else if (cmpe(e, arr + (index * el_size)) < 0) { /* left half */
+    } else if (cmpe(e, arr + (index * elt_size)) < 0) { /* left half */
       high = index - 1;
     } else { /* right half */
       low = index + 1;
@@ -47,7 +47,7 @@ int bsearch_iter(const void* const a,
 int bsearch_rec(const void* const in,
                 const void* const elt,
                 int (*cmpe)(const void* const e1, const void* const e2),
-                size_t el_size,
+                size_t elt_size,
                 int low,
                 int high) {
   RCSW_FPC_NV(-1, NULL != in, NULL != elt, NULL != cmpe);
@@ -62,7 +62,7 @@ int bsearch_rec(const void* const in,
   }
   int mid = (high + low) / 2;
   const uint8_t* const arr = in;
-  int rval = cmpe(elt, arr + (el_size * mid));
+  int rval = cmpe(elt, arr + (elt_size * mid));
 
   if (0 == rval) { /* found a match */
     return mid;
@@ -70,14 +70,14 @@ int bsearch_rec(const void* const in,
     if (low == mid) {
       return -1; /* no match */
     } else {
-      return bsearch_rec(arr, elt, cmpe, el_size, low, mid - 1);
+      return bsearch_rec(arr, elt, cmpe, elt_size, low, mid - 1);
     }
 
   } else { /* upper half */
     if (high == mid) {
       return -1; /* no match */
     } else {
-      return bsearch_rec(arr, elt, cmpe, el_size, mid + 1, high);
+      return bsearch_rec(arr, elt, cmpe, elt_size, mid + 1, high);
     }
   }
 } /* bsearch_rec() */

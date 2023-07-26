@@ -72,7 +72,7 @@ status_t condv_timedwait(struct condv* const cv,
   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
 
   /* Get current time */
-  RCSW_CHECK(OK == time_ts_ref_conv(to, &ts));
+  RCSW_CHECK(OK == time_ts_make_abs(to, &ts));
   RCSW_CHECK(0 == pthread_cond_timedwait(&cv->impl, &mtx->impl, &ts));
   return OK;
 

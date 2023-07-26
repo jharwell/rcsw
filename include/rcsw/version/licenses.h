@@ -131,30 +131,3 @@
   RCSW_XSTR(project) " is licensed under the terms of the MIT LICENSE.\n" \
       RCSW_XSTR(project) " is free software: you are free to change and redistribute it.\n" \
       RCSW_XSTR(project) " comes with no warranty.\n"
-
-/**
- * \def RCSW_LICENSE_FULL_MIT(contractno)
- *
- * \brief The full license notice for SIFT IRAD projects.
- *
- * Note that there is no short version, because I'm not a license person and Im
- * not going to guess what it should be.
- */
-#define RCSW_LICENSE_FULL_SIFT_IRAD(project, contractno, ...)           \
-  "RESTRICTED RIGHTS\n"                                                 \
-  "\n"                                                                  \
-  "Contract No. " RCSW_XSTR(contractno) "\n"                            \
-  "\n"                                                                  \
-  "Smart Information Flow Technologies\n"                               \
-  ""                                                                    \
-  "319 1st Ave N, Suite 400\n"                                          \
-  "Minneapolis, MN 55401-1689\n"                                        \
-  "\n"                                                                  \
-  "The Government's rights to use, modify, reproduce, release, perform, display,\n" \
-  "or disclose this software are restricted by paragraph (b)(3) of the Rights in\n" \
-  "Noncommercial Computer Software and Noncommercial Computer Software\n" \
-  "Documentation clause contained in the above identified contract. Any\n" \
-  "reproduction of computer software or portions thereof marked with this legend\n" \
-  "must also reproduce the markings. Any person, other than the Government, who\n" \
-  "has been provided access to such software must promptly notify the above\n" \
-  "named Contractor.\n"

@@ -15,7 +15,7 @@
 
 #include <math.h>
 
-#define RCSW_ER_MODID M_GRIND
+#define RCSW_ER_MODID ekLOG4CL_GRIND
 #define RCSW_ER_MODNAME "rcsw.grind"
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
@@ -370,7 +370,7 @@ struct grinder* grind_init(const struct grind_params* const params) {
     the_grinder->grindees[i].count = 0;
     the_grinder->grindees[i].tindex = 0;
     the_grinder->grindees[i].full = 0;
-    memset(&the_grinder->grindees[i].domain, 0, sizeof(union grind_domain_impl));
+    memset(&the_grinder->grindees[i].domain, 0, sizeof(union grind_mode_impl));
 
     if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
       the_grinder->grindees[i].domain.tick.first = true;

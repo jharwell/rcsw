@@ -28,8 +28,16 @@
  * - POSIX
  */
 struct csem {
-    sem_t impl;
-    uint32_t flags;
+  sem_t impl;
+
+  /**
+   * Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************

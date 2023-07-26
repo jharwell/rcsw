@@ -27,10 +27,29 @@
 #define RCSW_GRIND_COUNT(the_grinder, name)
 #define RCSW_GRIND_TICK(the_grinder, name)
 #else
-#define RCSW_GRIND_START(the_grinder, name) grind_capture_start(the_grinder, name)
+/**
+ * \brief Compile-time macro for \ref grind_capture_start()
+ */
+#define RCSW_GRIND_START(the_grinder, name) grind_capture_start(the_grinder, \
+                                                                name)
+
+/**
+ * \brief Compile-time macro for \ref grind_capture_end()
+ */
 #define RCSW_GRIND_END(the_grinder, name) grind_capture_end(the_grinder, name)
-#define RCSW_GRIND_COUNT(the_grinder, name) grind_capture_count(the_grinder, name)
+
+
+/**
+ * \brief Compile-time macro for \ref grind_capture_count()
+ */
+#define RCSW_GRIND_COUNT(the_grinder, name) grind_capture_count(the_grinder, \
+                                                                name)
+
+/**
+ * \brief Compile-time macro for \ref grind_capture_tick()
+ */
 #define RCSW_GRIND_TICK(the_grinder, name) grind_capture_tick(the_grinder, name)
+
 #endif
 
 /*******************************************************************************
@@ -54,10 +73,10 @@
 /**
  * \brief Automatically reset statistics for some/all grindees.
  *
- * Behavior with \ref RCSW_GRIND_TIMING_ABS: At the end of the timeout
+ * Behavior with \ref RCSW_GRIND_INTERVAL : At the end of the timeout
  * interval, reset statistics for \p all grindees.
  *
- * Behavior without \ref RCSW_GRIND_TIMING_ABS: once a grindee instance
+ * Behavior without \ref RCSW_GRIND_INTERVAL : once a grindee instance
  * becomes full it will be reset upon the next request to gather stats (other
  * stat instances are not affected).
  *
@@ -67,16 +86,16 @@
 #define RCSW_GRIND_RESET_AUTO (1 << (RCSW_MODFLAGS_START + 1))
 
 /**
- * \brief Automatically Report statistics for a grindee once full to stdout.
+ * \brief Automatically report statistics for a grindee once full to stdout.
  *
  * If not passed: stat gathering on a grindee whose stats are full to block
  * until statistics for that instance are reported unless \ref
- * RCSW_GRIND_AUTO_RESET is passed.
+ * RCSW_GRIND_RESET_AUTO is passed.
  *
  * If both \ref RCSW_GRIND_REPORT_AUTO and \ref RCSW_GRIND_RESET_AUTO are
  * passed, then statistics for a grindee will be reported and then reset, the
  * exact nature of the reset being determined by the presence/absence of
- * \ref RCSW_GRIND_TIMING_ABS.
+ * \ref RCSW_GRIND_INTERVAL.
  */
 #define RCSW_GRIND_REPORT_AUTO (1 << (RCSW_MODFLAGS_START + 2))
 
@@ -90,7 +109,7 @@
  * \note Has no effect on whether or not statistics for a "full" grindee will be
  * reset/reported when full; it only comes into play WHEN the \ref
  * grind_report() function has been called (either automatically if \ref
- * RCSW_GRIND_AUTO_REPORT is passed, or manually by the calling application.
+ * RCSW_GRIND_REPORT_AUTO is passed, or manually by the calling application.
  */
 #define RCSW_GRIND_REPORT_REQ_FULL (1 << (RCSW_MODFLAGS_START + 3))
 
@@ -109,21 +128,19 @@
 #define RCSW_GRIND_REPORT_HISTOGRAM (1 << (RCSW_MODFLAGS_START + 5))
 
 /**
- * \brief Show relative timing percentages within the timeout period.
- *
- * \note This feature is NOT part of the set which will be automatically
- * reported with \ref RCSW_GRIND_REPORT_AUTO.
+ * \brief Max length of all grindee names.
  */
-#define GRIND_REPORT_UTILIZATION (1 << (RCSW_MODFLAGS_START + 6))
-
 #define RCSW_GRINDEE_NAMELEN 32
 
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
+/**
+ * \brief The type of "grinding" to do; sets the domain for a \ref grinder.
+ */
 enum grind_mode {
   /**
-   * Enable usage of \ref grind_count() to capture execution counts.
+   * Enable usage of \ref grind_capture_count() to capture execution counts.
    *
    * All timing related flags are ignored in this mode. All stats must be
    * reported/cleared manually for each grindee.
@@ -131,19 +148,21 @@ enum grind_mode {
   ekRCSW_GRIND_COUNT,
 
   /**
-   * Enable usage of \ref grind_start()/\ref grind_end() to capture duration.
+   * Enable usage of \ref grind_capture_start() / \ref grind_capture_end() to
+   * capture duration.
    *
    * Durations are captured by (end - start) time. Execution counts of the
-   * section between \ref grind_start() and \ref grind_end() are also captured.
+   * section between \ref grind_capture_start() and \ref grind_capture_end() are
+   * also captured.
    */
   ekRCSW_GRIND_DURATION,
 
   /**
-   * Enable usage of \ref grind_start()/\ref grind_end() to capture ticks.
+   * Enable usage of \ref grind_capture_tick() to capture ticks.
    *
    * Ticks are captured by tick= last tick - current time; this is the same as
-   * the period of the thing that is ticking.  Execution counts of the
-   * section between \ref grind_start() and \ref grind_end() are also captured.
+   * the period of the thing that is ticking.  Execution counts of \ref
+   * grind_capture_tick() are also captured.
    */
   ekRCSW_GRIND_PERIOD,
 };
@@ -151,11 +170,6 @@ enum grind_mode {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-union grind_datapoint {
-  size_t value;
-  struct timespec ts;
-};
-
 /**
  * \brief A semantic unit for collecting timing/execution count information.
  *
@@ -186,7 +200,13 @@ struct grindee {
   /** Size of sample table */
   size_t               tsize;
 
-  union grind_domain_impl {
+  /**
+   * \brief Low-level implementation details for \ref grinder.
+   *
+   * There are currently two domains: duration and tick. See \ref grind_mode for
+   * details.
+   */
+  union grind_mode_impl {
     struct {
       /**
        * Temporary variable for holding accumulated execution time.
@@ -200,8 +220,8 @@ struct grindee {
       struct timespec end;
 
       /**
-       * The last call to \ref grind_start() has not yet been followed by a call
-       * to \ref grind_end() (i.e., grinding is in progress).
+       * The last call to \ref grind_capture_start() has not yet been followed
+       * by a call to \ref grind_capture_end() (i.e., grinding is in progress).
        */
       bool_t          active;
     } duration;
@@ -223,9 +243,20 @@ struct grindee {
 
 /** Grinder initialization parameters */
 struct grind_params {
-  char**          names;  /* grindee names */
-  size_t          n_inst;  /* number of grindee names in array */
-  uint32_t        flags; /* configuration flags */
+  /**
+   * Names of grindees
+   */
+  char**          names;
+
+  /**
+   * Number of grindee names in \ref grind_params.names.
+   */
+  size_t          n_inst;
+
+  /**
+   * Configuration flags. See \ref grinder.flags for valid flags.
+   */
+  uint32_t        flags;
   enum grind_mode mode;
 
   /**
@@ -249,9 +280,12 @@ struct grind_params {
   struct timespec (*gettime)(void);
 };
 
-/** Main grinder structure */
+/**
+ * Structure for tracking timing, execution count, etc. information gathered
+ * about a running application.
+ */
 struct grinder {
-  /** What is our mode of opertion? */
+  /** What is our mode of operation? */
   enum grind_mode mode;
 
   /** How many \ref grindee are we managing? */
@@ -269,7 +303,18 @@ struct grinder {
   /** That the timeout interval has begun (timing-related modes only) */
   bool_t                     in_interval;
 
-  /** Configuration flags */
+  /**
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_GRIND_REPORT_DATAPOINTS
+   * - \ref RCSW_GRIND_REPORT_HISTOGRAM
+   * - \ref RCSW_GRIND_REPORT_AUTO
+   * - \ref RCSW_GRIND_REPORT_REQ_FULL
+   * - \ref RCSW_GRIND_RESET_AUTO
+   * - \ref RCSW_GRIND_INTERVAL
+   *
+   * All other flags are ignored.
+   */
   uint32_t                   flags;
 
   struct     grindee         *grindees;
@@ -278,9 +323,9 @@ struct grinder {
   struct     timespec        interval;
 
   /**
-   * Time first call to \ref grind_start() was made. Used for determining
-   * if/when to reset statistics for ALL instances if \ref RCSW_GRIND_INTERVAL
-   * was passed.
+   * Time call to \ref grind_capture_start()/\ref grind_capture_tick() was
+   * made. Used for determining if/when to reset statistics for ALL instances if
+   * \ref RCSW_GRIND_INTERVAL was passed.
    */
   struct  timespec           interval_start;
 
@@ -301,7 +346,7 @@ struct grinder {
  * This function initializes the statistics global data structure to gather
  * statistics on all stat instances encountered during execution.
  *
- * \ref return The initialized module, or NULL if an error occurred.
+ * \return The initialized module, or NULL if an error occurred.
  */
 struct grinder * grind_init(const struct grind_params* const params);
 
@@ -395,7 +440,7 @@ int grind_report_utilization2(const struct grinder * const the_grinder,
                               char * const buf);
 
 /**
- * \brief Reset statistics for all \ref grindees.
+ * \brief Reset statistics for all grindees.
 */
 void grind_reset_all(struct grinder * const the_grinder);
 

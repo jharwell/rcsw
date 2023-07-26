@@ -20,6 +20,8 @@
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/common/common.h"
 
+/* \cond INTERNAL */
+
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
@@ -123,5 +125,7 @@ static inline void putchar_wrapper(char c, void* unused) {
 static inline struct printf_output_gadget gadget_putchar_extern(void) {
   return gadget_init_with_cb(putchar_wrapper, NULL);
 }
+
+/* \endcond */
 
 END_C_DECLS

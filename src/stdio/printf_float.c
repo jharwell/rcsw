@@ -179,7 +179,7 @@ static void print_broken_up_decimal(struct double_components number_,
     }
   }
 
-  out_rev_(output, buf, len, width, flags);
+  out_reversed(output, buf, len, width, flags);
 }
 
 // internal ftoa for fixed decimal floating point
@@ -457,15 +457,15 @@ void print_floating_point(struct printf_output_gadget* output,
 
   /* test for special values */
   if (value != value) {
-    out_rev_(output, "nan", 3, width, flags);
+    out_reversed(output, "nan", 3, width, flags);
     return;
   }
   if (value < -DBL_MAX) {
-    out_rev_(output, "fni-", 4, width, flags);
+    out_reversed(output, "fni-", 4, width, flags);
     return;
   }
   if (value > DBL_MAX) {
-    out_rev_(output,
+    out_reversed(output,
              (flags & FLAGS_PLUS) ? "fni+" : "fni",
              (flags & FLAGS_PLUS) ? 4U : 3U,
              width,

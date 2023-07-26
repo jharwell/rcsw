@@ -29,6 +29,13 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
+/**
+ * \struct inttree
+ *
+ * \brief An interval tree (specialized \ref bstree)
+ *
+ * \copydoc bstree
+ */
 
 /**
  * A simple representation of an interval for use in a \ref inttree.
@@ -59,8 +66,9 @@ struct inttree_node {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
+
 BEGIN_C_DECLS
 /**
  * \brief Determine if an \ref inttree is full.
@@ -97,7 +105,7 @@ static inline size_t inttree_size(const struct bstree* const tree) {
 
 /**
  * \brief Calculate the # of bytes that the \ref inttree will require if \ref
- * RCSW_DS_NOALLOC_DATA is passed to manage a specified # of elements of a
+ * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
  * \param max_elts # of desired elements the tree will hold
@@ -112,7 +120,7 @@ static inline size_t inttree_element_space(size_t max_elts) {
  * \brief Calculate the space needed for the nodes in the \ref inttree, given a
  * max # of elements
  *
- * Used in conjunction with \ref RCSW_DS_NOALLOC_NODES.
+ * Used in conjunction with \ref RCSW_NOALLOC_META.
  *
  * \param max_elts # of desired elements the tree will hold
  *
@@ -122,6 +130,9 @@ static inline size_t inttree_meta_space(size_t max_elts) {
     return bstree_meta_space(max_elts);
 }
 
+/**
+ * \brief \see bstree_insert_internal()
+ */
 static inline status_t inttree_insert(struct bstree* tree,
                                       struct interval_data* interval) {
   return  bstree_insert_internal(tree,
@@ -130,28 +141,37 @@ static inline status_t inttree_insert(struct bstree* tree,
                                  sizeof(struct inttree_node));
 }
 
+/**
+ * \brief \see bstree_init_internal()
+ */
 static inline struct bstree* inttree_init(struct bstree* const tree_in,
                                           const struct bstree_params* const params) {
   return bstree_init_internal(tree_in, params, sizeof(struct inttree_node));
 }
 
+/**
+ * \brief \see bstree_delete()
+ */
 static inline status_t inttree_delete(struct bstree* tree,
                                      struct inttree_node* victim,
                                      void* elt) {
   return bstree_delete(tree, (struct bstree_node*)victim, elt);
 }
 
+/**
+ * \brief \see bstree_remove()
+ */
 static inline status_t inttree_remove(struct bstree* tree, const void* key) {
   return bstree_remove(tree, key);
 }
 
 /*******************************************************************************
- * API Functions
+ * bstree-wrapped functions
  *
  * There are other bstree functions that you can use besides these; however,
  * given that you are using an Interval tree, these are really the only
  * operations you should be doing (besides insert/delete). I don't wrap the
- * bstree API here for that reason.
+ * whole bstree API here for that reason.
  *
  ******************************************************************************/
 

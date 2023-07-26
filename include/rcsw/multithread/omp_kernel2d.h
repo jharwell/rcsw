@@ -24,9 +24,9 @@ BEGIN_C_DECLS
  * \brief Apply a 3x3 kernel to a 2D array once, populating a new output array.
  *
  * \param input The input array.
- * \param stencil The kernel (must be 3x3).
+ * \param kernel The kernel (must be 3x3).
  * \param width Width of 2D array.
- * \param length Length of 2D array.
+ * \param height Length of 2D array.
  * \param output The output array.
  *
  * \return \ref status_t.
