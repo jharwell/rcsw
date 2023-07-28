@@ -140,7 +140,6 @@ static void print_test(struct matrix_params* params) {
 
   matrix = matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
-  matrix_print(matrix);
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
                          params->n_rows * params->n_cols);

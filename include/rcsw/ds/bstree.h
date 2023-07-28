@@ -180,6 +180,7 @@ struct bstree {
    * - \ref RCSW_DS_BSTREE_INT
    * - \ref RCSW_DS_BSTREE_OS
    * - \ref RCSW_DS_BSTREE_RB
+   * - \ref RCSW_ZALLOC
    *
    * All other flags are ignored.
    */
@@ -222,7 +223,7 @@ BEGIN_C_DECLS
  * This should NEVER be called by an application--for internal use only.
  *
  * \param tree_in The BST handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \p params->flags.
+ *                RCSW_NOALLOC_HANDLE passed in \ref bstree_params.flags.
  *
  * \param params Initialization parameters
  *

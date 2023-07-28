@@ -67,6 +67,7 @@ struct fifo {
   /**
    * Run-time configuration parameters. Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    *
@@ -162,8 +163,10 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
 /**
  * \brief Initialize a FIFO.
  *
- * \param fifo_in An application allocated handle for the FIFO. Can be NULL,
- * depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
+ * \param fifo_in An application allocated handle for the FIFO. Cannot be NULL,
+ *                if \ref RCSW_NOALLOC_HANDLE is passed in \ref
+ *                fifo_params.flags.
+ *
  * \param params The initialization parameters.
  *
  * \return The initialized FIFO, or NULL if an error occurred.

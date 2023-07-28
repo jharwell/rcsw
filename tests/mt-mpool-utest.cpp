@@ -34,8 +34,6 @@ template<typename T>
 static void run_test(mpool_test test, size_t n_threads = 1) {
   struct mpool_params params;
   params.flags = 0;
-  params.cmpe = NULL;
-  params.printe = NULL;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_MT_ITEMS;
   params.meta = (uint8_t*)malloc(mpool_meta_space(params.max_elts));

@@ -14,6 +14,7 @@
 #define RCSW_ER_MODNAME "rcsw.mp"
 #define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Structure Definitions
@@ -42,7 +43,10 @@ mpi_spmv_mult_init(const struct mpi_spmv_mult_params* const params) {
   ER_DEBUG("Initializing sparse matrix -> vector multiplier");
 
   /* All MPI processes perform the same basic initialization */
-  struct mpi_spmv_mult* mult = malloc(sizeof(struct mpi_spmv_mult));
+  struct mpi_spvm_mult* mult = rcsw_alloc(NULL,
+                                          sizeof(struct mpi_spvm_mult),
+                                          RCSW_NONE);
+
   RCSW_CHECK_PTR(mult);
 
   mult->matrix = params->matrix;
@@ -66,16 +70,24 @@ mpi_spmv_mult_init(const struct mpi_spmv_mult_params* const params) {
     /* To make dividing up the work easy  */
     RCSW_CHECK(csmatrix_n_cols(mult->matrix) % mult->mpi_world_size == 0);
 
-    mult->rank_alloc_elts = calloc(mult->mpi_world_size, sizeof(int));
+    mult->rank_alloc_elts = rcsw_alloc(NULL,
+                                       mult->mpi_world_size * sizeof(int),
+                                       RCSW_ZALLOC);
     RCSW_CHECK_PTR(mult->rank_alloc_elts);
 
-    mult->rank_alloc_rows = calloc(mult->mpi_world_size, sizeof(int));
+    mult->rank_alloc_rows = rcsw_alloc(NULL,
+                                       mult->mpi_world_size * sizeof(int),
+                                       RCSW_ZALLOC);
     RCSW_CHECK_PTR(mult->rank_alloc_rows);
 
-    mult->rank_alloc_row_prefix_sums = calloc(mult->n_rows_init, sizeof(int));
+    mult->rank_alloc_prefix_sums = rcsw_alloc(NULL,
+                                              mult->mpi_world_size * sizeof(int),
+                                              RCSW_ZALLOC);
     RCSW_CHECK_PTR(mult->rank_alloc_row_prefix_sums);
 
-    mult->row_sizes = calloc(mult->n_rows_init, sizeof(int));
+    mult->row_sizes = rcsw_alloc(NULL,
+                                 mult->n_rows_init * sizeof(int),
+                                 RCSW_ZALLOC);
     RCSW_CHECK_PTR(mult->row_sizes);
   } else {
     mult->rank_alloc_elts = NULL;

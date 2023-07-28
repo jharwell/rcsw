@@ -92,10 +92,12 @@ struct mpool {
   /**
    * Run time configuration flags. Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    * - \ref RCSW_NOALLOC_META
    *
+   * All other flags are ignored.
    */
   uint32_t          flags;
 };

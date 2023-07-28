@@ -20,6 +20,7 @@
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/time.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Macros
@@ -334,7 +335,8 @@ static struct timespec grind_gettime(void) {
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-struct grinder* grind_init(const struct grind_params* const params) {
+struct grinder* grind_init(struct grinder* grind_in,
+                           const struct grind_params* const params) {
   RCSW_FPC_NV(NULL,
               NULL != params,
               NULL != params->names,
@@ -343,7 +345,9 @@ struct grinder* grind_init(const struct grind_params* const params) {
 
   RCSW_ER_MODULE_INIT();
 
-  struct grinder* the_grinder = malloc(sizeof(struct grinder));
+  struct grinder* the_grinder = rcsw_alloc(grind_in,
+                                           sizeof(struct grinder),
+                                           params->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(the_grinder);
 
   the_grinder->interval = params->interval;
@@ -356,12 +360,16 @@ struct grinder* grind_init(const struct grind_params* const params) {
                                                    : grind_gettime;
 
   /* the array of grindees */
-  the_grinder->grindees = calloc(params->n_inst, sizeof(struct grindee));
+  the_grinder->grindees = rcsw_alloc(NULL,
+                                     params->n_inst * sizeof(struct grindee),
+                                     RCSW_NONE);
   RCSW_CHECK_PTR(the_grinder->grindees);
 
   /* initialize the table for each grindee */
   for (size_t i = 0; i < params->n_inst; ++i) {
-    the_grinder->grindees[i].table = calloc(params->tsize, sizeof(size_t));
+    the_grinder->grindees[i].table = rcsw_alloc(NULL,
+                                                params->tsize * sizeof(size_t),
+                                                RCSW_NONE);
     RCSW_CHECK_PTR(the_grinder->grindees[i].table);
     snprintf(the_grinder->grindees[i].name,
              sizeof(the_grinder->grindees[i].name),
@@ -399,14 +407,14 @@ void grind_destroy(struct grinder* the_grinder) {
 
   /* free each grindee's table */
   for (size_t i = 0; i < the_grinder->n_inst; i++) {
-    free(the_grinder->grindees[i].table);
+    rcsw_free(the_grinder->grindees[i].table, RCSW_NONE);
   } /* for() */
 
   /* free array of grindees */
-  free(the_grinder->grindees);
+  rcsw_free(the_grinder->grindees, RCSW_NONE);
 
   /* free grinder structure */
-  free(the_grinder);
+  rcsw_free(the_grinder, the_grinder->flags & RCSW_NOALLOC_HANDLE);
 
   return;
 } /* grind_destroy() */

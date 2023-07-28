@@ -16,6 +16,7 @@
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/rcsw.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -27,15 +28,12 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
+  struct mpool* the_pool = rcsw_alloc(pool_in,
+                                      sizeof(struct mpool),
+                                      params->flags & RCSW_NOALLOC_HANDLE);
 
-  struct mpool* the_pool = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(pool_in);
-    the_pool = pool_in;
-  } else {
-    the_pool = calloc(1, sizeof(struct mpool));
-    RCSW_CHECK_PTR(the_pool);
-  }
+  RCSW_CHECK_PTR(the_pool);
+
   the_pool->flags = params->flags;
   the_pool->elt_size = params->elt_size;
   the_pool->max_elts = params->max_elts;
@@ -45,44 +43,41 @@ struct mpool* mpool_init(struct mpool* const pool_in,
           the_pool->max_elts,
           the_pool->elt_size);
 
-  if (params->flags & RCSW_NOALLOC_DATA) {
-    RCSW_CHECK_PTR(params->elements);
-    the_pool->elements = params->elements;
-  } else {
-    the_pool->elements = calloc(params->max_elts, params->elt_size);
-    RCSW_CHECK_PTR(the_pool->elements);
-  }
+  /* allocate space for pool elements */
+  the_pool->elements = rcsw_alloc(params->elements,
+                                  params->max_elts * params->elt_size,
+                                  params->flags & RCSW_NOALLOC_DATA);
+  RCSW_CHECK_PTR(the_pool->elements);
 
-  if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->meta);
-    the_pool->nodes = (struct llist_node*)params->meta;
-  } else {
-    the_pool->nodes = calloc(params->max_elts, sizeof(struct llist_node));
-    RCSW_CHECK_PTR(the_pool->nodes);
-  }
-
+  /* allocate space for free/alloc list nodes */
+  the_pool->nodes = rcsw_alloc(params->meta,
+                               llist_meta_space(params->max_elts) * 2,
+                               params->flags & RCSW_NOALLOC_META);
+  RCSW_CHECK_PTR(the_pool->nodes);
 
   struct llist_params llist_params = {
     .max_elts = params->max_elts,
     .elt_size = params->elt_size,
     .cmpe = NULL,
-    .meta = params->meta,
+    .meta = (uint8_t*)the_pool->nodes,
     .flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
-             RCSW_NOALLOC_HANDLE | (params->flags & RCSW_NOALLOC_META),
+             RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META,
   };
 
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
-  llist_params.meta = params->meta + llist_meta_space(params->max_elts);
+  llist_params.meta = ((uint8_t*)the_pool->nodes) + llist_meta_space(params->max_elts);
   RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
 
-  for (size_t i = 0; i < (size_t)params->max_elts; ++i) {
+  for (size_t i = 0; i < the_pool->max_elts; ++i) {
     RCSW_CHECK(OK == llist_append(&the_pool->free,
                                   the_pool->elements + i * the_pool->elt_size));
   } /* for() */
 
   /* initialize reference counting */
-  the_pool->refs = calloc(the_pool->max_elts, sizeof(int));
+  the_pool->refs = rcsw_alloc(NULL,
+                              params->max_elts * sizeof(int),
+                              RCSW_ZALLOC);
   RCSW_CHECK_PTR(the_pool->refs);
 
   /* initialize locks */
@@ -108,18 +103,11 @@ void mpool_destroy(struct mpool* const the_pool) {
   llist_destroy(&the_pool->free);
   llist_destroy(&the_pool->alloc);
 
-  if (!(the_pool->flags & RCSW_NOALLOC_DATA)) {
-    free(the_pool->elements);
-  }
-  if (!(the_pool->flags & RCSW_NOALLOC_META)) {
-    free(the_pool->nodes);
-  }
-  if (the_pool->refs) {
-    free(the_pool->refs);
-  }
-  if (!(the_pool->flags & RCSW_NOALLOC_HANDLE)) {
-    free(the_pool);
-  }
+  rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(the_pool->nodes, the_pool->flags & RCSW_NOALLOC_META);
+
+  rcsw_free(the_pool->refs, RCSW_NONE);
+  rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
 } /* mpool_destroy() */
 
 uint8_t* mpool_req(struct mpool* const the_pool) {

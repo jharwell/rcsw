@@ -14,15 +14,13 @@
 #define RCSW_ER_MODNAME "rcsw.ds.matrix"
 #define RCSW_ER_MODID ekLOG4CL_DS_MATRIX
 #include "rcsw/er/client.h"
-
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
-BEGIN_C_DECLS
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 struct matrix* matrix_init(struct matrix* const matrix_in,
                            const struct matrix_params* const params) {
   RCSW_FPC_NV(NULL,
@@ -31,26 +29,20 @@ struct matrix* matrix_init(struct matrix* const matrix_in,
               params->n_cols > 0)
   RCSW_ER_MODULE_INIT();
 
-  struct matrix* matrix = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(matrix_in);
-    matrix = matrix_in;
-  } else {
-    matrix = malloc(sizeof(struct matrix));
-    RCSW_CHECK_PTR(matrix);
-  }
+  struct matrix* matrix = rcsw_alloc(matrix_in,
+                                     sizeof(struct matrix),
+                                     params->flags & RCSW_NOALLOC_HANDLE);
+  RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
   matrix->elt_size = params->elt_size;
   matrix->printe = params->printe;
   matrix->n_rows = params->n_rows;
   matrix->n_cols = params->n_cols;
 
-  if (matrix->flags & RCSW_NOALLOC_DATA) {
-    matrix->elements = params->elements;
-  } else {
-    matrix->elements = calloc(matrix->n_rows * matrix->n_cols,
-                              matrix->elt_size);
-  }
+  matrix->elements = rcsw_alloc(params->elements,
+                                params->n_rows * params->n_cols * params->elt_size,
+                                params->flags & RCSW_NOALLOC_DATA);
+
   RCSW_CHECK_PTR(matrix->elements);
   return matrix;
 
@@ -62,12 +54,8 @@ error:
 void matrix_destroy(struct matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
 
-  if (!(matrix->flags & RCSW_NOALLOC_DATA)) {
-    free(matrix->elements);
-  }
-  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
-    free(matrix);
-  }
+  rcsw_free(matrix->elements, matrix->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
 } /* matrix_destroy() */
 
 status_t matrix_transpose(struct matrix* const matrix) {

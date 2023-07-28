@@ -15,7 +15,7 @@
 #define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
-
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -60,18 +60,15 @@ struct binheap* binheap_init(struct binheap* heap_in,
               NULL != params->cmpe);
   RCSW_ER_MODULE_INIT();
 
-  struct binheap* heap = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(heap_in);
-    heap = heap_in;
-  } else {
-    heap = malloc(sizeof(struct binheap));
-    RCSW_CHECK_PTR(heap);
-  }
+  struct binheap* heap = rcsw_alloc(heap_in,
+                                    sizeof(struct binheap),
+                                    params->flags & RCSW_NOALLOC_HANDLE);
+  RCSW_CHECK_PTR(heap);
+
   heap->flags = params->flags;
 
   struct darray_params dparams = {
-      /* +1 is for the tmp element at index 0 */
+    /* +1 is for the tmp element at index 0 */
     .init_size =
     RCSW_MAX((size_t)1, params->init_size + 1),
       .printe = params->printe,
@@ -103,9 +100,8 @@ error:
 void binheap_destroy(struct binheap* heap) {
   RCSW_FPC_V(NULL != heap);
   darray_destroy(&heap->arr);
-  if (!(heap->flags & RCSW_NOALLOC_HANDLE)) {
-    free(heap);
-  }
+
+  rcsw_free(heap, heap->flags & RCSW_NOALLOC_HANDLE);
 } /* binheap_destroy() */
 
 status_t binheap_insert(struct binheap* const heap, const void* const e) {

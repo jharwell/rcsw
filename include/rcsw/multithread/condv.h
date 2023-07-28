@@ -34,6 +34,7 @@ struct condv {
   /**
    * Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    *
    * All other flags are ignored.

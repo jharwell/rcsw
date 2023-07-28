@@ -76,6 +76,7 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
     free(bus_params.pools[i].elements);
     free(bus_params.pools[i].meta);
   } /* for() */
+  free(bus_params.pools);
 
   RCSW_ER_DEINIT();
 } /* test_runner() */

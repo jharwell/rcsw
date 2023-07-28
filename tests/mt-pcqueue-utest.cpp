@@ -224,7 +224,11 @@ void timeout_test(const struct pcqueue_params* const params,
                        if (OK == pcqueue_push(q, &e)) {
                          ++count;
                        }
-                       if (count >= TH_NUM_MT_ITEMS * n_cons) {
+                       /*
+                        * Purposely don't push enough items so that all
+                        * consumers get the # they are trying to get.
+                        */
+                       if (count >= TH_NUM_MT_ITEMS) {
                          break;
                        }
                      } /* for(i..) */

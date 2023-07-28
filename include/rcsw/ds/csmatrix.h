@@ -91,7 +91,7 @@ struct csmatrix {
   size_t n_rows;
 
   /**
-   * Initial number of columns in the matrix
+   * Initial number of columns in the matrix.
    */
   size_t n_cols;
 
@@ -101,7 +101,17 @@ struct csmatrix {
   size_t n_nz_elts;
 
   /**
-   * Configuration flags. See \ref csmatrix.flags for valid flags.
+   * Number of unique indices in the inner indices array.
+   */
+  size_t n_eff_cols;
+
+  /**
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_ZALLOC
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 

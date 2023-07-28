@@ -19,6 +19,7 @@
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -48,7 +49,9 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, NULL != params->data, params->base > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct omp_radix_sorter* sorter = malloc(sizeof(struct omp_radix_sorter));
+  struct omp_radix_sorter* sorter = rcsw_alloc(NULL,
+                                               sizeof(struct omp_radix_sorter),
+                                               RCSW_NONE);
   RCSW_CHECK_PTR(sorter);
 
   sorter->n_elts = params->n_elts;
@@ -62,9 +65,13 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
    * Allocate memory. Make the FIFOs use a contiguous chunk of memory, rather
    * than each malloc()ing their own, to improve cache efficiency.
    */
-  sorter->bins = malloc(sizeof(struct fifo) * sorter->n_threads * sorter->base);
+  sorter->bins = rcsw_alloc(NULL,
+                            sizeof(struct fifo) * sorter->n_threads * sorter->base,
+                            RCSW_NONE);
   RCSW_CHECK_PTR(sorter->bins);
-  sorter->data = malloc(sizeof(size_t) * sorter->n_elts);
+  sorter->data = rcsw_alloc(NULL,
+                            sizeof(size_t) * sorter->n_elts,
+                            RCSW_NONE);
   RCSW_CHECK_PTR(sorter->data);
 
   struct fifo_params impl_params = { .elt_size = sizeof(size_t),
@@ -78,7 +85,9 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
     } /* for(j..) */
   } /* for(i..) */
 
-  sorter->cum_prefix_sums = malloc(sizeof(size_t) * sorter->base * sorter->n_threads);
+  sorter->cum_prefix_sums = rcsw_alloc(NULL,
+                                       sizeof(size_t) * sorter->base * sorter->n_threads,
+                                       RCSW_NONE);
   RCSW_CHECK_PTR(sorter->cum_prefix_sums);
 
   /* perform first touch allocation */

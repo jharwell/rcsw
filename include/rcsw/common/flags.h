@@ -51,10 +51,21 @@
  */
 #define RCSW_NOALLOC_META 0x4
 
+/**
+ * \brief Declare that any allocated space, regardless of where it comes from,
+ * should be zeroed before use.
+ *
+ * Applies to all modules which do memory allocation via \ref rcsw_alloc().
+ *
+ * If dynamic memory allocation is allowed, this causes it to use calloc()
+ * instead of malloc(). It memory allocation is disallowed, then provided
+ * application-allocated memory will be zeroed via memset().
+ */
+#define RCSW_ZALLOC 0x8
 
 /**
  * \brief Used by modules in RCSW to start their list of bitmask flags
  *
  * Prevents conflicts with common flags broadly applicable everywhere.
  */
-#define RCSW_MODFLAGS_START (3)
+#define RCSW_MODFLAGS_START (4)

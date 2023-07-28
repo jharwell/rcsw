@@ -21,12 +21,16 @@
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/*******************************************************************************
+ * Static Functions
+ ******************************************************************************/
 /**
  * \brief Increase the capacity of a darray by a set amount
  *
@@ -35,7 +39,30 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t.
  */
-static status_t darray_extend(struct darray* arr, size_t size);
+static status_t darray_extend(struct darray* const arr, size_t size) {
+  if (arr->flags & RCSW_NOALLOC_DATA) {
+    ER_ERR("Cannot extend array: RCSW_NOALLOC_DATA");
+    errno = EAGAIN;
+    return ERROR;
+  }
+
+  size_t old_size = size;
+  arr->capacity = size;
+
+  /* use tmp var to preserve orignal list in case of failure */
+  void* tmp = NULL;
+  tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
+
+  RCSW_CHECK_PTR(tmp);
+  arr->elements = tmp;
+
+  return OK;
+
+error:
+  errno = ENOMEM;
+  arr->capacity = old_size;
+  return ERROR;
+} /* darray_extend() */
 
 /**
  * \brief Halve the size of an darray
@@ -52,7 +79,31 @@ static status_t darray_extend(struct darray* arr, size_t size);
  *
  * \return \ref status_t
  */
-static status_t darray_shrink(struct darray* arr, size_t size);
+static status_t darray_shrink(struct darray* const arr, size_t size) {
+  RCSW_FPC_NV(ERROR, arr != NULL);
+
+  size_t old_size = arr->capacity;
+  arr->capacity = size;
+
+  if (arr->capacity > 0) {
+    ER_CHECK(!(arr->flags & RCSW_NOALLOC_DATA),
+             "Cannot shrink array: RCSW_NOALLOC_DATA");
+    void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
+    RCSW_CHECK_PTR(tmp);
+    arr->elements = tmp;
+    arr->current = RCSW_MIN(arr->capacity - 1, arr->current);
+  } else { /* the array has become empty--don't free() the array */
+    arr->current = 0;
+  }
+
+  return OK;
+
+error:
+  errno = EAGAIN;
+  arr->capacity = old_size;
+  return ERROR;
+} /* darray_shrink() */
+
 
 /*******************************************************************************
  * API Functions
@@ -64,31 +115,32 @@ struct darray* darray_init(struct darray* arr_in,
               params->elt_size > 0,
               params->max_elts != 0);
 
-  struct darray* arr = NULL;
-
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    arr = arr_in;
-  } else {
-    arr = malloc(sizeof(struct darray));
-  }
+  struct darray* arr = rcsw_alloc(arr_in,
+                                  sizeof(struct darray),
+                                  params->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(arr);
   arr->flags = params->flags;
   arr->elements = NULL;
 
   if (params->flags & RCSW_NOALLOC_DATA) {
-    RCSW_CHECK_PTR(params->elements);
-    RCSW_CHECK(params->max_elts > 0);
-    arr->elements = params->elements;
+    arr->elements = rcsw_alloc(params->elements,
+                               params->init_size * params->elt_size,
+                               params->flags & RCSW_NOALLOC_DATA);
     arr->capacity = params->max_elts;
   } else {
     RCSW_CHECK(-1 == params->max_elts ||
                params->init_size < (size_t)params->max_elts);
     arr->capacity = params->init_size;
-    arr->elements = NULL;
     if (arr->capacity > 0) {
-      arr->elements = calloc(params->init_size, params->elt_size);
+      arr->elements = rcsw_alloc(params->elements,
+                                 params->init_size * params->elt_size,
+                                 RCSW_NONE);
     }
   }
+  /*
+   * Don't check arr->elements because it's fine to init with an initial
+   * capacity of 0
+   */
   arr->max_elts = params->max_elts;
 
   /*
@@ -128,13 +180,8 @@ void darray_destroy(struct darray* arr) {
    * is undefined, but, you know, defensive programming...)
    */
   arr->current = 0;
-  if (arr->elements && !(arr->flags & RCSW_NOALLOC_DATA)) {
-    free(arr->elements);
-    arr->elements = NULL;
-  }
-  if (!(arr->flags & RCSW_NOALLOC_HANDLE)) {
-    free(arr);
-  }
+  rcsw_free(arr->elements, arr->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(arr, arr->flags & RCSW_NOALLOC_HANDLE);
 } /* darray_destroy() */
 
 status_t darray_clear(struct darray* const arr) {
@@ -438,57 +485,5 @@ status_t darray_inject(const struct darray* const arr,
   return OK;
 } /* darray_inject() */
 
-/*******************************************************************************
- * Static Functions
- ******************************************************************************/
-static status_t darray_extend(struct darray* const arr, size_t size) {
-  if (arr->flags & RCSW_NOALLOC_DATA) {
-    ER_ERR("Cannot extend array: RCSW_NOALLOC_DATA");
-    errno = EAGAIN;
-    return ERROR;
-  }
-
-  size_t old_size = size;
-  arr->capacity = size;
-
-  /* use tmp var to preserve orignal list in case of failure */
-  void* tmp = NULL;
-  tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
-
-  RCSW_CHECK_PTR(tmp);
-  arr->elements = tmp;
-
-  return OK;
-
-error:
-  errno = ENOMEM;
-  arr->capacity = old_size;
-  return ERROR;
-} /* darray_extend() */
-
-static status_t darray_shrink(struct darray* const arr, size_t size) {
-  RCSW_FPC_NV(ERROR, arr != NULL);
-
-  size_t old_size = arr->capacity;
-  arr->capacity = size;
-
-  if (arr->capacity > 0) {
-    ER_CHECK(!(arr->flags & RCSW_NOALLOC_DATA),
-             "Cannot shrink array: RCSW_NOALLOC_DATA");
-    void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
-    RCSW_CHECK_PTR(tmp);
-    arr->elements = tmp;
-    arr->current = RCSW_MIN(arr->capacity - 1, arr->current);
-  } else { /* the array has become empty--don't free() the array */
-    arr->current = 0;
-  }
-
-  return OK;
-
-error:
-  errno = EAGAIN;
-  arr->capacity = old_size;
-  return ERROR;
-} /* darray_shrink() */
 
 END_C_DECLS

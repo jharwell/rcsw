@@ -14,6 +14,7 @@
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/time.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -21,12 +22,10 @@
 BEGIN_C_DECLS
 
 struct cvm* cvm_init(struct cvm* const cvm_in, uint32_t flags) {
-  struct cvm* cvm = NULL;
-  if (flags & RCSW_NOALLOC_HANDLE) {
-    cvm = cvm_in;
-  } else {
-    cvm = calloc(1, sizeof(struct cvm));
-  }
+  struct cvm* cvm = rcsw_alloc(cvm_in,
+                               sizeof(struct cvm),
+                               flags & RCSW_NOALLOC_HANDLE);
+
   RCSW_CHECK_PTR(cvm);
   cvm->flags = flags;
 
@@ -44,10 +43,9 @@ void mt_cvm_destroy(struct cvm* const cvm) {
 
   condv_destroy(&cvm->cv);
   mutex_destroy(&cvm->mtx);
-  if (!(cvm->flags & RCSW_NOALLOC_HANDLE)) {
-    free(cvm);
-  }
+  rcsw_free(cvm, cvm->flags & RCSW_NOALLOC_HANDLE);
 } /* mt_cvm_destroy() */
+
 status_t cvm_signal(struct cvm* const cvm) {
   RCSW_FPC_NV(ERROR, NULL != cvm);
   RCSW_CHECK(0 == condv_signal(&cvm->cv));

@@ -71,6 +71,7 @@ struct pulse_params {
    *
    * Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_PULSE_NOALLOC_POOLS
    * - \ref RCSW_PULSE_ASYNC

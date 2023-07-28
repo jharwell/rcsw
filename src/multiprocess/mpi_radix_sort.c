@@ -19,6 +19,7 @@
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -47,7 +48,10 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
   RCSW_ER_MODULE_INIT();
 
   /* All MPI processes perform the same basic initialization */
-  struct mpi_radix_sorter* sorter = malloc(sizeof(struct mpi_radix_sorter));
+  struct mpi_radix_sorter* sorter = rcsw_alloc(NULL,
+                                               sizeof(struct mpi_radix_sorter),
+                                               RCSW_NONE);
+
   RCSW_CHECK_PTR(sorter);
   sorter->n_elts = params->n_elts;
   sorter->base = params->base;
@@ -62,17 +66,25 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
    * Allocate memory. The master needs more space for the prefix sums,
    * because it has to receive ALL prefix sums from workers
    */
-  sorter->prefix_sums = malloc(sizeof(size_t) * (sorter->base + 1));
+  sorter->prefix_sums = rcsw_alloc(NULL,
+                                   sizeof(size_t) * (sorter->base + 1),
+                                   RCSW_NONE);
   RCSW_CHECK_PTR(sorter->prefix_sums);
 
-  sorter->tmp_arr = malloc(sizeof(size_t) * sorter->n_elts);
+  sorter->tmp_arr = rcsw_alloc(NULL,
+                               sizeof(size_t) * (sorter->n_elts),
+                               RCSW_NONE);
   RCSW_CHECK_PTR(sorter->tmp_arr);
 
-  sorter->cum_prefix_sums = malloc(sizeof(size_t) * sorter->mpi_world_size * 2);
+  sorter->cum_prefix_sums = rcsw_alloc(NULL,
+                                       sizeof(size_t) * sorter->mpi_world_size * 2,
+                                       RCSW_NONE);
   RCSW_CHECK_PTR(sorter->cum_prefix_sums);
 
   sorter->cum_data = params->data;
-  sorter->data = malloc(sizeof(size_t) * sorter->chunk_size);
+  sorter->data = rcsw_alloc(NULL,
+                            sizeof(size_t) * chunk_size,
+                            RCSW_NONE);
   RCSW_CHECK_PTR(sorter->data);
 
   ER_DEBUG("Rank %d: n_elts=%zu chunk_size=%zu base=%zu world_size=%d",

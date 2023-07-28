@@ -15,6 +15,7 @@
 #define RCSW_ER_MODID ekLOG4CL_PULSE
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Private Functions
@@ -75,15 +76,11 @@ struct pulse* pulse_init(struct pulse* pulse_in,
   RCSW_FPC_NV(NULL, params != NULL);
   RCSW_ER_MODULE_INIT();
 
-  struct pulse* pulse = NULL;
+  struct pulse* pulse = rcsw_alloc(pulse_in,
+                                   sizeof(struct pulse),
+                                   params->flags & RCSW_NOALLOC_HANDLE);
 
-  /* initialize software bus */
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(pulse_in);
-    pulse = pulse_in;
-  } else {
-    pulse = calloc(1, sizeof(struct pulse));
-  }
+  RCSW_CHECK_PTR(pulse);
   RCSW_CHECK_PTR(mutex_init(&pulse->mutex, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(rdwrl_init(&pulse->syncl, RCSW_NOALLOC_HANDLE));
 
@@ -99,7 +96,10 @@ struct pulse* pulse_init(struct pulse* pulse_in,
   ER_DEBUG("Initializing %zu buffer pools", pulse->n_pools);
 
   /* initialize buffer pools */
-  pulse->pools = calloc(pulse->n_pools, sizeof(struct mpool));
+  pulse->pools = rcsw_alloc(NULL,
+                            pulse->n_pools * sizeof(struct mpool),
+                            RCSW_NONE);
+
   RCSW_CHECK_PTR(pulse->pools);
 
   for (size_t i = 0; i < pulse->n_pools; i++) {
@@ -113,7 +113,10 @@ struct pulse* pulse_init(struct pulse* pulse_in,
        pulse->max_subs);
 
   /* Allocate receive queues */
-  pulse->rxqs = calloc(pulse->max_rxqs, sizeof(struct pcqueue));
+  pulse->rxqs = rcsw_alloc(NULL,
+                           pulse->max_rxqs * sizeof(struct pcqueue),
+                            RCSW_NONE);
+
   RCSW_CHECK_PTR(pulse->rxqs);
 
   /* Initialize subscriber list */
@@ -139,18 +142,18 @@ void pulse_destroy(struct pulse* pulse) {
     for (size_t i = 0; i < pulse->n_pools; ++i) {
       mpool_destroy(&pulse->pools[i]);
     } /* for(i..) */
-    free(pulse->pools);
+    rcsw_free(pulse->pools, RCSW_NONE);
   }
   if (pulse->rxqs) {
     for (size_t i = 0; i < pulse->n_rxqs; ++i) {
       pcqueue_destroy(&pulse->rxqs[i]);
     } /* for(i..) */
-    free(pulse->rxqs);
+    rcsw_free(pulse->rxqs, RCSW_NONE);
   }
-
-  if (!(pulse->flags & RCSW_NOALLOC_HANDLE)) {
-    free(pulse);
+  if (pulse->subscribers) {
+    llist_destroy(pulse->subscribers);
   }
+  rcsw_free(pulse, pulse->flags & RCSW_NOALLOC_HANDLE);
 } /* pulse_destroy() */
 
 status_t pulse_publish(struct pulse* pulse,

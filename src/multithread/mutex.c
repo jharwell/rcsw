@@ -13,6 +13,7 @@
 
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -20,12 +21,9 @@
 BEGIN_C_DECLS
 
 struct mutex* mutex_init(struct mutex* mutex_in, uint32_t flags) {
-  struct mutex* mutex = NULL;
-  if (flags & RCSW_NOALLOC_HANDLE) {
-    mutex = mutex_in;
-  } else {
-    mutex = calloc(1, sizeof(struct mutex));
-  }
+  struct mutex* mutex = rcsw_alloc(mutex_in,
+                                   sizeof(struct mutex),
+                                   flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(mutex);
   mutex->flags = flags;
@@ -41,9 +39,7 @@ void mutex_destroy(struct mutex* mutex) {
   RCSW_FPC_V(NULL != mutex);
 
   pthread_mutex_destroy(&mutex->impl);
-  if (!(mutex->flags & RCSW_NOALLOC_HANDLE)) {
-    free(mutex);
-  }
+  rcsw_free(mutex, mutex->flags & RCSW_NOALLOC_HANDLE);
 } /* mutex_destroy() */
 
 status_t mutex_lock(struct mutex* mutex) {

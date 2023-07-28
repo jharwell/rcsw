@@ -14,6 +14,7 @@
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -21,12 +22,9 @@
 BEGIN_C_DECLS
 
 struct condv* condv_init(struct condv* const cv_in, uint32_t flags) {
-  struct condv* cv = NULL;
-  if (flags & RCSW_NOALLOC_HANDLE) {
-    cv = cv_in;
-  } else {
-    cv = calloc(1, sizeof(struct condv));
-  }
+  struct condv* cv = rcsw_alloc(cv_in,
+                                sizeof(struct condv),
+                                flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(cv);
   cv->flags = flags;
 
@@ -42,9 +40,7 @@ void condv_destroy(struct condv* const cv) {
   RCSW_FPC_V(NULL != cv);
 
   pthread_cond_destroy(&cv->impl);
-  if (!(cv->flags & RCSW_NOALLOC_HANDLE)) {
-    free(cv);
-  }
+  rcsw_free(cv, cv->flags & RCSW_NOALLOC_HANDLE);
 } /* condv_destroy() */
 
 status_t condv_signal(struct condv* const cv) {

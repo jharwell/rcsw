@@ -458,6 +458,7 @@ static void print_test(int len, struct darray_params *params) {
   }
 
   darray_print(nullptr);
+  darray_destroy(_arr);
 } /* print_test() */
 
 /*******************************************************************************

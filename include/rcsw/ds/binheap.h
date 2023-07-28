@@ -108,6 +108,7 @@ struct binheap {
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    * - \ref RCSW_DS_BINHEAP_MIN
+   * - \ref RCSW_ZALLOC
    *
    * All other flags are ignored.
    */

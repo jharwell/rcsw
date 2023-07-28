@@ -16,6 +16,7 @@
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Structure Definitions
@@ -26,8 +27,31 @@ struct col_pair {
 };
 
 /*******************************************************************************
- * Forward Declarations
+ * Private Functions
  ******************************************************************************/
+/**
+ * \brief Print a matrix entry
+ *
+ * \param matrix The matrix handle.
+ * \param e1 The matrix entry.
+ */
+static void csmatrix_entry_print(const struct csmatrix* const matrix,
+                                 const void* const e1) {
+  switch (matrix->type) {
+    case ekCSMATRIX_INT:
+      DPRINTF("%d", *(const int*)e1);
+      break;
+    case ekCSMATRIX_FLOAT:
+      DPRINTF("%f", *(const float*)e1);
+      break;
+    case ekCSMATRIX_DOUBLE:
+      DPRINTF("%f", *(const double*)e1);
+      break;
+    default:
+      break;
+  } /* switch() */
+} /* csmatrix_entry_print() */
+
 /**
  * \brief Multiply an entry in the matrix by something (must be of same data
  * type)
@@ -38,9 +62,23 @@ struct col_pair {
  *
  * \return The result.
  */
-static double csmatrix_entry_mult(const struct csmatrix* matrix,
-                                  const void* e1,
-                                  const void* e2);
+static double csmatrix_entry_mult(const struct csmatrix* const matrix,
+                                  const void* const e1,
+                                  const void* const e2) {
+  switch (matrix->type) {
+    case ekCSMATRIX_INT:
+      return *(const int*)e1 * *(const int*)e2;
+      break;
+    case ekCSMATRIX_FLOAT:
+      return *(const float*)e1 * *(const float*)e2;
+      break;
+    case ekCSMATRIX_DOUBLE:
+      return *(const double*)e1 * *(const double*)e2;
+      break;
+    default:
+      return -1;
+  } /* switch() */
+} /* csmatrix_entry_mult() */
 
 /**
  * \brief Divide an entry in the matrix by something (must be of same data
@@ -52,34 +90,39 @@ static double csmatrix_entry_mult(const struct csmatrix* matrix,
  *
  * \return The result.
  */
-static double
-csmatrix_entry_div(const struct csmatrix* matrix, const void* e1, const void* e2);
+static double csmatrix_entry_div(const struct csmatrix* const matrix,
+                                 const void* const e1,
+                                 const void* const e2) {
+  switch (matrix->type) {
+    case ekCSMATRIX_INT:
+      return *(const int*)e1 / *(const int*)e2;
+      break;
+    case ekCSMATRIX_FLOAT:
+      return *(const float*)e1 / *(const float*)e2;
+      break;
+    case ekCSMATRIX_DOUBLE:
+      return *(const double*)e1 / *(const double*)e2;
+      break;
+    default:
+      return -1;
+  } /* switch() */
+} /* csmatrix_entry_div() */
 
-/**
- * \brief Print a matrix entry
- *
- * \param matrix The matrix handle.
- * \param e1 The matrix entry.
- */
 
-static void csmatrix_entry_print(const struct csmatrix* matrix, const void* e1);
-static int csmatrix_col_cmpe(const void* e1, const void* e2);
-
-BEGIN_C_DECLS
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
                                const struct csmatrix_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
   RCSW_ER_MODULE_INIT();
 
-  struct csmatrix* matrix = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    matrix = matrix_in;
-  } else {
-    matrix = calloc(1, sizeof(struct csmatrix));
-  }
+  struct csmatrix* matrix = rcsw_alloc(matrix_in,
+                                       sizeof(struct csmatrix),
+                                       params->flags & RCSW_NOALLOC_HANDLE);
+
   RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
   matrix->type = params->type;
@@ -118,7 +161,10 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
            darray_size(&matrix->outer_starts),
            matrix->flags);
 
-  matrix->csizes = calloc(params->n_cols, sizeof(int));
+  matrix->csizes = rcsw_alloc(NULL,
+                              params->n_cols * sizeof(int),
+                              RCSW_NONE);
+
   RCSW_CHECK_PTR(matrix->csizes);
 
   /* size_t n_elts = params->n_nz_elts/params->n_cols*10; */
@@ -129,13 +175,16 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
   /* RCSW_CHECK_PTR(matrix->nodes); */
   /* RCSW_CHECK_PTR(matrix->elts); */
   struct llist_params llist_params = {
-    .cmpe = csmatrix_col_cmpe,
+    .cmpe = NULL,
     .printe = NULL,
     .max_elts = -1,
     .elt_size = sizeof(struct col_pair),
     .flags = RCSW_NOALLOC_HANDLE
   };
-  matrix->cols = calloc(matrix->n_cols, sizeof(struct llist));
+  matrix->cols = rcsw_alloc(NULL,
+                            params->n_cols * sizeof(struct llist),
+                            RCSW_NONE);
+
   for (size_t i = 0; i < matrix->n_cols; ++i) {
     /* llist_params.nodes = matrix->nodes + i* llist_meta_space(n_elts); */
     /* llist_params.elements = matrix->elts + */
@@ -170,9 +219,7 @@ void csmatrix_destroy(struct csmatrix* const matrix) {
   /* if (matrix->elts) { */
   /*     free(matrix->elts); */
   /* } */
-  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
-    free(matrix);
-  }
+  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
 } /* csmatrix_destroy() */
 
 status_t csmatrix_entry_add(struct csmatrix* const matrix,
@@ -468,63 +515,5 @@ void csmatrix_print(const struct csmatrix* matrix) {
   DPRINTF("}\n");
 } /* csmatrix_print() */
 
-/*******************************************************************************
- * Static Functions
- ******************************************************************************/
-static void csmatrix_entry_print(const struct csmatrix* const matrix,
-                                 const void* const e1) {
-  switch (matrix->type) {
-    case ekCSMATRIX_INT:
-      DPRINTF("%d", *(const int*)e1);
-      break;
-    case ekCSMATRIX_FLOAT:
-      DPRINTF("%f", *(const float*)e1);
-      break;
-    case ekCSMATRIX_DOUBLE:
-      DPRINTF("%f", *(const double*)e1);
-      break;
-    default:
-      break;
-  } /* switch() */
-} /* csmatrix_entry_print() */
 
-static double csmatrix_entry_mult(const struct csmatrix* const matrix,
-                                  const void* const e1,
-                                  const void* const e2) {
-  switch (matrix->type) {
-    case ekCSMATRIX_INT:
-      return *(const int*)e1 * *(const int*)e2;
-      break;
-    case ekCSMATRIX_FLOAT:
-      return *(const float*)e1 * *(const float*)e2;
-      break;
-    case ekCSMATRIX_DOUBLE:
-      return *(const double*)e1 * *(const double*)e2;
-      break;
-    default:
-      return -1;
-  } /* switch() */
-} /* csmatrix_entry_mult() */
-
-static double csmatrix_entry_div(const struct csmatrix* const matrix,
-                                 const void* const e1,
-                                 const void* const e2) {
-  switch (matrix->type) {
-    case ekCSMATRIX_INT:
-      return *(const int*)e1 / *(const int*)e2;
-      break;
-    case ekCSMATRIX_FLOAT:
-      return *(const float*)e1 / *(const float*)e2;
-      break;
-    case ekCSMATRIX_DOUBLE:
-      return *(const double*)e1 / *(const double*)e2;
-      break;
-    default:
-      return -1;
-  } /* switch() */
-} /* csmatrix_entry_div() */
-
-static int csmatrix_col_cmpe(const void* const e1, const void* const e2) {
-  return ((const struct col_pair*)e1)->row - ((const struct col_pair*)e2)->row;
-} /* csmatrix_col_cmpe() */
 END_C_DECLS

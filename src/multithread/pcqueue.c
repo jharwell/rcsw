@@ -13,6 +13,7 @@
 
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -23,15 +24,12 @@ struct pcqueue* pcqueue_init(struct pcqueue* queue_in,
                              const struct pcqueue_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->max_elts > 0, params->elt_size > 0);
 
-  struct pcqueue* queue = NULL;
+  struct pcqueue* queue = rcsw_alloc(queue_in,
+                                     sizeof(struct pcqueue),
+                                     params->flags & RCSW_NOALLOC_HANDLE);
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(queue_in);
-    queue = queue_in;
-  } else {
-    queue = calloc(1, sizeof(struct pcqueue));
-    RCSW_CHECK_PTR(queue);
-  }
+  RCSW_CHECK_PTR(queue);
+
   queue->flags = params->flags;
 
   /* create FIFO */
@@ -67,9 +65,7 @@ void pcqueue_destroy(struct pcqueue* const queue) {
   csem_destroy(&queue->slots_avail);
   csem_destroy(&queue->slots_inuse);
 
-  if (!(queue->flags & RCSW_NOALLOC_HANDLE)) {
-    free(queue);
-  }
+  rcsw_free(queue, queue->flags & RCSW_NOALLOC_HANDLE);
 } /* pcqueue_destroy() */
 
 status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {

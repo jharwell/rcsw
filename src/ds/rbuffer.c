@@ -15,6 +15,7 @@
 #define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
 #include "rcsw/ds/ds.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Macros
@@ -35,23 +36,17 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct rbuffer* rb = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(rb_in);
-    rb = rb_in;
-  } else {
-    rb = malloc(sizeof(struct rbuffer));
-    RCSW_CHECK_PTR(rb);
-  }
+  struct rbuffer* rb = rcsw_alloc(rb_in,
+                                  sizeof(struct rbuffer),
+                                  params->flags & RCSW_NOALLOC_HANDLE);
+  RCSW_CHECK_PTR(rb);
   rb->flags = params->flags;
 
-  if (params->flags & RCSW_NOALLOC_DATA) {
-    RCSW_CHECK_PTR(params->elements);
-    rb->elements = params->elements;
-  } else {
-    rb->elements = calloc(params->max_elts, params->elt_size);
-    RCSW_CHECK_PTR(rb->elements);
-  }
+  rb->elements = rcsw_alloc(params->elements,
+                            params->max_elts * params->elt_size,
+                            params->flags & RCSW_NOALLOC_DATA);
+
+  RCSW_CHECK_PTR(rb->elements);
 
   rb->elt_size = params->elt_size;
   rb->printe = params->printe;
@@ -75,16 +70,8 @@ error:
 void rbuffer_destroy(struct rbuffer* rb) {
   RCSW_FPC_V(NULL != rb);
 
-  if (!(rb->flags & RCSW_NOALLOC_DATA)) {
-    if (rb->elements) {
-      free(rb->elements);
-      rb->elements = NULL;
-    }
-  }
-
-  if (!(rb->flags & RCSW_NOALLOC_HANDLE)) {
-    free(rb);
-  }
+  rcsw_free(rb->elements, rb->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(rb, rb->flags & RCSW_NOALLOC_HANDLE);
 } /* rbuffer_destroy() */
 
 status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {

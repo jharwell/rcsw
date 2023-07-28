@@ -14,12 +14,14 @@
 #define RCSW_ER_MODNAME "rcsw.ds.dyn_matrix"
 #define RCSW_ER_MODID ekLOG4CL_DS_DYN_MATRIX
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
-BEGIN_C_DECLS
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
                                    const struct dyn_matrix_params* const params) {
   RCSW_FPC_NV(NULL,
@@ -28,14 +30,11 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
               params->n_cols > 0)
       RCSW_ER_MODULE_INIT();
 
-  struct dyn_matrix* matrix = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(matrix_in);
-    matrix = matrix_in;
-  } else {
-    matrix = calloc(1, sizeof(struct dyn_matrix));
-    RCSW_CHECK_PTR(matrix);
-  }
+  struct dyn_matrix* matrix = rcsw_alloc(matrix_in,
+                                         sizeof(struct dyn_matrix),
+                                         params->flags & RCSW_NOALLOC_HANDLE);
+
+  RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
   matrix->elt_size = params->elt_size;
   matrix->printe = params->printe;
@@ -80,9 +79,7 @@ void dyn_matrix_destroy(struct dyn_matrix* const matrix) {
   } /* for(i..) */
   darray_destroy(matrix->rows);
 
-  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
-    free(matrix);
-  }
+  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
 } /* dyn_matrix_destroy() */
 
 status_t dyn_matrix_set(struct dyn_matrix* const matrix,

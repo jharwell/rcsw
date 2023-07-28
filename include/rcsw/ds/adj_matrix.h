@@ -103,6 +103,7 @@ struct adj_matrix {
    *
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_ZALLOC
    *
    * All other flags are ignored.
    */
@@ -223,8 +224,10 @@ static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
 /**
  * \brief Initialize an adjacency matrix.
  *
- * \param matrix_in The matrix handle to be filled (can be NULL if
- * \ref RCSW_NOALLOC_HANDLE not passed).
+ * \param matrix_in An application allocated handle for the matrix. Can be NULL,
+ *                  depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
+ *                  adj_matrix_params.flags or not.
+ *
  * \param params Initialization parameters.
  *
  * \return The initialized adjacency matrix, or NULL if an error occurred.

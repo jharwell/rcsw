@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 10)
+set(PROJECT_VERSION_PATCH 11)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -16,6 +16,17 @@ libra_configure_version(
   ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c
   rcsw_components_SRC
 )
+
+# Are we allowed to allocate memory?
+if (NOT RCSW_NOALLOC)
+  set(RCSW_NOALLOC NO)
+endif()
+
+# Should all memory be zeroed before use (regardless of where it came
+# from) ?
+if (NOT RCSW_ZALLOC)
+  set(RCSW_ZALLOC NO)
+endif()
 
 # 'ntoa' conversion buffer size, this must be big enough to hold one
 # converted numeric number including padded zeros (dynamically created
@@ -259,6 +270,21 @@ add_compile_definitions(${rcsw_LIBRARY}
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
 )
 
+if("${RCSW_NOALLOC}")
+  add_compile_definitions(${rcsw_LIBRARY}
+    INTERFACE
+    RCSW_NOALLOC
+  )
+endif()
+
+if("${RCSW_ZALLOC}")
+  add_compile_definitions(${rcsw_LIBRARY}
+    INTERFACE
+    RCSW_ZALLOC
+  )
+endif()
+
+
 foreach(config ${RCSW_ONOFF_CONFIG})
   if(${config})
     add_compile_definitions(${rcsw_LIBRARY}
@@ -329,7 +355,7 @@ programming utilities, and simple I/O routines for bare-metal applications."
 # Status
 ################################################################################
 if(${LIBRA_SUMMARY})
-  
+
   message("")
   message("--------------------------------------------------------------------------------")
   message("                           RCSW Configuration Summary")
@@ -341,6 +367,7 @@ if(${LIBRA_SUMMARY})
     rcsw_VERSION
     RCSW_ER_PLUGIN
     RCSW_ER_PLUGIN_PATH
+    RCSW_ALLOC_POLICY
     RCSW_STDIO_GETCHAR
     RCSW_STDIO_PUTCHAR
     RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS
@@ -359,6 +386,7 @@ if(${LIBRA_SUMMARY})
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
   message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_ER_PLUGIN}${ColorReset} [RCSW_ER_PLUGIN]")
   message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_ER_PLUGIN_PATH}${ColorReset} [RCSW_ER_PLUGIN_PATH]")
+  message(STATUS "Memory allocation                             : ${ColorBold}${EMIT_RCSW_ALLOC_POLICY}${ColorReset} [RCSW_ALLOC_POLICY={NONE,MALLOC,ZALLOC}]")
   message(STATUS "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_GETCHAR}${ColorReset} [RCSW_STDIO_GETCHAR]")
   message(STATUS "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_PUTCHAR}${ColorReset} [RCSW_STDIO_PUTCHAR]")
   message(STATUS "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS}${ColorReset} [RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS]")

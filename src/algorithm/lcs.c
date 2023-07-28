@@ -13,6 +13,7 @@
 
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -49,7 +50,9 @@ status_t lcs_init(struct lcs_calculator* lcs, const char* x, const char* y) {
   lcs->x = x;
   lcs->y = y;
   lcs->size = 0;
-  lcs->results = malloc((lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int));
+  lcs->results  = rcsw_alloc(NULL,
+                             (lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int),
+                             RCSW_NONE);
   RCSW_CHECK_PTR(lcs->results);
   memset(lcs->results, -1, (lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int));
   return OK;
@@ -62,12 +65,8 @@ void lcs_destroy(struct lcs_calculator* lcs) {
   if (!lcs) {
     return;
   }
-  if (lcs->results) {
-    free(lcs->results);
-  }
-  if (lcs->sequence) {
-    free(lcs->sequence);
-  }
+  rcsw_free(lcs->results, RCSW_NONE);
+  rcsw_free(lcs->sequence, RCSW_NONE);
 } /* lcs_destroy() */
 
 int lcs_rec(const struct lcs_calculator* lcs) {
@@ -96,7 +95,9 @@ int lcs_iter(struct lcs_calculator* lcs) {
   } /* for(j=0...) */
   lcs->size = (size_t)lcs->results[lcs->len_x * lcs->len_x + lcs->len_y];
 
-  lcs->sequence = malloc((lcs->size + 1) * sizeof(char));
+  lcs->sequence  = rcsw_alloc(NULL,
+                              (lcs->size + 1) * sizeof(char),
+                              RCSW_NONE);
   lcs->sequence[lcs->size] = '\0';
   size_t index = lcs->size;
 

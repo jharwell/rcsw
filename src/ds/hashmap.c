@@ -19,6 +19,7 @@
 #include "rcsw/common/fpc.h"
 #include "rcsw/ds/darray.h"
 #include "rcsw/utils/hash.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -81,15 +82,11 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
               params->sort_thresh != 0,
               params->n_buckets > 0);
   RCSW_ER_MODULE_INIT();
-  struct hashmap* map = NULL;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(map_in);
-    map = map_in;
-  } else {
-    map = malloc(sizeof(struct hashmap));
-    RCSW_CHECK_PTR(map);
-  }
+  struct hashmap* map = rcsw_alloc(map_in,
+                                    sizeof(struct hashmap),
+                                    params->flags & RCSW_NOALLOC_HANDLE);
+  RCSW_CHECK_PTR(map);
 
   map->flags = params->flags;
   map->hash = params->hash;
@@ -105,22 +102,21 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   map->space.elements = NULL;
   map->space.buckets = NULL;
 
-  if (params->flags & RCSW_NOALLOC_META) {
-    RCSW_CHECK_PTR(params->meta);
-    map->space.buckets = (struct darray*)params->meta;
-  } else {
-    map->space.buckets = calloc(params->n_buckets, sizeof(struct darray));
-    RCSW_CHECK_PTR(map->space.buckets);
-  }
+  /* Allocate space for hashmap buckets */
+  map->space.buckets = rcsw_alloc(params->meta,
+                                   params->n_buckets * sizeof(struct darray),
+                                   params->flags & RCSW_NOALLOC_META);
+
+  RCSW_CHECK_PTR(map->space.buckets);
 
   /* Allocate space for hashnodes+datablocks+datablock alloc map */
-  if (params->flags & RCSW_NOALLOC_DATA) {
-    map->space.elements = params->elements;
-  } else {
-    map->space.elements = malloc(hashmap_element_space(map->n_buckets,
-                                                       params->bsize,
-                                                       map->elt_size));
-  }
+  size_t element_bytes = hashmap_element_space(map->n_buckets,
+                                               params->bsize,
+                                               map->elt_size);
+  map->space.elements = rcsw_alloc(params->elements,
+                                   element_bytes,
+                                   params->flags & RCSW_NOALLOC_DATA);
+
   RCSW_CHECK_PTR(map->space.elements);
 
   /* initialize free pool of hashnodes */
@@ -182,20 +178,9 @@ void hashmap_destroy(struct hashmap* map) {
     darray_destroy(map->space.buckets + i);
   }
 
-  if (!(map->flags & RCSW_NOALLOC_DATA)) {
-    if (NULL != map->space.elements) {
-      free(map->space.elements);
-    }
-  }
-
-  if (!(map->flags & RCSW_NOALLOC_META)) {
-    if (NULL != map->space.buckets) {
-      free(map->space.buckets);
-    }
-  }
-  if (!(map->flags & RCSW_NOALLOC_HANDLE)) {
-    free(map);
-  }
+  rcsw_free(map->space.elements, map->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(map->space.buckets, map->flags & RCSW_NOALLOC_META);
+  rcsw_free(map, map->flags & RCSW_NOALLOC_HANDLE);
 } /* hashmap_destroy() */
 
 struct darray* hashmap_query(const struct hashmap* const map,

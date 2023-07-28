@@ -106,6 +106,7 @@ struct rbuffer {
    *
    * Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    * - \ref RCSW_DS_RBUFFER_AS_FIFO
@@ -190,7 +191,8 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
  * \brief Initialize a ringbuffer.
  *
  * \param rb_in An application allocated handle for the ringbuffer. Can be NULL,
- *        depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
+ *        depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
+ *        rbuffer_params.flags or not.
  *
  * \param params The initialization parameters.
  *

@@ -11,18 +11,23 @@
                                            (substitute-in-file-name "$rcsw/include")
                                            (substitute-in-file-name "$rcsw/ext")
                                            (concat (projectile-project-root) "include")
-                                           )))
+                                           )
+                                          ))
                        (setq flycheck-clang-include-path includes-list)
                        (setq flycheck-gcc-include-path includes-list)
-                       (setq flycheck-clang-args '("-std=gnu11"))
-                       (add-to-list 'flycheck-clang-definitions
-                                    "LIBRA_ER=LIBRA_ERL_ALL")
-
-                       (setq flycheck-gcc-args '("-std=gnu11"))
-                       (add-to-list 'flycheck-gcc-definitions "LIBRA_ERL=LIBRA_ERL_ALL")
-
                        (setq cc-search-directories includes-list)
                        )
+
+                     (let ((defs-list (list
+                                       "LIBRA_ER=LIBRA_ERL_ALL"
+                                       )
+                             ))
+                       (setq flycheck-clang-definitions defs-list)
+                       (setq flycheck-gcc-definitions defs-list)
+                       )
+
+                       (setq flycheck-clang-args '("-std=gnu11"))
+                       (setq flycheck-gcc-args '("-std=gnu11"))
                      )
                  ))
          )

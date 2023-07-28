@@ -16,13 +16,14 @@
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/rcsw.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
-static BEGIN_C_DECLS
+BEGIN_C_DECLS
 
-void rdwrl_wr_exit(struct rdwrlock* const rdwr) {
+static void rdwrl_wr_exit(struct rdwrlock* const rdwr) {
   csem_post(&rdwr->access); /* release exclusive access to resource */
 } /* rdwrl_wr_exit() */
 
@@ -122,12 +123,10 @@ error:
  * API Functions
  ******************************************************************************/
 struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
-  struct rdwrlock* rdwr = NULL;
-  if (flags & RCSW_NOALLOC_HANDLE) {
-    rdwr = rdwr_in;
-  } else {
-    rdwr = malloc(sizeof(struct rdwrlock));
-  }
+  struct rdwrlock* rdwr = rcsw_alloc(rdwr_in,
+                                     sizeof(struct rdwrlock),
+                                     flags & RCSW_NOALLOC_HANDLE);
+
   RCSW_CHECK_PTR(rdwr);
   rdwr->flags = flags;
 
@@ -150,9 +149,7 @@ void rdwrl_destroy(struct rdwrlock* const rdwr) {
   csem_destroy(&rdwr->access);
   csem_destroy(&rdwr->read);
 
-  if (!(rdwr->flags & RCSW_NOALLOC_HANDLE)) {
-    free(rdwr);
-  }
+  rcsw_free(rdwr, rdwr->flags & RCSW_NOALLOC_HANDLE);
 } /* rdwrl_destroy() */
 
 void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {

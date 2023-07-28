@@ -14,6 +14,7 @@
 #define RCSW_ER_MODNAME "rcsw.ds.fifo"
 #define RCSW_ER_MODID ekLOG4CL_DS_FIFO
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -28,14 +29,11 @@ struct fifo* fifo_init(struct fifo* fifo_in,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct fifo* fifo = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(fifo_in);
-    fifo = fifo_in;
-  } else {
-    fifo = malloc(sizeof(struct fifo));
-    RCSW_CHECK_PTR(fifo);
-  }
+  struct fifo* fifo = rcsw_alloc(fifo_in,
+                                 sizeof(struct fifo),
+                                 params->flags & RCSW_NOALLOC_HANDLE);
+
+  RCSW_CHECK_PTR(fifo);
   fifo->flags = params->flags;
 
   struct rbuffer_params rb_params = { .printe = params->printe,
@@ -58,9 +56,8 @@ void fifo_destroy(struct fifo* const fifo) {
   RCSW_FPC_V(NULL != fifo);
 
   rbuffer_destroy(&fifo->rb);
-  if (!(fifo->flags & RCSW_NOALLOC_HANDLE)) {
-    free(fifo);
-  }
+
+  rcsw_free(fifo, fifo->flags & RCSW_NOALLOC_HANDLE);
 } /* fifo_destroy() */
 
 status_t fifo_add(struct fifo* const fifo, const void* const e) {

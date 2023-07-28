@@ -14,6 +14,7 @@
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/rcsw.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -21,12 +22,9 @@
 BEGIN_C_DECLS
 
 struct bsem* bsem_init(struct bsem* const sem_in, uint32_t flags) {
-  struct bsem* sem = NULL;
-  if (flags & RCSW_NOALLOC_HANDLE) {
-    sem = sem_in;
-  } else {
-    sem = calloc(1, sizeof(struct bsem));
-  }
+  struct bsem* sem = rcsw_alloc(sem_in,
+                                sizeof(struct bsem),
+                                flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(sem);
   sem->flags = flags;
 
@@ -45,9 +43,7 @@ void bsem_destroy(struct bsem* const sem) {
 
   mutex_destroy(&sem->mtx);
   condv_destroy(&sem->cv);
-  if (!(sem->flags & RCSW_NOALLOC_HANDLE)) {
-    free(sem);
-  }
+  rcsw_free(sem, sem->flags & RCSW_NOALLOC_HANDLE);
 } /* bsem_destroy() */
 
 status_t bsem_post(struct bsem* const sem) {

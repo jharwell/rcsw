@@ -28,14 +28,12 @@ using fifo_test_t = void(*)(int len, struct fifo_params *params);
  ******************************************************************************/
 template<typename T>
 static void run_test(fifo_test_t test) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING,"Testing"); */
-  /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
+  RCSW_ER_INIT();
 
   struct fifo_params params;
   memset(&params, 0, sizeof(fifo_params));
   params.flags = 0;
-  params.printe = th::printe<element8>;
+  params.printe = th::printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);
 
@@ -53,7 +51,9 @@ static void run_test(fifo_test_t test) {
     } /* for(i..) */
   } /* for(j..) */
   th::ds_shutdown(&params);
-} /* test_runner() */
+
+  RCSW_ER_DEINIT();
+}
 
 /*******************************************************************************
  * Test Functions

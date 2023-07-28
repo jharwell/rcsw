@@ -2,57 +2,6 @@
  * \file ds.h
  * \brief Common definitions for all data structures.
  *
- * In this module \ref RCSW_NOALLOC_DATA declare that the space for
- * datablocks/data the data structure will manage is provided by the
- * application.
- *
- * Passing this flag causes the memory pointed to by the elements field of
- * ds_params to be used for storing the datablocks, instead of malloc()ing for
- * the space. Applies to all data structures.
- *
- * If this flag is passed to the following data structure init() functions,the
- * maximum number of elements for the data structure MUST be capped/set
- * (a -1 will cause an error):
- *
- * - \ref darray
- * - \ref llist
- * - \ref bstree
- *
- * The application is responsible for calculating/specifying an appropriate cap
- * value.
- *
- * The amount of space that must be allocated by the application for the data
- * elements can be calculated by using the appropriate sizing functions.
- *
- * In this module \ref RCSW_NOALLOC_META declares that space for the
- * nodes/metadata of the data structure will use is provided by the application.
- *
- * Passing this flag causes the memory pointed to by the nodes field of
- * ds_params to be used for storing the data struct nodes/metadata, instead of
- * malloc()ing for the space.
- *
- * Applies to:
- *
- * - \ref darray
- * - \ref llist
- * - \ref bstree
- * - \ref hashmap
- *
- * If this flag is passed to the following data structure init() functions,the
- * maximum number of elements for the data structure MUST be capped (a -1 will
- * cause an error):
- *
- * - \ref llist
- * - \ref bstree
- *
- * The application is responsible for calculating/specifying an appropriate cap
- * value.
- *
- * The amount of space that must be allocated by the application for the nodes
- * can be calculated by the XX_meta_space() function found in the header file
- * for the data structure. (i.e. \ref bstree_meta_space() for the binary search
- * tree).
- *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT

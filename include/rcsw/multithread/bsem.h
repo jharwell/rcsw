@@ -38,6 +38,7 @@ struct bsem {
    *
    * Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    */
   uint32_t flags;

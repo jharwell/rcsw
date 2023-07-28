@@ -14,6 +14,7 @@
 #define RCSW_ER_MODNAME "rcsw.ds.adj_matrix"
 #define RCSW_ER_MODID ekLOG4CL_DS_ADJ_MATRIX
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Static Functions
@@ -35,15 +36,12 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
                 const struct adj_matrix_params* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
   RCSW_ER_MODULE_INIT();
-  struct adj_matrix* matrix = NULL;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(matrix_in);
-    matrix = matrix_in;
-  } else {
-    matrix = malloc(sizeof(struct adj_matrix));
-    RCSW_CHECK_PTR(matrix);
-  }
+  struct adj_matrix* matrix = rcsw_alloc(matrix_in,
+                                         sizeof(struct adj_matrix),
+                                         params->flags & RCSW_NOALLOC_HANDLE);
+
+  RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
   if (params->is_weighted) {
     matrix->elt_size = sizeof(double);
@@ -91,9 +89,8 @@ error:
 void adj_matrix_destroy(struct adj_matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
   matrix_destroy(&matrix->matrix);
-  if (!(matrix->flags & RCSW_NOALLOC_HANDLE)) {
-    free(matrix);
-  }
+
+  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
 } /* adj_matrix_destroy() */
 
 status_t adj_matrix_edge_addu(struct adj_matrix* const matrix,

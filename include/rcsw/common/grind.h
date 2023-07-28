@@ -306,6 +306,8 @@ struct grinder {
   /**
    * Configuration flags. Valid flags are:
    *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_GRIND_REPORT_DATAPOINTS
    * - \ref RCSW_GRIND_REPORT_HISTOGRAM
    * - \ref RCSW_GRIND_REPORT_AUTO
@@ -341,14 +343,19 @@ struct grinder {
  * API Functions
  ******************************************************************************/
 /**
- * \brief Initialize the \ref grinder for statistics collection
+ * \brief Initialize a \ref grinder for statistics collection.
  *
  * This function initializes the statistics global data structure to gather
  * statistics on all stat instances encountered during execution.
  *
- * \return The initialized module, or NULL if an error occurred.
+ * \param rb_in An application allocated handle for the grinder. Can be NULL,
+ *        depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
+ *        grind_params.flags.
+ *
+ * \return The initialized grinder, or NULL if an error occurred.
  */
-struct grinder * grind_init(const struct grind_params* const params);
+struct grinder * grind_init(struct grinder* grind_in,
+                            const struct grind_params* const params);
 
 /**
  * \brief Shutdown grinding.

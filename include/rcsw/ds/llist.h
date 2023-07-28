@@ -134,6 +134,7 @@ struct llist {
    *
    * Configuration flags. Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    * - \ref RCSW_DS_LLIST_DB_DISOWN
@@ -268,8 +269,8 @@ static inline size_t llist_meta_space(size_t max_elts) {
 /**
  * \brief Initialize a llist.
  *
- * \param list_in The llist handle to be filled (can be NULL if
- *                \ref RCSW_NOALLOC_HANDLE not passed).
+ * \param list_in The handle to be filled. Must be non-NULL if \ref
+ *                RCSW_NOALLOC_HANDLE passed in \ref llist_params.flags.
  *
  * \param params The initialization parameters.
  *

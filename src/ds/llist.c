@@ -16,6 +16,7 @@
 #include "rcsw/ds/llist_node.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -30,14 +31,11 @@ struct llist* llist_init(struct llist* list_in,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct llist* list = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    RCSW_CHECK_PTR(list_in);
-    list = list_in;
-  } else {
-    list = malloc(sizeof(struct llist));
-    RCSW_CHECK_PTR(list);
-  }
+
+  struct llist* list = rcsw_alloc(list_in,
+                                  sizeof(struct llist),
+                                  params->flags & RCSW_NOALLOC_HANDLE);
+  RCSW_CHECK_PTR(list);
   list->current = 0;
   list->flags = params->flags;
   list->first = NULL;
@@ -105,9 +103,7 @@ void llist_destroy(struct llist* list) {
     --list->current;
   } /* while() */
 
-  if (!(list->flags & RCSW_NOALLOC_HANDLE)) {
-    free(list);
-  }
+  rcsw_free(list, list->flags & RCSW_NOALLOC_HANDLE);
 } /* llist_destroy() */
 
 status_t llist_clear(struct llist* const list) {
@@ -546,9 +542,7 @@ status_t llist_splice(struct llist* list1,
       list1->current += list2->current;
     }
 
-    if (!(list2->flags & RCSW_NOALLOC_HANDLE)) {
-      free(list2);
-    }
+    rcsw_free(list2, list2->flags & RCSW_NOALLOC_HANDLE);
     break;
   }
 

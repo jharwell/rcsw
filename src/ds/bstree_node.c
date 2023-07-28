@@ -16,6 +16,7 @@
 #include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
 #include "rcsw/ds/allocm.h"
+#include "rcsw/common/alloc.h"
 
 BEGIN_C_DECLS
 
@@ -86,7 +87,7 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree,
     /* mark data block as available */
     allocm_mark_free(tree->space.db_map + idx);
   } else {
-    free(datablock);
+    rcsw_free(datablock, RCSW_NONE);
   }
 } /* bstree_node_datablock_dealloc() */
 
@@ -118,7 +119,7 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
 
     datablock = tree->space.datablocks + (alloc_idx * tree->elt_size);
   } else {
-    datablock = malloc(tree->elt_size);
+    datablock = rcsw_alloc(NULL, tree->elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
   }
 
@@ -156,12 +157,11 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
     /* mark node as in use */
     allocm_mark_inuse(tree->space.node_map + alloc_idx);
     node = tree->space.nodes + alloc_idx;
-  }
-  /* MY DOMAIN MWAHAHAHA! */
-  else {
-    node = malloc(node_size);
+  } else {
+    node = rcsw_alloc(NULL, node_size, RCSW_NONE);
     RCSW_CHECK_PTR(node);
   }
+
   return node;
 
 error:
@@ -176,7 +176,7 @@ void bstree_node_dealloc(const struct bstree* const tree,
     /* mark node as available */
     allocm_mark_free(tree->space.node_map + idx);
   } else {
-    free(node);
+    rcsw_free(node, RCSW_NONE);
   }
 } /* bstree_node_dealloc() */
 

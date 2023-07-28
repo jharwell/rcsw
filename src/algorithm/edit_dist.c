@@ -13,9 +13,10 @@
 
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -177,7 +178,9 @@ status_t edit_dist_init(struct edit_dist_finder* finder,
 
   size_t n_elts1 = finder->seq_len(a) + 1;
   size_t n_elts2 = finder->seq_len(b) + 1;
-  finder->memoization = malloc(n_elts1 * n_elts2 * sizeof(int));
+  finder->memoization  = rcsw_alloc(NULL,
+                                    n_elts1 * n_elts2 * sizeof(int),
+                                    RCSW_NONE);
   RCSW_CHECK_PTR(finder->memoization);
 
   return OK;
@@ -188,11 +191,9 @@ error:
 } /* edit_dist_init() */
 
 void edit_dist_destroy(struct edit_dist_finder* finder) {
-  if (NULL != finder) {
-    if (finder->memoization) {
-      free(finder->memoization);
-    }
-  }
+  RCSW_FPC_V(NULL != finder);
+
+  rcsw_free(finder->memoization, RCSW_NONE);
 } /* edit_dist_destroy() */
 
 int edit_dist_find(struct edit_dist_finder* finder,

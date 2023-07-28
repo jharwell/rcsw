@@ -16,6 +16,7 @@
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/ds/allocm.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * API Functions
@@ -40,7 +41,7 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
 
     ER_TRACE("Allocated llist_node %zu/%d", list->current + 1, list->max_elts);
   } else {
-    node = calloc(1, sizeof(struct llist_node));
+    node = rcsw_alloc(NULL, sizeof(struct llist_node), RCSW_NONE);
     RCSW_CHECK_PTR(node);
   }
 
@@ -58,7 +59,7 @@ void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
 
     ER_TRACE("Deallocated llist_node %d/%d", index + 1, list->max_elts);
   } else {
-    free(node);
+    rcsw_free(node, RCSW_NONE);
   }
 } /* llist_node_dealloc() */
 
@@ -117,7 +118,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
 
     ER_TRACE("Dellocated data block %zu/%d", block_idx, list->max_elts);
   } else {
-    free(datablock);
+    rcsw_free(datablock, RCSW_NONE);
   }
 } /* llist_node_datablock_dealloc() */
 
@@ -140,7 +141,7 @@ void* llist_node_datablock_alloc(struct llist* const list) {
 
     ER_TRACE("Allocated data block %d/%d", alloc_idx, list->max_elts);
   } else {
-    datablock = malloc(list->elt_size);
+    datablock = rcsw_alloc(NULL, list->elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
   }
 

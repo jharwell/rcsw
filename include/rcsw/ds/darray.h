@@ -110,6 +110,7 @@ struct darray {
    *
    * Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    * - \ref RCSW_DS_SORTED
@@ -217,10 +218,10 @@ static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
  *
  * It is valid to initialize the darray with an initial size of 0.
  *
- * \param arr_in The darray handle to be filled (can be NULL if
- *               \ref RCSW_NOALLOC_HANDLE not passed).
+* \param arr_in The handle to be filled. Must be non-NULL if \ref
+ *                RCSW_NOALLOC_HANDLE passed in \ref darray_params.flags.
  *
- * \param params Initialization parameters
+ * \param params Initialization parameters.
  *
  * \return The initialized list, or NULL if an ERROR occurred
  */

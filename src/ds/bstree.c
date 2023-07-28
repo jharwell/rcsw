@@ -22,6 +22,7 @@
 #include "rcsw/ds/rbtree.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/utils.h"
+#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -40,12 +41,9 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
               params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct bstree* tree = NULL;
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    tree = tree_in;
-  } else {
-    tree = malloc(sizeof(struct bstree));
-  }
+  struct bstree* tree = rcsw_alloc(tree_in,
+                                    sizeof(struct bstree),
+                                    params->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(tree);
 
   tree->flags = params->flags;
@@ -130,9 +128,7 @@ void bstree_destroy(struct bstree* tree) {
    */
   bstree_node_destroy(tree, tree->nil);
 
-  if (!(tree->flags & RCSW_NOALLOC_HANDLE)) {
-    free(tree);
-  }
+  rcsw_free(tree, tree->flags & RCSW_NOALLOC_HANDLE);
 } /* bstree_destroy() */
 
 void* bstree_data_query(const struct bstree* const tree, const void* const key) {

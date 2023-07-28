@@ -179,7 +179,16 @@ struct hashmap {
   bool_t sorted;
 
   /**
-   * Run time configuration flags.
+   * Run time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE.
+   * - \ref RCSW_NOALLOC_DATA.
+   * - \ref RCSW_NOALLOC_META.
+   * - \ref RCSW_DS_HASHMAP_LINPROB
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -265,8 +274,8 @@ static inline size_t hashmap_meta_space(size_t n_buckets) {
 /**
  * \brief Initialize a hashmap.
  *
- * \param map_in The hashmap handle to be filled (can be NULL if
- *               \ref RCSW_NOALLOC_HANDLE not passed).
+ * \param map_in The handle to be filled. Must be non-NULL if \ref
+ *                RCSW_NOALLOC_HANDLE passed in \ref hashmap_params.flags.
  *
  * \param params Initialization parameters
  *

@@ -82,6 +82,7 @@ struct matrix {
   /**
    * Run-time configuration flags. Valid flags are:
    *
+   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
    *
