@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 11)
+set(PROJECT_VERSION_PATCH 12)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -28,62 +28,44 @@ if (NOT RCSW_ZALLOC)
   set(RCSW_ZALLOC NO)
 endif()
 
-# 'ntoa' conversion buffer size, this must be big enough to hold one
-# converted numeric number including padded zeros (dynamically created
-# on stack)
-if (NOT RCSW_STDIO_PRINTF_BUFFER_SIZE)
-  set(RCSW_STDIO_PRINTF_BUFFER_SIZE 32)
+if (NOT RCSW_STDIO_PRINTF_BUFSIZE)
+  set(RCSW_STDIO_PRINTF_BUFSIZE 32)
 endif()
 
-# Support for the decimal notation floating point conversion specifiers (%f,
-# %F)
-if (NOT RCSW_STDIO_PRINTF_SUPPORT_DEC)
-  set(RCSW_STDIO_PRINTF_SUPPORT_DEC YES)
+
+if (NOT RCSW_STDIO_PRINTF_WITH_DEC)
+  set(RCSW_STDIO_PRINTF_WITH_DEC YES)
 endif()
 
-# Support for the exponential notation floating point conversion specifiers
-# (%e, %g, %E, %G)
-if (NOT RCSW_STDIO_PRINTF_SUPPORT_EXP)
-  set(RCSW_STDIO_PRINTF_SUPPORT_EXP YES)
+if (NOT RCSW_STDIO_PRINTF_WITH_EXP)
+  set(RCSW_STDIO_PRINTF_WITH_EXP YES)
 endif()
 
-# Support for the length write-back specifier (%n)
-if (NOT RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK)
-  set(RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK YES)
+if (NOT RCSW_STDIO_PRINTF_WITH_WRITEBACK)
+  set(RCSW_STDIO_PRINTF_WITH_WRITEBACK YES)
 endif()
 
-# Default precision for the floating point conversion specifiers (the C
-# standard sets this at 6)
+
 if (NOT RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC)
   set(RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC 6)
 endif()
 
-# According to the C languages standard, printf() and related
-# functions must be able to print any integral number in
-# floating-point notation, regardless of length, when using the %f
-# specifier - possibly hundreds of characters, potentially overflowing
-# your buffers. In this implementation, all values beyond this
-# threshold are switched to exponential notation.
+
 if (NOT RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH)
   set(RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH 9)
 endif()
 
-# Support for the long long integral types (with the ll, z and t
-# length modifiers for specifiers %d,%i,%o,%x,%X,%u, and with the %p
-# specifier). Note: 'L' (long double) is not supported.
-if (NOT RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG)
-  set(RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG YES)
+
+if (NOT RCSW_STDIO_PRINTF_WITH_LL)
+  set(RCSW_STDIO_PRINTF_WITH_LL YES)
 endif()
 
-# The number of terms in a Taylor series expansion of log_10(x) to
-# use for approximation - including the power-zero term (i.e. the
-# value at the point of expansion).
-if (NOT RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS)
-  set(RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS 4)
+
+if (NOT RCSW_STDIO_MATH_LOG10_TERMS)
+  set(RCSW_STDIO_MATH_LOG10_TERMS 4)
 endif()
 
-# Be extra-safe, and don't assume format specifiers are completed correctly
-# before the format string end.
+
 if (NOT RCSW_STDIO_PRINTF_CHECK_NULL)
   set(RCSW_STDIO_PRINTF_CHECK_NULL YES)
 endif()
@@ -93,34 +75,54 @@ if(NOT RCSW_NO_GRIND)
 endif()
 
 set (RCSW_ONOFF_CONFIG
-  RCSW_STDIO_PRINTF_SUPPORT_DEC
-  RCSW_STDIO_PRINTF_SUPPORT_EXP
-  RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
-  RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+  RCSW_STDIO_PRINTF_WITH_DEC
+  RCSW_STDIO_PRINTF_WITH_EXP
+  RCSW_STDIO_PRINTF_WITH_WRITEBACK
+  RCSW_STDIO_PRINTF_WITH_LL
   RCSW_STDIO_PRINTF_CHECK_NULL
   RCSW_NO_GRIND
 )
 set (RCSW_VALUE_CONFIG
-  RCSW_STDIO_PRINTF_BUFFER_SIZE
+  RCSW_STDIO_PRINTF_BUFSIZE
   RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC
   RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH
-  RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS
+  RCSW_STDIO_MATH_LOG10_TERMS
 )
 
 if (NOT RCSW_STDIO_PUTCHAR)
   set(RCSW_STDIO_PUTCHAR PUTCHAR_UNDEFINED)
 endif()
 
-
-# By default, assume the log4cl logger, since we don't know if log4c
-# exists on the system, and no-stdlib environments are less common
-# than those with stdlib.
 if(NOT RCSW_ER_PLUGIN)
   set(RCSW_ER_PLUGIN  LOG4CL)
 endif()
 
 if(NOT LIBRA_FPC)
   set(LIBRA_FPC  RETURN)
+endif()
+
+if(NOT RCSW_PTR_ALIGN)
+  # We know x86 can handle 1 byte-aligned addresses; add other
+  # architectures here as needed.
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64")
+    set(RCSW_PTR_ALIGN 4)
+    # We know ARM can't handle 1 byte-aligned accesses from say a
+    # 4-byte aligned pointer.
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm")
+    set(RCSW_PTR_ALIGN 1)
+  else()
+    # The fallback is the (possibly) less-efficient 1 byte alignment.
+    set(RCSW_PTR_ALIGN 1)
+    message(WARNING "Novel build target architecture '${CMAKE_SYSTEM_PROCESSOR}'--default to byte aligned data storage")
+  endif()
+endif()
+
+if (NOT RCSW_SUMMARY)
+  set(RCSW_SUMMARY YES)
+endif()
+
+if (RCSW_NOSTDLIB)
+
 endif()
 
 ################################################################################
@@ -151,35 +153,35 @@ libra_component_register_as_src(
   ds
   "src/ds")
 
-libra_component_register_as_src(
-  rcsw_mp_common_SRC
-  rcsw
-  "${rcsw_SRC}"
-  mp_common
-  "src/multiprocess/procm")
+
 # If we don't do this, then we have to use the mpicc/mpicxx C/C++
 # compiler wrappers even if we are not using MPI. (Slightly) better to
 # do it this way I think.
-if (LIBRA_MPI)
+if ("${LIBRA_MP}")
   libra_component_register_as_src(
-    rcsw_mp_mpi_SRC
+    rcsw_multiprocess_SRC
     rcsw
     "${rcsw_SRC}"
-    mp_mpi
-    "src/multiprocess/mpi")
+    multiprocess
+    "src/multiprocess")
 endif()
+
+if ("${LIBRA_MT}")
 libra_component_register_as_src(
   rcsw_multithread_SRC
   rcsw
   "${rcsw_SRC}"
   multithread
   "src/multithread")
+
 libra_component_register_as_src(
   rcsw_pulse_SRC
   rcsw
   "${rcsw_SRC}"
   pulse
   "src/pulse")
+endif()
+
 libra_component_register_as_src(
   rcsw_stdio_SRC
   rcsw
@@ -201,7 +203,7 @@ if (NOT rcsw_FIND_COMPONENTS)
     ds
     er
     multithread
-    mp_common
+    multiprocess
     pulse
     stdio
     utils
@@ -268,6 +270,11 @@ add_compile_definitions(${rcsw_LIBRARY}
 add_compile_definitions(${rcsw_LIBRARY}
   INTERFACE
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
+)
+
+add_compile_definitions(${rcsw_LIBRARY}
+  INTERFACE
+  RCSW_PTR_ALIGN=${RCSW_PTR_ALIGN}
 )
 
 if("${RCSW_NOALLOC}")
@@ -344,8 +351,9 @@ libra_configure_cpack(
   "Collection of reusable C software modules for embedded programming, styled
 after the C++ STL.
 
-It has many data structures, a publisher-subscriber system, concurrent
-programming utilities, and simple I/O routines for bare-metal applications."
+It has many data structures, a publisher-subscriber system,
+plugin-based event reporting framework, and a simple stdlib replacement
+for bare-metal applications."
 
   "John Harwell"
   "https://jharwell.github.io/rcsw"
@@ -354,12 +362,12 @@ programming utilities, and simple I/O routines for bare-metal applications."
 ################################################################################
 # Status
 ################################################################################
-if(${LIBRA_SUMMARY})
+if(${RCSW_SUMMARY})
 
   message("")
-  message("--------------------------------------------------------------------------------")
-  message("                           RCSW Configuration Summary")
-  message("--------------------------------------------------------------------------------")
+  message("${BoldBlue}--------------------------------------------------------------------------------")
+  message("${BoldBlue}                           RCSW Configuration Summary")
+  message("${BoldBlue}--------------------------------------------------------------------------------")
   message("")
 
 
@@ -367,17 +375,19 @@ if(${LIBRA_SUMMARY})
     rcsw_VERSION
     RCSW_ER_PLUGIN
     RCSW_ER_PLUGIN_PATH
-    RCSW_ALLOC_POLICY
+    RCSW_PTR_ALIGN
+    RCSW_NOALLOC
+    RCSW_ZALLOC
     RCSW_STDIO_GETCHAR
     RCSW_STDIO_PUTCHAR
-    RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS
-    RCSW_STDIO_PRINTF_BUFFER_SIZE
-    RCSW_STDIO_PRINTF_SUPPORT_DEC
-    RCSW_STDIO_PRINTF_SUPPORT_EXP
-    RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
+    RCSW_STDIO_MATH_LOG10_TERMS
+    RCSW_STDIO_PRINTF_BUFSIZE
+    RCSW_STDIO_PRINTF_WITH_DEC
+    RCSW_STDIO_PRINTF_WITH_EXP
+    RCSW_STDIO_PRINTF_WITH_WRITEBACK
     RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC
     RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH
-    RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+    RCSW_STDIO_PRINTF_WITH_LL
     RCSW_STDIO_PRINTF_CHECK_NULL
     RCSW_NO_GRIND
   )
@@ -386,20 +396,22 @@ if(${LIBRA_SUMMARY})
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
   message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_ER_PLUGIN}${ColorReset} [RCSW_ER_PLUGIN]")
   message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_ER_PLUGIN_PATH}${ColorReset} [RCSW_ER_PLUGIN_PATH]")
-  message(STATUS "Memory allocation                             : ${ColorBold}${EMIT_RCSW_ALLOC_POLICY}${ColorReset} [RCSW_ALLOC_POLICY={NONE,MALLOC,ZALLOC}]")
+  message(STATUS "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_NOALLOC}${ColorReset} [RCSW_NOALLOC]")
+  message(STATUS "Always zero alloc'd memory before use         : ${ColorBold}${EMIT_RCSW_ZALLOC}${ColorReset} [RCSW_ZALLOC]")
+  message(STATUS "Data pointer alignment                        : ${ColorBold}${EMIT_RCSW_PTR_ALIGN}${ColorReset} [RCSW_PTR_ALIGN={1,2,4}]")
   message(STATUS "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_GETCHAR}${ColorReset} [RCSW_STDIO_GETCHAR]")
   message(STATUS "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_STDIO_PUTCHAR}${ColorReset} [RCSW_STDIO_PUTCHAR]")
-  message(STATUS "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS}${ColorReset} [RCSW_STDIO_MATH_LOG10_TAYLOR_TERMS]")
-  message(STATUS "stdio printf() buffer size                    : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_BUFFER_SIZE}${ColorReset} [RCSW_STDIO_PRINTF_BUFFER_SIZE]")
-  message(STATUS "stdio printf() support for decimals           : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_SUPPORT_DEC}${ColorReset} [RCSW_STDIO_PRINTF_SUPPORT_DEC]")
-  message(STATUS "stdio printf() support for exponentials       : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_SUPPORT_EXP}${ColorReset} [RCSW_STDIO_PRINTF_SUPPORT_EXP]")
-  message(STATUS "stdio printf() support for writeback          : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK}${ColorReset} [RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK]")
+  message(STATUS "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_STDIO_MATH_LOG10_TERMS}${ColorReset} [RCSW_STDIO_MATH_LOG10_TERMS]")
+  message(STATUS "stdio printf() buffer size                    : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_BUFSIZE}${ColorReset} [RCSW_STDIO_PRINTF_BUFSIZE]")
+  message(STATUS "stdio printf() support for decimals           : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_WITH_DEC}${ColorReset} [RCSW_STDIO_PRINTF_WITH_DEC]")
+  message(STATUS "stdio printf() support for exponentials       : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_WITH_EXP}${ColorReset} [RCSW_STDIO_PRINTF_WITH_EXP]")
+  message(STATUS "stdio printf() support for writeback          : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_WITH_WRITEBACK}${ColorReset} [RCSW_STDIO_PRINTF_WITH_WRITEBACK]")
   message(STATUS "stdio printf() default float precision        : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC}${ColorReset} [RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC]")
   message(STATUS "stdio printf() decimal -> exp digit threshold : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH}${ColorReset} [RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH]")
-  message(STATUS "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG}${ColorReset} [RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG]")
-  message(STATUS "stdio printf() safety check in fmt strings    : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_STDIO_PRINTF_CHECK_NULL]")
-  message(STATUS "RCSW_GRIND_XX() macros                        : ${ColorBold}${EMIT_RCSW_NO_GRIND}${ColorReset} [RCSW_NO_GRIND]")
+  message(STATUS "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_WITH_LL}${ColorReset} [RCSW_STDIO_PRINTF_WITH_LL]")
+  message(STATUS "stdio printf() fmt string safety check        : ${ColorBold}${EMIT_RCSW_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_STDIO_PRINTF_CHECK_NULL]")
+  message(STATUS "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_NO_GRIND}${ColorReset} [RCSW_NO_GRIND]")
   message("")
-  message("--------------------------------------------------------------------------------")
+  message("${BoldBlue}--------------------------------------------------------------------------------${ColorReset}")
 
 endif()

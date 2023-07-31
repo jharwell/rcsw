@@ -43,10 +43,13 @@
  * \note With later GCC versions, if you don't have the casting right for
  * functions which are shared between bstree and ostree, things won't work
  * because of differing alignments/packing under optimizations.
+ *
+ * Must be packed and aligned to the same size as \ref dptr_t so that casts from
+ * \ref ostree_node.data are safe on all targets.
  */
-struct ostree_node {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) ostree_node {
     uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-    uint8_t *data;
+    dptr_t *data;
     struct ostree_node *left;
     struct ostree_node *right;
     struct ostree_node *parent;
@@ -55,8 +58,9 @@ struct ostree_node {
   /**
    * Size of subtree anchored at node (including node)
    */
-    int count;
+    int32_t count;
 };
+
 
 /*******************************************************************************
  * Inline Functions

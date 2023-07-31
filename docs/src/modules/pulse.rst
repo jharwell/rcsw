@@ -1,4 +1,4 @@
-.. _ln-rcsw-pulse:
+.. _modules-pulse:
 
 PUbLisher SubscribEr (PULSE)
 ============================

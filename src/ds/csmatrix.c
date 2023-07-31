@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-struct col_pair {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) col_pair {
   int row;
   int inner_index;
 };

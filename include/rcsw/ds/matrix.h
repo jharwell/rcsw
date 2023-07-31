@@ -34,7 +34,7 @@ struct matrix_params {
    * Pointer to application-allocated space for storing the data managed by the
    * \ref matrix. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -77,7 +77,7 @@ struct matrix {
   size_t n_cols;
 
   /** Matrix data. */
-  uint8_t* elements;
+  dptr_t* elements;
 
   /**
    * Run-time configuration flags. Valid flags are:
@@ -117,8 +117,8 @@ static inline void* matrix_access(const struct matrix* const matrix,
   RCSW_FPC_NV(NULL,
               NULL != matrix,
               u < matrix->n_rows,
-            v < matrix->n_cols);
-  return matrix->elements + (matrix->n_cols * matrix->elt_size * u) +
+              v < matrix->n_cols);
+  return (uint8_t*)matrix->elements + (matrix->n_cols * matrix->elt_size * u) +
       (matrix->elt_size * v);
 }
 

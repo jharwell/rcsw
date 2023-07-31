@@ -18,7 +18,7 @@
 
 #include "rcsw/stdio/printf_config.h"
 #include "rcsw/stdio/printf_gadget.h"
-#if (RCSW_STDIO_PRINTF_SUPPORT_DEC || RCSW_STDIO_PRINTF_SUPPORT_EXP)
+#if (RCSW_STDIO_PRINTF_WITH_DEC || RCSW_STDIO_PRINTF_WITH_EXP)
 #include "rcsw/stdio/printf_float.h"
 #endif
 

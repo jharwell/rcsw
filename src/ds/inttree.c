@@ -20,9 +20,13 @@
 #include "rcsw/utils/utils.h"
 
 /*******************************************************************************
- * Static Functions
+ * Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
+
+RCSW_STATIC_ASSERT(sizeof(struct inttree_node) == sizeof(struct bstree_node),
+                   "TEST");
+
 /**
  * \brief Compare two intervals to see if they overlap
  *
@@ -35,9 +39,9 @@ static bool_t inttree_cmp_overlap(const void* a, const void* b) {
   const struct interval_data* a_p = a;
   const struct interval_data* b_p = b;
   if (a_p->low <= b_p->low) {
-    return (bool_t)(b_p->low <= a_p->high);
+    return (b_p->low <= a_p->high);
   } else {
-    return (bool_t)(a_p->low <= b_p->high);
+    return (a_p->low <= b_p->high);
   }
 } /* inttree_cmp_overlap() */
 
@@ -91,8 +95,10 @@ inttree_overlap_search(const struct bstree* tree,
 } /* inttree_overlap_search() */
 
 void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
-  node->max_high = ((struct interval_data*)node->data)->high;
-  while (node != (struct inttree_node*)tree->root) {
+  struct interval_data* data = (struct interval_data*)node->data;
+  node->max_high = data->high;
+
+  while (node != RCSW_INTTREE_ROOT(tree)) {
     inttree_node_update_max(node);
     node = node->parent;
   } /* while() */

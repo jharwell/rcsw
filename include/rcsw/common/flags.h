@@ -22,8 +22,8 @@
  * Applicable to xx_init() functions with an \p xx_in parameter which is ignored
  * if you do not pass this flag (even if it is non-NULL).
  *
- * Applies to all RCSW modules. Whether or not it applies to a specific part of
- * a module will be documented for each module.
+ * Applicable to all RCSW modules. Whether or not it applies to a specific part
+ * of a module will be documented for each module.
  */
 #define RCSW_NOALLOC_HANDLE 0x1
 
@@ -34,8 +34,8 @@
  * If passed, you must provide a handle to the application-allocated space as a
  * parameter.
  *
- * Applies to xx_init() functions in all RCSW modules. Whether or not it applies
- * to a specific part of a module will be documented for each module.
+ * Applicable to xx_init() functions in all RCSW modules. Whether or not it
+ * applies to a specific part of a module will be documented for each module.
  */
 #define RCSW_NOALLOC_DATA 0x2
 
@@ -46,8 +46,8 @@
  * If passed, you must provide a handle to the application-allocated space as a
  * parameter.
  *
- * Applies generally to xx_init() functions in all RCSW modules. Whether or not
- * it applies to a specific part of a module will be documented for each module.
+ * Applicable to xx_init() functions in all RCSW modules. Whether or not it
+ * applies to a specific part of a module will be documented for each module.
  */
 #define RCSW_NOALLOC_META 0x4
 
@@ -55,7 +55,7 @@
  * \brief Declare that any allocated space, regardless of where it comes from,
  * should be zeroed before use.
  *
- * Applies to all modules which do memory allocation via \ref rcsw_alloc().
+ * Applicable to all modules which do memory allocation via \ref rcsw_alloc().
  *
  * If dynamic memory allocation is allowed, this causes it to use calloc()
  * instead of malloc(). It memory allocation is disallowed, then provided

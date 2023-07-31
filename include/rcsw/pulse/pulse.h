@@ -95,7 +95,7 @@ struct pulse_params {
  */
 struct pulse_rxq_ent {
   /** Pointer to the buffer with the actual data. */
-  uint8_t* data;
+  dptr_t* data;
 
   /** Received packet size in bytes. */
   size_t pkt_size;
@@ -128,7 +128,7 @@ struct pulse_rxq_ent {
  */
 struct pulse_rsrvn {
   /** Pointer to the buffer with the actual data. */
-  uint8_t* data;
+  dptr_t* data;
 
   /** Received packet size in bytes. */
   size_t pkt_size;
@@ -320,7 +320,7 @@ status_t pulse_unsubscribe(struct pulse * pulse,
 status_t pulse_publish(struct pulse * pulse,
                        uint32_t pid,
                        size_t pkt_size,
-                       const uint8_t* pkt);
+                       const void* pkt);
 
 /**
  * \brief Reserve a buffer on a \ref pulse instance.

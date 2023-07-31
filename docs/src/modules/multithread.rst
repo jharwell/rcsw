@@ -1,4 +1,4 @@
-.. _ln-rcsw-multithread:
+.. _modules-multithread:
 
 Multithread
 ===========

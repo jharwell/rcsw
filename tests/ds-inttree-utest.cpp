@@ -204,12 +204,12 @@ static void inttree_overlap_test(int len, struct bstree_params *params) {
   for (int i = 0; i < len; ++i) {
     if (overlap_arr[i]) {
       CATCH_REQUIRE(NULL != inttree_overlap_search(tree,
-                                                    (struct inttree_node*)tree->root,
-                                                    search_arr + i));
+                                                   RCSW_INTTREE_ROOT(tree),
+                                                   search_arr + i));
     } else {
       CATCH_REQUIRE(NULL == inttree_overlap_search(tree,
-                                                    (struct inttree_node*)tree->root,
-                                                    search_arr + i));
+                                                   RCSW_INTTREE_ROOT(tree),
+                                                   search_arr + i));
     }
   } /* for() */
   bstree_destroy(tree);

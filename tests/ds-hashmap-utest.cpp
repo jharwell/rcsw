@@ -73,7 +73,7 @@ static void build_test(struct hashmap_params *  params) {
   T data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
   if (params->flags & RCSW_DS_SORTED) {
-    params->sort_thresh = RCSW_MAX(attempts / 2, 1UL);
+    params->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
   }
 
   map = hashmap_init(&mymap, params);
@@ -115,6 +115,7 @@ static void build_test(struct hashmap_params *  params) {
     }
   } /* for() */
   hashmap_clear(map);
+
   for (j = 0; j < i; ++j) {
     CATCH_REQUIRE(nullptr == hashmap_data_get(map, nodes[j].key));
   } /* for() */

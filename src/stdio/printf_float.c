@@ -128,7 +128,7 @@ static void print_broken_up_decimal(struct double_components number_,
 
     if (number_.fractional > 0 || !(flags & FLAGS_ADAPT_EXP) ||
         (flags & FLAGS_HASH)) {
-      while (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+      while (len < RCSW_STDIO_PRINTF_BUFSIZE) {
         --count;
         buf[len++] = (char)('0' + number_.fractional % 10U);
         if (!(number_.fractional /= 10U)) {
@@ -136,23 +136,23 @@ static void print_broken_up_decimal(struct double_components number_,
         }
       }
       // add extra 0s
-      while ((len < RCSW_STDIO_PRINTF_BUFFER_SIZE) && (count > 0U)) {
+      while ((len < RCSW_STDIO_PRINTF_BUFSIZE) && (count > 0U)) {
         buf[len++] = '0';
         --count;
       }
-      if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+      if (len < RCSW_STDIO_PRINTF_BUFSIZE) {
         buf[len++] = '.';
       }
     }
   } else {
-    if ((flags & FLAGS_HASH) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+    if ((flags & FLAGS_HASH) && (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = '.';
     }
   }
 
   // Write the integer part of the number (it comes after the fractional
   // since the character order is reversed)
-  while (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+  while (len < RCSW_STDIO_PRINTF_BUFSIZE) {
     buf[len++] = (char)('0' + (number_.integral % 10));
     if (!(number_.integral /= 10)) {
       break;
@@ -164,12 +164,12 @@ static void print_broken_up_decimal(struct double_components number_,
     if (width && (number_.is_negative || (flags & (FLAGS_PLUS | FLAGS_SPACE)))) {
       width--;
     }
-    while ((len < width) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+    while ((len < width) && (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = '0';
     }
   }
 
-  if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+  if (len < RCSW_STDIO_PRINTF_BUFSIZE) {
     if (number_.is_negative) {
       buf[len++] = '-';
     } else if (flags & FLAGS_PLUS) {
@@ -197,7 +197,7 @@ static void print_decimal_number(struct printf_output_gadget* output,
 /*******************************************************************************
  * Exponential Support
  ******************************************************************************/
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
 struct scaling_factor {
   double raw_factor;
   bool_t multiply; // if true, need to multiply by raw_factor; otherwise need to
@@ -441,7 +441,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
     }
   }
 }
-#endif // PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#endif // PRINTF_WITH_EXPONENTIAL_SPECIFIERS
 
 /*******************************************************************************
  * API Functions
@@ -452,7 +452,7 @@ void print_floating_point(struct printf_output_gadget* output,
                           printf_size_t width,
                           printf_flags_t flags,
                           bool_t prefer_exponential) {
-  char buf[RCSW_STDIO_PRINTF_BUFFER_SIZE];
+  char buf[RCSW_STDIO_PRINTF_BUFSIZE];
   printf_size_t len = 0U;
 
   /* test for special values */
@@ -478,7 +478,7 @@ void print_floating_point(struct printf_output_gadget* output,
     // The required behavior of standard printf is to print _every_ integral-part
     // digit -- which could mean printing hundreds of characters, overflowing any
     // fixed internal buffer and necessitating a more complicated implementation.
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
     print_exponential_number(output, value, precision, width, flags, buf, len);
 #endif
     return;
@@ -491,14 +491,14 @@ void print_floating_point(struct printf_output_gadget* output,
 
   // limit precision so that our integer holding the fractional part does not
   // overflow
-  while ((len < RCSW_STDIO_PRINTF_BUFFER_SIZE) &&
+  while ((len < RCSW_STDIO_PRINTF_BUFSIZE) &&
          (precision > PRINTF_MAX_SUPPORTED_PRECISION)) {
     buf[len++] = '0'; // This respects the precision in terms of result length
         // only
     precision--;
   }
 
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   if (prefer_exponential)
     print_exponential_number(output, value, precision, width, flags, buf, len);
   else

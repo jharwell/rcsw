@@ -300,8 +300,12 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
   if (arr->sorted) {
     ER_DEBUG("Currently sorted: performing binary search");
-    rval = bsearch_rec(
-        arr->elements, e, arr->cmpe, arr->elt_size, 0, arr->current - 1);
+    rval = bsearch_rec(arr->elements,
+                       e,
+                       arr->cmpe,
+                       arr->elt_size,
+                       0,
+                       arr->current - 1);
   } else {
     for (size_t i = 0; i < arr->current; ++i) {
       if (arr->cmpe(e, darray_data_get(arr, i)) == 0) {
@@ -315,14 +319,17 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
-  return (arr->elements + (index * arr->elt_size));
+  return ((uint8_t*)arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 
 status_t darray_data_set(const struct darray* const arr,
                          size_t index,
                          const void* const e) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != e);
-  return ds_elt_copy(arr->elements + index * arr->elt_size, e, arr->elt_size);
+  return ds_elt_copy((uint8_t*)arr->elements + index * arr->elt_size,
+                     e,
+                     arr->elt_size);
+
 } /* darray_data_set() */
 
 status_t darray_resize(struct darray* const arr, size_t size) {
@@ -382,7 +389,7 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
 struct darray* darray_filter(struct darray* const arr,
                              bool_t (*pred)(const void* const e),
                              uint32_t flags,
-                             uint8_t* elements) {
+                             void* elements) {
   RCSW_FPC_NV(NULL,
               NULL != arr,
               NULL != pred,
@@ -431,7 +438,7 @@ error:
 
 struct darray* darray_copy(const struct darray* const arr,
                            uint32_t flags,
-                           uint8_t* elements) {
+                           void* elements) {
   RCSW_FPC_NV(NULL, arr != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
   struct darray_params params = {.init_size = arr->current,

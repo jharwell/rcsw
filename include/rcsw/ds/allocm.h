@@ -19,8 +19,8 @@
 /**
  * \brief An entry in an allocation map for datablocks.
  */
-struct allocm_entry {
-  int8_t value;
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) allocm_entry {
+  int32_t value;
 };
 
 /*******************************************************************************

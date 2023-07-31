@@ -32,13 +32,13 @@ struct hashmap_params {
    * Pointer to application-allocated space for storing the \ref hashmap
    * buckets. Ignored unless \ref RCSW_NOALLOC_META is passed.
    */
-  uint8_t *meta;
+  dptr_t *meta;
 
   /**
    * Pointer to application-allocated space for storing data managed by the \ref
    * hashmap. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -106,10 +106,10 @@ struct hashmap_space_mgmt {
   /**
    * Raw pointer to space for elements.
    */
-  uint8_t*                elements;
-  struct allocm_entry*    db_map;
-  uint8_t*                datablocks;
-  uint8_t*                hashnodes;
+  dptr_t*               elements;
+  struct allocm_entry*  db_map;
+  dptr_t*               datablocks;
+  struct hashnode*      hashnodes;
 
   /**
    * Dynamic arrays that will be set to a fixed size during
@@ -196,10 +196,13 @@ struct hashmap {
 /**
  * Nodes within the hashmap (each bucket is filled with these).
  *
- * As you woulde xpect for an associative array element,this isa key-value
- * pair.
+ * As you woulde xpect for an associative array element, this is a key-value
+ * pair
+ *
+ * Must be packed and aligned to the same size as \ref ptr_t so that casts from
+ * \ref hashnode.data are safe on all targets.
  */
-struct hashnode {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) hashnode {
   /**
    * Key for key-value pair.
    */
@@ -208,7 +211,7 @@ struct hashnode {
   /**
    * Value for key-value pair.
    */
-  void *data;
+  dptr_t *data;
 
   /**
    * Calculated hash. Not used at runtime, but useful when printing elements for

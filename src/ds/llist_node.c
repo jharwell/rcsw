@@ -31,10 +31,12 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-    int alloc_idx =
-        allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
+    int alloc_idx = allocm_probe(list->space.node_map,
+                                 (size_t)list->max_elts,
+                                 list->current);
+    printf("IDX: %d\n", alloc_idx);
     RCSW_CHECK(-1 != alloc_idx);
-    node = list->space.nodes + alloc_idx;
+    node = (list->space.nodes + alloc_idx);
 
     /* mark node as in use */
     allocm_mark_inuse(list->space.node_map + alloc_idx);
@@ -99,7 +101,7 @@ error:
 /*******************************************************************************
  * Datablock Functions
  ******************************************************************************/
-void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) {
+void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
   /* nothing to do */
   if (datablock == NULL) {
     return;
@@ -111,7 +113,7 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
   }
 
   if (list->flags & RCSW_NOALLOC_DATA) {
-    size_t block_idx = (datablock - list->space.datablocks) / list->elt_size;
+    size_t block_idx = ((uint8_t*)datablock - (uint8_t*)list->space.datablocks) / list->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(list->space.db_map + block_idx);
@@ -122,8 +124,8 @@ void llist_node_datablock_dealloc(struct llist* const list, uint8_t* datablock) 
   }
 } /* llist_node_datablock_dealloc() */
 
-void* llist_node_datablock_alloc(struct llist* const list) {
-  void* datablock = NULL;
+dptr_t* llist_node_datablock_alloc(struct llist* const list) {
+  dptr_t* datablock = NULL;
 
   if (list->flags & RCSW_NOALLOC_DATA) {
     /*
@@ -134,7 +136,7 @@ void* llist_node_datablock_alloc(struct llist* const list) {
     int alloc_idx =
         allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
-    datablock = list->space.datablocks + alloc_idx * list->elt_size;
+    datablock = (void*)((uint8_t*)list->space.datablocks + alloc_idx * list->elt_size);
 
     /* mark data block as inuse */
     allocm_mark_inuse(list->space.db_map + alloc_idx);

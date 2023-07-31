@@ -21,6 +21,11 @@ jobs:
           - OPT
           - DEV
 
+        ptr_align:
+          - 1
+          - 2
+          - 4
+
     steps:
       - uses: actions/checkout@v3
 
@@ -40,6 +45,7 @@ jobs:
           -DRCSW_STDIO_PUTCHAR=th_putchar \
           -DLIBRA_ERL=ALL \
           -DLIBRA_VALGRIND_COMPAT=YES \
+          -DRCSW_PTR_ALIGN=${{ matrix.ptr_align }}
           ..
 
           # Normal tests

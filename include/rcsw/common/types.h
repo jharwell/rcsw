@@ -57,7 +57,7 @@ typedef enum {
 
 extern uint32_t errno;
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__arm__)
 
 #include <errno.h>
 #include <stddef.h>
@@ -68,6 +68,7 @@ extern uint32_t errno;
 #include <unistd.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #if defined(DOXYGEN_DOCUMENTATION_BUILD)
 
@@ -126,3 +127,32 @@ enum exec_type {
    */
   ekEXEC_ITER,
 };
+
+/**
+ * \brief A C data pointer type.
+ *
+ * This is the pointer type to store all persistent runtime data in RCSW, which
+ * enables casts like:
+ *
+ * \code
+ * (struct mystruct*)node->data
+ * \endcode
+ *
+ * work as intended on all targets. On some embedded targets like ARM, if \code
+ * node->data \endcode has an alignment of 1 because it points to an address on
+ * the stack, then casting to \code mystruct \endcode which may have alignment >
+ * 1 can cause a hardware trap mecause the low-level instructions the compiler
+ * generates to access \code mystruct \endcode assumes whatever is pointed at
+ * has the expected alignment.
+ *
+ * This can be overriden at compile time.
+ */
+#if (RCSW_PTR_ALIGN == 4)
+typedef uint32_t dptr_t;
+#elif (RCSW_PTR_ALIGN == 2)
+typedef uint16_t dptr_t;
+#elif (RCSW_PTR_ALIGN == 1)
+typedef uint8_t dptr_t;
+#else
+#error RCSW currently supports [1,2,4] byte pointer alignment
+#endif

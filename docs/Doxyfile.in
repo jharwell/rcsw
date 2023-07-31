@@ -160,7 +160,7 @@ FULL_PATH_NAMES        = YES
 # will be relative from the directory where doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        =
+STRIP_FROM_PATH        = ../include
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -2214,6 +2214,7 @@ PREDEFINED             = __cplusplus= \
                          RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_LOG4CL\
                          RCSW_STDIO_PUTCHAR=RCSW_STDIO_PUTCHAR \
                          RCSW_STDIO_GETCHAR=RCSW_STDIO_GETCHAR \
+                         RCSW_PTR_ALIGN=4\
                          BEGIN_C_DECLS= \
                          LIBRA_ERL_LVL=LIBRA_ERL_ALL\
                          LIBRA_FPC=LIBRA_FPC_RETURN\

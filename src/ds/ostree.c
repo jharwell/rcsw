@@ -20,6 +20,9 @@
 
 BEGIN_C_DECLS
 
+RCSW_STATIC_ASSERT(sizeof(struct ostree_node) == sizeof(struct bstree_node),
+                   "TEST");
+
 /*******************************************************************************
  * API Functions
  ******************************************************************************/

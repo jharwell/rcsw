@@ -54,7 +54,7 @@ typedef unsigned int printf_flags_t;
 
 typedef uint8_t numeric_base_t;
 
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
 typedef unsigned long long printf_unsigned_value_t;
 typedef long long          printf_signed_value_t;
 #else

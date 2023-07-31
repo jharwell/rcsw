@@ -50,9 +50,9 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
   strncpy(bus_params.name, "TESTBUS", sizeof(bus_params.name));
 
   for (size_t i = 0; i < TH_MAX_POOLS; ++i) {
-    bus_params.pools[i].elements = (uint8_t*)malloc(mpool_element_space(TH_MAX_BUFSIZE,
+    bus_params.pools[i].elements = (dptr_t*)malloc(mpool_element_space(TH_MAX_BUFSIZE,
                                                                      TH_RXQ_SIZE));
-    bus_params.pools[i].meta = (uint8_t*)malloc(mpool_meta_space(TH_RXQ_SIZE));
+    bus_params.pools[i].meta = (dptr_t*)malloc(mpool_meta_space(TH_RXQ_SIZE));
     CATCH_REQUIRE(nullptr != bus_params.pools[i].elements);
     CATCH_REQUIRE(nullptr != bus_params.pools[i].meta);
     bus_params.pools[i].max_elts = TH_RXQ_SIZE;

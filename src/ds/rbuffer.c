@@ -103,7 +103,7 @@ void* rbuffer_data_get(const struct rbuffer* const rb, size_t idx) {
   RCSW_FPC_NV(NULL, rb != NULL);
 
   idx = idx % rb->max_elts;
-  return rb->elements + (idx * rb->elt_size);
+  return (uint8_t*)rb->elements + (idx * rb->elt_size);
 } /* rbuffer_data_get() */
 
 status_t rbuffer_serve_front(const struct rbuffer* const rb, void* const e) {

@@ -41,13 +41,13 @@ struct llist_params {
    * Pointer to application-allocated space for storing the nodes managed by the
    * \ref llist. Ignored unless \ref RCSW_NOALLOC_META is passed.
    */
-  uint8_t *meta;
+  dptr_t *meta;
 
   /**
    * Pointer to application-allocated space for storing the datablocks managed
    * by the \ref llist. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -67,8 +67,11 @@ struct llist_params {
 
 /**
  * \brief Linked list node for \ref llist.
+ *
+ * Must be packed and aligned to the same size as \ref dptr_t so that casts from
+ * \ref llist_node.data are same on all targets.
  */
-struct llist_node {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) llist_node {
   /**
    * Next node in the list.
    */
@@ -82,7 +85,7 @@ struct llist_node {
   /**
    * Actual data associated with this node
    */
-  uint8_t *data;
+  dptr_t *data;
 };
 
 /**
@@ -93,7 +96,7 @@ struct llist_space_mgmt {
    * Space for the data elements. Used if \ref RCSW_NOALLOC_DATA passed in \ref
    * llist_params.flags.
    */
-  uint8_t*             datablocks;
+  dptr_t*             datablocks;
 
   /**
    * Space for the allocation map for datablocks. Used if \ref RCSW_NOALLOC_DATA
@@ -419,8 +422,8 @@ status_t llist_sort(struct llist *list, enum exec_type type);
  */
 struct llist* llist_copy(struct llist *list,
                          uint32_t flags,
-                         uint8_t* elements,
-                         uint8_t* nodes);
+                         void* elements,
+                         void* nodes);
 
 /**
  * \brief Create a copy of part of a \ref llist (conditional copy).
@@ -448,8 +451,8 @@ struct llist* llist_copy(struct llist *list,
 struct llist *llist_copy2(struct llist *list,
                           bool_t (*pred)(const void *e),
                           uint32_t flags,
-                          uint8_t* elements,
-                          uint8_t* nodes);
+                          void* elements,
+                          void* nodes);
 
 /**
  * \brief  Filter out elements from one \ref llist into another.
@@ -477,8 +480,8 @@ struct llist *llist_copy2(struct llist *list,
 struct llist *llist_filter(struct llist *list,
                            bool_t (*pred)(const void *const e),
                            uint32_t flags,
-                           uint8_t* elements,
-                           uint8_t* nodes);
+                           void* elements,
+                           void* nodes);
 
 /**
  * \brief - Filter out items that satisfy a predicate from a \ref llist.

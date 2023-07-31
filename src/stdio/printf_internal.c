@@ -51,7 +51,7 @@ void print_integer(struct printf_output_gadget* output,
                    printf_size_t precision,
                    printf_size_t width,
                    printf_flags_t flags) {
-  char buf[RCSW_STDIO_PRINTF_BUFFER_SIZE];
+  char buf[RCSW_STDIO_PRINTF_BUFSIZE];
   printf_size_t len = 0U;
 
   if (!value) {
@@ -73,7 +73,7 @@ void print_integer(struct printf_output_gadget* output,
           (char)(digit < 10 ? '0' + digit
                             : (flags & FLAGS_UPPERCASE ? 'A' : 'a') + digit - 10);
       value /= base;
-    } while (value && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE));
+    } while (value && (len < RCSW_STDIO_PRINTF_BUFSIZE));
   }
 
   print_integer_finalization(
@@ -98,12 +98,12 @@ void print_integer_finalization(struct printf_output_gadget* output,
         width--;
       }
       while ((flags & FLAGS_ZEROPAD) && (len < width) &&
-             (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+             (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
         buf[len++] = '0';
       }
     }
 
-    while ((len < precision) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+    while ((len < precision) && (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = '0';
     }
 
@@ -129,20 +129,20 @@ void print_integer_finalization(struct printf_output_gadget* output,
       }
     }
     if ((base == BASE_HEX) && !(flags & FLAGS_UPPERCASE) &&
-        (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+        (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = 'x';
     } else if ((base == BASE_HEX) && (flags & FLAGS_UPPERCASE) &&
-               (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+               (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = 'X';
-    } else if ((base == BASE_BINARY) && (len < RCSW_STDIO_PRINTF_BUFFER_SIZE)) {
+    } else if ((base == BASE_BINARY) && (len < RCSW_STDIO_PRINTF_BUFSIZE)) {
       buf[len++] = 'b';
     }
-    if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+    if (len < RCSW_STDIO_PRINTF_BUFSIZE) {
       buf[len++] = '0';
     }
   }
 
-  if (len < RCSW_STDIO_PRINTF_BUFFER_SIZE) {
+  if (len < RCSW_STDIO_PRINTF_BUFSIZE) {
     if (negative) {
       buf[len++] = '-';
     } else if (flags & FLAGS_PLUS) {

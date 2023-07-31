@@ -77,12 +77,12 @@ int bstree_node_destroy(const struct bstree* const tree,
 } /* bstree_node_destroy() */
 
 void bstree_node_datablock_dealloc(const struct bstree* const tree,
-                                   uint8_t* datablock) {
+                                   dptr_t* datablock) {
   if (datablock == NULL) {
     return;
   }
   if (tree->flags & RCSW_NOALLOC_DATA) {
-    size_t idx = (datablock - tree->space.datablocks) / tree->elt_size;
+    size_t idx = ((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) / tree->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(tree->space.db_map + idx);
@@ -117,7 +117,7 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
     /* mark data block as in use */
     allocm_mark_inuse(tree->space.db_map + alloc_idx);
 
-    datablock = tree->space.datablocks + (alloc_idx * tree->elt_size);
+    datablock = (uint8_t*)tree->space.datablocks + (alloc_idx * tree->elt_size);
   } else {
     datablock = rcsw_alloc(NULL, tree->elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
@@ -150,8 +150,9 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    int alloc_idx = allocm_probe(
-        tree->space.node_map, (size_t)tree->max_elts + 2, search_idx);
+    int alloc_idx = allocm_probe(tree->space.node_map,
+                                 (size_t)tree->max_elts + 2,
+                                 search_idx);
     RCSW_CHECK(-1 != alloc_idx);
 
     /* mark node as in use */

@@ -40,7 +40,7 @@ struct rbuffer_params {
    * Pointer to application-allocated space for storing the elements managed by
    * the \ref rbuffer. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -79,7 +79,7 @@ struct rbuffer {
   /**
    * The actual data.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Current # of elements in buffer.

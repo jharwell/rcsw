@@ -83,7 +83,7 @@ mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
 
   sorter->cum_data = params->data;
   sorter->data = rcsw_alloc(NULL,
-                            sizeof(size_t) * chunk_size,
+                            sizeof(size_t) * sorter->chunk_size,
                             RCSW_NONE);
   RCSW_CHECK_PTR(sorter->data);
 

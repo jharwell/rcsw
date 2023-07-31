@@ -41,7 +41,7 @@ struct darray_params {
    * Pointer to application-allocated space for storing data managed by the \ref
    * darray. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -444,7 +444,7 @@ status_t darray_inject(const struct darray * arr,
 struct darray *darray_filter(struct darray * arr,
                              bool_t (*pred)(const void * e),
                              uint32_t flags,
-                             uint8_t* elements);
+                             void* elements);
 
 /**
  * \brief Create a copy of a darray
@@ -462,7 +462,7 @@ struct darray *darray_filter(struct darray * arr,
  */
 struct darray *darray_copy(const struct darray * arr,
                            uint32_t flags,
-                           uint8_t* elements);
+                           void* elements);
 
 /**
  * \brief Print an darray

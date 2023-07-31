@@ -33,7 +33,8 @@ struct rawfifo {
   /**
    * The actual elements.
    */
-  uint8_t *elements;
+  dptr_t *elements;
+
   /**
    * Element where we write next.
    */
@@ -112,7 +113,7 @@ static inline size_t rawfifo_n_free(const struct rawfifo *const fifo) {
  * \return \ref status_t.
  */
 status_t rawfifo_init(struct rawfifo * fifo,
-                      uint8_t * buf,
+                      void* buf,
                       size_t max_elts,
                       size_t elt_size);
 

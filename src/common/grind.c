@@ -106,7 +106,7 @@ static void grind_report_hist(const struct grinder* const the_grinder,
     } /* for(j...) */
   } /* for(i..) */
 
-  size_t xmax = RCSW_MIN(bin_count_max, 40UL);
+  size_t xmax = RCSW_MIN(bin_count_max, (size_t)40);
 
   /* print histogram */
   for (size_t i = 0; i < 50; ++i) {
@@ -145,7 +145,10 @@ static void grind_report_datapoints(const struct grinder* the_grinder,
       DPRINTF("%8zu            %08zu\n", i, grindee->table[i]);
     } else {
       struct timespec ts = time_monons2ts(grindee->table[i]);
-      DPRINTF("%8zu            %8zu.%08zu sec\n", i, ts.tv_sec, ts.tv_nsec);
+      DPRINTF("%8zu            %8zu.%08zu sec\n",
+              i,
+              (size_t)ts.tv_sec,
+              (size_t)ts.tv_nsec);
     }
   } /* for() */
 }
@@ -180,8 +183,8 @@ static void grind_report_count(const struct grinder* const the_grinder,
   size_t min = grindee_data_min(grindee);
   size_t max = grindee_data_max(grindee);
 
-  DPRINTF("Maximum            : %lu\n", max);
-  DPRINTF("Minimum            : %lu\n", min);
+  DPRINTF("Maximum            : %zu\n", max);
+  DPRINTF("Minimum            : %zu\n", min);
 
   /* get average time */
   double mean = 0;
@@ -260,8 +263,8 @@ static status_t grind_housekeeping_pre_capture(struct grinder* const the_grinder
   if ((the_grinder->flags & RCSW_GRIND_INTERVAL) && !the_grinder->in_interval &&
       !grindee->full) {
     ER_TRACE("Interval start=%zu.%zu/%zu",
-             curr_time.tv_sec,
-             curr_time.tv_nsec,
+             (size_t)curr_time.tv_sec,
+             (size_t)curr_time.tv_nsec,
              time_ts2monons(&curr_time));
     the_grinder->interval_start = curr_time;
     the_grinder->in_interval = true;
@@ -279,8 +282,8 @@ static status_t grind_housekeeping_pre_capture(struct grinder* const the_grinder
     if (time_ts_cmp(&diff, &the_grinder->interval) >= 0) {
       grind_reset_all(the_grinder);
       ER_TRACE("Reset statistics for all grindees: %zu.%zu seconds elapsed",
-               the_grinder->interval.tv_sec,
-               the_grinder->interval.tv_nsec);
+               (size_t)the_grinder->interval.tv_sec,
+               (size_t)the_grinder->interval.tv_nsec);
     }
   }
   return OK;
@@ -312,8 +315,8 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
       if (time_ts_cmp(&diff, &the_grinder->interval) >= 0) {
         grind_reset_all(the_grinder);
         ER_TRACE("Reset statistics all grindees: %zu.%zu seconds elapsed.",
-                 the_grinder->interval.tv_sec,
-                 the_grinder->interval.tv_nsec);
+                 (size_t)the_grinder->interval.tv_sec,
+                 (size_t)the_grinder->interval.tv_nsec);
       }
       /*
        * Using relative timing, so will reset upon next call to
@@ -554,8 +557,8 @@ status_t grind_capture_tick(struct grinder* const the_grinder,
                grindee->tindex,
                grindee->tsize,
                grindee->domain.tick.accum,
-               rel.tv_sec,
-               rel.tv_nsec);
+               (size_t)rel.tv_sec,
+               (size_t)rel.tv_nsec);
     }
 
     /*
@@ -708,7 +711,7 @@ int grind_report_utilization2(const struct grinder* const the_grinder,
     grindee = &the_grinder->grindees[i];
     inst_total = grindee_data_sum(grindee);
     buf_ptr += sprintf(buf_ptr,
-                       "  %-15.15s  %-18lu   %3.2f",
+                       "  %-15.15s  %-18zu   %3.2f",
                        grindee->name,
                        inst_total,
                        (inst_total / divisor) * 100.0);
@@ -739,7 +742,7 @@ status_t grind_report_utilization(const struct grinder* const the_grinder) {
   for (size_t i = 0; i < the_grinder->n_inst; ++i) {
     grindee = &the_grinder->grindees[i];
     inst_total = grindee_data_sum(grindee);
-    DPRINTF("%-15.15s   %-18lu    %3.2f%%",
+    DPRINTF("%-15.15s   %-18zu    %3.2f%%",
             grindee->name,
             inst_total,
             (inst_total / divisor) * 100.0);

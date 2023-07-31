@@ -268,7 +268,7 @@ PRINTF_TEST_CASE(stdio_vsnprintf) {
   CATCH_CHECK(!strcmp(buffer, "3 -1000 test"));
 }
 
-#if RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
+#if RCSW_STDIO_PRINTF_WITH_WRITEBACK
 PRINTF_TEST_CASE(writeback_specifier) {
   char buffer[base_buffer_size];
 
@@ -334,11 +334,11 @@ PRINTF_TEST_CASE(ret_value)
   CATCH_CHECK(buffer[2] == '\0');
 }
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_DEC || RCSW_STDIO_PRINTF_WITH_EXP
 PRINTF_TEST_CASE(brute_force_float)
 {
   char buffer[base_buffer_size];
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   // brute force float
   bool any_failed = false;
   std::stringstream sstr;
@@ -356,7 +356,7 @@ PRINTF_TEST_CASE(brute_force_float)
   }
   CATCH_CHECK(not any_failed);
 
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   // This is tested when _both_ decimal and exponential specifiers are supported.
   // brute force exp
   sstr.setf(std::ios::scientific, std::ios::floatfield);
@@ -379,7 +379,7 @@ PRINTF_TEST_CASE(brute_force_float)
 #endif
 }
 
-#endif // PRINTF_SUPPORT_DECIMAL_SPECIFIERS || PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#endif // PRINTF_WITH_DECIMAL_SPECIFIERS || PRINTF_WITH_EXPONENTIAL_SPECIFIERS
 
 
 
@@ -428,7 +428,7 @@ PRINTF_TEST_CASE(space_flag)
   PRINTING_CHECK("             42",         ==, stdio_sprintf, buffer, "% 15d", 42);
   PRINTING_CHECK("            -42",         ==, stdio_sprintf, buffer, "% 15d", -42);
   PRINTING_CHECK("            -42",         ==, stdio_sprintf, buffer, "% 15d", -42);
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("        -42.987",         ==, stdio_sprintf, buffer, "% 15.3f", -42.987);
   PRINTING_CHECK("         42.987",         ==, stdio_sprintf, buffer, "% 15.3f", 42.987);
 #endif
@@ -445,13 +445,13 @@ PRINTF_TEST_CASE(space_flag__non_standard_format)
   char buffer[base_buffer_size];
   PRINTING_CHECK("Hello testing",           ==, stdio_sprintf, buffer, "% s", mkstr("Hello testing"));
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "% u", 1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "% I16u", (uint16_t) 1024);
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "% I32u", (uint32_t) 1024);
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "% I64u", (uint64_t) 1024);
 #endif
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "% u", 4294966272U);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "% I32u", (uint32_t) 4294966272U);
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "% I64u", (uint64_t) 4294966272U);
 #endif
@@ -480,7 +480,7 @@ PRINTF_TEST_CASE(plus_flag)
   PRINTING_CHECK("-1024",                   ==, stdio_sprintf, buffer, "%+d", -1024);
   PRINTING_CHECK("+1024",                   ==, stdio_sprintf, buffer, "%+i", 1024);
   PRINTING_CHECK("-1024",                   ==, stdio_sprintf, buffer, "%+i", -1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("+1024",                   ==, stdio_sprintf, buffer, "%+I16d", (int16_t) 1024);
   PRINTING_CHECK("-1024",                   ==, stdio_sprintf, buffer, "%+I16d", (int16_t) -1024);
   PRINTING_CHECK("+1024",                   ==, stdio_sprintf, buffer, "%+I32d", (int32_t) 1024);
@@ -498,11 +498,11 @@ PRINTF_TEST_CASE(plus_flag__non_standard_format)
   char buffer[base_buffer_size];
   PRINTING_CHECK("Hello testing",           ==, stdio_sprintf, buffer, "%+s", mkstr("Hello testing"));
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%+u", 1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%+I32u", (uint32_t) 1024);
 #endif
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "%+u", 4294966272U);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "%+I32u", (uint32_t) 4294966272U);
 #endif
   PRINTING_CHECK("777",                     ==, stdio_sprintf, buffer, "%+o", 511);
@@ -527,7 +527,7 @@ PRINTF_TEST_CASE(zero_flag)
   PRINTING_CHECK("-0042",                   ==, stdio_sprintf, buffer, "%05d", -42);
   PRINTING_CHECK("000000000000042",         ==, stdio_sprintf, buffer, "%015d", 42);
   PRINTING_CHECK("-00000000000042",         ==, stdio_sprintf, buffer, "%015d", -42);
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("000000000042.12",         ==, stdio_sprintf, buffer, "%015.2f", 42.1234);
   PRINTING_CHECK("00000000042.988",         ==, stdio_sprintf, buffer, "%015.3f", 42.9876);
   PRINTING_CHECK("-00000042.98760",         ==, stdio_sprintf, buffer, "%015.5f", -42.9876);
@@ -564,13 +564,13 @@ PRINTF_TEST_CASE(minus_flag_and_non_standard_zero_modifier_for_integers)
   PRINTING_CHECK("42             ",         ==, stdio_sprintf, buffer, "%0-15d", 42);
   PRINTING_CHECK("-42            ",         ==, stdio_sprintf, buffer, "%0-15d", -42);
 
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if PRINTF_WITH_EXPONENTIAL_SPECIFIERS
   PRINTING_CHECK("-4.200e+01     ",         ==, stdio_sprintf, buffer, "%0-15.3e", -42.);
 #else
   PRINTING_CHECK("e",                       ==, stdio_sprintf, buffer, "%0-15.3e", -42.);
 #endif
 
-#if PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#if PRINTF_WITH_EXPONENTIAL_SPECIFIERS
   PRINTING_CHECK("-42            ",         ==, stdio_sprintf, buffer, "%0-15.3g", -42.);
 #else
   PRINTING_CHECK("g",                       ==, stdio_sprintf, buffer,  "%0-15.3g", -42.);
@@ -615,7 +615,7 @@ PRINTF_TEST_CASE(sharp_flag__non_standard_format)
 
 #endif
 
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
 
 PRINTF_TEST_CASE(sharp_flag_with_long_long)
 {
@@ -648,7 +648,7 @@ PRINTF_TEST_CASE(sharp_flag_with_long_long__non_standard_format)
 }
 
 #endif
-#endif // PRINTF_SUPPORT_LONG_LONG
+#endif // PRINTF_WITH_LL
 
 PRINTF_TEST_CASE(specifier)
 {
@@ -674,7 +674,7 @@ PRINTF_TEST_CASE(specifier)
   PRINTING_CHECK("777",                     ==, stdio_sprintf, buffer, "%o", 511);
   PRINTING_CHECK("%",                       ==, stdio_sprintf, buffer, "%%");
 
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("127",                     ==, stdio_sprintf, buffer, "%I8d", (int8_t) 127LL);
 #if (SHRT_MAX >= 32767)
   PRINTING_CHECK("32767",                   ==, stdio_sprintf, buffer, "%I16d", (int16_t) 32767LL);
@@ -685,7 +685,7 @@ PRINTF_TEST_CASE(specifier)
   PRINTING_CHECK("9223372036854775807",     ==, stdio_sprintf, buffer, "%I64d", (int64_t) 9223372036854775807LL);
 #endif
 #endif
-#endif // PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#endif // PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
 }
 
 
@@ -698,13 +698,13 @@ PRINTF_TEST_CASE(width)
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%1i", 1024);
   PRINTING_CHECK("-1024",                   ==, stdio_sprintf, buffer, "%1i", -1024);
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%1u", 1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%1I16u", (uint16_t) 1024);
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%1I32u", (uint32_t) 1024);
   PRINTING_CHECK("1024",                    ==, stdio_sprintf, buffer, "%1I64u", (uint64_t) 1024);
 #endif
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "%1u", 4294966272U);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "%1I32u", (uint32_t) 4294966272U);
   PRINTING_CHECK("4294966272",              ==, stdio_sprintf, buffer, "%1I64u", (uint64_t) 4294966272U);
 #endif
@@ -728,13 +728,13 @@ PRINTF_TEST_CASE(width_20)
   PRINTING_CHECK("               -1024",    ==, stdio_sprintf, buffer, "%20i", -1024);
   PRINTING_CHECK("                   0",    ==, stdio_sprintf, buffer, "%20i", 0);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%20u", 1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%20I16u", (uint16_t) 1024);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%20I32u", (uint32_t) 1024);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%20I64u", (uint64_t) 1024);
 #endif
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%20u", 4294966272U);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%20I32u", (uint32_t) 4294966272U);
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%20I64u", (uint64_t) 4294966272U);
 #endif
@@ -746,7 +746,7 @@ PRINTF_TEST_CASE(width_20)
   PRINTING_CHECK("            EDCB5433",    ==, stdio_sprintf, buffer, "%20X", 3989525555U);
   PRINTING_CHECK("                   0",    ==, stdio_sprintf, buffer, "%20X", 0);
   PRINTING_CHECK("                   0",    ==, stdio_sprintf, buffer, "%20X", 0U);
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   PRINTING_CHECK("                   0",    ==, stdio_sprintf, buffer, "%20llX", 0ULL);
 #endif
   PRINTING_CHECK("                   x",    ==, stdio_sprintf, buffer, "%20c", 'x');
@@ -762,13 +762,13 @@ PRINTF_TEST_CASE(width_asterisk_20)
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%*i", 20, 1024);
   PRINTING_CHECK("               -1024",    ==, stdio_sprintf, buffer, "%*i", 20, -1024);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%*u", 20, 1024);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%*I16u", 20, (uint16_t) 1024);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%*I32u", 20, (uint32_t) 1024);
   PRINTING_CHECK("                1024",    ==, stdio_sprintf, buffer, "%*I64u", 20, (uint64_t) 1024);
 #endif
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%*u", 20, 4294966272U);
-#ifdef PRINTF_SUPPORT_MSVC_STYLE_INTEGER_SPECIFIERS
+#ifdef PRINTF_WITH_MSVC_STYLE_INTEGER_SPECIFIERS
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%*I32u", 20, (uint32_t) 4294966272U);
   PRINTING_CHECK("          4294966272",    ==, stdio_sprintf, buffer, "%*I64u", 20, (uint64_t) 4294966272U);
 #endif
@@ -791,7 +791,7 @@ PRINTF_TEST_CASE(width_minus_20)
   PRINTING_CHECK("1024                ",    ==, stdio_sprintf, buffer, "%-20i", 1024);
   PRINTING_CHECK("-1024               ",    ==, stdio_sprintf, buffer, "%-20i", -1024);
   PRINTING_CHECK("1024                ",    ==, stdio_sprintf, buffer, "%-20u", 1024);
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("1024.1234           ",    ==, stdio_sprintf, buffer, "%-20.4f", 1024.1234);
 #endif
   PRINTING_CHECK("4294966272          ",    ==, stdio_sprintf, buffer, "%-20u", 4294966272U);
@@ -956,27 +956,27 @@ PRINTF_TEST_CASE(padding_negative_numbers)
 }
 
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_DEC || RCSW_STDIO_PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(float_padding_negative_numbers)
 {
   char buffer[base_buffer_size];
 
   // space padding
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("-5.0",                    ==, stdio_sprintf, buffer, "% 3.1f", -5.);
   PRINTING_CHECK("-5.0",                    ==, stdio_sprintf, buffer, "% 4.1f", -5.);
   PRINTING_CHECK(" -5.0",                   ==, stdio_sprintf, buffer, "% 5.1f", -5.);
 #endif
 
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   PRINTING_CHECK("    -5",                  ==, stdio_sprintf, buffer, "% 6.1g", -5.);
   PRINTING_CHECK("-5.0e+00",                ==, stdio_sprintf, buffer, "% 6.1e", -5.);
   PRINTING_CHECK("  -5.0e+00",              ==, stdio_sprintf, buffer, "% 10.1e", -5.);
 #endif
 
   // zero padding
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("-5.0",                    ==, stdio_sprintf, buffer, "%03.1f", -5.);
   PRINTING_CHECK("-5.0",                    ==, stdio_sprintf, buffer, "%04.1f", -5.);
   PRINTING_CHECK("-05.0",                   ==, stdio_sprintf, buffer, "%05.1f", -5.);
@@ -987,14 +987,14 @@ PRINTF_TEST_CASE(float_padding_negative_numbers)
   PRINTING_CHECK("-05",                     ==, stdio_sprintf, buffer, "%03.0f", -5.);
 #endif
 
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   PRINTING_CHECK("-005.0e+00",              ==, stdio_sprintf, buffer, "%010.1e", -5.);
   PRINTING_CHECK("-05E+00",                 ==, stdio_sprintf, buffer, "%07.0E", -5.);
   PRINTING_CHECK("-05",                     ==, stdio_sprintf, buffer, "%03.0g", -5.);
 #endif
 }
 
-#endif // PRINTF_SUPPORT_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#endif // PRINTF_WITH_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(length)
 {
@@ -1039,28 +1039,28 @@ PRINTF_TEST_CASE(length__non_standard_format)
 #endif
 
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC || PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_DEC || PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(infinity_and_not_a_number_values)
 {
   char buffer[base_buffer_size];
 
   // test special-case floats using math.h macros
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("     nan",                ==, stdio_sprintf, buffer, "%8f", (double) NAN);
   PRINTING_CHECK("     inf",                ==, stdio_sprintf, buffer, "%8f", (double) INFINITY);
   PRINTING_CHECK("-inf    ",                ==, stdio_sprintf, buffer, "%-8f", (double) -INFINITY);
 #endif
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   PRINTING_CHECK("     nan",                ==, stdio_sprintf, buffer, "%8e", (double) NAN);
   PRINTING_CHECK("     inf",                ==, stdio_sprintf, buffer, "%8e", (double) INFINITY);
   PRINTING_CHECK("-inf    ",                ==, stdio_sprintf, buffer, "%-8e", (double) -INFINITY);
 #endif
 }
 
-#endif // PRINTF_SUPPORT_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#endif // PRINTF_WITH_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_WITH_EXP
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
 
 PRINTF_TEST_CASE(floating_point_specifiers_with_31_to_32_bit_integer_values)
 {
@@ -1084,7 +1084,7 @@ PRINTF_TEST_CASE(floating_point_specifiers_with_31_to_32_bit_integer_values)
 
 #endif
 
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(tiny_floating_point_values)
 {
@@ -1113,7 +1113,7 @@ PRINTF_TEST_CASE(tiny_floating_point_values)
 
 #endif
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
 
 PRINTF_TEST_CASE(fallback_from_decimal_to_exponential)
 {
@@ -1141,7 +1141,7 @@ PRINTF_TEST_CASE(fallback_from_decimal_to_exponential)
 
   CAPTURE_AND_PRINT(stdio_sprintf, buffer, "%.0f", (double) ((int64_t) 1 * 1000 * 1000 * 1000 * 1000));
   if (RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH < 12) {
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
     CATCH_CHECK(!strcmp(buffer, "1e+12"));
 #else
     CATCH_CHECK(!strcmp(buffer, ""));
@@ -1152,7 +1152,7 @@ PRINTF_TEST_CASE(fallback_from_decimal_to_exponential)
 
   CAPTURE_AND_PRINT(stdio_sprintf, buffer, "%.0f", (double) ((int64_t) 1 * 1000 * 1000 * 1000 * 1000 * 1000));
   if (RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH < 15) {
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
     CATCH_CHECK(!strcmp(buffer, "1e+15"));
 #else
     CATCH_CHECK(!strcmp(buffer, ""));
@@ -1163,7 +1163,7 @@ PRINTF_TEST_CASE(fallback_from_decimal_to_exponential)
 
   // A value which should Should definitely be out of range for float
   CAPTURE_AND_PRINT(stdio_sprintf, buffer, "%.1f", 1E20);
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   CATCH_CHECK(!strcmp(buffer, "1.0e+20"));
 #else
   CATCH_CHECK(!strcmp(buffer, ""));
@@ -1171,14 +1171,14 @@ PRINTF_TEST_CASE(fallback_from_decimal_to_exponential)
 
 }
 
-#endif // PRINTF_SUPPORT_DECIMAL_SPECIFIERS
+#endif // PRINTF_WITH_DECIMAL_SPECIFIERS
 
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_DEC || RCSW_STDIO_PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(floating_point_specifiers_precision_and_flags)
 {
   char buffer[base_buffer_size];
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("3.1415",                  ==, stdio_sprintf, buffer, "%.4f", 3.1415354);
   PRINTING_CHECK("30343.142",               ==, stdio_sprintf, buffer, "%.3f", 30343.1415354);
   PRINTING_CHECK("34",                      ==, stdio_sprintf, buffer, "%.0f", 34.1415354);
@@ -1206,7 +1206,7 @@ PRINTF_TEST_CASE(floating_point_specifiers_precision_and_flags)
   PRINTING_CHECK("a0.5  ",                  ==, stdio_sprintf, buffer, "a%-5.1f", 0.5);
   PRINTING_CHECK("a0.5  end",               ==, stdio_sprintf, buffer, "a%-5.1fend", 0.5);
 #endif
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   PRINTING_CHECK("0.5",                     ==, stdio_sprintf, buffer, "%.4g", 0.5);
   PRINTING_CHECK("1",                       ==, stdio_sprintf, buffer, "%.4g", 1.0);
   PRINTING_CHECK("12345.7",                 ==, stdio_sprintf, buffer, "%G", 12345.678);
@@ -1236,7 +1236,7 @@ PRINTF_TEST_CASE(floating_point_specifiers_precision_and_flags)
   PRINTING_CHECK("-8.380923438e+04",        ==, stdio_sprintf, buffer, "%.9e", -83809.234375);
 #endif
 }
-#endif // PRINTF_SUPPORT_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_SUPPORT_EXP
+#endif // PRINTF_WITH_DECIMAL_SPECIFIERS || RCSW_STDIO_PRINTF_WITH_EXP
 
 PRINTF_TEST_CASE(integer_types)
 {
@@ -1248,14 +1248,14 @@ PRINTF_TEST_CASE(integer_types)
   PRINTING_CHECK("30",                      ==, stdio_sprintf, buffer, "%li", 30L);
   PRINTING_CHECK("-2147483647",             ==, stdio_sprintf, buffer, "%li", -2147483647L);
   PRINTING_CHECK("2147483647",              ==, stdio_sprintf, buffer, "%li", 2147483647L);
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   PRINTING_CHECK("30",                      ==, stdio_sprintf, buffer, "%lli", 30LL);
   PRINTING_CHECK("-9223372036854775807",    ==, stdio_sprintf, buffer, "%lli", -9223372036854775807LL);
   PRINTING_CHECK("9223372036854775807",     ==, stdio_sprintf, buffer, "%lli", 9223372036854775807LL);
 #endif
   PRINTING_CHECK("100000",                  ==, stdio_sprintf, buffer, "%lu", 100000L);
   PRINTING_CHECK("4294967295",              ==, stdio_sprintf, buffer, "%lu", 0xFFFFFFFFL);
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   PRINTING_CHECK("281474976710656",         ==, stdio_sprintf, buffer, "%llu", 281474976710656LLU);
   PRINTING_CHECK("18446744073709551615",    ==, stdio_sprintf, buffer, "%llu", 18446744073709551615LLU);
 #endif
@@ -1265,7 +1265,7 @@ PRINTF_TEST_CASE(integer_types)
   PRINTING_CHECK("165140",                  ==, stdio_sprintf, buffer, "%o", 60000);
   PRINTING_CHECK("57060516",                ==, stdio_sprintf, buffer, "%lo", 12345678L);
   PRINTING_CHECK("12345678",                ==, stdio_sprintf, buffer, "%lx", 0x12345678L);
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   PRINTING_CHECK("1234567891234567",        ==, stdio_sprintf, buffer, "%llx", 0x1234567891234567LLU);
 #endif
   PRINTING_CHECK("abcdefab",                ==, stdio_sprintf, buffer, "%lx", 0xabcdefabL);
@@ -1393,7 +1393,7 @@ PRINTF_TEST_CASE(misc)
 {
   char buffer[base_buffer_size];
   PRINTING_CHECK("53000atest-20 bit",       ==, stdio_sprintf, buffer, "%u%u%ctest%d %s", 5, 3000, 'a', -20, mkstr("bit"));
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
   PRINTING_CHECK("0.33",                    ==, stdio_sprintf, buffer, "%.*f", 2, 0.33333333);
   PRINTING_CHECK("1",                       ==, stdio_sprintf, buffer, "%.*d", -1, 1);
   PRINTING_CHECK("foo",                     ==, stdio_sprintf, buffer, "%.3s", mkstr("foobar"));
@@ -1403,7 +1403,7 @@ PRINTF_TEST_CASE(misc)
   PRINTING_CHECK("00123               ",    ==, stdio_sprintf, buffer, "%-20.5i", 123);
   PRINTING_CHECK("-67224.546875000000000000", ==, stdio_sprintf, buffer, "%.18f", -67224.546875);
 #endif
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
   PRINTING_CHECK("0.33",                    ==, stdio_sprintf, buffer, "%.*g", 2, 0.33333333);
   PRINTING_CHECK("3.33e-01",                ==, stdio_sprintf, buffer, "%.*e", 2, 0.33333333);
   PRINTING_CHECK("0.000000e+00",            ==, stdio_sprintf, buffer, "%e", 0.0);
@@ -1437,7 +1437,7 @@ PRINTF_TEST_CASE(extremal_signed_integer_values)
   std::sprintf(expected, "%ld", std::numeric_limits<long int>::max());
   PRINTING_CHECK(expected,                  ==, stdio_sprintf, buffer, "%ld", std::numeric_limits<long int>::max());
 
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   std::sprintf(expected, "%lld", std::numeric_limits<long long int>::min());
   PRINTING_CHECK(expected,                  ==, stdio_sprintf, buffer, "%lld", std::numeric_limits<long long int>::min());
 
@@ -1463,7 +1463,7 @@ PRINTF_TEST_CASE(extremal_unsigned_integer_values)
   std::sprintf(expected, "%lu", std::numeric_limits<long unsigned>::max());
   PRINTING_CHECK(expected,                  ==, stdio_sprintf, buffer, "%lu", std::numeric_limits<long unsigned>::max());
 
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
   std::sprintf(expected, "%llu", std::numeric_limits<long long unsigned>::max());
   PRINTING_CHECK(expected,                  ==, stdio_sprintf, buffer, "%llu", std::numeric_limits<long long unsigned>::max());
 #endif

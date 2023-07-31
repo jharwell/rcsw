@@ -198,7 +198,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           // A signed specifier: d, i or possibly I + bit size if enabled
 
           if (flags & FLAGS_LONG_LONG) {
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
             const long long value = va_arg(args, long long);
             print_integer(output,
                           ABS_FOR_PRINTING(value),
@@ -241,7 +241,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           flags &= ~(FLAGS_PLUS | FLAGS_SPACE);
 
           if (flags & FLAGS_LONG_LONG) {
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
             print_integer(output,
                           (printf_unsigned_value_t)va_arg(args,
                                                           unsigned long long),
@@ -276,7 +276,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         }
         break;
       }
-#if RCSW_STDIO_PRINTF_SUPPORT_DEC
+#if RCSW_STDIO_PRINTF_WITH_DEC
       case 'f':
       case 'F':
         if (*format == 'F')
@@ -290,7 +290,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         format++;
         break;
 #endif
-#if RCSW_STDIO_PRINTF_SUPPORT_EXP
+#if RCSW_STDIO_PRINTF_WITH_EXP
       case 'e':
       case 'E':
       case 'g':
@@ -384,7 +384,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
         // Many people prefer to disable support for %n, as it lets the caller
         // engineer a write to an arbitrary location, of a value the caller
         // effectively controls - which could be a security concern in some cases.
-#if RCSW_STDIO_PRINTF_SUPPORT_WRITEBACK
+#if RCSW_STDIO_PRINTF_WITH_WRITEBACK
       case 'n': {
         if (flags & FLAGS_CHAR)
           *(va_arg(args, char*)) = (char)output->pos;
@@ -392,7 +392,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           *(va_arg(args, short*)) = (short)output->pos;
         else if (flags & FLAGS_LONG)
           *(va_arg(args, long*)) = (long)output->pos;
-#if RCSW_STDIO_PRINTF_SUPPORT_LONG_LONG
+#if RCSW_STDIO_PRINTF_WITH_LL
         else if (flags & FLAGS_LONG_LONG)
           *(va_arg(args, long long*)) = (long long int)output->pos;
 #endif

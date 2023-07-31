@@ -90,8 +90,8 @@ void *bstree_node_datablock_alloc(const struct bstree * tree);
 /**
  * \brief Deallocate a datablock
  **/
-void bstree_node_datablock_dealloc(const struct bstree * tree,
-                                   uint8_t *datablock);
+void bstree_node_datablock_dealloc(const struct bstree* tree,
+                                   dptr_t* datablock);
 
 /**
  * \brief Internal function to do pre-order traversal

@@ -127,7 +127,7 @@ error:
 
 status_t pcqueue_timedpeek(struct pcqueue* const queue,
                            const struct timespec* const to,
-                           uint8_t** const e) {
+                           void** const e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != to, NULL != e);
 
   RCSW_CHECK(OK == csem_timedwait(&queue->slots_inuse, to));
@@ -147,7 +147,7 @@ error:
 } /* pcqueue_timedpeek() */
 
 status_t pcqueue_peek(struct pcqueue* const queue,
-                      uint8_t** const e) {
+                      void** const e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
 
   csem_wait(&queue->slots_inuse);

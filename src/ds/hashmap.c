@@ -22,7 +22,7 @@
 #include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -34,7 +34,34 @@ BEGIN_C_DECLS
  * \return The allocated datablock, or NULL if no valid block could be found.
  *
  */
-static void* hashmap_db_alloc(const struct hashmap* map);
+static dptr_t* hashmap_db_alloc(const struct hashmap* const map) {
+  /*
+   * Try to find an available data block. Using hashing/linear probing instead
+   * of linear scan. This reduces startup times if initializing/building a
+   * large hashmap.
+   */
+
+  /* make sure that we have 32 bits of randomness */
+  uint32_t val =
+      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
+      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
+
+  size_t search_idx = hash_fnv1a(&val, 4) % map->max_elts;
+
+  int alloc_idx = allocm_probe(map->space.db_map, map->max_elts, search_idx);
+  RCSW_CHECK(-1 != alloc_idx);
+  dptr_t* datablock = (void*)((uint8_t*)map->space.datablocks + (alloc_idx * map->elt_size));
+
+  /* mark data block as in use */
+  allocm_mark_inuse(map->space.db_map + alloc_idx);
+
+  ER_TRACE("Allocated data block %d/%zu", alloc_idx, map->max_elts);
+
+  return datablock;
+
+error:
+  return NULL;
+} /* datablock_alloc() */
 
 /**
  * \brief Deallocate a datablock.
@@ -43,8 +70,20 @@ static void* hashmap_db_alloc(const struct hashmap* map);
  * \param datablock The datablock to deallocate.
  *
  */
-static void hashmap_db_dealloc(const struct hashmap* map,
-                               const uint8_t* datablock);
+static void hashmap_db_dealloc(const struct hashmap* const map,
+                               const void* const datablock) {
+  if (NULL == datablock) {
+    return;
+  }
+  size_t block_index = ((const uint8_t*)datablock - (uint8_t*)map->space.datablocks) / (map->elt_size);
+
+  /* mark data block as available */
+  allocm_mark_free(map->space.db_map + block_index);
+
+  ER_TRACE("Dellocated data block %zu/%zu", block_index, map->max_elts);
+} /* datablock_dealloc() */
+
+
 /**
  * \brief Use linear probing, starting at the specified bucket, to
  * find a hashnode
@@ -56,10 +95,25 @@ static void hashmap_db_dealloc(const struct hashmap* map,
  * \param node_index Filled with node index within the bucket the hashnode was
  * found in.
  */
-static void hashmap_linear_probe(const struct hashmap* map,
-                                 const struct hashnode* node,
+static void hashmap_linear_probe(const struct hashmap* const map,
+                                 const struct hashnode* const node,
                                  int* bucket_index,
-                                 int* node_index);
+                                 int* node_index) {
+  for (int i = (*bucket_index + 1) % (int)map->n_buckets; i != *bucket_index;
+       i++) {
+    *node_index = darray_idx_query(map->space.buckets + i, node);
+    if (*node_index != -1) {
+      *bucket_index = i;
+      return;
+    }
+    if (i + 1 == (int)map->n_buckets) {
+      i = -1;
+    }
+  } /* for() */
+
+  *bucket_index = -1;
+  *node_index = -1;
+} /* linear_probe() */
 
 /**
  * \brief Compare hashnodes for equality
@@ -69,7 +123,11 @@ static void hashmap_linear_probe(const struct hashmap* map,
  *
  * \return true if n1 = n2, false otherwise
  */
-static int hashnode_cmp(const void* n1, const void* n2);
+static int hashnode_cmp(const void* const n1, const void* const n2) {
+  return memcmp(((const struct hashnode*)n1)->key,
+                ((const struct hashnode*)n2)->key,
+                RCSW_HASHMAP_KEYSIZE);
+} /* hashnode_cmp() */
 
 /*******************************************************************************
  * API Functions
@@ -128,32 +186,32 @@ struct hashmap* hashmap_init(struct hashmap* map_in,
   /* initialize buckets */
   struct darray_params bucket_params = {
     .init_size = params->bsize,
+    .cmpe = hashnode_cmp,
+    .printe = NULL,
+    .max_elts = (int)params->bsize,
+    .elt_size = sizeof(struct hashnode),
 
-      .cmpe = hashnode_cmp,
-      .printe = NULL,
-      .max_elts = (int)params->bsize,
-      .elt_size = sizeof(struct hashnode),
+    .flags = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA
+  };
 
-      .flags = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA};
   if (params->flags & RCSW_DS_SORTED) {
     bucket_params.flags |= RCSW_DS_SORTED;
   }
 
-  map->space.datablocks =
-      map->space.elements + ds_meta_space(map->n_buckets * params->bsize);
+  map->space.datablocks = (void*)((uint8_t*)map->space.elements + ds_meta_space(map->n_buckets * params->bsize));
   size_t db_space_per_bucket =
       darray_element_space(params->bsize, params->elt_size);
-  map->space.hashnodes =
-      (map->space.datablocks + db_space_per_bucket * map->n_buckets);
+  map->space.hashnodes = (void*)((uint8_t*)map->space.datablocks + db_space_per_bucket * map->n_buckets);
 
   size_t hn_space_per_bucket =
       darray_element_space(params->bsize, sizeof(struct hashnode));
+
   for (size_t i = 0; i < map->n_buckets; i++) {
     /*
      * Each bucket is given a bsize chunk of the allocated space for
      * hashnodes
      */
-    bucket_params.elements = map->space.hashnodes + hn_space_per_bucket * i;
+    bucket_params.elements = (void*)((uint8_t*)map->space.hashnodes + i * hn_space_per_bucket);
     RCSW_CHECK(darray_init(map->space.buckets + i, &bucket_params) != NULL);
   } /* for() */
 
@@ -478,7 +536,7 @@ void hashmap_print_dist(const struct hashmap* const map) {
     DPRINTF(RCSW_ER_MODNAME " : < empty >\n");
     return;
   }
-  size_t xmax = RCSW_MIN(max_node_count, 80UL);
+  size_t xmax = RCSW_MIN(max_node_count, (size_t)80);
 
   for (size_t i = 0; i < map->n_buckets; ++i) {
     DPRINTF("Bucket %-4zu| ", i);
@@ -498,76 +556,5 @@ void hashmap_print_dist(const struct hashmap* const map) {
   DPRINTF("\nHistogram normalized w.r.t. max bucket fill.\n");
 } /* hashmap_print_dist() */
 
-/*******************************************************************************
- * Static Functions
- ******************************************************************************/
-static int hashnode_cmp(const void* const n1, const void* const n2) {
-  return memcmp(((const struct hashnode*)n1)->key,
-                ((const struct hashnode*)n2)->key,
-                RCSW_HASHMAP_KEYSIZE);
-} /* hashnode_cmp() */
-
-static void hashmap_linear_probe(const struct hashmap* const map,
-                                 const struct hashnode* const node,
-                                 int* bucket_index,
-                                 int* node_index) {
-  for (int i = (*bucket_index + 1) % (int)map->n_buckets; i != *bucket_index;
-       i++) {
-    *node_index = darray_idx_query(map->space.buckets + i, node);
-    if (*node_index != -1) {
-      *bucket_index = i;
-      return;
-    }
-    if (i + 1 == (int)map->n_buckets) {
-      i = -1;
-    }
-  } /* for() */
-
-  *bucket_index = -1;
-  *node_index = -1;
-} /* linear_probe() */
-
-static void hashmap_db_dealloc(const struct hashmap* const map,
-                               const uint8_t* const datablock) {
-  if (datablock == NULL) {
-    return;
-  }
-  size_t block_index =
-      (size_t)(datablock - map->space.datablocks) / (map->elt_size);
-
-  /* mark data block as available */
-  allocm_mark_free(map->space.db_map + block_index);
-
-  ER_TRACE("Dellocated data block %zu/%zu", block_index, map->max_elts);
-} /* datablock_dealloc() */
-
-static void* hashmap_db_alloc(const struct hashmap* const map) {
-  /*
-   * Try to find an available data block. Using hashing/linear probing instead
-   * of linear scan. This reduces startup times if initializing/building a
-   * large hashmap.
-   */
-
-  /* make sure that we have 32 bits of randomness */
-  uint32_t val =
-      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
-      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
-
-  size_t search_idx = hash_fnv1a(&val, 4) % map->max_elts;
-
-  int alloc_idx = allocm_probe(map->space.db_map, map->max_elts, search_idx);
-  RCSW_CHECK(-1 != alloc_idx);
-  void* datablock = map->space.datablocks + (alloc_idx * map->elt_size);
-
-  /* mark data block as in use */
-  allocm_mark_inuse(map->space.db_map + alloc_idx);
-
-  ER_TRACE("Allocated data block %d/%zu", alloc_idx, map->max_elts);
-
-  return datablock;
-
-error:
-  return NULL;
-} /* datablock_alloc() */
 
 END_C_DECLS

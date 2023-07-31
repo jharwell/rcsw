@@ -30,13 +30,13 @@ struct mpool_params {
    * objects used to carve up \ref mpool_params.elements. Ignored unless \ref
    * RCSW_NOALLOC_META is passed.
    */
-  uint8_t *meta;
+  dptr_t *meta;
 
   /**
    * Pointer to application-allocated space for the pool.Ignored unless \ref
    * RCSW_NOALLOC_META is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -61,7 +61,7 @@ struct mpool_params {
  */
 struct mpool {
   /** The chunks of managed memory. */
-  uint8_t           *elements;
+  dptr_t           *elements;
 
   /** Space for the llist nodes for both the free and allocated lists. */
   struct llist_node *nodes;
@@ -222,7 +222,7 @@ void mpool_destroy(struct mpool * the_pool);
  *
  * \return The allocated chunk, or NULL if an error occurred.
  */
-uint8_t *mpool_req(struct mpool * the_pool);
+void *mpool_req(struct mpool * the_pool);
 
 /**
  * \brief Request a memory chunk from a \ref mpool with a timeout.
@@ -237,7 +237,7 @@ uint8_t *mpool_req(struct mpool * the_pool);
  */
 status_t mpool_timedreq(struct mpool * the_pool,
                         const struct timespec* to,
-                        uint8_t** chunk);
+                        void** chunk);
 
 /**
  * \brief Release a chunk of memory from a \ref mpool.
@@ -251,7 +251,7 @@ status_t mpool_timedreq(struct mpool * the_pool,
  *
  * \return \ref status_t.
  */
-status_t mpool_release(struct mpool * the_pool, uint8_t * ptr);
+status_t mpool_release(struct mpool * the_pool, void * ptr);
 
 /**
  * \brief Increment ref count for a previously allocated chunk in a \ref mpool.
@@ -265,7 +265,7 @@ status_t mpool_release(struct mpool * the_pool, uint8_t * ptr);
  *
  * \return \ref status_t.
  */
-status_t mpool_ref_add(struct mpool * the_pool, const uint8_t * ptr);
+status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
 
 /**
  * \brief Decrement ref count for a currently allocated chunk in a \ref mpool.
@@ -280,7 +280,7 @@ status_t mpool_ref_add(struct mpool * the_pool, const uint8_t * ptr);
  * \return \ref status_t
  */
 status_t mpool_ref_remove(struct mpool * the_pool,
-                          const uint8_t * ptr);
+                          const void * ptr);
 
 /**
  * \brief Get the index of the reference count (not the reference count)
@@ -294,7 +294,7 @@ status_t mpool_ref_remove(struct mpool * the_pool,
  *
  * \return The reference index, or -1 if does not exist.
  */
-int mpool_ref_query(struct mpool * the_pool, const uint8_t* ptr);
+int mpool_ref_query(struct mpool * the_pool, const void* ptr);
 
 /**
  * \brief Get the reference count of an allocated chunk in a \ref mpool.
@@ -308,6 +308,6 @@ int mpool_ref_query(struct mpool * the_pool, const uint8_t* ptr);
  *
  * \return The reference count, or 0 on error.
  */
-size_t mpool_ref_count(struct mpool * the_pool, const uint8_t* ptr);
+size_t mpool_ref_count(struct mpool * the_pool, const void* ptr);
 
 END_C_DECLS

@@ -33,7 +33,7 @@ struct fifo_params {
    * Pointer to application-allocated space for storing data managed by the \ref
    * fifo. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.

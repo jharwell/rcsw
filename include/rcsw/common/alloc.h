@@ -14,14 +14,6 @@
 #include "rcsw/common/common.h"
 
 /*******************************************************************************
- * Constants
- ******************************************************************************/
-#define RCSW_ALLOC_NONE 0
-
-#define RCSW_ALLOC_MALLOC 1
-#define RCSW_ALLOC_ZALLOC 2
-
-/*******************************************************************************
  * API Functions
  ******************************************************************************/
 /**
@@ -42,12 +34,12 @@
  *
  * \param n_bytes The number of bytes to allocate.
  *
-  * \param flags Run-time flags. Valid flags are:
+ * \param flags Run-time flags. Valid flags are:
  *
- *              - \ref RCSW_NOALLOC_META
- *              - \ref RCSW_NOALLOC_DATA
- *              - \ref RCSW_NOALLOC_HANDLE
- *              - \ref RCSW_ZALLOC
+ * - \ref RCSW_NOALLOC_META
+ * - \ref RCSW_NOALLOC_DATA
+ * - \ref RCSW_NOALLOC_HANDLE
+ * - \ref RCSW_ZALLOC
  *
  */
 void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);

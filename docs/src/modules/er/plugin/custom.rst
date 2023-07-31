@@ -60,7 +60,7 @@ file):
      - The main ER plugin hook. Will be called as part of every
        :c:macro:`ER_WARN()`, etc. statement. Arguments:
 
-       - ``LVL`` - The level of the statement. See :ref:`ln-rcsw-er-levels` for
+       - ``LVL`` - The level of the statement. See :ref:`er-levels` for
          details.
 
        - ``HANDLE`` - Whatever was returned from ``RCSW_ER_PLUGIN_HANDLE()``.

@@ -159,8 +159,8 @@ void pulse_destroy(struct pulse* pulse) {
 status_t pulse_publish(struct pulse* pulse,
                        uint32_t pid,
                        size_t pkt_size,
-                       const uint8_t* pkt) {
-  RCSW_FPC_NV(ERROR, pulse != NULL, pkt_size > 0);
+                       const void* pkt) {
+  RCSW_FPC_NV(ERROR, NULL != pulse, pkt_size > 0, NULL != pkt);
 
   ER_DEBUG("Publishing to bus '%s': PID=%d/0x%x, pkt=%p, pkt_size=%zu",
            pulse->name,
@@ -214,7 +214,7 @@ status_t pulse_publish_reserve(struct pulse* pulse,
            mpool_isfull(pool));
       continue;
     }
-    uint8_t* space = mpool_req(pool);
+    dptr_t* space = mpool_req(pool);
     if (NULL != space) {
       res->data = space;
       res->bp = pulse->pools + i;
@@ -398,7 +398,7 @@ struct pulse_rxq_ent* pulse_rxq_wait(struct pulse* pulse,
   RCSW_FPC_NV(NULL, NULL != pulse, NULL != queue);
   struct pulse_rxq_ent *ent = NULL;
 
-  RCSW_CHECK(OK == pcqueue_peek(queue, (uint8_t**)&ent));
+  RCSW_CHECK(OK == pcqueue_peek(queue, (void**)&ent));
 
   /*
    * Put after you actually get data so that if you aren't supposed to start
@@ -424,7 +424,7 @@ struct pulse_rxq_ent* pulse_rxq_timedwait(struct pulse* pulse,
                                          struct timespec* to) {
   RCSW_FPC_NV(NULL, NULL != pulse, NULL != queue, NULL != to);
   struct pulse_rxq_ent *ent = NULL;
-  RCSW_CHECK(OK == pcqueue_timedpeek(queue, to, (uint8_t**)&ent));
+  RCSW_CHECK(OK == pcqueue_timedpeek(queue, to, (void**)&ent));
 
   if (!(pulse->flags & RCSW_PULSE_ASYNC)) {
     rdwrl_req(&pulse->syncl, ekSCOPE_RD);
@@ -466,7 +466,7 @@ struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue) {
   RCSW_FPC_NV(NULL, queue != NULL);
   struct pulse_rxq_ent* ent = NULL;
 
-  RCSW_CHECK(OK == pcqueue_peek(queue, (uint8_t**)&ent));
+  RCSW_CHECK(OK == pcqueue_peek(queue, (void**)&ent));
   return ent;
 
 error:

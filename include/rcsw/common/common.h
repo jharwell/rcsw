@@ -82,10 +82,11 @@
  * will be compiled away at high optimization levels.
  */
 #define RCSW_MIN_(t1, t2, min1, min2, a, b) ({\
-      t1 min1 = (a);\
-      t2 min2 = (b);\
+      t1 min1 = (a);                            \
+      t2 min2 = (b);                            \
       (void) (&(min1) == &(min2));              \
-      (min1) < (min2) ? (min1) : (min2); })
+      (min1) < (min2) ? (min1) : (min2);        \
+    })
 
 /**
  * \def RCSW_MAX_(t1, t2, min1, min2, a, b)
@@ -97,10 +98,11 @@
  * will be compiled away at high optimization levels.
  */
 #define RCSW_MAX_(t1, t2, max1, max2, a, b) ({       \
-      t1 max1 = (a);                            \
-      t2 max2 = (b);                            \
-      (void) (&(max1) == &(max2));                  \
-      (max1) > (max2) ? (max1) : (max2); })
+        t1 max1 = (a);                               \
+        t2 max2 = (b);                               \
+        (void) (&(max1) == &(max2));                 \
+        (max1) > (max2) ? (max1) : (max2);           \
+      })
 
 /**
  * \def RCSW_MIN(a, b)

@@ -1,4 +1,4 @@
-.. _ln-rcsw-modules:
+.. _modules:
 
 ===============
 Modules Summary

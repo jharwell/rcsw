@@ -39,7 +39,7 @@ struct dyn_matrix_params {
 
   size_t n_rows;  /// # rows in matrix.
   size_t n_cols;  /// # columns in matrix.
-  uint8_t* rows;  /// Ptr to space for vector-of-row-vectors.
+  dptr_t* rows;  /// Ptr to space for vector-of-row-vectors.
 };
 
 

@@ -1,4 +1,4 @@
-.. _ln-rcsw-algorithm:
+.. _modules-algorithm:
 
 Algorithms
 ==========

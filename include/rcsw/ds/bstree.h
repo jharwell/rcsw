@@ -61,13 +61,13 @@ struct bstree_params {
    * Pointer to application-allocated space for storing the \ref bstree
    * nodes. Ignored unless \ref RCSW_NOALLOC_META is passed.
    */
-  uint8_t *meta;
+  dptr_t *meta;
 
   /**
    * Pointer to application-allocated space for storing data managed by the \ref
    * bstree. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
@@ -88,19 +88,23 @@ struct bstree_params {
 /**
  * \brief The base node for all binary search trees.
  *
- * For all derived trees/nodes from bstree/bstree_node, all of the below fields
- * must be present and:
+ * For all nodes from trees derived from bstree, the node MUST:
  *
- * (1) Be declared in the same order as the "parent" structs
- * (2) Have the same size as the "parent" struct entries
+ * (1) Have all the fields present below and have them declared in the same
+ * order as the "parent" structs.
+ *
+ * (2) Have the same size as the "parent" struct entries.
  *
  * This is so that I can take the derived class struct, cast it to a
- * bstree/bstree_node, and pass it to a function in the bstree class, and
- * have everything work as desired.
+ * bstree/bstree_node, and pass it to a function in the bstree class, and have
+ * everything work as desired.
+ *
+ * Must be packed and aligned to the same size as \ref dptr_t so that casts from
+ * \ref bstree_node.data are safe on all targets.
  */
-struct bstree_node {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) bstree_node {
   uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-  uint8_t *data;
+  dptr_t *data;
   struct bstree_node *left;
   struct bstree_node *right;
   struct bstree_node *parent;
@@ -111,6 +115,9 @@ struct bstree_node {
    * red is false then the node is black.
    */
   bool_t red;
+
+  /* extra padding added for compatibility with ostree_node and inttree_node */
+  int32_t tmp;
 };
 
 /**
@@ -121,7 +128,7 @@ struct bstree_space_mgmt {
    * Space for the data elements. Used if \ref RCSW_NOALLOC_DATA passed in \ref
    * bstree_params.flags.
    */
-  uint8_t*             datablocks;
+  dptr_t*             datablocks;
 
   /**
    * Space for the allocation map for datablocks. Used if \ref RCSW_NOALLOC_DATA
@@ -133,7 +140,7 @@ struct bstree_space_mgmt {
    * Space for \ref bstree_node objects. Used if \ref RCSW_NOALLOC_META
    * passed in \ref bstree_params.flags.
    */
-  struct bstree_node*   nodes;
+  struct bstree_node*  nodes;
 
   /**
    * Space for the allocation map for \ref bstree_node objects. Used if \ref

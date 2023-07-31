@@ -43,30 +43,27 @@ struct llist* llist_init(struct llist* list_in,
   if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->meta);
     ER_CHECK(params->max_elts != -1,
-             "Cannot have uncapped list length with "
-             "RCSW_NOALLOC_META");
+             "Cannot have uncapped list length with RCSW_NOALLOC_META");
 
     /* initialize free list of llist_nodes */
     list->space.node_map = (struct allocm_entry*)params->meta;
-    list->space.nodes =
-        (struct llist_node*)(list->space.node_map + params->max_elts);
+    list->space.nodes = (struct llist_node*)(list->space.node_map + params->max_elts);
     allocm_init(list->space.node_map, params->max_elts);
   }
 
   if (params->flags & RCSW_NOALLOC_DATA) {
     RCSW_CHECK_PTR(params->elements);
     ER_CHECK(params->max_elts != -1,
-             "Cannot have uncapped list length with "
-             "RCSW_NOALLOC_DATA");
+             "Cannot have uncapped list length with RCSW_NOALLOC_DATA");
 
     /* initialize free list of data elements */
     list->space.db_map = (struct allocm_entry*)params->elements;
-    list->space.datablocks = (uint8_t*)(list->space.db_map + params->max_elts);
+    list->space.datablocks = (dptr_t*)(list->space.db_map + params->max_elts);
     allocm_init(list->space.db_map, params->max_elts);
   }
 
   if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_DB_PTR)) {
-    ER_WARN("No compare function provided and RCSW_DS_LLIST_PTR_CMP not "
+    ER_WARN("No compare function provided and RCSW_DS_LLIST_DB_PTR not "
             "passed\n");
   }
 
@@ -336,8 +333,8 @@ status_t llist_sort(struct llist* const list, enum exec_type type) {
 
 struct llist* llist_copy(struct llist* const list,
                          uint32_t flags,
-                         uint8_t* elements,
-                         uint8_t* nodes) {
+                         void* elements,
+                         void* nodes) {
   RCSW_FPC_NV(NULL, list != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
   struct llist_params params = {
@@ -363,8 +360,8 @@ error:
 struct llist* llist_copy2(struct llist* const list,
                           bool_t (*pred)(const void* const e),
                           uint32_t flags,
-                          uint8_t* elements,
-                          uint8_t* nodes) {
+                          void* elements,
+                          void* nodes) {
   RCSW_FPC_NV(NULL,
               list != NULL,
               pred != NULL,
@@ -400,8 +397,8 @@ error:
 struct llist* llist_filter(struct llist* list,
                            bool_t (*pred)(const void* const e),
                            uint32_t flags,
-                           uint8_t* elements,
-                           uint8_t* nodes) {
+                           void* elements,
+                           void* nodes) {
   RCSW_FPC_NV(NULL,
               list != NULL,
               pred != NULL,

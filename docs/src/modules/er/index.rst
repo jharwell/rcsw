@@ -1,4 +1,4 @@
-.. _ln-rcsw-er:
+.. _modules-er:
 
 Event Reporting (ER)
 ====================
@@ -80,7 +80,7 @@ Plugins
       .. include:: plugin/custom.rst
 
 
-.. _ln-rcsw-er-levels:
+.. _er-levels:
 
 Levels
 ------

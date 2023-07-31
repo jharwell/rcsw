@@ -206,7 +206,7 @@ status_t pcqueue_timedpop(struct pcqueue * pcqueue,
  */
 status_t pcqueue_timedpeek(struct pcqueue* const queue,
                            const struct timespec* const to,
-                           uint8_t** const e);
+                           void** const e);
 /**
  * \brief Get the first element in the queue if it exists, with a timeout.
  *
@@ -220,6 +220,6 @@ status_t pcqueue_timedpeek(struct pcqueue* const queue,
  *
  * \return \ref status_t.
  */
-status_t pcqueue_peek(struct pcqueue* const queue, uint8_t** const e);
+status_t pcqueue_peek(struct pcqueue* const queue, void** const e);
 
 END_C_DECLS

@@ -71,7 +71,7 @@ void llist_node_destroy(struct llist * list, struct llist_node *node);
  *
  * \return The allocated datablock, or NULL if no valid block could be found.
  */
-void *llist_node_datablock_alloc(struct llist * list);
+dptr_t* llist_node_datablock_alloc(struct llist * list);
 
 /**
  * \brief Deallocate a datablock belonging to a linked list.
@@ -82,7 +82,7 @@ void *llist_node_datablock_alloc(struct llist * list);
  * \param list The linked list handle.
  * \param datablock The datablock to dealloc.
  */
-void llist_node_datablock_dealloc(struct llist * list, uint8_t *datablock);
+void llist_node_datablock_dealloc(struct llist * list, dptr_t* datablock);
 
 END_C_DECLS
 

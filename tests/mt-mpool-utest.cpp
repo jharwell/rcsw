@@ -32,12 +32,17 @@ using mpool_test = void(*)(const struct mpool_params* const params,
  ******************************************************************************/
 template<typename T>
 static void run_test(mpool_test test, size_t n_threads = 1) {
+  RCSW_ER_INIT();
+  RCSW_ER_INSMOD(ekLOG4CL_MT_MPOOL, "rcsw.mt.mpool");
+  RCSW_ER_INSMOD(ekLOG4CL_DS_LLIST, "rcsw.ds.llist");
+  log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_ALL);
+  log4cl_mod_lvl_set(ekLOG4CL_DS_LLIST, RCSW_ERL_ALL);
   struct mpool_params params;
   params.flags = 0;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_MT_ITEMS;
-  params.meta = (uint8_t*)malloc(mpool_meta_space(params.max_elts));
-  params.elements = (uint8_t*)malloc(mpool_element_space(params.max_elts,
+  params.meta = (dptr_t*)malloc(mpool_meta_space(params.max_elts));
+  params.elements = (dptr_t*)malloc(mpool_element_space(params.max_elts,
                                                          params.elt_size));
 
   uint32_t flags[] = {
@@ -54,6 +59,7 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
 
   free(params.meta);
   free(params.elements);
+  RCSW_ER_DEINIT();
 } /* test_runner() */
 
 /*******************************************************************************
@@ -119,7 +125,7 @@ static void concurrency_test(const struct mpool_params* const params,
 
               while (vals.size() < TH_NUM_MT_ITEMS) {
                 T* e = nullptr;
-                if (OK != mpool_timedreq(p, &to, (uint8_t**)&e)) {
+                if (OK != mpool_timedreq(p, &to, (void**)&e)) {
                   continue;
                 }
                 mtx.lock();

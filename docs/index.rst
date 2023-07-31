@@ -1,3 +1,5 @@
+.. _main:
+
 ================================
 Welcome to RCSW's documentation!
 ================================
@@ -7,5 +9,5 @@ Welcome to RCSW's documentation!
    :caption: Contents:
 
    src/setup/index.rst
-   src/modules.rst
+   src/modules/index.rst
    _api/api.rst

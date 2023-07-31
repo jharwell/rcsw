@@ -23,7 +23,7 @@
 BEGIN_C_DECLS
 
 status_t rawfifo_init(struct rawfifo* const fifo,
-                      uint8_t* const buf,
+                      void* const buf,
                       size_t max_elts,
                       size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != fifo, NULL != buf, elt_size <= 4);

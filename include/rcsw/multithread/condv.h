@@ -55,9 +55,9 @@ BEGIN_C_DECLS
  *
  * \param flags Configuration flags.Valid flags are:
  *
- *              - \ref RCSW_NOALLOC_HANDLE
+ * - \ref RCSW_NOALLOC_HANDLE
  *
- *              All other flags are ignored.
+ * All other flags are ignored.
  *
  * \return The initialized signal condition, or NULL if an ERROR occurred.
  */

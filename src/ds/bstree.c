@@ -78,8 +78,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
      */
     tree->space.db_map = (struct allocm_entry*)params->elements;
     allocm_init(tree->space.db_map, params->max_elts + 2);
-    tree->space.datablocks =
-        (uint8_t*)(tree->space.db_map + params->max_elts + 2);
+    tree->space.datablocks = (dptr_t*)(tree->space.db_map + params->max_elts + 2);
   }
 
   tree->cmpkey = params->cmpkey;

@@ -24,7 +24,7 @@
 /**
  * Convenience macro for getting a reference to the root node in the tree
  */
-#define INTTREE_ROOT(tree) BSTREE_ROOT(tree)
+#define RCSW_INTTREE_ROOT(tree) ((struct inttree_node*)RCSW_BSTREE_ROOT(tree))
 
 /*******************************************************************************
  * Structure Definitions
@@ -39,8 +39,11 @@
 
 /**
  * A simple representation of an interval for use in a \ref inttree.
+ *
+ * Must be packed and aligned to the same size as \ref dptr_t so that casts from
+ * \ref inttree_node.data are safe on all targets.
  */
-struct interval_data {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) interval_data  {
     int32_t high;
     int32_t low;
 };
@@ -50,10 +53,13 @@ struct interval_data {
  *
  * Note that the first fields are identical to the ones in the bstree_node; this
  * is necessary for the casting to "up" the inheritance tree to work.
+ *
+  Must be packed and aligned to the same size as \ref dptr_t so that casts from
+ * \ref inttree_node.data are safe on all targets.
  */
-struct inttree_node {
+struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) inttree_node {
     uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-    uint8_t *data;
+    dptr_t *data;
     struct inttree_node *left;
     struct inttree_node *right;
     struct inttree_node *parent;

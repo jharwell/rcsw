@@ -59,20 +59,27 @@ struct mpool* mpool_init(struct mpool* const pool_in,
     .max_elts = params->max_elts,
     .elt_size = params->elt_size,
     .cmpe = NULL,
-    .meta = (uint8_t*)the_pool->nodes,
+    .meta = (dptr_t*)the_pool->nodes,
     .flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
              RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META,
   };
 
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
-  llist_params.meta = ((uint8_t*)the_pool->nodes) + llist_meta_space(params->max_elts);
-  RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
-
   for (size_t i = 0; i < the_pool->max_elts; ++i) {
     RCSW_CHECK(OK == llist_append(&the_pool->free,
-                                  the_pool->elements + i * the_pool->elt_size));
+                                  (uint8_t*)the_pool->elements + i * the_pool->elt_size));
+
   } /* for() */
+  size_t n_bytes = llist_meta_space(params->max_elts);
+
+  /*
+   * Spurious cast alignment warning: the target and destination pointers are
+   * of the same alignment, we just need to convert to 1-byte alignment to get
+   * the math to work.
+   */
+  llist_params.meta = (void*)((uint8_t*)the_pool->nodes + n_bytes);
+  RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
 
   /* initialize reference counting */
   the_pool->refs = rcsw_alloc(NULL,
@@ -110,10 +117,10 @@ void mpool_destroy(struct mpool* const the_pool) {
   rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
 } /* mpool_destroy() */
 
-uint8_t* mpool_req(struct mpool* const the_pool) {
+void* mpool_req(struct mpool* const the_pool) {
   RCSW_FPC_NV(NULL, NULL != the_pool);
 
-  uint8_t* ptr = NULL;
+  void* ptr = NULL;
   ER_DEBUG("Wait for buffer to become available: n_free=%zu,n_alloc=%zu",
            llist_size(&the_pool->free),
            llist_size(&the_pool->alloc));
@@ -128,7 +135,7 @@ uint8_t* mpool_req(struct mpool* const the_pool) {
   llist_append(&the_pool->alloc, ptr);
 
   /* One more THING using this chunk */
-  size_t idx = (size_t)(ptr - the_pool->elements) / the_pool->elt_size;
+  size_t idx = (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
   the_pool->refs[idx]++;
 
   mutex_unlock(&the_pool->mutex);
@@ -144,7 +151,7 @@ uint8_t* mpool_req(struct mpool* const the_pool) {
 
 status_t mpool_timedreq(struct mpool* const the_pool,
                         const struct timespec* const to,
-                        uint8_t** chunk) {
+                        void** chunk) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != to);
 
   ER_DEBUG("Wait for buffer to become available: n_free=%zu,n_alloc=%zu",
@@ -155,16 +162,16 @@ status_t mpool_timedreq(struct mpool* const the_pool,
   mutex_lock(&the_pool->mutex);
 
   /* Remove the entry from free list and add to allocated list */
-  uint8_t* ptr = the_pool->free.first->data;
+  dptr_t* ptr = (dptr_t*)the_pool->free.first->data;
   llist_remove(&the_pool->free, ptr);
   llist_append(&the_pool->alloc, ptr);
 
   /* One more THING using this chunk */
-  size_t idx = (ptr - the_pool->elements) / the_pool->elt_size;
+  size_t idx = ((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
   the_pool->refs[idx]++;
 
   if (NULL != chunk) {
-    *chunk = ptr;
+    *chunk = (dptr_t*)ptr;
   }
 
   mutex_unlock(&the_pool->mutex);
@@ -180,7 +187,7 @@ error:
   return ERROR;
 } /* mpool_timedreq() */
 
-status_t mpool_release(struct mpool* const the_pool, uint8_t* const ptr) {
+status_t mpool_release(struct mpool* const the_pool, void* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
 
   ER_DEBUG("Attempting release of buf=%p", ptr);
@@ -226,7 +233,7 @@ error:
   return ERROR;
 } /* mpool_release() */
 
-status_t mpool_ref_add(struct mpool* const the_pool, const uint8_t* const ptr) {
+status_t mpool_ref_add(struct mpool* const the_pool, const void* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
 
   status_t rstat = ERROR;
@@ -248,7 +255,7 @@ error:
 } /* mpool_ref_add() */
 
 status_t mpool_ref_remove(struct mpool* const the_pool,
-                          const uint8_t* const ptr) {
+                          const void* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
 
   status_t rstat = ERROR;
@@ -269,7 +276,7 @@ error:
   return rstat;
 } /* mpool_ref_remove() */
 
-int mpool_ref_query(struct mpool* const the_pool, const uint8_t* const ptr) {
+int mpool_ref_query(struct mpool* const the_pool, const void* const ptr) {
   RCSW_FPC_NV(-1, NULL != the_pool, NULL != ptr);
 
   /*
@@ -278,16 +285,16 @@ int mpool_ref_query(struct mpool* const the_pool, const uint8_t* const ptr) {
    * here, and the llist can be modified elsewhere.
    */
   size_t memsize = mpool_element_space(the_pool->elt_size, the_pool->max_elts);
-  RCSW_CHECK(RCSW_IS_BETWEENHO(ptr,
-                               the_pool->elements,
-                               the_pool->elements + memsize));
-  return (ptr - the_pool->elements) / the_pool->elt_size;
+  RCSW_CHECK(RCSW_IS_BETWEENHO((const uint8_t*)ptr,
+                               (uint8_t*)the_pool->elements,
+                               (uint8_t*)the_pool->elements + memsize));
+  return ((const uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
 
 error:
   return -1;
 } /* mpool_ref_query() */
 
-size_t mpool_ref_count(struct mpool* const the_pool, const uint8_t* const ptr) {
+size_t mpool_ref_count(struct mpool* const the_pool, const void* const ptr) {
   RCSW_FPC_NV(-1, NULL != the_pool, NULL != ptr);
 
   /*

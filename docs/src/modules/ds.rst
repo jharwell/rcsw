@@ -1,4 +1,4 @@
-.. _ln-rcsw-ds:
+.. _modules-ds:
 
 Data Structures
 ===============

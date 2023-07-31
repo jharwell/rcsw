@@ -1,7 +1,7 @@
-.. _ln-rcsw-stdio:
+.. _modules-stdio:
 
-Simple STD I/O Replacement Library
-==================================
+Simple I/O Replacement Library
+==============================
 
 A re-implementation of the libc routines needed to make printf() work. Mostly
 stolen from `<https://github.com/eyalroz/printf>`_. for debugging in bare

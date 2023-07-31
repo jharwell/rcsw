@@ -28,7 +28,7 @@ struct adj_matrix_params {
    * Pointer to application-allocated space for storing the \ref adj_matrix
    * data. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
   */
-  uint8_t *elements;
+  dptr_t *elements;
 
   /**
    * Size of elements in bytes.
