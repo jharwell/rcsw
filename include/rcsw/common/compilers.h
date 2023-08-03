@@ -101,8 +101,12 @@
 #define RCSW_WARNING_DISABLE_FUNC_CAST(...)
 #define RCSW_WARNING_DISABLE_STRICT_PROTO(...)
 #define RCSW_WARNING_DISABLE_FLOAT_EQUAL(...)
+#define RCSW_WARNING_DISABLE_REDUNDANT_DECLS(...)
 
 #elif defined(__GNUC__)
+
+#define RCSW_WARNING_DISABLE_REDUNDANT_DECLS(...) \
+  RCSW_WARNING_DISABLE(-Wredundant-decls)
 
 #define RCSW_WARNING_DISABLE_QUAL(...) \
   RCSW_WARNING_DISABLE(-Wdiscarded-qualifiers)
@@ -134,7 +138,7 @@
  * Attribute macros supported by [gcc, clang, intel] first
  */
 #if defined (RCSW_ATTR)
-#error "RCSW_ATTR defined!"
+#error RCSW_ATTR defined!
 
 #else
 
@@ -148,7 +152,7 @@
 #endif /* RCSW_ATTR */
 
 #if defined(RCSW_CONST)
-#error "RCSW_CONST defined!"
+#error RCSW_CONST defined!
 
 #else
 
@@ -163,7 +167,7 @@
 #endif /* RCSW_CONST */
 
 #if defined(RCSW_EXPORT)
-#error "RCSW_EXPORT defined!"
+#error RCSW_EXPORT defined!
 
 #else
 /**
@@ -174,6 +178,19 @@
 #define RCSW_EXPORT __attribute__((visibility("default")))
 
 #endif /* RCSW_EXPORT */
+
+#if defined(RCSW_HIDDEN)
+#error RCSW_HIDDEN defined!
+
+#else
+/**
+ * \def RCSW_HIDDEN
+ *
+ * Shorthand for marked a function as private in a shared library.
+ */
+#define RCSW_HIDDEN __attribute__((visibility("hidden")))
+
+#endif /* RCSW_HIDDEN */
 
 /**
  * \def RCSW_LIB_INIT
@@ -205,7 +222,7 @@
 #elif defined(__clang__) || defined(__GNUC__)
 
 #if defined(RCSW_COLD)
-#error "RCSW_COLD defined!"
+#error RCSW_COLD defined!
 
 #else
 
@@ -217,7 +234,7 @@
 #endif /* RCSW_COLD */
 
 #if defined(RCSW_UNUSED)
-#error "RCSW_UNUSED defined!"
+#error RCSW_UNUSED defined!
 
 #else
 
@@ -236,7 +253,7 @@
 #endif /* RCSW_UNUSED */
 
 #if defined(RCSW_CHECK_RET)
-#error "RCSW_CHECK_RET defined!"
+#error RCSW_CHECK_RET defined!
 
 #else
 
@@ -249,7 +266,7 @@
 #endif /* RCSW_CHECK_RET */
 
 #if defined(RCSW_PURE)
-#error "RCSW_PURE defined!"
+#error RCSW_PURE defined!
 
 #else
 
@@ -263,7 +280,7 @@
 
 
 #if defined(RCSW_DEAD)
-#error "RCSW_DEAD defined!"
+#error RCSW_DEAD defined!
 
 #else
 /**
@@ -274,7 +291,7 @@
 #endif /* RCSW_DEAD */
 
 #if defined(RCSW_WEAK)
-#error "RCSW_WEAK defined!"
+#error RCSW_WEAK defined!
 
 #else
 /**
@@ -289,7 +306,7 @@
 #endif /* __clang__ || __GNUC__ */
 
 #if defined(RCSW_ATTR_PRINTF)
-#error "RCSW_ATTR_PRINTF" define!d
+#error RCSW_ATTR_PRINTF defined!
 #endif
 
 #if defined(__clang__)
@@ -299,6 +316,19 @@
 #define RCSW_ATTR_PRINTF(...) RCSW_ATTR(format(gnu_printf, __VA_ARGS__))
 
 #endif /* __clang__ */
+
+/*******************************************************************************
+ * Visibility Macros
+ ******************************************************************************/
+#if defined(RCSW_EXPORTS)
+/* building RCSW as shared library */
+#define RCSW_API RCSW_EXPORT
+#define RCSW_LOCAL RCSW_HIDDEN
+#else
+/* building RCSW as static library */
+#define RCSW_API
+#define RCSW_LOCAL
+#endif
 
 /*******************************************************************************
  * Other Macros

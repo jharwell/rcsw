@@ -24,9 +24,6 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-RCSW_STATIC_ASSERT(sizeof(struct inttree_node) == sizeof(struct bstree_node),
-                   "TEST");
-
 /**
  * \brief Compare two intervals to see if they overlap
  *
@@ -45,15 +42,23 @@ static bool_t inttree_cmp_overlap(const void* a, const void* b) {
   }
 } /* inttree_cmp_overlap() */
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
-int inttree_cmp_key(const void* a, const void* b) {
+/**
+ * \brief Compare two the keys of two intervals during insertion
+ *
+ * \param a Key #1
+ * \param b Key #2
+ *
+ * \return <,=,> 0, depending if low endpoint of a <,=,> low endpoint of b
+ */
+static int inttree_cmp_key(const void* a, const void* b) {
   const int32_t* a_p = a;
   const int32_t* b_p = b;
   return (*a_p - *b_p);
 } /* inttree_cmp_key() */
 
+/*******************************************************************************
+ * RCSW Private Functions
+ ******************************************************************************/
 void inttree_init_helper(const struct bstree* tree) {
   struct interval_data nil_data = { .low = INT_MIN, .high = INT_MIN };
   ds_elt_copy(tree->nil->data, &nil_data, tree->elt_size);
@@ -61,6 +66,27 @@ void inttree_init_helper(const struct bstree* tree) {
   ((struct inttree_node*)tree->nil)->max_high = INT_MIN;
   ((struct inttree_node*)tree->root)->max_high = INT_MIN;
 } /* inttree_init_helper() */
+
+void inttree_high_fixup(const struct bstree* tree,
+                               struct inttree_node* node) {
+  struct interval_data* data = (struct interval_data*)node->data;
+  node->max_high = data->high;
+
+  while (node != RCSW_INTTREE_ROOT(tree)) {
+    inttree_node_update_max(node);
+    node = node->parent;
+  } /* while() */
+} /* inttree_high_fixup() */
+
+/*******************************************************************************
+ * API Functions
+ ******************************************************************************/
+struct bstree* inttree_init(struct bstree* const tree_in,
+                            struct bstree_params* const params) {
+  RCSW_FPC_NV(NULL, NULL != params);
+  params->cmpkey = inttree_cmp_key;
+  return bstree_init_internal(tree_in, params, sizeof(struct inttree_node));
+}
 
 struct inttree_node*
 inttree_overlap_search(const struct bstree* tree,
@@ -94,14 +120,13 @@ inttree_overlap_search(const struct bstree* tree,
   }
 } /* inttree_overlap_search() */
 
-void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
-  struct interval_data* data = (struct interval_data*)node->data;
-  node->max_high = data->high;
+status_t inttree_insert(struct bstree* tree,
+                        struct interval_data* interval) {
 
-  while (node != RCSW_INTTREE_ROOT(tree)) {
-    inttree_node_update_max(node);
-    node = node->parent;
-  } /* while() */
-} /* inttree_high_fixup() */
+  return  bstree_insert_internal(tree,
+                                 &(interval)->low,
+                                 interval,
+                                 sizeof(struct inttree_node));
+}
 
 END_C_DECLS

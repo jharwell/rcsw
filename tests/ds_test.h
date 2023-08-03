@@ -43,9 +43,6 @@ struct hashmap_params;
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
-/* typedef void (*ds_test_t)(int len, struct ds_params *params); */
-/* typedef void (*ds_test2_t)(int len1, int len2, struct ds_params *params); */
-
 typedef void (*hashmap_test_t)(struct hashmap_params *params);
 
 /*******************************************************************************
@@ -67,7 +64,7 @@ int th_key_cmp(const void *a, const void *b) RCSW_PURE;
  * \brief Stub implementation so that unit tests OTHER than the stdio test
  * (which defines its own version of this) link.
  */
-int th_putchar(int c) RCSW_ATTR(weak,const);
+int th_putchar(int c);
 
 END_C_DECLS
 

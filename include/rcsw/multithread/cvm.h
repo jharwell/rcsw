@@ -55,18 +55,18 @@ BEGIN_C_DECLS
  * \param cvm_in CVM to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
  *               passed.
  *
- * \param flags Configuration flags.
+ * \param flags Configuration flags. see \ref cvm.flags for valid flags.
  *
  * \return The initialized CVM, or NULL if an ERROR occurred.
  */
-struct cvm* cvm_init(struct cvm * cvm_in, uint32_t flags);
+RCSW_API struct cvm* cvm_init(struct cvm * cvm_in, uint32_t flags);
 
 /**
  * \brief Destroy the signal condition.
  *
  * \param cvm The CVM handle.
  */
-void mt_cvm_destroy(struct cvm * cvm);
+RCSW_API void mt_cvm_destroy(struct cvm * cvm);
 
 /**
  * \brief Signal on a condition variable while holding a mutex.
@@ -75,7 +75,7 @@ void mt_cvm_destroy(struct cvm * cvm);
  *
  * \return \ref status_t.
  */
-status_t cvm_signal(struct cvm * cvm);
+RCSW_API status_t cvm_signal(struct cvm * cvm);
 
 /**
  * \brief Broadcast to everyone waiting on a condition variable.
@@ -88,7 +88,7 @@ status_t cvm_signal(struct cvm * cvm);
  *
  * \return \ref status_t.
  */
-status_t cvm_broadcast(struct cvm * cvm);
+RCSW_API status_t cvm_broadcast(struct cvm * cvm);
 
 /**
  * \brief  Wait on a condition variable while holding a mutex.
@@ -97,7 +97,7 @@ status_t cvm_broadcast(struct cvm * cvm);
  *
  * \return \ref status_t.
  */
-status_t cvm_wait(struct cvm * cvm);
+RCSW_API status_t cvm_wait(struct cvm * cvm);
 
 /**
  * \brief Timed wait on a condition variable while holding a mutex.
@@ -110,6 +110,6 @@ status_t cvm_wait(struct cvm * cvm);
  *
  * \return \ref status_t
  */
-status_t cvm_timedwait(struct cvm * cvm, const struct timespec * to);
+RCSW_API status_t cvm_timedwait(struct cvm * cvm, const struct timespec * to);
 
 END_C_DECLS

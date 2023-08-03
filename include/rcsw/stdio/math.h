@@ -105,8 +105,8 @@ int stdio_floor(double x) RCSW_CONST;
  * Computes the base-10 logarithm of the input number - which must be an actual
  * positive number (not infinity or NaN, nor a sub-normal).
  */
-double stdio_log10(double positive_number) RCSW_CONST;
+RCSW_API double stdio_log10(double positive_number) RCSW_CONST;
 
-double stdio_pow10(int floored_exp10) RCSW_CONST;
+RCSW_API double stdio_pow10(int floored_exp10) RCSW_CONST;
 
 END_C_DECLS

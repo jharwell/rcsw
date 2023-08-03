@@ -19,6 +19,17 @@
 #include "rcsw/stdio/string.h"
 
 /*******************************************************************************
+ * Helper Functions
+ ******************************************************************************/
+/*
+ * Needed to get things to link with RCSW hidden visibility when built as an
+ * .so; having this in the C test harness didn't work.
+ */
+int th_putchar(int c) {
+  putchar(c);
+  return c;
+}
+/*******************************************************************************
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("Char Test", "[stdio]") {

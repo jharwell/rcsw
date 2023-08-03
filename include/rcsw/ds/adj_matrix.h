@@ -232,8 +232,8 @@ static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
  *
  * \return The initialized adjacency matrix, or NULL if an error occurred.
  */
-struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
-                                     const struct adj_matrix_params* params) RCSW_CHECK_RET;
+RCSW_API struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
+                                            const struct adj_matrix_params* params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy an adjacency matrix. Any further use of the provided handle is
@@ -241,7 +241,7 @@ struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
  *
  * \param matrix The matrix handle.
  */
-void adj_matrix_destroy(struct adj_matrix* matrix);
+RCSW_API void adj_matrix_destroy(struct adj_matrix* matrix);
 
 /**
  * \brief Add a directed edge to the graph.
@@ -253,7 +253,7 @@ void adj_matrix_destroy(struct adj_matrix* matrix);
  *
  * \return \ref status_t.
  */
-status_t adj_matrix_edge_addd(struct adj_matrix* matrix,
+RCSW_API status_t adj_matrix_edge_addd(struct adj_matrix* matrix,
                               size_t u,
                               size_t v,
                               const double *w);
@@ -272,7 +272,9 @@ status_t adj_matrix_edge_addd(struct adj_matrix* matrix,
  *
  * \return \ref status_t.
  */
-status_t adj_matrix_edge_addu(struct adj_matrix* matrix, size_t u, size_t v);
+RCSW_API status_t adj_matrix_edge_addu(struct adj_matrix* matrix,
+                                       size_t u,
+                                       size_t v);
 
 /**
  * \brief Remove an edge (u,v). If the graph was undirected, also remove the
@@ -284,7 +286,7 @@ status_t adj_matrix_edge_addu(struct adj_matrix* matrix, size_t u, size_t v);
  *
  * \return \ref status_t.
  */
-status_t adj_matrix_edge_remove(struct adj_matrix* matrix,
+RCSW_API status_t adj_matrix_edge_remove(struct adj_matrix* matrix,
                                 size_t u,
                                 size_t v);
 

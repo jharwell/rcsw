@@ -238,7 +238,7 @@ BEGIN_C_DECLS
  *
  * \return The top of the queue, or NULL if no such packet or an error occurred.
  */
-struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue);
+RCSW_API struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue);
 
 /**
  * \brief Initialize a \ref pulse instance.
@@ -250,7 +250,7 @@ struct pulse_rxq_ent* pulse_rxq_front(struct pcqueue *const queue);
  *
  * \return Initialized pulse instance, or NULL if an error occurred.
  */
-struct pulse *pulse_init(struct pulse *pulse_in,
+RCSW_API struct pulse *pulse_init(struct pulse *pulse_in,
                          const struct pulse_params * params) RCSW_CHECK_RET;
 
 /**
@@ -260,7 +260,7 @@ struct pulse *pulse_init(struct pulse *pulse_in,
  *
  * \param pulse The pulse handle.
  */
-void pulse_destroy(struct pulse *pulse);
+RCSW_API void pulse_destroy(struct pulse *pulse);
 
 /**
  * \brief Allocate and initialize a receive queue.
@@ -274,7 +274,7 @@ void pulse_destroy(struct pulse *pulse);
  *
  * \return Pointer to new receive queue, or NULL if an error occurred.
  */
-struct pcqueue *pulse_rxq_init(struct pulse * pulse,
+RCSW_API struct pcqueue *pulse_rxq_init(struct pulse * pulse,
                                 void * buf_p,
                                 uint32_t n_entries) RCSW_CHECK_RET;
 
@@ -287,7 +287,7 @@ struct pcqueue *pulse_rxq_init(struct pulse * pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_subscribe(struct pulse * pulse,
+RCSW_API status_t pulse_subscribe(struct pulse * pulse,
                          struct pcqueue * queue,
                          uint32_t pid);
 
@@ -300,7 +300,7 @@ status_t pulse_subscribe(struct pulse * pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_unsubscribe(struct pulse * pulse,
+RCSW_API status_t pulse_unsubscribe(struct pulse * pulse,
                            struct pcqueue * queue,
                            uint32_t pid);
 
@@ -317,7 +317,7 @@ status_t pulse_unsubscribe(struct pulse * pulse,
  *
  * \return \ref status_t
  */
-status_t pulse_publish(struct pulse * pulse,
+RCSW_API status_t pulse_publish(struct pulse * pulse,
                        uint32_t pid,
                        size_t pkt_size,
                        const void* pkt);
@@ -336,7 +336,7 @@ status_t pulse_publish(struct pulse * pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_publish_reserve(struct pulse* pulse,
+RCSW_API status_t pulse_publish_reserve(struct pulse* pulse,
                                struct pulse_rsrvn* res,
                                size_t pkt_size);
 /**
@@ -361,7 +361,7 @@ status_t pulse_publish_reserve(struct pulse* pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_publish_release(struct pulse* pulse,
+RCSW_API status_t pulse_publish_release(struct pulse* pulse,
                                uint32_t pid,
                                struct pulse_rsrvn* res,
                                size_t pkt_size);
@@ -380,7 +380,7 @@ status_t pulse_publish_release(struct pulse* pulse,
  * \return A reference to the first item in the queue, or NULL if an ERROR
  * occurred.
  */
-struct pulse_rxq_ent* pulse_rxq_wait(struct pulse* pulse,
+RCSW_API struct pulse_rxq_ent* pulse_rxq_wait(struct pulse* pulse,
                                      struct pcqueue * queue) RCSW_CHECK_RET;
 
 /**
@@ -398,7 +398,7 @@ struct pulse_rxq_ent* pulse_rxq_wait(struct pulse* pulse,
  * \return A reference to the first item in the queue, or NULL if an ERROR or a
  * timeout occurred.
  */
-struct pulse_rxq_ent* pulse_rxq_timedwait(struct pulse* pulse,
+RCSW_API struct pulse_rxq_ent* pulse_rxq_timedwait(struct pulse* pulse,
                                           struct pcqueue * queue,
                                           struct timespec * to) RCSW_CHECK_RET;
 
@@ -412,7 +412,7 @@ struct pulse_rxq_ent* pulse_rxq_timedwait(struct pulse* pulse,
  *
  * \return \ref status_t.
  */
-status_t pulse_rxq_pop_front(struct pcqueue* queue,
+RCSW_API status_t pulse_rxq_pop_front(struct pcqueue* queue,
                              struct pulse_rxq_ent * ent);
 
 END_C_DECLS

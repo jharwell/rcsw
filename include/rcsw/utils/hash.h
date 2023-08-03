@@ -16,7 +16,7 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -30,7 +30,7 @@ BEGIN_C_DECLS
  *
  * \return The hash, or 0 if an ERROR occurred
  */
-uint32_t hash_default(const void * data, size_t len) RCSW_PURE;
+RCSW_API uint32_t hash_default(const void * data, size_t len) RCSW_PURE;
 
 /**
  * \brief Compute a hash over data
@@ -43,7 +43,7 @@ uint32_t hash_default(const void * data, size_t len) RCSW_PURE;
  * \return The hash, or 0 if an ERROR occurred
  *
  */
-uint32_t hash_fnv1a(const void * data, size_t len) RCSW_PURE;
+RCSW_API uint32_t hash_fnv1a(const void * data, size_t len) RCSW_PURE;
 
 /**
  * \brief Compute a hash over data
@@ -56,7 +56,6 @@ uint32_t hash_fnv1a(const void * data, size_t len) RCSW_PURE;
  * \return The hash, or 0 if an ERROR occurred
  *
  */
-uint32_t hash_djb(const void * data, size_t len) RCSW_PURE;
+RCSW_API uint32_t hash_djb(const void * data, size_t len) RCSW_PURE;
 
 END_C_DECLS
-

@@ -74,7 +74,10 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
   if (matrix->is_weighted) {
     for (size_t i = 0; i < matrix->n_vertices; ++i) {
       for (size_t j = 0; j < matrix->n_vertices; ++j) {
-        *(double*)matrix_access(&matrix->matrix, i, j) = NAN;
+        double* tmp = matrix_access(&matrix->matrix, i, j);
+        if (RCSW_LIKELY(NULL != tmp)) {
+          *tmp = NAN;
+        }
       } /* for(j..) */
     } /* for(i..) */
   }

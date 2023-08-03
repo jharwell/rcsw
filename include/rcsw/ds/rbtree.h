@@ -18,7 +18,7 @@
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -32,7 +32,7 @@ BEGIN_C_DECLS
  * \param node The parent (or successor) of the node that was deleted.
  *
  */
-void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node);
+RCSW_API void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node);
 
 /**
  * \brief  Fix up tree structure after an insertion
@@ -40,8 +40,12 @@ void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node);
  * \param tree The rbtree handle.
  * \param node The parent the node that was inserted.
  */
-void rbtree_insert_fixup(struct bstree* tree, struct bstree_node * node);
+RCSW_API void rbtree_insert_fixup(struct bstree* tree,
+                                  struct bstree_node * node);
 
+/*******************************************************************************
+ * API Functions
+ ******************************************************************************/
 /**
  * \brief Get the black height of a node in an RB Tree.
  *
@@ -50,6 +54,6 @@ void rbtree_insert_fixup(struct bstree* tree, struct bstree_node * node);
  * \return The height or 0 if the node is NULL.
  *
  **/
-int rbtree_node_black_height(const struct bstree_node *node) RCSW_PURE;
+RCSW_API int rbtree_node_black_height(const struct bstree_node *node) RCSW_PURE;
 
 END_C_DECLS

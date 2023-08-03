@@ -54,11 +54,11 @@ BEGIN_C_DECLS
  *
  * \param value The initial semaphore value.
  *
- * \param flags Configuration flags.
+ * \param flags Configuration flags. See \ref csem.flags for valid flags.
  *
  * \return The initialization counting semaphore, or NULL if an ERROR occurred.
  */
-struct csem* csem_init(struct csem *sem_in,
+RCSW_API struct csem* csem_init(struct csem *sem_in,
                           size_t value,
                           uint32_t flags);
 
@@ -67,7 +67,7 @@ struct csem* csem_init(struct csem *sem_in,
  *
  * \param sem The semaphore to destroy.
  */
-void csem_destroy(struct csem * sem);
+RCSW_API void csem_destroy(struct csem * sem);
 
 /**
  * \brief Increment (unlock) a counting semaphore.
@@ -76,10 +76,10 @@ void csem_destroy(struct csem * sem);
  *
  * \return \ref status_t.
  */
-status_t csem_post(struct csem * sem);
+RCSW_API status_t csem_post(struct csem * sem);
 
 /**
- * struct csemimedwait() - Wait on (lock) a counting semaphore with a timeout.
+ * Wait on a counting semaphore with a timeout.
  *
  * \param sem The semaphore handle.
  *
@@ -89,7 +89,7 @@ status_t csem_post(struct csem * sem);
  *
  * \return \ref status_t.
  */
-status_t csem_timedwait(struct csem * sem, const struct timespec * to);
+RCSW_API status_t csem_timedwait(struct csem * sem, const struct timespec * to);
 
 /**
  * \brief Wait on (lock) a counting semaphore.
@@ -98,7 +98,7 @@ status_t csem_timedwait(struct csem * sem, const struct timespec * to);
  *
  * \return \ref status_t.
  */
-status_t csem_wait(struct csem *sem);
+RCSW_API status_t csem_wait(struct csem *sem);
 
 /**
  * \brief Lock the semaphore only if it is currently available.
@@ -109,6 +109,6 @@ status_t csem_wait(struct csem *sem);
  *
  * \return \ref status_t.
  */
-status_t csem_trywait(struct csem *sem);
+RCSW_API status_t csem_trywait(struct csem *sem);
 
 END_C_DECLS

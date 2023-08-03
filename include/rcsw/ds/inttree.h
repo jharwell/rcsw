@@ -72,7 +72,34 @@ struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) inttree_node {
 };
 
 /*******************************************************************************
+ * RCSW Private Functions
+ ******************************************************************************/
+/**
+ * \brief Initialize \ref inttree specific bits of a BST
+ *
+ * \param tree The partially constructed interval tree.
+ */
+RCSW_LOCAL void inttree_init_helper(const struct bstree* tree);
+
+/**
+ * \brief Fixup high field for all nodes above target node after an
+ * insertion/deletion
+ *
+ * \param tree The interval tree handle.
+ * \param node The leaf node to propagate fixes up the tree for.
+ */
+
+RCSW_LOCAL void inttree_high_fixup(const struct bstree* tree,
+                                   struct inttree_node* node);
+
+/*******************************************************************************
  * API Functions
+*
+* There are other bstree functions that you can use besides these; however,
+* given that you are using an Interval tree, these are really the only
+* operations you should be doing (besides insert/delete). I don't wrap the
+* whole bstree API here for that reason.
+*
  ******************************************************************************/
 
 BEGIN_C_DECLS
@@ -137,25 +164,6 @@ static inline size_t inttree_meta_space(size_t max_elts) {
 }
 
 /**
- * \brief \see bstree_insert_internal()
- */
-static inline status_t inttree_insert(struct bstree* tree,
-                                      struct interval_data* interval) {
-  return  bstree_insert_internal(tree,
-                                 &(interval)->low,
-                                 interval,
-                                 sizeof(struct inttree_node));
-}
-
-/**
- * \brief \see bstree_init_internal()
- */
-static inline struct bstree* inttree_init(struct bstree* const tree_in,
-                                          const struct bstree_params* const params) {
-  return bstree_init_internal(tree_in, params, sizeof(struct inttree_node));
-}
-
-/**
  * \brief \see bstree_delete()
  */
 static inline status_t inttree_delete(struct bstree* tree,
@@ -171,15 +179,18 @@ static inline status_t inttree_remove(struct bstree* tree, const void* key) {
   return bstree_remove(tree, key);
 }
 
-/*******************************************************************************
- * bstree-wrapped functions
- *
- * There are other bstree functions that you can use besides these; however,
- * given that you are using an Interval tree, these are really the only
- * operations you should be doing (besides insert/delete). I don't wrap the
- * whole bstree API here for that reason.
- *
- ******************************************************************************/
+/**
+ * \brief \see bstree_insert_internal()
+ */
+RCSW_API status_t inttree_insert(struct bstree* tree,
+                                 struct interval_data* interval);
+
+/**
+ * \brief \see bstree_init_internal()
+ */
+RCSW_API struct bstree* inttree_init(struct bstree* const tree_in,
+                                     struct bstree_params* const params);
+
 
 /**
  * \brief Determine if the given interval overlaps any in the \ref inttree.
@@ -194,40 +205,10 @@ static inline status_t inttree_remove(struct bstree* tree, const void* key) {
  * \return The first overlapping interval encountered, or NULL if none was found
  * or an error occurred.
  */
-struct inttree_node* inttree_overlap_search(
+RCSW_API struct inttree_node* inttree_overlap_search(
     const struct bstree * tree,
     struct inttree_node * root,
     const struct interval_data * interval);
 
-/**
- * \brief Initialize \ref inttree specific bits of a BST
- *
- * Do not call this function directly.
- *
- * \param tree The partially constructed interval tree.
- */
-void inttree_init_helper(const struct bstree * tree);
-
-/**
- * \brief Fixup high field for all nodes above target node after an
- * insertion/deletion
- *
- * Do not call this function directly.
- *
- * \param tree The interval tree handle.
- * \param node The leaf node to propagate fixes up the tree for.
- */
-void inttree_high_fixup(const struct bstree* tree,
-                         struct inttree_node * node);
-
-/**
- * \brief Compare two the keys of two intervals during insertion
- *
- * \param a Key #1
- * \param b Key #2
- *
- * \return <,=,> 0, depending if low endpoint of a <,=,> low endpoint of b
- */
-int inttree_cmp_key(const void * a, const void * b) RCSW_PURE;
 
 END_C_DECLS

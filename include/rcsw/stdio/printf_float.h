@@ -24,10 +24,10 @@
 #define PRINTF_ABS(_x) ( (_x) > 0 ? (_x) : -(_x) )
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
-void print_floating_point(struct printf_output_gadget* output,
+RCSW_LOCAL void print_floating_point(struct printf_output_gadget* output,
                           double value,
                           printf_size_t precision,
                           printf_size_t width,

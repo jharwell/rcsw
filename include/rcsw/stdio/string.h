@@ -29,7 +29,7 @@
   ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -44,7 +44,7 @@ BEGIN_C_DECLS
  * \param n # of bytes to copy.
  * \return Memory pointed to by dest
  */
-void* stdio_memcpy(void* __restrict__ dest,
+RCSW_API void* stdio_memcpy(void* __restrict__ dest,
                    const void* __restrict__ src,
                    size_t n);
 
@@ -55,7 +55,7 @@ void* stdio_memcpy(void* __restrict__ dest,
  *
  * \return The converted char.
  */
-int stdio_toupper(int c) RCSW_CONST;
+RCSW_API int stdio_toupper(int c) RCSW_CONST;
 
 /**
  * \brief Convert a char to lower case.
@@ -64,7 +64,7 @@ int stdio_toupper(int c) RCSW_CONST;
  *
  * \return The converted char.
  */
-int stdio_tolower(int c) RCSW_CONST;
+RCSW_API int stdio_tolower(int c) RCSW_CONST;
 
 /**
  * \brief Get the length of a string.
@@ -73,7 +73,7 @@ int stdio_tolower(int c) RCSW_CONST;
  *
  * \return The length of the string.
  */
-size_t stdio_strlen(const char * s) RCSW_PURE;
+RCSW_API size_t stdio_strlen(const char * s) RCSW_PURE;
 
 /**
  * \brief Get the length of a string, limited by \p maxsize
@@ -85,7 +85,7 @@ size_t stdio_strlen(const char * s) RCSW_PURE;
  * \return The length of the string.
  */
 
-size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
+RCSW_API size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
 
 /**
  * \brief Reverse a string of known length.
@@ -97,7 +97,7 @@ size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
  * \param s The string to reverse.
  * \param len Length of the string to reverse.
  */
-void stdio_strrev(char *s, size_t len);
+RCSW_API void stdio_strrev(char *s, size_t len);
 
 /**
  * \brief Search a string for another string.
@@ -115,7 +115,7 @@ void stdio_strrev(char *s, size_t len);
  * \return: The first occurence of the needle, or NULL if the substring was not
  *          found.
  */
-const char *stdio_strstr(const char * haystack,
+RCSW_API const char *stdio_strstr(const char * haystack,
                          const char * needle) RCSW_PURE;
 
 /**
@@ -133,7 +133,7 @@ const char *stdio_strstr(const char * haystack,
  * \return Pointer to the first occurence of the needle, or NULL if the
  *         char was not found.
  */
-const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
+RCSW_API const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
 
 /**
  * \brief Copy one string over another.
@@ -149,7 +149,7 @@ const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
  *
  * \return Pointer to dest.
  */
-char *stdio_strncpy(char * __restrict__ dest,
+RCSW_API char *stdio_strncpy(char * __restrict__ dest,
                     const char * __restrict__ src,
                     size_t n);
 
@@ -167,7 +167,8 @@ char *stdio_strncpy(char * __restrict__ dest,
  *
  * \return Pointer to dest, unless \p dest is NULL, then NULL.
  */
-char *stdio_strcpy(char * __restrict__ dest, const char * __restrict__ src);
+RCSW_API char *stdio_strcpy(char * __restrict__ dest,
+                            const char * __restrict__ src);
 
 /**
  * \brief Compare two strings for equality.
@@ -181,7 +182,9 @@ char *stdio_strcpy(char * __restrict__ dest, const char * __restrict__ src);
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-int stdio_strncmp(const char * s1, const char * s2, size_t len) RCSW_PURE;
+RCSW_API int stdio_strncmp(const char * s1,
+                           const char * s2,
+                           size_t len) RCSW_PURE;
 
 /**
  * \brief Compare two strings for equality.
@@ -194,7 +197,7 @@ int stdio_strncmp(const char * s1, const char * s2, size_t len) RCSW_PURE;
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
+RCSW_API int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
 
 /**
  * \brief Replace a occurrences of one substring within another string with
@@ -210,7 +213,7 @@ int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
  *
  * \return The updated string.
  */
-char *stdio_strrep(const char * __restrict__ original,
+RCSW_API char *stdio_strrep(const char * __restrict__ original,
                    const char * __restrict__ pattern,
                    const char * __restrict__ replacement,
                    char * __restrict__ new_str);

@@ -112,7 +112,7 @@ static inline size_t rawfifo_n_free(const struct rawfifo *const fifo) {
  *
  * \return \ref status_t.
  */
-status_t rawfifo_init(struct rawfifo * fifo,
+RCSW_API status_t rawfifo_init(struct rawfifo * fifo,
                       void* buf,
                       size_t max_elts,
                       size_t elt_size);
@@ -126,7 +126,7 @@ status_t rawfifo_init(struct rawfifo * fifo,
  *
  * \return # of elements removed from the FIFO.
  */
-size_t rawfifo_deq(struct rawfifo * fifo, void * e, size_t n_elts);
+RCSW_API size_t rawfifo_deq(struct rawfifo * fifo, void * e, size_t n_elts);
 
 /**
  * \brief Adds N elements to the FIFO.
@@ -136,6 +136,8 @@ size_t rawfifo_deq(struct rawfifo * fifo, void * e, size_t n_elts);
  * \param n_elts # elements to remove.
  * \return # of elements added to the FIFO.
  */
-size_t rawfifo_enq(struct rawfifo * fifo, const void * elts, size_t n_elts);
+RCSW_API size_t rawfifo_enq(struct rawfifo * fifo,
+                            const void * elts,
+                            size_t n_elts);
 
 END_C_DECLS

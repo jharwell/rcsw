@@ -40,7 +40,7 @@ struct mutex {
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -50,18 +50,18 @@ BEGIN_C_DECLS
  * \param mutex_in The mutex to initialize. Can be NULL if \ref
  *                 RCSW_NOALLOC_HANDLE is not passed.
  *
- * \param flags Configuration flags.
+ * \param flags Configuration flags. See \ref mutex.flags for valid flags.
  *
  * \return The initialized mutex, or NULL if an ERROR occurred.
  */
-struct mutex* mutex_init(struct mutex *mutex_in, uint32_t flags);
+RCSW_API struct mutex* mutex_init(struct mutex *mutex_in, uint32_t flags);
 
 /**
  * \brief Destroy a mutex.
  *
  * \param mutex The mutex handle.
  */
-void mutex_destroy(struct mutex *mutex);
+RCSW_API void mutex_destroy(struct mutex *mutex);
 
 /**
  * \brief Acquire the lock.
@@ -70,7 +70,7 @@ void mutex_destroy(struct mutex *mutex);
  *
  * \return \ref status_t.
  */
-status_t mutex_lock(struct mutex *mutex);
+RCSW_API status_t mutex_lock(struct mutex *mutex);
 
 /**
  * \brief Release the lock.
@@ -79,6 +79,6 @@ status_t mutex_lock(struct mutex *mutex);
  *
  * \return \ref status_t.
  */
-status_t mutex_unlock(struct mutex *mutex);
+RCSW_API status_t mutex_unlock(struct mutex *mutex);
 
 END_C_DECLS

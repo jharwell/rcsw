@@ -51,7 +51,7 @@ BEGIN_C_DECLS
 /*******************************************************************************
  * Checksum Functions
  ******************************************************************************/
-status_t string_gen(char* const buf, size_t len) {
+status_t util_string_gen(char* const buf, size_t len) {
   RCSW_FPC_NV(ERROR, buf != NULL);
 
   /* ASCII characters 33 to 126 */
@@ -65,7 +65,7 @@ status_t string_gen(char* const buf, size_t len) {
   return OK;
 } /* string_gen() */
 
-uint32_t reflect32(uint32_t data, size_t n_bits) {
+uint32_t util_reflect32(uint32_t data, size_t n_bits) {
   uint32_t reflection = 0x00000000;
 
   /* reflect the data about the center bit */

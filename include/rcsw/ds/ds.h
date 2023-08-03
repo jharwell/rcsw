@@ -134,27 +134,23 @@ enum ds_tag {
 #define RCSW_DS_EXTFLAGS_START 10
 
 /*******************************************************************************
- * Structure Definitions
- ******************************************************************************/
-#if !defined(DOXYGEN_DOCUMENTATION_BUILD)
-/**
- * \brief The common set of parameters used by all data structures.
- */
-#define RCSW_DECLARE_DS_PARAMS_COMMON  \
-  int (*cmpe)(const void *const e1, const void *const e2); \
-  int (*cmpkey)(const void *const e1, const void *const e2); \
-  void (*printe)(const void *e); \
-  uint8_t *meta; \
-  uint8_t *elements; \
-  size_t elt_size; \
-  int max_elts; \
-  uint32_t flags;
-#endif
-
-/*******************************************************************************
- * Inline Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
+
+/**
+ * \brief Utility function to swap two elements.
+ *
+ * If the element is larger than double, a for() loop is used. Otherwise
+ * pointers are used.
+ *
+ * \param elt1 Element #1.
+ * \param elt2 Element #2.
+ * \param elt_size Size of elements in bytes.
+ *
+ * \return \ref status_t
+ */
+RCSW_LOCAL status_t ds_elt_swap(void *elt1, void *elt2, size_t elt_size);
 
 /**
  * \brief Calculate how large the chunk of memory for the metadata for a data
@@ -215,8 +211,21 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
 }
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
+/**
+ * \brief Utility function to clear an element.
+ *
+ * If the element is larger than a double, memcpy() is used. If it is < than the
+ * size of a double, pointers are used.
+ *
+ * \param elt Element to clear.
+ * \param elt_size Size of element in bytes.
+ *
+ * \return \ref status_t
+ */
+RCSW_API status_t ds_elt_clear(void *elt, size_t elt_size);
+
 /**
  * \brief Utility function to copy elt2 into elt1, overwriting.
  *
@@ -229,33 +238,6 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
  *
  * \return \ref status_t
  */
-status_t ds_elt_copy(void *elt1, const void *elt2, size_t elt_size);
-
-/**
- * \brief Utility function to clear an element.
- *
- * If the element is larger than a double, memcpy() is used. If it is < than the
- * size of a double, pointers are used.
- *
- * \param elt Element to clear.
- * \param elt_size Size of element in bytes.
- *
- * \return \ref status_t
- */
-status_t ds_elt_clear(void *elt, size_t elt_size);
-
-/**
- * \brief Utility function to swap two elements.
- *
- * If the element is larger than double, a for() loop is used. Otherwise
- * pointers are used.
- *
- * \param elt1 Element #1.
- * \param elt2 Element #2.
- * \param elt_size Size of elements in bytes.
- *
- * \return \ref status_t
- */
-status_t ds_elt_swap(void *elt1, void *elt2, size_t elt_size);
+RCSW_API status_t ds_elt_copy(void *elt1, const void *elt2, size_t elt_size);
 
 END_C_DECLS

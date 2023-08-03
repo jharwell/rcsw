@@ -16,7 +16,7 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -33,10 +33,13 @@ BEGIN_C_DECLS
  *
  * \return \ref bool_t
  **/
-bool_t str_is_parenthesizable(const char *x,
-                              char *r, char el,
-                              char (*multiply_cb)(char x, char y));
+RCSW_API bool_t str_is_parenthesizable(const char *x,
+                                       char *r, char el,
+                                       char (*multiply_cb)(char x, char y));
 
+/*******************************************************************************
+ * RCSW Private Functions
+ ******************************************************************************/
 /**
  * \brief Find the largest # in an array of non-negative integers
  *
@@ -45,7 +48,7 @@ bool_t str_is_parenthesizable(const char *x,
  *
  * \return The largest #, or 0 if an ERROR occurred
  */
-size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
+RCSW_LOCAL size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
 
 /**
  * \brief Find the largest # in an array of integers
@@ -55,6 +58,6 @@ size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
  *
  * \return The largest #, or 0 if an ERROR occurred
  */
-int alg_arr_largest_num2(const int * array, size_t n_elts);
+RCSW_LOCAL int alg_arr_largest_num2(const int * array, size_t n_elts);
 
 END_C_DECLS

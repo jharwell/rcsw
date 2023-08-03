@@ -98,7 +98,7 @@ struct matrix {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -182,9 +182,7 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
   return matrix->n_cols == matrix->n_rows;
 }
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
+
 /**
  * \brief Initialize a static matrix.
  *
@@ -195,8 +193,8 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-struct matrix* matrix_init(struct matrix* matrix_in,
-                           const struct matrix_params* params);
+RCSW_API struct matrix* matrix_init(struct matrix* matrix_in,
+                                    const struct matrix_params* params);
 
 /**
  * \brief Destroy a static matrix.
@@ -205,7 +203,7 @@ struct matrix* matrix_init(struct matrix* matrix_in,
  *
  * \param matrix The matrix handle.
  */
-void matrix_destroy(struct matrix* matrix);
+RCSW_API void matrix_destroy(struct matrix* matrix);
 
 /**
  * \brief Transpose a static matrix.
@@ -216,7 +214,7 @@ void matrix_destroy(struct matrix* matrix);
  *
  * \return \ref status_t
  */
-status_t matrix_transpose(struct matrix* matrix);
+RCSW_API status_t matrix_transpose(struct matrix* matrix);
 
 /**
  * \brief Print a static matrix
@@ -225,6 +223,6 @@ status_t matrix_transpose(struct matrix* matrix);
  *
  * \param matrix The matrix handle.
  */
-void matrix_print(const struct matrix* matrix);
+RCSW_API void matrix_print(const struct matrix* matrix);
 
 END_C_DECLS

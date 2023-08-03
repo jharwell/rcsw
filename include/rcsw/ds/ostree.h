@@ -62,11 +62,27 @@ struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) ostree_node {
 };
 
 
+
 /*******************************************************************************
- * Inline Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Initialize \ref ostree specific bits of a BST.
+ *
+ * \param tree The ostree handle.
+ */
+RCSW_LOCAL void ostree_init_helper(struct bstree* tree);
 
+/*******************************************************************************
+ * API Functions
+ *
+ * There are other bstree functions that you can use besides these; however,
+ * given that you are using an Order Statistics tree, these are really the only
+ * operations you should be doing (besides insert/delete). I don't wrap the
+ * bstree API here for that reason.
+ *
+ ******************************************************************************/
 
 /**
  * \brief \see bstree_element_space()
@@ -74,7 +90,6 @@ BEGIN_C_DECLS
 static inline size_t ostree_element_space(size_t max_elts, size_t elt_size) {
   return bstree_element_space(max_elts, elt_size);
 }
-
 
 /**
  * \brief Calculate the space needed for the nodes in a \ref ostree.
@@ -90,25 +105,6 @@ static inline size_t ostree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts + 2) +
       ds_elt_space_simple(max_elts+2, sizeof(struct ostree_node));
 }
-
-/**
- * \brief \see bstree_init_internal()
- */
-static inline struct bstree* ostree_init(struct bstree* tree_in,
-                                         const struct bstree_params* params) {
-  return bstree_init_internal(tree_in, params, sizeof(struct ostree_node));
-}
-
-
-/**
- * \brief \see bstree_insert_internal()
- */
-static inline status_t ostree_insert(struct bstree* tree,
-                                     void* const key,
-                                     void* const data) {
-  return bstree_insert_internal(tree, key, data, sizeof(struct ostree_node));
-}
-
 
 /**
  * \brief \see bstree_delete()
@@ -144,16 +140,6 @@ static inline struct ostree_node* ostree_node_query(const struct bstree* const t
                                                 key);
 }
 
-/*******************************************************************************
- * API Functions
- *
- * There are other bstree functions that you can use besides these; however,
- * given that you are using an Order Statistics tree, these are really the only
- * operations you should be doing (besides insert/delete). I don't wrap the
- * bstree API here for that reason.
- *
- ******************************************************************************/
-
 /**
  * \brief Select the ith smallest element in the \ref ostree.
  *
@@ -166,9 +152,9 @@ static inline struct ostree_node* ostree_node_query(const struct bstree* const t
  * \return The ith smallest element, or NULL if no such element or an error
  * occurred.
  */
-struct ostree_node* ostree_select(const struct bstree* tree,
-                                  struct ostree_node * node_in,
-                                  int i);
+RCSW_API struct ostree_node* ostree_select(const struct bstree* tree,
+                                           struct ostree_node * node_in,
+                                           int i);
 
 /**
  * \brief Get the rank of an element within an \ref ostree.
@@ -178,15 +164,23 @@ struct ostree_node* ostree_select(const struct bstree* tree,
  *
  * \return The rank, or -1 on ERROR.
  */
-int ostree_rank(const struct bstree * tree,
-                const struct ostree_node* node);
+RCSW_API int ostree_rank(const struct bstree * tree,
+                         const struct ostree_node* node);
+
 
 /**
- * \brief Initialize \ref ostree specific bits of a BST.
- *
- * Do not call this function directly.
- * \param tree The ostree handle.
+ * \brief \see bstree_init_internal()
  */
-void ostree_init_helper(struct bstree* tree);
+RCSW_API struct bstree* ostree_init(struct bstree* tree_in,
+                           const struct bstree_params* params);
+
+
+/**
+ * \brief \see bstree_insert_internal()
+ */
+RCSW_API status_t ostree_insert(struct bstree* tree,
+                       void* const key,
+                       void* const data);
+
 
 END_C_DECLS

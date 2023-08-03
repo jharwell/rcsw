@@ -29,7 +29,9 @@ BEGIN_C_DECLS
  *
  * \return computed 8-bit checksum
  */
-uint8_t xchks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
+RCSW_API uint8_t xchks8(const uint8_t * buf,
+                        size_t n_bytes,
+                        uint8_t seed) RCSW_PURE;
 
 /**
  * \brief Compute an 16-bit checksum (XOR, rotate)
@@ -42,7 +44,9 @@ uint8_t xchks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
  *
  * \return computed 16-bit checksum
  */
-uint16_t xchks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
+RCSW_API uint16_t xchks16(const uint16_t * buf,
+                          size_t n_bytes,
+                          uint16_t seed) RCSW_PURE;
 
 /**
  * \brief Compute an 32-bit checksum (XOR, rotate)
@@ -55,7 +59,9 @@ uint16_t xchks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
  *
  * \return Computed 32-bit checksum
  */
-uint32_t xchks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
+RCSW_API uint32_t xchks32(const uint32_t * buf,
+                          size_t n_bytes,
+                          uint32_t seed) RCSW_PURE;
 
 /**
  * \brief Compute an 8-bit checksum (add-ignore-carry)
@@ -66,7 +72,9 @@ uint32_t xchks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
  *
  * \return computed 8-bit checksum
  */
-uint8_t achks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
+RCSW_API uint8_t achks8(const uint8_t * buf,
+                        size_t n_bytes,
+                        uint8_t seed) RCSW_PURE;
 
 /**
  * \brief Compute an 16-bit checksum (add-ignore-carry)
@@ -79,7 +87,9 @@ uint8_t achks8(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
  *
  * \return computed 16-bit checksum
  */
-uint16_t achks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
+RCSW_API uint16_t achks16(const uint16_t * buf,
+                          size_t n_bytes,
+                          uint16_t seed) RCSW_PURE;
 
 /**
  * \brief Compute an 32-bit checksum (add-ignore-carry)
@@ -92,7 +102,9 @@ uint16_t achks16(const uint16_t * buf, size_t n_bytes, uint16_t seed) RCSW_PURE;
  *
  * \return computed 32-bit checksum
  */
-uint32_t achks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
+RCSW_API uint32_t achks32(const uint32_t * buf,
+                          size_t n_bytes,
+                          uint32_t seed) RCSW_PURE;
 
 /**
  * \brief Compute a 16-bit checksum (add-ignore-carry) over 8-bit values
@@ -103,7 +115,9 @@ uint32_t achks32(const uint32_t * buf, size_t n_bytes, uint32_t seed) RCSW_PURE;
  *
  * \return computed 16-bit checksum
  */
-uint16_t achks8_16(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
+RCSW_API uint16_t achks8_16(const uint8_t * buf,
+                            size_t n_bytes,
+                            uint8_t seed) RCSW_PURE;
 
 /**
  * \brief Compute a 32-bit CRC using the work of Gary S. Brown
@@ -151,12 +165,12 @@ uint16_t achks8_16(const uint8_t * buf, size_t n_bytes, uint8_t seed) RCSW_PURE;
  *
  * \return The CRC
  */
-uint32_t crc32_brown(const uint8_t * buf, uint32_t crc, size_t size);
+RCSW_API uint32_t crc32_brown(const uint8_t * buf, uint32_t crc, size_t size);
 
 /**
  * \brief Initialize Ethernet 32 bit CRC lookup table
  */
-void crc32_ethl_init(void);
+RCSW_API void crc32_ethl_init(void);
 
 /**
  *
@@ -172,7 +186,7 @@ void crc32_ethl_init(void);
  * \return CRC of data
  *
  */
-uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
+RCSW_API uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
 
 /**
  *
@@ -190,7 +204,6 @@ uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
  *
  * \return CRC of data
  */
-uint32_t crc32_eth(const uint8_t * buf, size_t n_bytes) RCSW_PURE;
+RCSW_API uint32_t crc32_eth(const uint8_t * buf, size_t n_bytes) RCSW_PURE;
 
 END_C_DECLS
-

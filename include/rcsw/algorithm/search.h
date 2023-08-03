@@ -18,7 +18,7 @@
 #include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * Function prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -40,7 +40,7 @@ BEGIN_C_DECLS
  *
  * \return The index, or -1 if not found or an ERROR occurred
  */
-int bsearch_iter(const void * a,
+RCSW_API int bsearch_iter(const void * a,
                  const void * e,
                  int (*cmpe)(const void * e1, const void * e2),
                  size_t el_size,
@@ -67,7 +67,7 @@ int bsearch_iter(const void * a,
  * \return The index, or -1 if not found/an error occurred.
  *
  */
-int bsearch_rec(const void * arr,
+RCSW_API int bsearch_rec(const void * arr,
                 const void * e,
                 int (*cmpe)(const void * e1, const void * e2),
                 size_t elt_size,

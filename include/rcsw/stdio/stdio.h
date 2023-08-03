@@ -24,27 +24,33 @@
 BEGIN_C_DECLS
 
 #ifndef RCSW_STDIO_PUTCHAR
-#define RCSW_STDIO_PUTCHAR_UNDEF
+#define RCSW_STDIO_PUTCHAR putchar
 #else
 /**
  * \brief RCSW_STDIO_PUTCHAR
  *
  * The name of the putchar()-like function to send a character to stdout in some
  * way.
+ *
+ * \note weak attribute needed to link with the definition of the function in
+ * another library/object file when the default visibility is hidden.
  */
-int RCSW_STDIO_PUTCHAR(int c);
+RCSW_API int RCSW_STDIO_PUTCHAR(int c) RCSW_ATTR(weak);
 #endif
 
 #ifndef RCSW_STDIO_GETCHAR
-#define RCSW_STDIO_GETCHAR_UNDEF
+#define RCSW_STDIO_GETCHAR getchar
 #else
 /**
  * \brief RCSW_STDIO_GETCHAR
  *
  * The name of the getchar()-like function to get a character from stdout in
  * some way.
+ *
+ * \note weak attribute needed to link with the definition of the function in
+ * another library/object file when the default visibility is hidden.
  */
-int RCSW_STDIO_GETCHAR(void);
+RCSW_API int RCSW_STDIO_GETCHAR(void) RCSW_ATTR(weak);
 #endif
 
 /*******************************************************************************
@@ -61,7 +67,7 @@ int RCSW_STDIO_GETCHAR(void);
  *
  * \return The number of bytes written
  */
-size_t stdio_puts(const char *const s);
+RCSW_API size_t stdio_puts(const char *const s);
 
 /**
  * \brief Write a character to stdout.
@@ -108,7 +114,7 @@ static inline int stdio_getchar(void) {
  *
  * \todo This does not currently work if the string to be converted is INT_MIN.
  */
-int stdio_atoi(const char *s, int base) RCSW_PURE;
+RCSW_API int stdio_atoi(const char *s, int base) RCSW_PURE;
 
 /**
  * \brief Convert an integer into a decimal string.
@@ -123,7 +129,7 @@ int stdio_atoi(const char *s, int base) RCSW_PURE;
  *
  * \return The converted string.
  */
-char *stdio_itoad(int32_t n, char *s);
+RCSW_API char *stdio_itoad(int32_t n, char *s);
 
 /**
  * \brief Convert an integer into a hexadecimal string.
@@ -138,6 +144,6 @@ char *stdio_itoad(int32_t n, char *s);
  *
  * \return The converted string.
  */
-char *stdio_itoax(uint32_t i, char *s, bool_t add_0x);
+RCSW_API char *stdio_itoax(uint32_t i, char *s, bool_t add_0x);
 
 END_C_DECLS

@@ -225,7 +225,7 @@ static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
  *
  * \return The initialized list, or NULL if an ERROR occurred
  */
-struct darray *darray_init(struct darray *arr_in,
+RCSW_API struct darray *darray_init(struct darray *arr_in,
                            const struct darray_params * params) RCSW_CHECK_RET;
 
 /**
@@ -235,7 +235,7 @@ struct darray *darray_init(struct darray *arr_in,
  *
  * \param arr The darray handle
  */
-void darray_destroy(struct darray *arr);
+RCSW_API void darray_destroy(struct darray *arr);
 
 /**
  * \brief Clear a darray
@@ -246,7 +246,7 @@ void darray_destroy(struct darray *arr);
  *
  * \return \ref status_t
  */
-status_t darray_clear(struct darray * arr);
+RCSW_API status_t darray_clear(struct darray * arr);
 
 /**
  * \brief Clear a darray's data (the element count is not affected)
@@ -257,7 +257,7 @@ status_t darray_clear(struct darray * arr);
  *
  * \return \ref status_t
  */
-status_t darray_data_clear(struct darray * arr);
+RCSW_API status_t darray_data_clear(struct darray * arr);
 
 /**
  * \brief Insert an item into an darray
@@ -280,7 +280,7 @@ status_t darray_data_clear(struct darray * arr);
  *
  * \return \ref status_t
  */
-status_t darray_insert(struct darray * arr, const void * e,
+RCSW_API status_t darray_insert(struct darray * arr, const void * e,
                        size_t index);
 /**
  * \brief Remove an item from an darray
@@ -301,7 +301,7 @@ status_t darray_insert(struct darray * arr, const void * e,
  *
  * \return \ref status_t
  */
-status_t darray_remove(struct darray * arr, void * e, size_t index);
+RCSW_API status_t darray_remove(struct darray * arr, void * e, size_t index);
 
 /**
  * \brief Get an element in a darray (array not modified)
@@ -312,7 +312,7 @@ status_t darray_remove(struct darray * arr, void * e, size_t index);
  *
  * \return \ref status_t
  */
-status_t darray_idx_serve(const struct darray * arr, void * e,
+RCSW_API status_t darray_idx_serve(const struct darray * arr, void * e,
                             size_t index);
 
 /**
@@ -320,15 +320,15 @@ status_t darray_idx_serve(const struct darray * arr, void * e,
  *
  * Find the first occurence of the element in the darray which is is equal to
  * e. A recursive implementation of binary search will be used if the darray is
- * sorted, linear scan otherwise. This function can only be called if \ref darray.cmpe was
- * non-NULL during initialization.
+ * sorted, linear scan otherwise. This function can only be called if \ref
+ * darray.cmpe was non-NULL during initialization.
  *
  * \param arr The darray handle
  * \param e To be filled with the served element
  *
  * \return The index, or -1 if not found
  */
-int darray_idx_query(const struct darray * arr, const void * e);
+RCSW_API int darray_idx_query(const struct darray * arr, const void * e);
 
 /**
  * \brief Retrieve an item from an darray
@@ -341,7 +341,7 @@ int darray_idx_query(const struct darray * arr, const void * e);
  *
  * \return: The element, or NULL if an error occurred
  */
-void *darray_data_get(const struct darray * arr, size_t index);
+RCSW_API void *darray_data_get(const struct darray * arr, size_t index);
 
 /**
  * \brief Set an item in a darray
@@ -355,7 +355,7 @@ void *darray_data_get(const struct darray * arr, size_t index);
  *
  * \return \ref status_t
  */
-status_t darray_data_set(const struct darray* arr, size_t index,
+RCSW_API status_t darray_data_set(const struct darray* arr, size_t index,
                          const void* e);
 
 /**
@@ -370,7 +370,7 @@ status_t darray_data_set(const struct darray* arr, size_t index,
  *
  * \return \ref status_t.
  */
-status_t darray_resize(struct darray * arr, size_t size);
+RCSW_API status_t darray_resize(struct darray * arr, size_t size);
 
 /**
  * \brief Copy the data from one darray to another.
@@ -385,7 +385,7 @@ status_t darray_resize(struct darray * arr, size_t size);
  *
  * \return \ref status_t.
  */
-status_t darray_data_copy(const struct darray* arr1,
+RCSW_API status_t darray_data_copy(const struct darray* arr1,
                           const struct darray* arr2);
 /**
  * \brief Sort a darray
@@ -398,7 +398,7 @@ status_t darray_data_copy(const struct darray* arr1,
  *
  * \return \ref status_t.
  */
-status_t darray_sort(struct darray * arr, enum exec_type type);
+RCSW_API status_t darray_sort(struct darray * arr, enum exec_type type);
 
 /**
  * \brief Apply a function to all elements in the darray.
@@ -408,7 +408,7 @@ status_t darray_sort(struct darray * arr, enum exec_type type);
  *
  * \return \ref status_t.
  */
-status_t darray_map(struct darray *arr, void (*f)(void *e));
+RCSW_API status_t darray_map(struct darray *arr, void (*f)(void *e));
 
 /**
  * \brief Compute a cumulative SOMETHING using all elements in the darray
@@ -421,7 +421,7 @@ status_t darray_map(struct darray *arr, void (*f)(void *e));
  * \return \ref status_t.
  *
  */
-status_t darray_inject(const struct darray * arr,
+RCSW_API status_t darray_inject(const struct darray * arr,
                        void (*f)(void *e, void *res), void *result);
 
 /**
@@ -441,7 +441,7 @@ status_t darray_inject(const struct darray * arr,
  *
  * \return The filtered array, or NULL if an error occured.
  */
-struct darray *darray_filter(struct darray * arr,
+RCSW_API struct darray *darray_filter(struct darray * arr,
                              bool_t (*pred)(const void * e),
                              uint32_t flags,
                              void* elements);
@@ -460,7 +460,7 @@ struct darray *darray_filter(struct darray * arr,
  *
  * \return The new arr, or NULL if an error occurred.
  */
-struct darray *darray_copy(const struct darray * arr,
+RCSW_API struct darray *darray_copy(const struct darray * arr,
                            uint32_t flags,
                            void* elements);
 
@@ -469,6 +469,6 @@ struct darray *darray_copy(const struct darray * arr,
  *
  * \param arr The darray handle
  */
-void darray_print(const struct darray * arr);
+RCSW_API void darray_print(const struct darray * arr);
 
 END_C_DECLS

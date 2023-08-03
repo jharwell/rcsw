@@ -19,9 +19,19 @@
 #include "rcsw/er/client.h"
 
 BEGIN_C_DECLS
+/*******************************************************************************
+ * RCSW Private Functions
+ ******************************************************************************/
+struct bstree* ostree_init(struct bstree* tree_in,
+                           const struct bstree_params* params) {
+  return bstree_init_internal(tree_in, params, sizeof(struct ostree_node));
+}
 
-RCSW_STATIC_ASSERT(sizeof(struct ostree_node) == sizeof(struct bstree_node),
-                   "TEST");
+status_t ostree_insert(struct bstree* tree,
+                       void* const key,
+                       void* const data) {
+  return bstree_insert_internal(tree, key, data, sizeof(struct ostree_node));
+}
 
 /*******************************************************************************
  * API Functions

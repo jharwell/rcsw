@@ -158,7 +158,7 @@ CATCH_TEST_CASE("mem_copy Test", "[utils]") {
   for (i = 4; i < sizeof(buf1)/sizeof(uint32_t); i+=4) {
     memset(buf1, 0, sizeof(buf1));
     memset(buf2, 0, sizeof(buf1));
-    string_gen((char*)buf1, i);
+    util_string_gen((char*)buf1, i);
     mem_cpy32(buf2, buf1, i);
     CATCH_REQUIRE(memcmp(buf1, buf2, sizeof(buf2)) == 0);
   } /* for() */
@@ -255,8 +255,8 @@ CATCH_TEST_CASE("checksum Test", "[utils]") {
 }
 
 CATCH_TEST_CASE("misc Test", "[utils]") {
-  CATCH_REQUIRE(reflect32(0xF0021001, 32) == 0x8008400F);
-  CATCH_REQUIRE(reflect32(0xF0000001, 16) == 0x8000);
+  CATCH_REQUIRE(util_reflect32(0xF0021001, 32) == 0x8008400F);
+  CATCH_REQUIRE(util_reflect32(0xF0000001, 16) == 0x8000);
 
   uint8_t arr[5] = {0x5, 0x1, 0x2, 0x3, 0x4};
 

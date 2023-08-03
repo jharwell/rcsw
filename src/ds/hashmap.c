@@ -27,6 +27,30 @@
 BEGIN_C_DECLS
 
 /**
+ * \brief Get a bucket index from a reference to a bucket.
+ *
+ * Not really necessary to be a function, but helps with readability.
+ */
+static size_t hashmap_bucket_index(const struct hashmap* const map,
+                                   const struct darray* const bucket) {
+  return (bucket - map->space.buckets) % sizeof(struct darray);
+}
+
+/**
+ * \brief Get the bucket a key can be found in.
+ *
+ * \param map The hashmap handle.
+ * \param key The key to identify.
+ * \param hash_out The hash of the element, if non-NULL.
+ *
+ * \return The bucket, or NULL if an ERROR occurred.
+ *
+ */
+static struct darray *hashmap_query(const struct hashmap * map,
+                             const void * key,
+                             uint32_t * hash_out);
+
+/**
  * \brief Allocate a datablock.
  *
  * \param map The hashmap handle.

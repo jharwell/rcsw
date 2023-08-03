@@ -222,7 +222,7 @@ static inline size_t binheap_height(const struct binheap * heap) {
  *
  * \return The initialized heap, or NULL if an error occurred.
  */
-struct binheap *binheap_init(struct binheap *heap_in,
+RCSW_API struct binheap *binheap_init(struct binheap *heap_in,
                              const struct binheap_params * params) RCSW_CHECK_RET;
 
 /**
@@ -231,7 +231,7 @@ struct binheap *binheap_init(struct binheap *heap_in,
  *
  * \param heap The heap handle.
  */
-void binheap_destroy(struct binheap *heap);
+RCSW_API void binheap_destroy(struct binheap *heap);
 
 /**
  * \brief Add element to heap
@@ -241,7 +241,7 @@ void binheap_destroy(struct binheap *heap);
  *
  * \return OK, if successful, ERROR otherwise.
  */
-status_t binheap_insert(struct binheap * heap, const void * e);
+RCSW_API status_t binheap_insert(struct binheap * heap, const void * e);
 
 /**
  * \brief Convert an unordered array into a heap (presumably after you have
@@ -255,7 +255,7 @@ status_t binheap_insert(struct binheap * heap, const void * e);
  *
  * \return \ref status_t
  */
-status_t binheap_make(struct binheap * heap, const void* data,
+RCSW_API status_t binheap_make(struct binheap * heap, const void* data,
                        size_t n_elts);
 
 /**
@@ -268,7 +268,7 @@ status_t binheap_make(struct binheap * heap, const void* data,
  *
  * \return \ref status_t.
  */
-status_t binheap_extract(struct binheap * heap, void * e);
+RCSW_API status_t binheap_extract(struct binheap * heap, void * e);
 
 
 /**
@@ -285,7 +285,7 @@ status_t binheap_extract(struct binheap * heap, void * e);
  *
  * \return \ref status_t.
  */
-status_t binheap_delete_key(struct binheap* heap, size_t index,
+RCSW_API status_t binheap_delete_key(struct binheap* heap, size_t index,
                              const void* minmax);
 
 /**
@@ -298,14 +298,14 @@ status_t binheap_delete_key(struct binheap* heap, size_t index,
  *
  * \return \ref status_t.
  */
-status_t binheap_update_key(struct binheap* heap, size_t index,
-                               const void* new_val);
+RCSW_API status_t binheap_update_key(struct binheap* heap, size_t index,
+                                     const void* new_val);
 
 /**
  * \brief Print a heap.
  *
  * \param heap The heap handle.
  */
-void binheap_print(const struct binheap * heap);
+RCSW_API void binheap_print(const struct binheap * heap);
 
 END_C_DECLS

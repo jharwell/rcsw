@@ -201,8 +201,8 @@ static inline size_t mpool_capacity(const struct mpool* const pool) {
  *
  * \return The initialized pool, or NULL if an error occurred.
  */
-struct mpool*mpool_init(struct mpool * pool_in,
-                        const struct mpool_params * params) RCSW_CHECK_RET;
+RCSW_API struct mpool*mpool_init(struct mpool * pool_in,
+                                 const struct mpool_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a \ref mpool.
@@ -211,7 +211,7 @@ struct mpool*mpool_init(struct mpool * pool_in,
  *
  * \param the_pool The mpool handle.
  */
-void mpool_destroy(struct mpool * the_pool);
+RCSW_API void mpool_destroy(struct mpool * the_pool);
 
 /**
  * \brief Request a memory chunk from a \ref mpool.
@@ -222,7 +222,7 @@ void mpool_destroy(struct mpool * the_pool);
  *
  * \return The allocated chunk, or NULL if an error occurred.
  */
-void *mpool_req(struct mpool * the_pool);
+RCSW_API void *mpool_req(struct mpool * the_pool);
 
 /**
  * \brief Request a memory chunk from a \ref mpool with a timeout.
@@ -235,7 +235,7 @@ void *mpool_req(struct mpool * the_pool);
  *
  * \return The allocated chunk, or NULL if an error occurred.
  */
-status_t mpool_timedreq(struct mpool * the_pool,
+RCSW_API status_t mpool_timedreq(struct mpool * the_pool,
                         const struct timespec* to,
                         void** chunk);
 
@@ -251,7 +251,7 @@ status_t mpool_timedreq(struct mpool * the_pool,
  *
  * \return \ref status_t.
  */
-status_t mpool_release(struct mpool * the_pool, void * ptr);
+RCSW_API status_t mpool_release(struct mpool * the_pool, void * ptr);
 
 /**
  * \brief Increment ref count for a previously allocated chunk in a \ref mpool.
@@ -265,7 +265,7 @@ status_t mpool_release(struct mpool * the_pool, void * ptr);
  *
  * \return \ref status_t.
  */
-status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
+RCSW_API status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
 
 /**
  * \brief Decrement ref count for a currently allocated chunk in a \ref mpool.
@@ -279,7 +279,7 @@ status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
  *
  * \return \ref status_t
  */
-status_t mpool_ref_remove(struct mpool * the_pool,
+RCSW_API status_t mpool_ref_remove(struct mpool * the_pool,
                           const void * ptr);
 
 /**
@@ -294,7 +294,7 @@ status_t mpool_ref_remove(struct mpool * the_pool,
  *
  * \return The reference index, or -1 if does not exist.
  */
-int mpool_ref_query(struct mpool * the_pool, const void* ptr);
+RCSW_API int mpool_ref_query(struct mpool * the_pool, const void* ptr);
 
 /**
  * \brief Get the reference count of an allocated chunk in a \ref mpool.
@@ -308,6 +308,6 @@ int mpool_ref_query(struct mpool * the_pool, const void* ptr);
  *
  * \return The reference count, or 0 on error.
  */
-size_t mpool_ref_count(struct mpool * the_pool, const void* ptr);
+RCSW_API size_t mpool_ref_count(struct mpool * the_pool, const void* ptr);
 
 END_C_DECLS

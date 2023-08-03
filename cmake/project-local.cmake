@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 12)
+set(PROJECT_VERSION_PATCH 13)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -90,7 +90,10 @@ set (RCSW_VALUE_CONFIG
 )
 
 if (NOT RCSW_STDIO_PUTCHAR)
-  set(RCSW_STDIO_PUTCHAR PUTCHAR_UNDEFINED)
+  set(RCSW_STDIO_PUTCHAR putchar)
+endif()
+if (NOT RCSW_STDIO_GETCHAR)
+  set(RCSW_STDIO_GETCHAR getchar)
 endif()
 
 if(NOT RCSW_ER_PLUGIN)
@@ -121,8 +124,8 @@ if (NOT RCSW_SUMMARY)
   set(RCSW_SUMMARY YES)
 endif()
 
-if (RCSW_NOSTDLIB)
-
+if(NOT RCSW_LIBTYPE)
+  set(RCSW_LIBTYPE STATIC)
 endif()
 
 ################################################################################
@@ -226,7 +229,7 @@ endforeach()
 set(rcsw_LIBRARY rcsw)
 add_library(
   ${rcsw_LIBRARY}
-  STATIC
+  ${RCSW_LIBTYPE}
   ${rcsw_components_SRC}
 )
 
@@ -249,44 +252,44 @@ set_target_properties(${rcsw_LIBRARY}
 ########################################
 # Compile Definitions
 ########################################
-add_compile_definitions(${rcsw_LIBRARY}
-  PRIVATE
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
   RCSW_STDIO_PUTCHAR=${RCSW_STDIO_PUTCHAR}
 )
 
 target_compile_definitions(${rcsw_LIBRARY}
-  INTERFACE
+  PUBLIC
   LIBRA_ERL=LIBRA_ERL_${LIBRA_ERL}
 )
 
-add_compile_definitions(${rcsw_LIBRARY}
-  INTERFACE
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
   RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_ER_PLUGIN}
 )
-add_compile_definitions(${rcsw_LIBRARY}
-  INTERFACE
-  RCSW_ER_PLUGIN_PATH=RCSW_ER_PLUGIN_PATH
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
+  RCSW_ER_PLUGIN_PATH=${RCSW_ER_PLUGIN_PATH}
 )
-add_compile_definitions(${rcsw_LIBRARY}
-  INTERFACE
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
 )
 
-add_compile_definitions(${rcsw_LIBRARY}
-  INTERFACE
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
   RCSW_PTR_ALIGN=${RCSW_PTR_ALIGN}
 )
 
 if("${RCSW_NOALLOC}")
-  add_compile_definitions(${rcsw_LIBRARY}
-    INTERFACE
+  target_compile_definitions(${rcsw_LIBRARY}
+    PUBLIC
     RCSW_NOALLOC
   )
 endif()
 
 if("${RCSW_ZALLOC}")
-  add_compile_definitions(${rcsw_LIBRARY}
-    INTERFACE
+  target_compile_definitions(${rcsw_LIBRARY}
+    PUBLIC
     RCSW_ZALLOC
   )
 endif()
@@ -294,8 +297,8 @@ endif()
 
 foreach(config ${RCSW_ONOFF_CONFIG})
   if(${config})
-    add_compile_definitions(${rcsw_LIBRARY}
-      PRIVATE
+    target_compile_definitions(${rcsw_LIBRARY}
+      PUBLIC
       ${config}
     )
   endif()
@@ -303,13 +306,23 @@ endforeach()
 
 foreach(config ${RCSW_VALUE_CONFIG})
   if(${config})
-    add_compile_definitions(${rcsw_LIBRARY}
-      PRIVATE
+    target_compile_definitions(${rcsw_LIBRARY}
+      PUBLIC
       ${config}=${${config}}
     )
   endif()
 endforeach()
 
+get_target_property(target_type ${rcsw_LIBRARY} TYPE)
+if (target_type STREQUAL SHARED_LIBRARY)
+  target_compile_definitions(${rcsw_LIBRARY}
+    PRIVATE
+    RCSW_EXPORTS=1
+  )
+  set_target_properties(${rcsw_LIBRARY} PROPERTIES
+    C_VISIBILITY_PRESET hidden
+  )
+endif()
 
 ########################################
 # Include directories
@@ -373,6 +386,7 @@ if(${RCSW_SUMMARY})
 
   set(fields
     rcsw_VERSION
+    RCSW_LIBTYPE
     RCSW_ER_PLUGIN
     RCSW_ER_PLUGIN_PATH
     RCSW_PTR_ALIGN
@@ -394,6 +408,7 @@ if(${RCSW_SUMMARY})
   libra_config_summary_prepare_fields("${fields}")
 
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
+  message(STATUS "Library type                                  : ${ColorBold}${EMIT_RCSW_LIBTYPE}${ColorReset} [RCSW_LIBTYPE]")
   message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_ER_PLUGIN}${ColorReset} [RCSW_ER_PLUGIN]")
   message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_ER_PLUGIN_PATH}${ColorReset} [RCSW_ER_PLUGIN_PATH]")
   message(STATUS "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_NOALLOC}${ColorReset} [RCSW_NOALLOC]")

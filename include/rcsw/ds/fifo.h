@@ -79,7 +79,7 @@ struct fifo {
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Determine if the FIFO is currently full
@@ -157,9 +157,6 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
     return rbuffer_element_space(max_elts, el_size);
 }
 
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
 /**
  * \brief Initialize a FIFO.
  *
@@ -171,8 +168,8 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
  *
  * \return The initialized FIFO, or NULL if an error occurred.
  */
-struct fifo *fifo_init(struct fifo *fifo_in,
-                       const struct fifo_params * params) RCSW_CHECK_RET;
+RCSW_API struct fifo *fifo_init(struct fifo *fifo_in,
+                                const struct fifo_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a FIFO.
@@ -181,7 +178,7 @@ struct fifo *fifo_init(struct fifo *fifo_in,
  *
  * \param fifo The FIFO to destroy.
  */
-void fifo_destroy(struct fifo *fifo);
+RCSW_API void fifo_destroy(struct fifo *fifo);
 
 /**
  * \brief Enqueue an element into the FIFO.
@@ -191,7 +188,7 @@ void fifo_destroy(struct fifo *fifo);
  *
  * \return \ref status_t.
  */
-status_t fifo_add(struct fifo * fifo, const void * e);
+RCSW_API status_t fifo_add(struct fifo * fifo, const void * e);
 
 /**
  * \brief Dequeue an element from the FIFO.
@@ -201,7 +198,7 @@ status_t fifo_add(struct fifo * fifo, const void * e);
  *
  * \return \ref status_t.
  */
-status_t fifo_remove(struct fifo * fifo, void * e);
+RCSW_API status_t fifo_remove(struct fifo * fifo, void * e);
 
 /**
  * \brief Clear a FIFO.
@@ -210,31 +207,34 @@ status_t fifo_remove(struct fifo * fifo, void * e);
  *
  * \return \ref status_t.
  */
-status_t fifo_clear(struct fifo * fifo);
+RCSW_API status_t fifo_clear(struct fifo * fifo);
 
 /**
  * \brief Apply an operation to all elements of the FIFO.
  *
  * \param fifo The FIFO handle.
- * \param f A function pointer which will be called for every element in the.
- * FIFO. This function CAN modify FIFO elements.
+ *
+ * \param f A function pointer which will be called for every element in the
+ *          FIFO. This function CAN modify FIFO elements.
  *
  * \return \ref status_t.
  */
-status_t fifo_map(struct fifo * fifo, void (*f)(void *e));
+RCSW_API status_t fifo_map(struct fifo * fifo, void (*f)(void *e));
 
 /**
  * \brief Compute a cumulative SOMETHING over all elements of a FIFO.
  *
  * \param fifo The FIFO handle.
  * \param f A function point which will be called for every element in the
- * FIFO. This function CAN modify FIFO elements.
+ *         FIFO. This function CAN modify FIFO elements.
+ *
  * \param result The initial value for the cumulative SOMETHING to be
- * computed. This will be passed to each invocation of the callback.
+ *               computed. This will be passed to each invocation of the
+ *               callback.
  *
  * \return \ref status_t.
  */
-status_t fifo_inject(struct fifo * fifo,
+RCSW_API status_t fifo_inject(struct fifo * fifo,
                      void (*f)(void *e, void *res), void *result);
 
 /**
@@ -242,6 +242,6 @@ status_t fifo_inject(struct fifo * fifo,
  *
  * \param fifo The FIFO handle.
  **/
-void fifo_print(struct fifo * fifo);
+RCSW_API void fifo_print(struct fifo * fifo);
 
 END_C_DECLS

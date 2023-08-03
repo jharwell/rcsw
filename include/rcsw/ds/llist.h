@@ -279,7 +279,7 @@ static inline size_t llist_meta_space(size_t max_elts) {
  *
  * \return The initialized list, or NULL if an error occured.
  */
-struct llist *llist_init(struct llist *list_in,
+RCSW_API struct llist *llist_init(struct llist *list_in,
                          const struct llist_params *params) RCSW_CHECK_RET;
 
 /**
@@ -290,7 +290,7 @@ struct llist *llist_init(struct llist *list_in,
  *
  * \param list The list to destroy.
  */
-void llist_destroy(struct llist *list);
+RCSW_API void llist_destroy(struct llist *list);
 
 /**
  * \brief Clear a \ref llist.
@@ -303,7 +303,7 @@ void llist_destroy(struct llist *list);
  *
  * \return \ref status_t.
  */
-status_t llist_clear(struct llist *list);
+RCSW_API status_t llist_clear(struct llist *list);
 
 /**
  * \brief Remove an item from a \ref llist.
@@ -315,7 +315,7 @@ status_t llist_clear(struct llist *list);
  *
  * \return \ref status_t.
  */
-status_t llist_remove(struct llist *list, const void *e);
+RCSW_API status_t llist_remove(struct llist *list, const void *e);
 
 /**
  * \brief Delete a node from a \ref llist.
@@ -326,7 +326,7 @@ status_t llist_remove(struct llist *list, const void *e);
  *
  * \return \ref status_t.
  */
-status_t llist_delete(struct llist * list, struct llist_node * victim,
+RCSW_API status_t llist_delete(struct llist * list, struct llist_node * victim,
                       void *e);
 /**
  * \brief Append an item to a \ref llist.
@@ -336,7 +336,7 @@ status_t llist_delete(struct llist * list, struct llist_node * victim,
  *
  * \return \ref status_t.
  */
-status_t llist_append(struct llist *list, void *data);
+RCSW_API status_t llist_append(struct llist *list, void *data);
 
 /**
  * \brief Prepend an item to the llist.
@@ -349,14 +349,14 @@ status_t llist_append(struct llist *list, void *data);
  *
  * \return \ref status_t.
  */
-status_t llist_prepend(struct llist *list, void *data);
+RCSW_API status_t llist_prepend(struct llist *list, void *data);
 
 /**
  * llist_print() - Print the llist
  *
  * \param list The linked list handle.
  */
-void llist_print(struct llist *list);
+RCSW_API void llist_print(struct llist *list);
 
 /**
  * \brief Search a \ref llist for specific data
@@ -370,7 +370,7 @@ void llist_print(struct llist *list);
  * \return The matching data, or NULL if an error occured or no match was
  * found.
  */
-void* llist_data_query(struct llist *list, const void *e);
+RCSW_API void* llist_data_query(struct llist *list, const void *e);
 
 /**
  * \brief Search a \ref llist for specific data
@@ -384,7 +384,7 @@ void* llist_data_query(struct llist *list, const void *e);
  * \return The node for which the data matched, or NULL if an error occured or
  * no match was found.
  */
-struct llist_node* llist_node_query(struct llist *list,
+RCSW_API struct llist_node* llist_node_query(struct llist *list,
                                     const void *e);
 /**
  * \brief Sort a \ref llist.
@@ -399,7 +399,7 @@ struct llist_node* llist_node_query(struct llist *list,
  *
  * \return \ref status_t.
  */
-status_t llist_sort(struct llist *list, enum exec_type type);
+RCSW_API status_t llist_sort(struct llist *list, enum exec_type type);
 
 /**
  * \brief Create a copy of a \ref llist.
@@ -420,7 +420,7 @@ status_t llist_sort(struct llist *list, enum exec_type type);
  *
  * \return The new list, or NULL if an error occurred..
  */
-struct llist* llist_copy(struct llist *list,
+RCSW_API struct llist* llist_copy(struct llist *list,
                          uint32_t flags,
                          void* elements,
                          void* nodes);
@@ -448,7 +448,7 @@ struct llist* llist_copy(struct llist *list,
 
  * \return The new list, or NULL if an error occurred.
  */
-struct llist *llist_copy2(struct llist *list,
+RCSW_API struct llist *llist_copy2(struct llist *list,
                           bool_t (*pred)(const void *e),
                           uint32_t flags,
                           void* elements,
@@ -477,7 +477,7 @@ struct llist *llist_copy2(struct llist *list,
  *
  * \return The new list, or NULL if an error occurred.
  */
-struct llist *llist_filter(struct llist *list,
+RCSW_API struct llist *llist_filter(struct llist *list,
                            bool_t (*pred)(const void *const e),
                            uint32_t flags,
                            void* elements,
@@ -497,7 +497,8 @@ struct llist *llist_filter(struct llist *list,
  *
  * \return \ref status_t.
  */
-status_t llist_filter2(struct llist *list, bool_t (*pred)(const void * e));
+RCSW_API status_t llist_filter2(struct llist *list,
+                                bool_t (*pred)(const void * e));
 
 /**
  * \brief Splice two \ref llist objects together.
@@ -518,7 +519,7 @@ status_t llist_filter2(struct llist *list, bool_t (*pred)(const void * e));
  *
  * \return \ref status_t
  */
-status_t llist_splice(struct llist *list1,
+RCSW_API status_t llist_splice(struct llist *list1,
                       struct llist *list2,
                       const struct llist_node * node);
 
@@ -530,7 +531,7 @@ status_t llist_splice(struct llist *list1,
  *
  * \return \ref status_t.
  */
-status_t llist_map(struct llist *list, void (*f)(void *e));
+RCSW_API status_t llist_map(struct llist *list, void (*f)(void *e));
 
 /**
  * \brief Compute a cumulative SOMETHING using all elements in the \ref llist.
@@ -544,8 +545,9 @@ status_t llist_map(struct llist *list, void (*f)(void *e));
  *
  * \return \ref status_t
  */
-status_t llist_inject(struct llist * list, void (*f)(void *e, void *res),
-                      void *result);
+RCSW_API status_t llist_inject(struct llist * list,
+                               void (*f)(void *e, void *res),
+                               void *result);
 
 /**
  * \brief Get # of bytes occupied on the heap by a \ref llist.
@@ -554,6 +556,6 @@ status_t llist_inject(struct llist * list, void (*f)(void *e, void *res),
  *
  * \return # of bytes occupied.
  */
-size_t llist_heap_footprint(const struct llist * list);
+RCSW_API size_t llist_heap_footprint(const struct llist * list);
 
 END_C_DECLS

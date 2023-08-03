@@ -55,7 +55,7 @@ struct edit_dist_finder {
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -76,8 +76,8 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t
  */
-status_t edit_dist_init(struct edit_dist_finder * finder,
-                        const void* a,
+RCSW_API status_t edit_dist_init(struct edit_dist_finder * finder,
+                                 const void* a,
                         const void*b,
                         size_t elt_size,
                         bool_t (*cmpe)(const void* e1,
@@ -89,7 +89,7 @@ status_t edit_dist_init(struct edit_dist_finder * finder,
  * \param finder The finder handle
  *
  */
-void edit_dist_destroy(struct edit_dist_finder * finder);
+RCSW_API void edit_dist_destroy(struct edit_dist_finder * finder);
 
 /**
  * \brief Find the edit distance between two sequences
@@ -101,6 +101,6 @@ void edit_dist_destroy(struct edit_dist_finder * finder);
  *
  * \return The edit distance, or -1 on error
  */
-int edit_dist_find(struct edit_dist_finder * finder,
-                   enum exec_type type);
+RCSW_API int edit_dist_find(struct edit_dist_finder * finder,
+                            enum exec_type type);
 END_C_DECLS

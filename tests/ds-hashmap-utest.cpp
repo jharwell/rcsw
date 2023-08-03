@@ -82,7 +82,7 @@ static void build_test(struct hashmap_params *  params) {
   /* attempt to fill hashmap */
   for (i = 0; i < attempts; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = i;
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
@@ -138,7 +138,7 @@ static void stats_test(struct hashmap_params *  params) {
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T e = g.next();
     struct hashnode n;
     memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
@@ -165,7 +165,7 @@ static void linear_probing_test(struct hashmap_params *  params) {
   /* fill hashmap */
   for (int i = 0; i < len; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i+1);
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
@@ -204,7 +204,7 @@ static void remove_test(struct hashmap_params * params) {
   /* attempt to fill hashmap */
   for (i = 0; i < len; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i+1);
 
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
@@ -262,7 +262,7 @@ static void print_test(struct hashmap_params *  params) {
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS*10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T e = g.next();
     struct hashnode n;
     memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);

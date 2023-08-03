@@ -52,7 +52,7 @@ struct ds_iterator {
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *
  * \return The next element, or NULL if no more
  */
-void *ds_iter_next(struct ds_iterator *iter);
+RCSW_API void *ds_iter_next(struct ds_iterator *iter);
 
 
 /**
@@ -84,7 +84,7 @@ void *ds_iter_next(struct ds_iterator *iter);
  *
  * \return The initialized iterator, or NULL if an ERROR occurred
  */
-struct ds_iterator * ds_iter_init(void *ds,
+RCSW_API struct ds_iterator * ds_iter_init(void *ds,
                                   enum ds_tag tag,
                                   enum ds_iter_type type);
 
@@ -107,7 +107,7 @@ struct ds_iterator * ds_iter_init(void *ds,
  *
  * \return The initialized iterator, or NULL if an ERROR occurred
  */
-struct ds_iterator * ds_filter_init(void *ds,
+RCSW_API struct ds_iterator * ds_filter_init(void *ds,
                                     enum ds_tag tag,
                                     bool_t (*f)(void *e));
 END_C_DECLS

@@ -101,7 +101,7 @@ struct dyn_matrix {
 };
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -171,9 +171,6 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
   return matrix->n_cols == matrix->n_rows;
 }
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
 /**
  * \brief Initialize a dynamic matrix.
  *
@@ -184,8 +181,8 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
-                                   const struct dyn_matrix_params* params) RCSW_CHECK_RET;
+RCSW_API struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
+                                            const struct dyn_matrix_params* params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a dynamic matrix.
@@ -194,7 +191,7 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
  *
  * \param matrix The matrix handle.
  */
-void dyn_matrix_destroy(struct dyn_matrix* matrix);
+RCSW_API void dyn_matrix_destroy(struct dyn_matrix* matrix);
 
 /**
  * \brief Transpose a dynamic matrix.
@@ -205,7 +202,7 @@ void dyn_matrix_destroy(struct dyn_matrix* matrix);
  *
  * \return \ref status_t
  */
-status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
+RCSW_API status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
 
 /**
  * \brief Print a dynamic matrix.
@@ -214,7 +211,7 @@ status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
  *
  * \param matrix The matrix handle.
  */
-void dyn_matrix_print(const struct dyn_matrix* matrix);
+RCSW_API void dyn_matrix_print(const struct dyn_matrix* matrix);
 
 /**
  * \brief Resize a dynamic matrix manually.
@@ -228,7 +225,10 @@ void dyn_matrix_print(const struct dyn_matrix* matrix);
  *
  * \return \ref status_t
  */
-status_t dyn_matrix_resize(struct dyn_matrix* matrix, size_t u, size_t v);
+RCSW_API status_t dyn_matrix_resize(struct dyn_matrix* matrix,
+                                    size_t u,
+                                    size_t v);
+
 /**
  * \brief Set an element in the dynamic matrix to a specific value.
  *
@@ -242,7 +242,7 @@ status_t dyn_matrix_resize(struct dyn_matrix* matrix, size_t u, size_t v);
  *
  * \return \ref status_t
  */
-status_t dyn_matrix_set(struct dyn_matrix* matrix,
+RCSW_API status_t dyn_matrix_set(struct dyn_matrix* matrix,
                         size_t u,
                         size_t v,
                         const void *w);

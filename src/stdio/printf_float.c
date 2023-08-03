@@ -52,7 +52,7 @@ static const double powers_of_10[NUM_DECIMAL_DIGITS_IN_INT64_T] = {
 };
 
 /*******************************************************************************
- * Misc. Private Functions
+ * Private Functions
  ******************************************************************************/
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_FLOAT_EQUAL()
@@ -444,7 +444,7 @@ static void print_exponential_number(struct printf_output_gadget* output,
 #endif // PRINTF_WITH_EXPONENTIAL_SPECIFIERS
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 void print_floating_point(struct printf_output_gadget* output,
                           double value,

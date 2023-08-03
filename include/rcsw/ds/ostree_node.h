@@ -29,7 +29,7 @@ enum ostree_fixup_type {
 };
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -37,25 +37,20 @@ BEGIN_C_DECLS
  * \brief Fixup count field for all nodes above target node after an
  * insertion/deletion.
  *
- * Do not call this function directly.
- *
  * \param tree The ostree handle.
  * \param node The node to fixup.
  * \param type The type of fixup to perform.
  */
-void ostree_count_fixup(const struct bstree* tree,
+RCSW_LOCAL void ostree_count_fixup(const struct bstree* tree,
                         struct ostree_node * node,
                         enum ostree_fixup_type type);
 /**
  * \brief Update the subtree size for a node.
  *
- * Do not call this function directly.
- *
  * \param node The node to update.
  */
-void ostree_node_update_count(struct ostree_node* node);
+RCSW_LOCAL void ostree_node_update_count(struct ostree_node* node);
 
 END_C_DECLS
 
 /* \endcond */
-

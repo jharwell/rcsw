@@ -70,7 +70,9 @@ static inline uint32_t mem_read32(size_t addr) {
  *
  * \return \ref status_t
  */
-static inline status_t mem_rmwr32(uint32_t addr, uint32_t wval, uint32_t mask) {
+static inline status_t mem_rmwr32(uint32_t addr,
+                                  uint32_t wval,
+                                  uint32_t mask) {
     RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
 
     volatile uint32_t curr_val = 0;
@@ -116,8 +118,9 @@ error:
  *
  * \return The destination
  */
-void *mem_cpy32(void * __restrict__ dest, const void * __restrict__ src,
-                size_t n_bytes);
+RCSW_API void *mem_cpy32(void * __restrict__ dest,
+                         const void * __restrict__ src,
+                         size_t n_bytes);
 
 /**
  * \brief Dump 4 byte words in memory to stdout in hexadecimal
@@ -128,7 +131,7 @@ void *mem_cpy32(void * __restrict__ dest, const void * __restrict__ src,
  *
  * \return \ref status_t
  */
-status_t mem_dump32(const void * buf, size_t n_bytes);
+RCSW_API status_t mem_dump32(const void * buf, size_t n_bytes);
 
 /**
  * \brief Dump 2 byte words in memory to stdout in hexadecimal
@@ -139,7 +142,7 @@ status_t mem_dump32(const void * buf, size_t n_bytes);
  *
  * \return \ref status_t
  */
-status_t mem_dump16(const void * buf, size_t n_bytes);
+RCSW_API status_t mem_dump16(const void * buf, size_t n_bytes);
 
 /**
  * \brief Dump 1 byte words in memory to stdout in hexadecimal
@@ -148,29 +151,31 @@ status_t mem_dump16(const void * buf, size_t n_bytes);
  * \param n_bytes How large of a dump to take, in bytes
  *
  */
-void mem_dump8(const void * buf, size_t n_bytes);
+RCSW_API void mem_dump8(const void * buf, size_t n_bytes);
 
 /**
  * \brief Dump 4 byte words in memory to stdout in hexadecimal, with offsets
  *
  * \param buf Address for start of dump. If this is not 32-bit aligned, ERROR is
- * returned.
+ *            returned.
+ *
  * \param n_bytes How large of a dump to take, in bytes
  *
  * \return \ref status_t
  */
-status_t mem_dump32v(const void * buf, size_t n_bytes);
+RCSW_API status_t mem_dump32v(const void * buf, size_t n_bytes);
 
 /**
  * \brief Dump 2 byte words in memory to stdout in hexadecimal, with offsets
  *
  * \param buf Address for start of dump. If this is not 16-bit aligned, ERROR is
- * returned.
+ *            returned.
+ *
  * \param n_bytes How large of a dump to take, in bytes
  *
  * \return \ref status_t
  */
-status_t mem_dump16v(const void * buf, size_t n_bytes);
+RCSW_API status_t mem_dump16v(const void * buf, size_t n_bytes);
 
 /**
  * \brief Dump 1 byte words in memory to stdout in hexadecimal, with offsets
@@ -179,7 +184,7 @@ status_t mem_dump16v(const void * buf, size_t n_bytes);
  * \param n_bytes How large of a dump to take, in bytes
  *
  */
-void mem_dump8v(const void * buf, size_t n_bytes);
+RCSW_API void mem_dump8v(const void * buf, size_t n_bytes);
 
 /**
  * \brief Byte swap memory in 1 byte chunks (upper 8/lower 8) in place.
@@ -193,7 +198,7 @@ void mem_dump8v(const void * buf, size_t n_bytes);
  * \return \ref status_t
  *
  */
-status_t mem_bswap16(uint16_t * buf, size_t n_bytes);
+RCSW_API status_t mem_bswap16(uint16_t * buf, size_t n_bytes);
 
 /**
  * \brief Byte swap memory in 2 byte chunks (upper 16/lower 16) in place.
@@ -207,7 +212,6 @@ status_t mem_bswap16(uint16_t * buf, size_t n_bytes);
  * \return \ref status_t
  *
  */
-status_t mem_bswap32(uint32_t * buf, size_t n_bytes);
+RCSW_API status_t mem_bswap32(uint32_t * buf, size_t n_bytes);
 
 END_C_DECLS
-

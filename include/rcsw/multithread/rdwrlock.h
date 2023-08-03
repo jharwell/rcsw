@@ -62,7 +62,7 @@ enum rdwrlock_scope {
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  *
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
-struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
+RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
                             uint32_t flags) RCSW_CHECK_RET;
 
 /**
@@ -86,7 +86,7 @@ struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
  *
  * \param rdwr The lock handle.
  */
-void rdwrl_destroy(struct rdwrlock *const rdwr);
+RCSW_API void rdwrl_destroy(struct rdwrlock *const rdwr);
 
 
 /**
@@ -99,7 +99,7 @@ void rdwrl_destroy(struct rdwrlock *const rdwr);
  *
  * \param scope The scope of the privileges requested.
  */
-void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
+RCSW_API void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Exit a critical section.
@@ -111,7 +111,8 @@ void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
  *
  * \param scope The scope of the privileges requested.
  */
-void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
+RCSW_API void rdwrl_exit(struct rdwrlock *const rdwr,
+                         enum rdwrlock_scope scope);
 
 /**
  * \brief Request to enter a critical section with a timeout.
@@ -129,8 +130,8 @@ void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
  *
  * \return \ref status_t.
  */
-status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
-                        enum rdwrlock_scope scope,
-                        const struct timespec *const to);
+RCSW_API status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
+                                 enum rdwrlock_scope scope,
+                                 const struct timespec *const to);
 
 END_C_DECLS

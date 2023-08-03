@@ -18,7 +18,7 @@
 #include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -30,7 +30,7 @@ BEGIN_C_DECLS
  *
  * \return The allocated node, or NULL if no node could be found.
  */
-struct llist_node *llist_node_alloc(struct llist * list);
+RCSW_LOCAL struct llist_node *llist_node_alloc(struct llist * list);
 
 /**
  * \brief Deallocate a llist_node.
@@ -38,7 +38,7 @@ struct llist_node *llist_node_alloc(struct llist * list);
  * \param list The linked list handle.
  * \param node The node to deallocate from the linked list.
  */
-void llist_node_dealloc(struct llist * list, struct llist_node *node);
+RCSW_LOCAL void llist_node_dealloc(struct llist * list, struct llist_node *node);
 
 /**
  * \brief Create a linked list node by allocating space for it and its data.
@@ -50,7 +50,7 @@ void llist_node_dealloc(struct llist * list, struct llist_node *node);
  *
  * \return The created node, or NULL if an error occurred.
  */
-struct llist_node * llist_node_create(struct llist * list,
+RCSW_LOCAL struct llist_node * llist_node_create(struct llist * list,
                                       void * data_in);
 /**
  * \brief Delete a linked list by deallocating its data, and then the node
@@ -59,7 +59,8 @@ struct llist_node * llist_node_create(struct llist * list,
  * \param list The linked list handle.
  * \param node The node to destroy.
  */
-void llist_node_destroy(struct llist * list, struct llist_node *node);
+RCSW_LOCAL void llist_node_destroy(struct llist * list,
+                                   struct llist_node *node);
 
 /**
  * \brief Allocate a datablock owned by a linked list.
@@ -71,7 +72,7 @@ void llist_node_destroy(struct llist * list, struct llist_node *node);
  *
  * \return The allocated datablock, or NULL if no valid block could be found.
  */
-dptr_t* llist_node_datablock_alloc(struct llist * list);
+RCSW_LOCAL dptr_t* llist_node_datablock_alloc(struct llist * list);
 
 /**
  * \brief Deallocate a datablock belonging to a linked list.
@@ -82,7 +83,8 @@ dptr_t* llist_node_datablock_alloc(struct llist * list);
  * \param list The linked list handle.
  * \param datablock The datablock to dealloc.
  */
-void llist_node_datablock_dealloc(struct llist * list, dptr_t* datablock);
+RCSW_LOCAL void llist_node_datablock_dealloc(struct llist * list,
+                                             dptr_t* datablock);
 
 END_C_DECLS
 

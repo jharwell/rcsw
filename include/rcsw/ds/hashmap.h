@@ -224,15 +224,6 @@ struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) hashnode {
  * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
-/**
- * \brief Get a bucket index from a reference to a bucket.
- *
- * Not really necessary to be a function, but helps with readability.
- */
-static inline size_t hashmap_bucket_index(const struct hashmap* const map,
-                                          const struct darray* const bucket) {
-  return (bucket - map->space.buckets) % sizeof(struct darray);
-}
 
 /**
  * \brief Calculate the # of bytes that the hashmap will require if \ref
@@ -284,14 +275,14 @@ static inline size_t hashmap_meta_space(size_t n_buckets) {
  *
  * \return  The initialized hashmap, or NULL if an error occurred
  */
-struct hashmap *hashmap_init(struct hashmap *map_in,
-                             const struct hashmap_params * params) RCSW_CHECK_RET;
+RCSW_API struct hashmap *hashmap_init(struct hashmap *map_in,
+                                      const struct hashmap_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief destroy a hashmap. Any further use of the hashmap after calling this
  * function is undefined.
  */
-void hashmap_destroy(struct hashmap *map);
+RCSW_API void hashmap_destroy(struct hashmap *map);
 
 
 /**
@@ -305,7 +296,7 @@ void hashmap_destroy(struct hashmap *map);
  *
  * \return \ref status_t
  */
-status_t hashmap_sort(struct hashmap * map);
+RCSW_API status_t hashmap_sort(struct hashmap * map);
 
 /**
  * \brief Clear a hashmap, but don't deallocate its data
@@ -314,7 +305,7 @@ status_t hashmap_sort(struct hashmap * map);
  *
  * \return \ref status_t
  */
-status_t hashmap_clear(const struct hashmap * map);
+RCSW_API status_t hashmap_clear(const struct hashmap * map);
 
 /**
  * \brief Returns the data from the hashmap corresponding to the given key.
@@ -324,7 +315,7 @@ status_t hashmap_clear(const struct hashmap * map);
  *
  * \return: The data, or NULL if an error occurred or the data was not found.
  */
-void *hashmap_data_get(struct hashmap * map, const void * key);
+RCSW_API void *hashmap_data_get(struct hashmap * map, const void * key);
 
 /**
  * \brief Add a node to the hashmap
@@ -341,7 +332,9 @@ void *hashmap_data_get(struct hashmap * map, const void * key);
  *
  * \return \ref status_t
  */
-status_t hashmap_add(struct hashmap * map, const void * key, const void * data);
+RCSW_API status_t hashmap_add(struct hashmap * map,
+                              const void * key,
+                              const void * data);
 
 /**
  * \brief Remove a node from a hashmap
@@ -355,7 +348,7 @@ status_t hashmap_add(struct hashmap * map, const void * key, const void * data);
  *
  * \return \ref status_t
  */
-status_t hashmap_remove(struct hashmap * map, const void * key);
+RCSW_API status_t hashmap_remove(struct hashmap * map, const void * key);
 
 /**
  * \brief Show stats about a hashmap.
@@ -365,7 +358,7 @@ status_t hashmap_remove(struct hashmap * map, const void * key);
  *
  * \param map The hashmap handle.
  */
-void hashmap_print(const struct hashmap * map);
+RCSW_API void hashmap_print(const struct hashmap * map);
 
 /**
  * \brief Gather statistics about current state of hashmap.
@@ -375,8 +368,8 @@ void hashmap_print(const struct hashmap * map);
  *
  * \return \ref status_t
  */
-status_t hashmap_gather(const struct hashmap * map,
-                        struct hashmap_stats * stats);
+RCSW_API status_t hashmap_gather(const struct hashmap * map,
+                                 struct hashmap_stats * stats);
 
 /**
  * \brief Print the hashmap distribution.
@@ -386,20 +379,6 @@ status_t hashmap_gather(const struct hashmap * map,
  *
  * \param map The hashmap handle.
  */
-void hashmap_print_dist(const struct hashmap * map);
-
-/**
- * \brief Get the bucket a key can be found in.
- *
- * \param map The hashmap handle.
- * \param key The key to identify.
- * \param hash_out The hash of the element, if non-NULL.
- *
- * \return The bucket, or NULL if an ERROR occurred.
- *
- */
-struct darray *hashmap_query(const struct hashmap * map,
-                             const void * key,
-                             uint32_t * hash_out);
+RCSW_API void hashmap_print_dist(const struct hashmap * map);
 
 END_C_DECLS

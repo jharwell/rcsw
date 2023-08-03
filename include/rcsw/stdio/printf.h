@@ -46,12 +46,12 @@ BEGIN_C_DECLS
  * \return The number of characters written into \p s, not counting the
  *         terminating null character
  */
-int stdio_printf(const char* format, ...) RCSW_ATTR_PRINTF(1, 2);
+RCSW_API int stdio_printf(const char* format, ...) RCSW_ATTR_PRINTF(1, 2);
 
 /**
  * \brief Same as \ref stdio_printf(), but you pass a va_list directly.
  */
-int stdio_vprintf(const char* format, va_list arg) RCSW_ATTR_PRINTF(1, 0);
+RCSW_API int stdio_vprintf(const char* format, va_list arg) RCSW_ATTR_PRINTF(1, 0);
 
 /**
  * An implementation of the C standard's sprintf()
@@ -71,12 +71,12 @@ int stdio_vprintf(const char* format, va_list arg) RCSW_ATTR_PRINTF(1, 0);
  * \return The number of characters written into \p s, not counting the
  *         terminating null character
  */
-int stdio_sprintf(char* s, const char* format, ...) RCSW_ATTR_PRINTF(2, 3);
+RCSW_API int stdio_sprintf(char* s, const char* format, ...) RCSW_ATTR_PRINTF(2, 3);
 
 /**
  * \brief Same as \ref stdio_sprintf(), but you pass a va_list directly.
  */
-int stdio_vsprintf(char* s,
+RCSW_API int stdio_vsprintf(char* s,
                    const char* format,
                    va_list arg) RCSW_ATTR_PRINTF(2, 0);
 
@@ -103,7 +103,7 @@ int stdio_vsprintf(char* s,
  *         non-negative and less than \p n, the null-terminated string has been
  *         fully and successfully printed.
  */
-int  stdio_snprintf(char* s,
+RCSW_API int stdio_snprintf(char* s,
                     size_t n,
                     const char* format,
                     ...) RCSW_ATTR_PRINTF(3, 4);
@@ -111,7 +111,7 @@ int  stdio_snprintf(char* s,
 /**
  * \brief Same as \ref stdio_snprintf(), but you pass a va_list directly.
  */
-int stdio_vsnprintf(char* s,
+RCSW_API int stdio_vsnprintf(char* s,
                     size_t count,
                     const char* format,
                     va_list arg) RCSW_ATTR_PRINTF(3, 0);
@@ -138,7 +138,7 @@ int stdio_vsnprintf(char* s,
  * \return The number of characters for which the output f unction was invoked,
  *         not counting the terminating null character.
  */
-int stdio_usfprintf(void (*out)(char c, void* extra_arg),
+RCSW_API int stdio_usfprintf(void (*out)(char c, void* extra_arg),
                     void* extra_arg,
                     const char* format,
                     ...) RCSW_ATTR_PRINTF(3, 4);
@@ -146,7 +146,7 @@ int stdio_usfprintf(void (*out)(char c, void* extra_arg),
 /**
  * \brief Same as \ref stdio_usfprintf(), but you pass a va_list directly.
  */
-int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
+RCSW_API int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
                      void* extra_arg,
                      const char* format,
                      va_list arg) RCSW_ATTR_PRINTF(3, 0);

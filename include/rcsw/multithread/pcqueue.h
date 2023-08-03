@@ -56,8 +56,10 @@ struct pcqueue {
 };
 
 /*******************************************************************************
- * Macros
+ * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Determine if the queue is currently full.
  *
@@ -123,11 +125,6 @@ static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
     return pcqueue_capacity(queue) - pcqueue_size(queue);
 }
 
-/*******************************************************************************
- * Function Prototypes
- ******************************************************************************/
-BEGIN_C_DECLS
-
 /**
  * \brief Initialize a producer-consumer queue.
  *
@@ -138,9 +135,8 @@ BEGIN_C_DECLS
  *
  * \return The initialized queue, or NULL if an error occurred.
  */
-struct pcqueue * pcqueue_init(
-    struct pcqueue *pcqueue_in,
-    const struct pcqueue_params * params) RCSW_CHECK_RET;
+RCSW_API struct pcqueue * pcqueue_init(struct pcqueue *pcqueue_in,
+                                       const struct pcqueue_params * params) RCSW_CHECK_RET;
 
 /**
  * \brief Destroy a producer-consumer queue.
@@ -149,7 +145,7 @@ struct pcqueue * pcqueue_init(
  *
  * \param pcqueue The queue handle.
  */
-void pcqueue_destroy(struct pcqueue * pcqueue);
+RCSW_API void pcqueue_destroy(struct pcqueue * pcqueue);
 
 /**
  * \brief Push an item to the back of the queue, waiting if necessary for space
@@ -160,7 +156,7 @@ void pcqueue_destroy(struct pcqueue * pcqueue);
  *
  * \return \ref status_t.
  */
-status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
+RCSW_API status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting if
@@ -171,7 +167,7 @@ status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
  *
  * \return \ref status_t.
  */
-status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
+RCSW_API status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting until the
@@ -183,7 +179,7 @@ status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
  *
  * \return \ref status_t.
  */
-status_t pcqueue_timedpop(struct pcqueue * pcqueue,
+RCSW_API status_t pcqueue_timedpop(struct pcqueue * pcqueue,
                             const struct timespec * to,
                            void * e);
 
@@ -204,7 +200,7 @@ status_t pcqueue_timedpop(struct pcqueue * pcqueue,
  *
  * \return \ref status_t.
  */
-status_t pcqueue_timedpeek(struct pcqueue* const queue,
+RCSW_API status_t pcqueue_timedpeek(struct pcqueue* const queue,
                            const struct timespec* const to,
                            void** const e);
 /**
@@ -220,6 +216,6 @@ status_t pcqueue_timedpeek(struct pcqueue* const queue,
  *
  * \return \ref status_t.
  */
-status_t pcqueue_peek(struct pcqueue* const queue, void** const e);
+RCSW_API status_t pcqueue_peek(struct pcqueue* const queue, void** const e);
 
 END_C_DECLS

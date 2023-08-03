@@ -139,20 +139,20 @@ struct log4cl_plugin {
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Check if a module with the specified ID is currently loaded.
  *
  * \return The module, or NULL if not found.
  */
-struct log4cl_module* log4cl_mod_query(uint64_t id) RCSW_CONST;
+RCSW_API struct log4cl_module* log4cl_mod_query(uint64_t id) RCSW_CONST;
 
 /**
  * \brief Check if a message with the specified level should be emitted.
  */
-bool_t log4cl_mod_emit(const struct log4cl_module* module,
-                       uint8_t lvl) RCSW_PURE;
+RCSW_API bool_t log4cl_mod_emit(const struct log4cl_module* module,
+                                uint8_t lvl) RCSW_PURE;
 
 /**
  * \brief Initialize LOG4CL plugin
@@ -161,14 +161,14 @@ bool_t log4cl_mod_emit(const struct log4cl_module* module,
  *
  * \return \ref status_t
  */
-status_t log4cl_init(void);
+RCSW_API status_t log4cl_init(void);
 
 /**
  * \brief Shutdown LOG4CL plugin.
  *
  * The plugin can be re-initialized later without error.
  */
-void log4cl_shutdown(void);
+RCSW_API void log4cl_shutdown(void);
 
 /**
  * \brief Add a module to the active list of debug printing modules
@@ -183,7 +183,7 @@ void log4cl_shutdown(void);
  *
  * \return \ref status_t
  */
-status_t log4cl_insmod(int64_t id, const char *name);
+RCSW_API status_t log4cl_insmod(int64_t id, const char *name);
 
 /**
  * \brief Remove a module from the active list by ID.
@@ -194,7 +194,7 @@ status_t log4cl_insmod(int64_t id, const char *name);
  *
  * \return \ref status_t
  */
-status_t log4cl_rmmod(int64_t id);
+RCSW_API status_t log4cl_rmmod(int64_t id);
 
 /**
  * \brief Remove a module from the active list by name.
@@ -204,14 +204,14 @@ status_t log4cl_rmmod(int64_t id);
  * \param name The name of the module to remove
  * \return \ref status_t
  */
-status_t log4cl_rmmod2(const char *name);
+RCSW_API status_t log4cl_rmmod2(const char *name);
 
 /**
  * \brief Set the reporting level for a module
  *
  * \return \ref status_t
  */
-status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
+RCSW_API status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
 
 /**
  * \brief Set the default reporting level for the plugin.
@@ -221,7 +221,7 @@ status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
  *
  * \param lvl The new default level.
  */
-void log4cl_default_lvl_set(uint8_t lvl);
+RCSW_API void log4cl_default_lvl_set(uint8_t lvl);
 
 /**
  * \brief Get the ID of a module from its name.
@@ -230,6 +230,6 @@ void log4cl_default_lvl_set(uint8_t lvl);
  *
  * \return The ID, or -1 if an error occurred.
  */
-int64_t log4cl_mod_id_get(const char* name) RCSW_PURE;
+RCSW_API int64_t log4cl_mod_id_get(const char* name) RCSW_PURE;
 
 END_C_DECLS

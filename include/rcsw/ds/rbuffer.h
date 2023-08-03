@@ -198,7 +198,7 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
  *
  * \return The initialized ringbuffer, or NULL if an error occurred.
  */
-struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
+RCSW_API struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
                              const struct rbuffer_params * params) RCSW_CHECK_RET;
 
 /**
@@ -209,7 +209,7 @@ struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
  *
  * \param rb The ringbuffer handle.
  */
-void rbuffer_destroy(struct rbuffer *rb);
+RCSW_API void rbuffer_destroy(struct rbuffer *rb);
 
 /**
  * \brief Add an item into the ringbuffer.
@@ -227,7 +227,7 @@ void rbuffer_destroy(struct rbuffer *rb);
  *
  * \return \ref status_t.
  */
-status_t rbuffer_add(struct rbuffer * rb, const void * e);
+RCSW_API status_t rbuffer_add(struct rbuffer * rb, const void * e);
 
 /**
  * \brief Remove the next item from the ringbuffer.
@@ -239,7 +239,7 @@ status_t rbuffer_add(struct rbuffer * rb, const void * e);
  *
  * \return \ref status_t.
  */
-status_t rbuffer_remove(struct rbuffer * rb, void * e);
+RCSW_API status_t rbuffer_remove(struct rbuffer * rb, void * e);
 
 /**
  * \brief Get the element in the ringbuffer at the specified index.
@@ -258,7 +258,7 @@ status_t rbuffer_remove(struct rbuffer * rb, void * e);
  *
  * \return The element, or NULL if an error occurred.
  */
-void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
+RCSW_API void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
 
 /**
  * \brief  Get the index of an element in the ringbuffer.
@@ -273,7 +273,7 @@ void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
  * \return The index of the first element in the rbuffer that matches according
  * to the compare function, or -1 on error.
  */
-int rbuffer_index_query(struct rbuffer * rb, const void * e);
+RCSW_API int rbuffer_index_query(struct rbuffer * rb, const void * e);
 
 /**
  * \brief Retrieve the first entry from the ringbuffer.
@@ -285,7 +285,7 @@ int rbuffer_index_query(struct rbuffer * rb, const void * e);
  *
  * \return \ref status_t.
  */
-status_t rbuffer_serve_front(const struct rbuffer * rb, void * e);
+RCSW_API status_t rbuffer_serve_front(const struct rbuffer * rb, void * e);
 
 /**
  * \brief Get a reference to the first entry in the ringbuffer.
@@ -297,7 +297,7 @@ status_t rbuffer_serve_front(const struct rbuffer * rb, void * e);
  * \return A reference to the first element, or NULL if no such element or an
  * error occurred.
  */
-void* rbuffer_front(const struct rbuffer * rb);
+RCSW_API void* rbuffer_front(const struct rbuffer * rb);
 
 /**
  * \brief Clear a rbuffer, but do not deallocate its memory.
@@ -308,7 +308,7 @@ void* rbuffer_front(const struct rbuffer * rb);
  *
  * \return \ref status_t.
  */
-status_t rbuffer_clear(struct rbuffer * rb);
+RCSW_API status_t rbuffer_clear(struct rbuffer * rb);
 
 /**
  * \brief Apply a function to all elements in the ringbuffer.
@@ -318,7 +318,7 @@ status_t rbuffer_clear(struct rbuffer * rb);
  *
  * \return \ref status_t.
  */
-status_t rbuffer_map(struct rbuffer * rb, void (*f)(void *e));
+RCSW_API status_t rbuffer_map(struct rbuffer * rb, void (*f)(void *e));
 
 /**
  * \brief Compute a cumulative SOMETHING using elements in the ringbuffer.
@@ -334,7 +334,7 @@ status_t rbuffer_map(struct rbuffer * rb, void (*f)(void *e));
  *
  * \return \ref status_t.
  */
-status_t rbuffer_inject(struct rbuffer * rb,
+RCSW_API status_t rbuffer_inject(struct rbuffer * rb,
                         void (*f)(void *elt, void *res),
                         void *result);
 
@@ -346,6 +346,6 @@ status_t rbuffer_inject(struct rbuffer * rb,
  *
  * \param rb The ringbuffer handle.
  */
-void rbuffer_print(struct rbuffer * rb);
+RCSW_API void rbuffer_print(struct rbuffer * rb);
 
 END_C_DECLS

@@ -160,7 +160,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-extern const uint8_t rcsw_util_revtable[];
+RCSW_API extern const uint8_t rcsw_util_revtable[];
 
 /*******************************************************************************
  * API Functions
@@ -173,7 +173,7 @@ extern const uint8_t rcsw_util_revtable[];
  *
  * \return The rounded value.
  */
- RCSW_PURE static inline float utils_clamp_f255(float v) {
+RCSW_PURE static inline float utils_clamp_f255(float v) {
     if (v < 0) {
         return 0.0F;
     }
@@ -191,7 +191,7 @@ extern const uint8_t rcsw_util_revtable[];
  * \param size # of bytes in array.
  *
  */
-void arr8_reverse(void* arr, size_t size);
+RCSW_API void arr8_reverse(void* arr, size_t size);
 
 /**
  * \brief Generate permutations from elements within an array.
@@ -203,8 +203,8 @@ void arr8_reverse(void* arr, size_t size);
  * \param start Start position in array to permute
  * \param fp A callback which each permutation is handed to in turn.
  */
-void arr32_permute(uint32_t *arr, size_t size, size_t start,
-                   void (*fp)(uint32_t * elt));
+RCSW_API void arr32_permute(uint32_t *arr, size_t size, size_t start,
+                            void (*fp)(uint32_t * elt));
 
 /**
  * \brief Swap two 32-bit elements in an array.
@@ -213,7 +213,7 @@ void arr32_permute(uint32_t *arr, size_t size, size_t start,
  * \param i Index #1
  * \param j Index #2
  */
-void arr32_elt_swap(uint32_t * v, size_t i, size_t j);
+RCSW_API void arr32_elt_swap(uint32_t * v, size_t i, size_t j);
 
 /**
  * \brief Generate a random alpha-numeric string of known length.
@@ -226,7 +226,7 @@ void arr32_elt_swap(uint32_t * v, size_t i, size_t j);
  *
  * \return \ref status_t.
  */
-status_t string_gen(char * buf, size_t len);
+RCSW_API status_t util_string_gen(char * buf, size_t len);
 
 /**
  *
@@ -240,7 +240,7 @@ status_t string_gen(char * buf, size_t len);
  *
  * \return The reflected data.
  */
-uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
+RCSW_API uint32_t util_reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
 /**
  * \brief Utility function to check if an element is 0.
@@ -253,6 +253,6 @@ uint32_t reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
  *
  * \return \ref bool_t
  */
-bool_t util_zchk(void *elt, size_t elt_size);
+RCSW_API bool_t util_zchk(void *elt, size_t elt_size);
 
 END_C_DECLS

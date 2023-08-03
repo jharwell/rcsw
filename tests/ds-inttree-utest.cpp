@@ -43,7 +43,6 @@ static void run_test(inttree_test_t test) {
   params.flags = 0;
   params.elt_size = sizeof(struct interval_data);
   params.max_elts = TH_NUM_ITEMS;
-  params.cmpkey = inttree_cmp_key;
   th::ds_init(&params);
 
   uint32_t flags[] = {

@@ -124,7 +124,7 @@ static void insert_test(int len,
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
     T e = g.next();
     T *e_ptr;
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
@@ -184,7 +184,7 @@ static void print_test(int len,
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
     T e = g.next();
     T *e_ptr;
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
@@ -228,7 +228,7 @@ static void remove_test(int len,
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
     T e = g.next();
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
     data_arr[i] = e;

@@ -220,9 +220,28 @@ struct bstree {
 };
 
 /*******************************************************************************
- * Forward Decls
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
+
+/*******************************************************************************
+ * RCSW Private Functions
+ ******************************************************************************/
+/**
+ * \brief Insert a new data into a BST
+ *
+ * This should NEVER be called by an application--for internal use only.
+ *
+ * \param tree The BST handle
+ * \param key The key of the data to insert
+ * \param data The data to insert
+ * \param node_size The size of the nodes in the tree, in bytes
+ *
+ * \return \ref status_t
+ */
+RCSW_LOCAL status_t bstree_insert_internal(struct bstree * tree,
+                                void * key, void * data,
+                                size_t node_size);
 /**
  * \brief Initialize a binary search (or related) tree, which may have different
  * node sizes.
@@ -238,123 +257,13 @@ BEGIN_C_DECLS
  *
  * \return The initialized tree, or NULL if an error occurred
  */
-struct bstree *bstree_init_internal(struct bstree *tree_in,
+RCSW_LOCAL struct bstree *bstree_init_internal(struct bstree *tree_in,
                                     const struct bstree_params * params,
                                     size_t node_size) RCSW_CHECK_RET;
 
-/**
- * \brief Destroy a binary search tree
- *
- * Any further use of the tree after calling this function is undefined.
- *
- * \param tree The BST to destroy
- *
- */
-void bstree_destroy(struct bstree *tree);
-
-/**
- * \brief Insert a new data into a BST
- *
- * This should NEVER be called by an application--for internal use only.
- *
- * \param tree The BST handle
- * \param key The key of the data to insert
- * \param data The data to insert
- * \param node_size The size of the nodes in the tree, in bytes
- *
- * \return \ref status_t
- */
-status_t bstree_insert_internal(struct bstree * tree,
-                                void * key, void * data,
-                                size_t node_size);
-
-/**
- * \brief Remove the node in a BST that contains data that matches the given key
- *
- * \param tree The BST handle
- * \param key Key to match in the search for the node to delete
- *
- * \return \ref status_t
- */
-status_t bstree_remove(struct bstree * tree, const void * key);
-
-/**
- * \brief Delete a node from the tree
- *
- * The algorithm from this function is from _Introduction_To_Algorithms_
- *
- * \param tree The BST handle
- * \param victim The node to delete
- * \param elt To be filled with the data of the deleted node if non-NULL
- *
- * \return \ref status_t
- */
-status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
-                       void * elt);
-
-/**
- * \brief Query a BST for a specific node, starting the search at the specified
- * search root
- *
- * \param tree The BST handle
- * \param search_root The root of the search (not necessarily the root of the
- * tree)
- * \param key The key to match
- *
- * \return The node with the matching key, or NULL if not found
- */
-struct bstree_node *bstree_node_query(const struct bstree* tree,
-                                      struct bstree_node* search_root,
-                                      const void* key);
-
-/**
- * \brief Get the data associated with a key
- *
- * This function returns the data in the first node for which the compare
- * function returned 0 for.
- *
- * \param tree The BST handle
- * \param key The key to search for
- *
- * \return The data associated with the key, or NULL if no match for key was
- * found
- */
-void *bstree_data_query(const struct bstree * tree, const void * key);
-
-/**
- * \brief Traverse a binary search tree and operate on each node's data.
- *
- * Can traverse in a pre-order, post-order, or in-order way.
- *
- * If the callback returns nonzero on a given node, then the traversal is
- * aborted.
- *
- * \param tree The BST handle
- *
- * \param cb Callback called on each node in the tree, and passed the BST
- *           handle. Cannot be used to modify the BST handle, but CAN modify the
- *           node.
- *
- * \param type The type of traversal to perform.
- *
- * \return Return code of last callback that was non-zero, or 0 if callback
- * succeeded on all nodes
- */
-int bstree_traverse(struct bstree * tree,
-                    int (*cb)(const struct bstree* tree,
-                              struct bstree_node * node),
-                    enum bstree_traversal_type type);
-
-/**
- * \brief Print a BSTREE
- *
- * \param tree The BST handle
- */
-void bstree_print(struct bstree * tree);
-
 
 /*******************************************************************************
- * Inline Functions
+ * API Functions
  ******************************************************************************/
 /**
  * \brief Determine if a \ref bstree is currently full.
@@ -433,11 +342,9 @@ static inline size_t bstree_meta_space(size_t max_elts) {
  *
  * \param data The data to insert
  */
-static inline status_t bstree_insert(struct bstree* tree,
-                                     void* const key,
-                                     void* const data) {
-  return bstree_insert_internal(tree, key, data, sizeof(struct bstree_node));
-}
+RCSW_API status_t bstree_insert(struct bstree* tree,
+                                void* const key,
+                                void* const data);
 
 /**
  * \brief Initialize a \ref bstree.
@@ -446,9 +353,104 @@ static inline status_t bstree_insert(struct bstree* tree,
  *
  * \param params Initialization parameters
  */
-static inline struct bstree* bstree_init(struct bstree* tree_in,
-                                         const struct bstree_params* const params) {
-  return bstree_init_internal(tree_in, params, sizeof(struct bstree_node));
-}
+RCSW_API struct bstree* bstree_init(struct bstree* tree_in,
+                                    const struct bstree_params* const params);
+
+/**
+ * \brief Destroy a binary search tree
+ *
+ * Any further use of the tree after calling this function is undefined.
+ *
+ * \param tree The BST to destroy
+ *
+ */
+RCSW_API void bstree_destroy(struct bstree *tree);
+
+
+/**
+ * \brief Remove the node in a BST that contains data that matches the given key
+ *
+ * \param tree The BST handle
+ * \param key Key to match in the search for the node to delete
+ *
+ * \return \ref status_t
+ */
+RCSW_API status_t bstree_remove(struct bstree * tree, const void * key);
+
+/**
+ * \brief Delete a node from the tree
+ *
+ * The algorithm from this function is from _Introduction_To_Algorithms_
+ *
+ * \param tree The BST handle
+ * \param victim The node to delete
+ * \param elt To be filled with the data of the deleted node if non-NULL
+ *
+ * \return \ref status_t
+ */
+RCSW_API status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
+                       void * elt);
+
+/**
+ * \brief Query a BST for a specific node, starting the search at the specified
+ * search root
+ *
+ * \param tree The BST handle
+ * \param search_root The root of the search (not necessarily the root of the
+ * tree)
+ * \param key The key to match
+ *
+ * \return The node with the matching key, or NULL if not found
+ */
+RCSW_API struct bstree_node *bstree_node_query(const struct bstree* tree,
+                                      struct bstree_node* search_root,
+                                      const void* key);
+
+/**
+ * \brief Get the data associated with a key
+ *
+ * This function returns the data in the first node for which the compare
+ * function returned 0 for.
+ *
+ * \param tree The BST handle
+ * \param key The key to search for
+ *
+ * \return The data associated with the key, or NULL if no match for key was
+ * found
+ */
+RCSW_API void *bstree_data_query(const struct bstree * tree, const void * key);
+
+/**
+ * \brief Traverse a binary search tree and operate on each node's data.
+ *
+ * Can traverse in a pre-order, post-order, or in-order way.
+ *
+ * If the callback returns nonzero on a given node, then the traversal is
+ * aborted.
+ *
+ * \param tree The BST handle
+ *
+ * \param cb Callback called on each node in the tree, and passed the BST
+ *           handle. Cannot be used to modify the BST handle, but CAN modify the
+ *           node.
+ *
+ * \param type The type of traversal to perform.
+ *
+ * \return Return code of last callback that was non-zero, or 0 if callback
+ * succeeded on all nodes
+ */
+RCSW_API int bstree_traverse(struct bstree * tree,
+                    int (*cb)(const struct bstree* tree,
+                              struct bstree_node * node),
+                    enum bstree_traversal_type type);
+
+/**
+ * \brief Print a BSTREE
+ *
+ * \param tree The BST handle
+ */
+RCSW_API void bstree_print(struct bstree * tree);
+
+
 
 END_C_DECLS

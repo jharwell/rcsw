@@ -53,22 +53,20 @@ BEGIN_C_DECLS
  * \param cv_in cv to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
  *              passed.
  *
- * \param flags Configuration flags.Valid flags are:
- *
- * - \ref RCSW_NOALLOC_HANDLE
+ * \param flags Configuration flags. See \ref condv.flags for valid flags.
  *
  * All other flags are ignored.
  *
  * \return The initialized signal condition, or NULL if an ERROR occurred.
  */
-struct condv* condv_init(struct condv * cv_in, uint32_t flags);
+RCSW_API struct condv* condv_init(struct condv * cv_in, uint32_t flags);
 
 /**
  * \brief Destroy the signal condition.
  *
  * \param cv The cv handle.
  */
-void condv_destroy(struct condv *cv);
+RCSW_API void condv_destroy(struct condv *cv);
 
 /**
  * \brief Signal on a condition variable.
@@ -77,7 +75,7 @@ void condv_destroy(struct condv *cv);
  *
  * \return \ref status_t.
  */
-status_t condv_signal(struct condv * cv);
+RCSW_API status_t condv_signal(struct condv * cv);
 
 /**
  * \brief Broadcast to everyone waiting on a condition variable.
@@ -90,7 +88,7 @@ status_t condv_signal(struct condv * cv);
  *
  * \return \ref status_t.
  */
-status_t condv_broadcast(struct condv * cv);
+RCSW_API status_t condv_broadcast(struct condv * cv);
 
 /**
  * \brief Unconditional wait on a condition variable.
@@ -100,7 +98,7 @@ status_t condv_broadcast(struct condv * cv);
  *
  * \return \ref status_t.
  */
-status_t condv_wait(struct condv * cv, struct mutex * mtx);
+RCSW_API status_t condv_wait(struct condv * cv, struct mutex * mtx);
 
 /**
  * \brief Timed wait on a condition variable.
@@ -114,7 +112,7 @@ status_t condv_wait(struct condv * cv, struct mutex * mtx);
  *
  * \return \ref status_t.
  */
-status_t condv_timedwait(struct condv* cv,
+RCSW_API status_t condv_timedwait(struct condv* cv,
                         struct mutex* mtx,
                         const struct timespec * to);
 

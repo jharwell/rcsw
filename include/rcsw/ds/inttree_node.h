@@ -17,15 +17,13 @@
 #include "rcsw/ds/inttree.h"
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
 /**
  * \brief Update the max high interval for a node during the fixup process after
  * an insertion/deletion.
- *
- * Do not call this function directly.
  *
  * \param node The node to update.
  */

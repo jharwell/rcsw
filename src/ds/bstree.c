@@ -25,13 +25,10 @@
 #include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
 struct bstree* bstree_init_internal(struct bstree* tree_in,
                                     const struct bstree_params* const params,
                                     size_t node_size) {
@@ -114,59 +111,6 @@ error:
   return NULL;
 } /* bstree_init_internal() */
 
-void bstree_destroy(struct bstree* tree) {
-  RCSW_FPC_V(NULL != tree);
-
-  if (tree->root != NULL) {
-    bstree_traverse_nodes_postorder(tree, tree->root, bstree_node_destroy);
-  }
-
-  /*
-   * Special case to delete nil sentinel node (not reachable from the rest of
-   * the tree via traversal)
-   */
-  bstree_node_destroy(tree, tree->nil);
-
-  rcsw_free(tree, tree->flags & RCSW_NOALLOC_HANDLE);
-} /* bstree_destroy() */
-
-void* bstree_data_query(const struct bstree* const tree, const void* const key) {
-  RCSW_FPC_NV(NULL, tree != NULL, key != NULL);
-
-  struct bstree_node* node = bstree_node_query(tree, tree->root->left, key);
-  return (node == NULL) ? NULL : node->data;
-} /* bstree_data_query() */
-
-struct bstree_node* bstree_node_query(const struct bstree* const tree,
-                                      struct bstree_node* const search_root,
-                                      const void* const key) {
-  struct bstree_node* x = search_root;
-  while (x != tree->nil) {
-    int res;
-    if ((res = tree->cmpkey(key, x->key)) == 0) {
-      return x;
-    }
-    x = res < 0 ? x->left : x->right;
-  } /* while() */
-  return NULL;
-} /* bstree_node_query() */
-
-int bstree_traverse(struct bstree* const tree,
-                    int (*cb)(const struct bstree* const tree,
-                              struct bstree_node* const node),
-                    enum bstree_traversal_type type) {
-  RCSW_FPC_NV(ERROR, tree != NULL, cb != NULL);
-
-  if (ekTRAVERSE_PREORDER == type) {
-    return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
-  } else if (ekTRAVERSE_INORDER == type) {
-    return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
-  } else if (ekTRAVERSE_POSTORDER == type) {
-    return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
-  }
-  return -1;
-} /* bstree_traverse() */
-
 status_t bstree_insert_internal(struct bstree* const tree,
                                 void* const key,
                                 void* const data,
@@ -236,6 +180,73 @@ status_t bstree_insert_internal(struct bstree* const tree,
 error:
   return ERROR;
 } /* bstree_insert_internal() */
+
+/*******************************************************************************
+ * API Functions
+ ******************************************************************************/
+struct bstree* bstree_init(struct bstree* tree_in,
+                           const struct bstree_params* const params) {
+  return bstree_init_internal(tree_in, params, sizeof(struct bstree_node));
+}
+status_t bstree_insert(struct bstree* tree,
+                       void* const key,
+                       void* const data) {
+  return bstree_insert_internal(tree, key, data, sizeof(struct bstree_node));
+}
+
+void bstree_destroy(struct bstree* tree) {
+  RCSW_FPC_V(NULL != tree);
+
+  if (tree->root != NULL) {
+    bstree_traverse_nodes_postorder(tree, tree->root, bstree_node_destroy);
+  }
+
+  /*
+   * Special case to delete nil sentinel node (not reachable from the rest of
+   * the tree via traversal)
+   */
+  bstree_node_destroy(tree, tree->nil);
+
+  rcsw_free(tree, tree->flags & RCSW_NOALLOC_HANDLE);
+} /* bstree_destroy() */
+
+void* bstree_data_query(const struct bstree* const tree, const void* const key) {
+  RCSW_FPC_NV(NULL, tree != NULL, key != NULL);
+
+  struct bstree_node* node = bstree_node_query(tree, tree->root->left, key);
+  return (node == NULL) ? NULL : node->data;
+} /* bstree_data_query() */
+
+struct bstree_node* bstree_node_query(const struct bstree* const tree,
+                                      struct bstree_node* const search_root,
+                                      const void* const key) {
+  struct bstree_node* x = search_root;
+  while (x != tree->nil) {
+    int res;
+    if ((res = tree->cmpkey(key, x->key)) == 0) {
+      return x;
+    }
+    x = res < 0 ? x->left : x->right;
+  } /* while() */
+  return NULL;
+} /* bstree_node_query() */
+
+int bstree_traverse(struct bstree* const tree,
+                    int (*cb)(const struct bstree* const tree,
+                              struct bstree_node* const node),
+                    enum bstree_traversal_type type) {
+  RCSW_FPC_NV(ERROR, tree != NULL, cb != NULL);
+
+  if (ekTRAVERSE_PREORDER == type) {
+    return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
+  } else if (ekTRAVERSE_INORDER == type) {
+    return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
+  } else if (ekTRAVERSE_POSTORDER == type) {
+    return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
+  }
+  return -1;
+} /* bstree_traverse() */
+
 
 status_t bstree_remove(struct bstree* const tree, const void* const key) {
   RCSW_FPC_NV(ERROR, tree != NULL, key != NULL);
@@ -345,5 +356,6 @@ void bstree_print(struct bstree* const tree) {
                                 (int (*)(const struct bstree* const,
                                          struct bstree_node*))bstree_node_print);
 } /* bstree_print() */
+
 
 END_C_DECLS

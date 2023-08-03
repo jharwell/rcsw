@@ -36,14 +36,14 @@
 
 
 /*******************************************************************************
- * API Functions
+ * RCSW Private Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
 /**
  * Output the specified string in reverse, taking care of any zero-padding
  */
-void out_reversed(struct printf_output_gadget* output,
+RCSW_LOCAL void out_reversed(struct printf_output_gadget* output,
                   const char* buf, printf_size_t len,
                   printf_size_t width,
                   printf_flags_t flags);
@@ -51,7 +51,7 @@ void out_reversed(struct printf_output_gadget* output,
 /**
  * An internal itoa-like function
  */
-void print_integer(struct printf_output_gadget* output,
+RCSW_LOCAL void print_integer(struct printf_output_gadget* output,
                    printf_unsigned_value_t value,
                    bool_t negative,
                    numeric_base_t base,
@@ -64,7 +64,7 @@ void print_integer(struct printf_output_gadget* output,
  * necessary work on the number's prefix (as the number is initially printed in
  * reverse order)
  */
-void print_integer_finalization(struct printf_output_gadget* output,
+RCSW_LOCAL void print_integer_finalization(struct printf_output_gadget* output,
                                 char* buf,
                                 printf_size_t len,
                                 bool_t negative,

@@ -165,8 +165,8 @@ RCSW ``cmake`` Configuration
        implementation should link with to write characters to stdout. Must have
        same signature as putchar().
 
-     - ``PUTCHAR_UNDEFINED`` (placeholder to make debugging linker errors
-       easier).
+     - ``putchar`` (assume linking with stdlibs OR that this is the name of your
+       custom function).
 
    * - ``RCSW_STDIO_GETCHAR``
 
@@ -174,8 +174,8 @@ RCSW ``cmake`` Configuration
        implementation should link with to read characters from stdin. Must have
        same signature as getchar().
 
-     - ``GETCHAR_UNDEFINED`` (placeholder to make debugging linker errors
-       easier).
+     - ``getchar`` (assume linking with stdlibs OR that this is the name of your
+       custom function).
 
    * - ``RCSW_NO_GRIND``
 
@@ -228,3 +228,9 @@ RCSW ``cmake`` Configuration
      - Show a summary of all RCSW-specific variables when running ``cmake``.
 
      - ``YES``
+
+   * - ``RCSW_LIBTYPE``
+
+     - What type of library to build RCSW as (SHARED or STATIC).
+
+     - ``STATIC``

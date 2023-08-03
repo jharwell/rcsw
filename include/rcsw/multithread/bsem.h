@@ -55,11 +55,11 @@ BEGIN_C_DECLS
  * \param sem_in The semaphore to initialize. Can be NULL if \ref
  *               RCSW_NOALLOC_HANDLE is not passed.
  *
- * \param flags Initialization flags
+ * \param flags Configuration flags. See \ref bsem.flags for valid flags.
  *
  * \return The initialized binary semaphore, or NULL if an ERROR occurred.
  */
-struct bsem* bsem_init(struct bsem * sem_in, uint32_t flags);
+RCSW_API struct bsem* bsem_init(struct bsem * sem_in, uint32_t flags);
 
 /**
  * \brief Destroy a binary semaphore.
@@ -68,7 +68,7 @@ struct bsem* bsem_init(struct bsem * sem_in, uint32_t flags);
  *
  * \param sem The semaphore to destroy.
  */
-void bsem_destroy(struct bsem * sem);
+RCSW_API void bsem_destroy(struct bsem * sem);
 
 /**
  * \brief Unlock a binary semaphore.
@@ -77,7 +77,7 @@ void bsem_destroy(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-status_t bsem_post(struct bsem * sem);
+RCSW_API status_t bsem_post(struct bsem * sem);
 
 /**
  * \brief - Notify all waiting threads and make it available again.
@@ -86,7 +86,7 @@ status_t bsem_post(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-status_t bsem_flush(struct bsem * sem);
+RCSW_API status_t bsem_flush(struct bsem * sem);
 
 /**
  * \brief Wait on binary semaphore with a timeout.
@@ -99,7 +99,8 @@ status_t bsem_flush(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-status_t  bsem_timedwait(struct bsem * sem, const struct timespec * to);
+RCSW_API status_t  bsem_timedwait(struct bsem * sem,
+                                  const struct timespec * to);
 
 /**
  * \brief Block on binary semaphore until it becomes available.
@@ -108,6 +109,6 @@ status_t  bsem_timedwait(struct bsem * sem, const struct timespec * to);
  *
  * \return \ref status_t.
  */
-status_t bsem_wait(struct bsem * sem);
+RCSW_API status_t bsem_wait(struct bsem * sem);
 
 END_C_DECLS

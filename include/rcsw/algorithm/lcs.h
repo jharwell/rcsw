@@ -33,7 +33,7 @@ struct lcs_calculator {
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t
  */
-status_t lcs_init(struct lcs_calculator * lcs,
+RCSW_API status_t lcs_init(struct lcs_calculator * lcs,
                   const char * x,
                   const char * y);
 
@@ -58,7 +58,7 @@ status_t lcs_init(struct lcs_calculator * lcs,
  * Any further use of the LCS after calling this function is undefined.
  *
  */
-void lcs_destroy(struct lcs_calculator * lcs);
+RCSW_API void lcs_destroy(struct lcs_calculator * lcs);
 
 /**
  * \brief Compute the LCS of x,y using top down dynamic programming
@@ -67,7 +67,7 @@ void lcs_destroy(struct lcs_calculator * lcs);
  *
  * \return LCS of (x,y) or -1 if an error occurred
  */
-int lcs_rec(const struct lcs_calculator* lcs);
+RCSW_API int lcs_rec(const struct lcs_calculator* lcs);
 
 /**
  * \brief Compute LCS(x,y) using bottom up dynamic programming
@@ -76,7 +76,6 @@ int lcs_rec(const struct lcs_calculator* lcs);
  *
  * \return \ref status_t
  */
-int lcs_iter(struct lcs_calculator * lcs);
+RCSW_API int lcs_iter(struct lcs_calculator * lcs);
 
 END_C_DECLS
-
