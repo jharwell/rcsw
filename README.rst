@@ -37,7 +37,9 @@ Reusable C Software (RCSW)
 
 
 RCSW is a collection of reusable (but not necessarily generic) C software
-modules, in the style of the C++ STL. Briefly, it contains:
+modules, in the style of the C++ STL. Intended to jump-start new software
+development and generally make your C development life easier. Briefly, it
+contains:
 
 - Data structures: ringbuffer, linked list, FIFIO, dynamic array, binary search
   tree, red-black tree, order statistics tree, hashmap, binary heap, etc.

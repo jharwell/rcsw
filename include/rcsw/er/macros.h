@@ -111,7 +111,7 @@
 
 /* \cond INTERNAL */
 #define ER_ERR_IMPL(handle, ...) {                                      \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_ERROR)) {       \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, ERROR)) {       \
       ER_REPORT(ERROR, handle, __VA_ARGS__)                             \
     }                                                                   \
   }
@@ -173,7 +173,7 @@
 
 /* \cond INTERNAL */
 #define ER_WARN_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_WARN)) {        \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, WARN)) {        \
       ER_REPORT(WARN, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
@@ -201,7 +201,7 @@
 
 /* \cond INTERNAL */
 #define ER_INFO_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_INFO)) {        \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, INFO)) {        \
       ER_REPORT(INFO, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
@@ -229,7 +229,7 @@
 
 /* \cond INTERNAL */
 #define ER_DEBUG_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_DEBUG)) {        \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, DEBUG)) {        \
       ER_REPORT(DEBUG, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
@@ -257,7 +257,7 @@
 
 /* \cond INTERNAL */
 #define ER_TRACE_IMPL(handle, ...) {                                     \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_TRACE)) {        \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, TRACE)) {        \
       ER_REPORT(TRACE, handle, ## __VA_ARGS__)                           \
     }                                                                   \
   }
@@ -276,9 +276,8 @@
  * Define a statement reporting the occurrence of an event with the specified
  * level \a lvl.
  *
- * This macro is only available if event reporting is fully enabled.
+ * This macro is only available if the event reporting level is > NONE.
  */
-
 #define ER_REPORT(lvl, handle, msg, ...)        \
   {                                             \
     RCSW_ER_PLUGIN_REPORT(lvl,                  \
@@ -437,6 +436,18 @@
 
 #ifndef RCSW_ER_MODULE_INIT
 #define RCSW_ER_MODULE_INIT(...)
+#endif
+
+#ifndef RCSW_ER_INIT
+#define RCSW_ER_INIT(...)
+#endif
+
+#ifndef RCSW_ER_DEINIT
+#define RCSW_ER_DEINIT(...)
+#endif
+
+#ifndef RCSW_ER_INSMOD
+#define RCSW_ER_INSMOD(...)
 #endif
 
 #ifndef ER_REPORT

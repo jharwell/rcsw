@@ -7,12 +7,91 @@ on:
       - devel
 
 concurrency:
-  group: "build-and-test"
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # parametric-build:
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: jharwell/ubuntu20.04:2023-07-09
+  #   strategy:
+  #     matrix:
+  #       build_type:
+  #         - OPT
+  #         - DEV
+
+  #         # No need to test with {ERROR,WARN,INFO}--those aren't different than
+  #         # ALL for the purposes of testing compilation.
+  #       er_lvl:
+  #         - NONE
+  #         - FATAL
+  #         - ALL
+
+  #       ptr_align:
+  #         - 1
+  #         - 2
+  #         - 4
+
+  #       zalloc:
+  #         - YES
+  #         - NO
+
+  #       er_plugin:
+  #         - LOG4CL
+  #         - SIMPLE
+
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+
+  #     - name: Build=${{ matrix.build_type }}
+  #       shell: bash
+  #       run: |
+
+  #         git config --global --add safe.directory $PWD
+  #         git submodule update --init --remote --recursive
+  #         mkdir -p build && cd build
+
+  #         cmake  \
+  #         -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+  #         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+  #         -DLIBRA_TESTS=yes \
+  #         -DLIBRA_CODE_COV=YES \
+  #         -DLIBRA_MT=YES \
+  #         -DRCSW_CONFIG_STDIO_PUTCHAR=putchar \
+  #         -DLIBRA_ERL=ALL \
+  #         -DLIBRA_VALGRIND_COMPAT=YES \
+  #         -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+  #         -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+  #         -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
+  #         -DRCSW_CONFIG_LIBTYPE=SHARED \
+  #         ..
+
+  #         make -j$(nproc)
+
+  #         cmake  \
+  #         -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+  #         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+  #         -DLIBRA_TESTS=yes \
+  #         -DLIBRA_CODE_COV=YES \
+  #         -DLIBRA_MT=YES \
+  #         -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
+  #         -DLIBRA_ERL=ALL \
+  #         -DLIBRA_VALGRIND_COMPAT=YES \
+  #         -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+  #         -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+  #         -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
+  #         -DRCSW_CONFIG_LIBTYPE=STATIC \
+  #         ..
+
+  #         # Normal tests
+  #         make -j$(nproc)
+
   build-and-test:
     runs-on: ubuntu-latest
+    # needs:
+    #   - parametric-build
     container:
       image: jharwell/ubuntu20.04:2023-07-09
     strategy:
@@ -25,6 +104,10 @@ jobs:
           - 1
           - 2
           - 4
+        zalloc:
+          - YES
+          - NO
+
 
     steps:
       - uses: actions/checkout@v3
@@ -42,16 +125,20 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DLIBRA_TESTS=yes \
           -DLIBRA_CODE_COV=YES \
-          -DRCSW_STDIO_PUTCHAR=th_putchar \
-          -DLIBRA_ERL=ALL \
+          -DLIBRA_MT=YES \
+          -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
+          -DLIBRA_ERL=NONE \
           -DLIBRA_VALGRIND_COMPAT=YES \
-          -DRCSW_PTR_ALIGN=${{ matrix.ptr_align }}
+          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+          -DRCSW_CONFIG_LIBTYPE=STATIC \
           ..
 
           # Normal tests
           make build-and-test -j$(nproc)
 
-          # Run under valgrind
+          # Run under valgrind (only with no ER because that slows things down a
+          # lot)
           ctest -T memcheck --verbose
 
           make coverage-report
@@ -60,7 +147,7 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: build/coverage.info
+          path-to-lcov: build/coverage/coverage.info
 
   docs:
     uses: ./.github/workflows/pages.yml

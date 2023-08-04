@@ -151,7 +151,7 @@ static void concurrent_test(const struct pcqueue_params* const params,
                    T e;
                    size_t count = 0;
                    while (count < 10) {
-                     struct timespec to = {.tv_sec = 0, .tv_nsec = 1000000};
+                     struct timespec to = {.tv_sec = 0, .tv_nsec = 100000000};
                      status_t rval = pcqueue_timedpop(q, &to, &e);
                      if (OK == rval) {
                        std::scoped_lock lock(mtx);

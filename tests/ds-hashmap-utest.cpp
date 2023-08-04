@@ -38,6 +38,7 @@ static void run_test(hashmap_test_t test) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
@@ -45,16 +46,25 @@ static void run_test(hashmap_test_t test) {
     RCSW_DS_HASHMAP_LINPROB
   };
 
+  uint32_t applied = 0;
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    for (size_t j = 1; j < TH_NUM_ITEMS; ++j) {
-      for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
-        params.flags = flags[i];
-        params.bsize = j;
-        params.n_buckets = k;
-        test(&params);
-      } /* for(k..) */
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (size_t m = 1; m < TH_NUM_ITEMS; ++m) {
+        for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
+          params.flags = applied;
+          params.bsize = m;
+          params.n_buckets = k;
+          test(&params);
+        } /* for(k..) */
+      } /* for(m..) */
+
+      applied &= ~flags[j];
     } /* for(j..) */
   } /* for(i..) */
+
   th::ds_shutdown(&params);
 } /* run_test() */
 

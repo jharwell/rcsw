@@ -41,10 +41,10 @@ double stdio_log10(double positive_number) {
       // Taylor expansion around 1.5:
       0.1760912590556812420 // Expansion term 0: ln(1.5)            / ln(10)
       + z * 0.2895296546021678851 // Expansion term 1: (M - 1.5)   * 2/3  / ln(10)
-#if RCSW_STDIO_MATH_LOG10_TERMS > 2
+#if RCSW_CONFIG_STDIO_MATH_LOG10_TERMS > 2
       - z * z * 0.0965098848673892950 // Expansion term 2: (M - 1.5)^2 * 2/9  /
   // ln(10)
-#if RCSW_STDIO_MATH_LOG10_TERMS > 3
+#if RCSW_CONFIG_STDIO_MATH_LOG10_TERMS > 3
       + z * z * z * 0.0428932821632841311 // Expansion term 2: (M - 1.5)^3 * 8/81
   // / ln(10)
 #endif

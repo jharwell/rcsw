@@ -16,7 +16,7 @@
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"
-
+#include "rcsw/common/flags.h"
 
 /*******************************************************************************
  * Private Functions

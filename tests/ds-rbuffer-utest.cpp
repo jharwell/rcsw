@@ -29,7 +29,7 @@ using rbuffer_test_t = void(*)(int len,
  ******************************************************************************/
 template <typename T>
 static void run_test(rbuffer_test_t test) {
-  log4cl_init();
+  RCSW_ER_PLUGIN_INIT();
 
   struct rbuffer_params params;
   memset(&params, 0, sizeof(rbuffer_params));
@@ -41,20 +41,27 @@ static void run_test(rbuffer_test_t test) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_DS_RBUFFER_AS_FIFO
   };
 
-  for (size_t j = 3; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      params.flags = flags[i];
-      params.max_elts = j;
-      test(j, &params);
-    } /* for(i..) */
-  } /* for(j..) */
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+      for (size_t k = 3; k < TH_NUM_ITEMS; ++k) {
+        params.max_elts = k;
+        test(k, &params);
+      } /* for(k..) */
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
-  log4cl_shutdown();
+  RCSW_ER_PLUGIN_DEINIT();
 } /* test_runner() */
 
 /*******************************************************************************

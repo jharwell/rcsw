@@ -34,7 +34,7 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
     int alloc_idx = allocm_probe(list->space.node_map,
                                  (size_t)list->max_elts,
                                  list->current);
-    printf("IDX: %d\n", alloc_idx);
+
     RCSW_CHECK(-1 != alloc_idx);
     node = (list->space.nodes + alloc_idx);
 

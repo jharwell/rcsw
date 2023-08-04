@@ -40,16 +40,27 @@ static void run_test(fifo_test_t test) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
-  for (int j = 1; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      params.flags = flags[i];
-      params.max_elts = j;
-      test(j, &params);
-    } /* for(i..) */
-  } /* for(j..) */
+
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (int k = 1; k < TH_NUM_ITEMS; ++k) {
+        params.flags = applied;
+        params.max_elts = k;
+        test(k, &params);
+      } /* for(k..) */
+
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
 
   RCSW_ER_DEINIT();

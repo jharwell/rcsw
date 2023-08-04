@@ -19,8 +19,8 @@
 #include "rcsw/er/plugin/log4cl.h"
 #elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4C
 #include "rcsw/er/plugin/log4c.h"
-#elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_CUSTOM
-#error "Custom ER plugins not supported yet"
+#else
+/* assume a custom ER plugin */
 #endif
 
 /*******************************************************************************

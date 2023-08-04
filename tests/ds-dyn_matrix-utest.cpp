@@ -25,11 +25,6 @@
  ******************************************************************************/
 template<typename T>
 void run_test(void (*test)(struct dyn_matrix_params *params)) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING,"Testing"); */
-  /* dbg_insmod(M_DS_DYN_MATRIX,"DYN_MATRIX"); */
-  /* dbg_mod_lvl_set(M_DS_DYN_MATRIX, DBG_V); */
-
   struct dyn_matrix_params params;
   memset(&params, 0, sizeof(dyn_matrix_params));
   params.elt_size = sizeof(T);
@@ -41,19 +36,31 @@ void run_test(void (*test)(struct dyn_matrix_params *params)) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
-  for (size_t i = 1; i <= 10; ++i) {
-    for (size_t j = 1; j <= 10; ++j) {
-      for (size_t k = 0; k < RCSW_ARRAY_ELTS(flags); ++k) {
-      params.n_cols = i;
-      params.n_rows = j;
-      params.flags = flags[k];
-      test(&params);
-      } /* for(k..) */
+
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (size_t m = 1; m <= 10; ++m) {
+        for (size_t n = 1; n <= 10; ++n) {
+          params.n_cols = m;
+          params.n_rows = n;
+          params.flags = applied;
+          test(&params);
+        } /* for(m..) */
+      } /* for(n..) */
+
+      applied &= ~flags[j];
     } /* for(j..) */
   } /* for(i..) */
+
+
   th::ds_shutdown(&params);
 } /* run_test() */
 

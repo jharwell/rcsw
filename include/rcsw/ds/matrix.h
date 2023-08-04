@@ -112,8 +112,8 @@ BEGIN_C_DECLS
  * \return Reference to element, or NULL if an error occurred.
  */
 static inline void* matrix_access(const struct matrix* const matrix,
-                                         size_t u,
-                                         size_t v) {
+                                  size_t u,
+                                  size_t v) {
   RCSW_FPC_NV(NULL,
               NULL != matrix,
               u < matrix->n_rows,

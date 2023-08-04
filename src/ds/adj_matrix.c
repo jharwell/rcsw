@@ -58,6 +58,10 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
     .n_cols = params->n_vertices,
     .elements = params->elements,
     .elt_size = matrix->elt_size,
+    /*
+     * 2023-11-02 [JRH]: The matrix relies on elts being zeroed initially (at
+     * least, my test code cb does, and other code might too).
+     */
     .flags = params->flags | RCSW_NOALLOC_HANDLE,
   };
   if (matrix->is_weighted) {

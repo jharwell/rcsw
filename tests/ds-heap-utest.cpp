@@ -24,14 +24,9 @@
  * Test Helper Functions
  ******************************************************************************/
 template<typename T>
-static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *params),
+static void run_test(void (*test)(enum gen_elt_type,
+                                  struct binheap_params *params),
                      enum gen_elt_type type) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING, "Testing"); */
-  /* dbg_insmod(M_DS_BINHEAP, "BINHEAP"); */
-  /* dbg_insmod(M_DS_DARRAY, "DARRAY"); */
-  /* dbg_mod_lvl_set(M_DS_BINHEAP, DBG_V); */
-  /* dbg_mod_lvl_set(M_DS_DARRAY, DBG_V); */
   struct binheap_params params;
   memset(&params, 0, sizeof(binheap_params));
   params.flags = 0;
@@ -42,18 +37,26 @@ static void run_test(void (*test)(enum gen_elt_type, struct binheap_params *para
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_DS_BINHEAP_MIN
   };
-  for (int j = 1; j < TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      params.flags = flags[i];
-      params.max_elts = j;
-      params.init_size = 0;
-      test(type, &params);
-    } /* for(i..) */
-  } /* for(j..) */
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+      for (int m = 1; m < TH_NUM_ITEMS; ++m) {
+        params.flags = applied;
+        params.max_elts = m;
+        params.init_size = 0;
+        test(type, &params);
+      } /* for(m..) */
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
 } /* run_test() */
 

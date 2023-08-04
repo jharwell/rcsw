@@ -12,7 +12,7 @@
 #include "rcsw/er/plugin/log4cl.h"
 
 #include "rcsw/ds/llist.h"
-#include "rcsw/er/client.h"
+#include "rcsw/er/er.h"
 
 /*******************************************************************************
  * Global Variables

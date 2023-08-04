@@ -54,6 +54,6 @@ void th_printn(const void *node) {
          (const char *)hashnode->key, hashnode->hash, *(int *)hashnode->data);
 } /* th_printn() */
 
-int th_putchar(int c) { return c; }
+int RCSW_WEAK th_putchar(int c) { return c; }
 
 END_C_DECLS
