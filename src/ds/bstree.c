@@ -14,7 +14,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#define RCSW_ER_MODNAME "rcsw.ds.bstree"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw","ds", "bstree")
 #define RCSW_ER_MODID ekLOG4CL_DS_BSTREE
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"

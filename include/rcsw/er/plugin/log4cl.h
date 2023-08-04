@@ -1,7 +1,9 @@
 /**
  * \file log4cl.h
  * \ingroup er
- * \brief A C debugging/logging framework in the style of log4c, but less complex.
+ *
+ * \brief A C debugging/logging framework in the style of log4c, but less
+ * complex.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -27,6 +29,7 @@
 /* \cond INTERNAL */
 
 #define RCSW_ER_PLUGIN_PRINTF printf
+#define RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR "."
 
 #define RCSW_ER_PLUGIN_INIT(...) log4cl_init(__VA_ARGS__)
 #define RCSW_ER_PLUGIN_DEINIT(...) log4cl_shutdown(__VA_ARGS__)

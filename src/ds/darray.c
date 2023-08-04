@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RCSW_ER_MODNAME "rcsw.ds.darray"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "darray")
 #define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/search.h"

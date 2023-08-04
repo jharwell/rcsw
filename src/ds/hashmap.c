@@ -12,7 +12,7 @@
 
 #include <math.h>
 
-#define RCSW_ER_MODNAME "rcsw.ds.hm"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "hashmap")
 #define RCSW_ER_MODID ekLOG4CL_DS_HASHMAP
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/sort.h"

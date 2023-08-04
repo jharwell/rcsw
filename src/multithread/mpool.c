@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multithread/mpool.h"
 
-#define RCSW_ER_MODNAME "rcsw.mt.mpool"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "mpool")
 #define RCSW_ER_MODID ekLOG4CL_MT_MPOOL
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"

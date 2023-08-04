@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/csmatrix.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.csmat"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "csmat")
 #define RCSW_ER_MODID ekLOG4CL_DS_CSMATRIX
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/common/fpc.h"

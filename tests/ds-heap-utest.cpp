@@ -27,6 +27,7 @@ template<typename T>
 static void run_test(void (*test)(enum gen_elt_type,
                                   struct binheap_params *params),
                      enum gen_elt_type type) {
+  RCSW_ER_INIT(TH_ZLOG_CONF);
   struct binheap_params params;
   memset(&params, 0, sizeof(binheap_params));
   params.flags = 0;
@@ -58,6 +59,7 @@ static void run_test(void (*test)(enum gen_elt_type,
   } /* for(i..) */
 
   th::ds_shutdown(&params);
+  RCSW_ER_DEINIT();
 } /* run_test() */
 
 template<typename T>
@@ -260,6 +262,8 @@ static void print_test(gen_elt_type type, struct binheap_params * params) {
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("insert() Test", "[ds][binheap]") {
+
+
   run_test<element8>(insert_test<element8>, ekINC_VALS);
   run_test<element8>(insert_test<element8>, ekDEC_VALS);
   run_test<element8>(insert_test<element8>, ekRAND_VALS);
@@ -275,6 +279,7 @@ CATCH_TEST_CASE("insert() Test", "[ds][binheap]") {
   run_test<element1>(insert_test<element1>, ekINC_VALS);
   run_test<element1>(insert_test<element1>, ekDEC_VALS);
   run_test<element1>(insert_test<element1>, ekRAND_VALS);
+
 }
 CATCH_TEST_CASE("delete() Test", "[ds][binheap]") {
   run_test<element8>(delete_test<element8>, ekINC_VALS);

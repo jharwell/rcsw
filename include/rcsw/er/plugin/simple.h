@@ -31,6 +31,9 @@
 /* \cond INTERNAL */
 #define RCSW_ER_PLUGIN_PRINTF stdio_printf
 
+/* not used for anything other than printing */
+#define RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR "."
+
 #define RCSW_ER_PLUGIN_INIT(...)
 #define RCSW_ER_PLUGIN_DEINIT(...)
 

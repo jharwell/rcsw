@@ -13,7 +13,7 @@
 
 #include <omp.h>
 
-#define RCSW_ER_MODNAME "rcsw.mt"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt")
 #define RCSW_ER_MODID ekLOG4CL_MT_RADIX
 #include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"

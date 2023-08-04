@@ -28,7 +28,7 @@ using fifo_test_t = void(*)(int len, struct fifo_params *params);
  ******************************************************************************/
 template<typename T>
 static void run_test(fifo_test_t test) {
-  RCSW_ER_INIT();
+  RCSW_ER_INIT(TH_ZLOG_CONF);
 
   struct fifo_params params;
   memset(&params, 0, sizeof(fifo_params));

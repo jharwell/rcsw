@@ -13,9 +13,6 @@
  ******************************************************************************/
 #include <vector>
 
-#define RCSW_ER_MODNAME "rcsw.ds.test"
-#define RCSW_ER_MODID ekLOG4CL_TESTING
-
 #include "rcsw/er/client.h"
 #include "rcsw/ds/binheap.h"
 #include "rcsw/ds/bstree.h"

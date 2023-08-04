@@ -28,11 +28,22 @@
 
 /**
  * \brief Initialize the defined ER plugin.
+ *
+ * All usage of any ER machinery is undefined until this call.
+ *
+ * \note May not be idempotent if the underlying plugin initialization function
+ * is not idempotent. See plugin documentation for details.
  */
 #define RCSW_ER_INIT(...) RCSW_ER_PLUGIN_INIT(__VA_ARGS__)
 
 /**
  * \brief Uninitialize/shutdown the defined ER plugin.
+ *
+ * All usage of any ER machinery is undefined after this call until \ref
+ * RCSW_ER_INIT is called.
+ *
+ * \note May not be idempotent if the underlying plugin shutdown function
+ * is not idempotent. See plugin documentation for details.
  */
 #define RCSW_ER_DEINIT(...) RCSW_ER_PLUGIN_DEINIT(__VA_ARGS__)
 
@@ -118,14 +129,20 @@
 /* \endcond */
 
 /**
- * \brief The name of an ER module. If not specified, use \a __FILE_NAME__.
+ * \brief The name of an ER module. Used by some logging plugins to identify a
+ * module.
+ *
+ * If not specified, defined as \a __FILE_NAME__.
  */
 #if !defined(RCSW_ER_MODNAME)
 #define RCSW_ER_MODNAME __FILE_NAME__
 #endif
 
 /**
- * \brief The ID of an ER module. If not specified, use -1.
+ * \brief The ID of an ER module. Use by some logging plugins to identify a
+ * module.
+ *
+ * If not specified, defined as -1.
  */
 #if !defined(RCSW_ER_MODID)
 #define RCSW_ER_MODID (-1)
@@ -134,11 +151,10 @@
 /**
  * \def RCSW_ER_MODULE_INIT()
  *
- * Initialize a module in the currently selected ER plugin.
+ * Initialize a module in the currently selected ER plugin using the \ref
+ * RCSW_ER_MODID and \ref RCSW_ER_MODNAME currently in scope.
  *
- * Installation is idempotent. Requires that \ref RCSW_ER_MODID and \ref
- * RCSW_ER_MODNAME are defined if they are used by the plugin; otherwise, they
- * can be undefined and will get default values.
+ * Initialization is idempotent if the selected plugin supports it.
  */
 #define RCSW_ER_MODULE_INIT(...)                        \
   RCSW_ER_PLUGIN_INSMOD(RCSW_ER_MODID, RCSW_ER_MODNAME)
