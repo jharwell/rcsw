@@ -33,7 +33,7 @@ using llist_test2_t = void(*)(int len1,
  ******************************************************************************/
 template<typename T>
 static void run_test(llist_test1_t test) {
-  RCSW_ER_INIT();
+  RCSW_ER_INIT(TH_ZLOG_CONF);
 
   struct llist_params params;
   memset(&params, 0, sizeof(llist_params));

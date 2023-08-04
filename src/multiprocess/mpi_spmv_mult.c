@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multiprocess/mpi_spmv_mult.h"
 
-#define RCSW_ER_MODNAME "rcsw.mp"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mp")
 #define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"

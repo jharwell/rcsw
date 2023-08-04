@@ -1,5 +1,6 @@
 .. _modules-er:
 
+====================
 Event Reporting (ER)
 ====================
 
@@ -15,7 +16,7 @@ facilities. Important aspects/terminology:
   ``RCSW_ER_PLUGIN_INSMOD()`` was previously called for the module.
 
 Usage
------
+=====
 
 To use one of the existing RCSW ER plugins in your code, you need to:
 
@@ -26,7 +27,8 @@ To use one of the existing RCSW ER plugins in your code, you need to:
    .. TIP:: Not all ER plugins use both ``RCSW_ER_MODID`` and
             ``RCSW_ER_MODNAME``; see documentation for relevant plugins for
             details. Still, it's generally good practice to always define both
-            to make your code more robust.
+            to make your code more robust and compatible with any RCSW ER
+            plugin.
 
    For example, in ``src/ds/rbuffer.c`` we have something like this near the top of
    the file::
@@ -37,7 +39,7 @@ To use one of the existing RCSW ER plugins in your code, you need to:
 
 #. Call ``RCSW_ER_MODULE_INIT()`` somewhere in your ``.c`` file, ideally in an
    initialization function. If a ``.c`` file you want to define a module for
-   does not have such a function, you can put it in a commit initialization
+   does not have such a function, you can put it in a common initialization
    function for your library/application. E.g.::
 
      void library_init(void) {
@@ -58,35 +60,16 @@ To use one of the existing RCSW ER plugins in your code, you need to:
      }
 
   The two forms are equivalent. The first is generally more convenient for more
-  OOP-oriented modules.
+  OOP-oriented modules in separate files.
 
-Plugins
--------
-
-.. tabs::
-
-   .. tab:: Simple
-
-
-      .. include:: plugin/simple.rst
-
-   .. tab:: LOG4CL
-
-      .. include:: plugin/log4cl.rst
-
-   .. tab:: LOG4C
-
-      Coming soon!
-
-   .. tab:: Custom
-
-      .. include:: plugin/custom.rst
-
+.. NOTE:: If you want to be able to use the same code to define modules for
+          different plugins, use :c:macro:`RCSW_ER_MODNAME_BUILDER` to define
+          the names so that they will work with every plugin.
 
 .. _er-levels:
 
 Levels
-------
+======
 
 The reporting levels which RCSW uses across all its plugins should be familiar
 if you've dealt with logging before. All plugins support all logging levels. The
@@ -106,4 +89,28 @@ A somewhat unique feature: because RCSW works with :ref:`LIBRA
 - At compile-time, effectively disabling any events are lower severity levels;
   i.e., they will be compiled out.
 
-- At run-time, as you would expect (if the selected plugin supports it)
+- At run-time, as you would expect (if the selected plugin supports it).
+
+Plugins
+=======
+
+.. tabs::
+
+   .. tab:: Simple
+
+
+      .. include:: plugin/simple.rst
+
+   .. tab:: LOG4CL
+
+      .. include:: plugin/log4cl.rst
+
+   .. tab:: zlog
+
+      .. include:: plugin/zlog.rst
+
+   .. tab:: Custom
+
+      .. include:: plugin/custom.rst
+
+

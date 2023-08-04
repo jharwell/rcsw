@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/fifo.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.fifo"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "fifo")
 #define RCSW_ER_MODID ekLOG4CL_DS_FIFO
 #include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"

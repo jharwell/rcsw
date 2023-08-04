@@ -12,7 +12,7 @@
 #include "rcsw/ds/rbuffer.h"
 
 #define RCSW_ER_MODID ekLOG4CL_DS_RBUFFER
-#define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
+#define RCSW_ER_MODNAME "rcsw_ds_rbuffer"
 #include "rcsw/ds/ds.h"
 #include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"

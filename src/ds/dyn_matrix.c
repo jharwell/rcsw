@@ -11,11 +11,10 @@
  ******************************************************************************/
 #include "rcsw/ds/dyn_matrix.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.dyn_matrix"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "dyn_matrix")
 #define RCSW_ER_MODID ekLOG4CL_DS_DYN_MATRIX
 #include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"
-
 
 /*******************************************************************************
  * API Functions

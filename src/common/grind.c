@@ -16,9 +16,9 @@
 #include <math.h>
 
 #define RCSW_ER_MODID ekLOG4CL_GRIND
-#define RCSW_ER_MODNAME "rcsw.grind"
-#include "rcsw/common/fpc.h"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "grind")
 #include "rcsw/er/client.h"
+#include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
 #include "rcsw/common/alloc.h"
 

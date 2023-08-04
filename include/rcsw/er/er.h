@@ -9,6 +9,11 @@
 #pragma once
 
 /*******************************************************************************
+ * Includes
+ ******************************************************************************/
+ #include "rcsw/common/common.h"
+
+/*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
 /* \cond INTERNAL */
@@ -68,18 +73,43 @@
 #define RCSW_ER_PLUGIN_SIMPLE 1
 
 /**
- * Specify that all logging go to the log4c framework.
+ * Specify that all logging go to the zlog framework.
  *
  * This is the most full-featured of RCSW's built-in logging schemes, supporting
- * everything log4c does.
+ * everything zlog does.
  *
  * This is useful in:
  *
  * - Linux targets and targets with a full-featured OS.
  */
-#define RCSW_ER_PLUGIN_LOG4C 2
+#define RCSW_ER_PLUGIN_ZLOG 2
 
 /**
  * Specify that all logging go to a custom reporting macro.
  */
 #define RCSW_ER_PLUGIN_CUSTOM 3
+
+/*******************************************************************************
+ * Macros
+ ******************************************************************************/
+#define RCSW_ER_MODNAME_BUILDER_IMPL(X) X RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR
+
+/**
+ * \def RCSW_ER_MODNAME_BUILDER(...) Define the name of a logging module
+ *
+ * Takes a comma-separated list of string components of the name you want your
+ * module to have. Each "component" corresponds to a level in hierarchical
+ * logging scheme. For example, if you want to create a module called "mymodule"
+ * in a project called "myproject", you would do:
+ *
+ * \code
+ * #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("myproject", "mymodule")
+ * \endcode
+ *
+ * which would be expanded as appropriate ("myproject.mymodule",
+ * "myproject_mymodule", etc.) depending on the plugin you build RCSW with.
+ *
+ * This macro ensures that you can use the same code with multple ER plugins.
+ */
+#define RCSW_ER_MODNAME_BUILDER(...)                                    \
+  RCSW_XFOR_EACH1_NOTAIL(RCSW_ER_MODNAME_BUILDER_IMPL, __VA_ARGS__)

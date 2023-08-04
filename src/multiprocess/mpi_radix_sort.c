@@ -13,7 +13,7 @@
 
 #include <mpi.h>
 
-#define RCSW_ER_MODNAME "rcsw.mp"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mp")
 #define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"

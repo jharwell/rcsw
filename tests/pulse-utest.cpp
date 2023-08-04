@@ -19,6 +19,7 @@
 #include "rcsw/pulse/pulse.h"
 #include "tests/pulse_test.h"
 #include "rcsw/er/client.h"
+#include "tests/ds_test.h"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -36,11 +37,7 @@ using pulse_test = void(*)(const struct pulse_params* const params,
  * Test Helper Functions
  ******************************************************************************/
 static void run_test(pulse_test test, size_t n_threads = 1) {
-  RCSW_ER_INIT();
-  RCSW_ER_INSMOD(ekLOG4CL_PULSE, "rcsw.pulse");
-  RCSW_ER_INSMOD(ekLOG4CL_MT_MPOOL, "rcsw.mt.mpool");
-  /* log4cl_mod_lvl_set(ekLOG4CL_PULSE, RCSW_ERL_DEBUG); */
-  /* log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_INFO); */
+  RCSW_ER_INIT(TH_ZLOG_CONF);
 
   struct pulse_params bus_params;
   bus_params.max_pools = TH_MAX_POOLS;

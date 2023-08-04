@@ -5,9 +5,12 @@ implementation, to provide the necessary logging functionality in environments
 where stdlib is not available, and/or using stdlib hogs too much space.
 
 In this plugin, each source file within RCSW and of each project which links
-with RCSW can define a logging "module"; modules are file-based, and
-therefore you can't have multiple modules/loggers in a single file. If you
-architect your projects well, this should not be a burdensome restriction.
+with RCSW can define a logging "module"; modules are file-based, and therefore
+you can't have multiple modules/loggers in a single file. If you architect your
+projects well, this should not be a burdensome restriction.  You *can* split a
+logging module across several files if you want by defining
+:c:macro:`RCSW_ER_MODNAME` equivalently.
+
 The modules in this plugin:
 
 - Are unconditionally enabled and cannot be disabled; that is, each time a
@@ -23,14 +26,60 @@ The modules in this plugin:
 
 Each emitted logging statement is of the form::
 
-  <RCSW_ER_MODULE_NAME> [LVL] <message>
+  <RCSW_ER_MODNAME> [LVL] <message>
 
-Where :c:macro:`RCSW_ER_MODNAME` is the #define defining the name of the
-module. If it is not defined, ``__FILE_NAME__`` is used. ``LVL`` is one of:
-[FATAL, ERROR, INFO, WARN, DEBUG, TRACE].
+``LVL`` is one of [FATAL, ERROR, INFO, WARN, DEBUG, TRACE], and
+``<message>`` is the rendered message. :c:macro:`RCSW_ER_MODNAME` defines the
+logical name of the module.
+
 
 This plugin is useful in:
 
 - Bare metal environments such as bootstraps without an OS.
 
 - Bare metal hardware validation tests.
+
+
+Plugin Configuration Details
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Configuration Item
+
+     - Notes
+
+   * - :c:macro:`RCSW_ER_PLUGIN_PRINTF`
+
+     - Defined as :c:func:`stdio_printf()`.
+
+   * - :c:macro:`RCSW_ER_PLUGIN_INIT()`
+
+     - Idempotent/not used by this plugin.
+
+   * - :c:macro:`RCSW_ER_PLUGIN_DEINIT()`
+
+     - Idempotent/not used by this plugin.
+
+   * - :c:macro:`RCSW_ER_PLUGIN_REPORT()`
+
+     - None.
+
+   * - :c:macro:`RCSW_ER_PLUGIN_INSMOD`
+
+     - Idempotent/not used by this plugin.
+
+   * - :c:macro:`RCSW_ER_PLUGIN_LVL_CHECK`
+
+     - Not used by this plugin/always ``true``.
+
+   * - :c:macro:`RCSW_ER_MODNAME`
+
+     - The name of the module. Can have any format; it can be convenient to use
+       a hierarchical format such as ``foo.bar.baz`` for interoperability with
+       other plugins. See also :c:macro:`RCSW_ER_MODNAME_BUILDER`.
+
+   * - :c:macro:`RCSW_ER_MODID`
+
+     - Not used by this plugin.

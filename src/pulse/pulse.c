@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/pulse/pulse.h"
 
-#define RCSW_ER_MODNAME "rcsw.pulse"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "pulse")
 #define RCSW_ER_MODID ekLOG4CL_PULSE
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"

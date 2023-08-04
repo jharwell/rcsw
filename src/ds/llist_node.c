@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/llist_node.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.llist"
+#define RCSW_ER_MODNAME "rcsw_ds_llist"
 #define RCSW_ER_MODID ekLOG4CL_DS_LLIST
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"

@@ -29,8 +29,7 @@ using rbuffer_test_t = void(*)(int len,
  ******************************************************************************/
 template <typename T>
 static void run_test(rbuffer_test_t test) {
-  RCSW_ER_PLUGIN_INIT();
-
+  RCSW_ER_INIT(TH_ZLOG_CONF);
   struct rbuffer_params params;
   memset(&params, 0, sizeof(rbuffer_params));
   params.flags = 0;
@@ -61,7 +60,7 @@ static void run_test(rbuffer_test_t test) {
   } /* for(i..) */
 
   th::ds_shutdown(&params);
-  RCSW_ER_PLUGIN_DEINIT();
+  RCSW_ER_DEINIT();
 } /* test_runner() */
 
 /*******************************************************************************

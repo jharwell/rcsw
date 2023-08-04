@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 16)
+set(PROJECT_VERSION_PATCH 17)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -331,12 +331,18 @@ target_include_directories(
   ${rcsw_LIBRARY}
   PUBLIC
   $<BUILD_INTERFACE:${rcsw_DIR}/include>
+  ${LIBRA_DEPS_PREFIX}/include
 )
 
 ########################################
 # Link Libraries
 ########################################
 target_link_libraries(${rcsw_LIBRARY} pthread dl m)
+
+if("${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "ZLOG")
+  target_link_libraries(${rcsw_LIBRARY} zlog)
+  target_link_directories(${rcsw_LIBRARY} PUBLIC ${LIBRA_DEPS_PREFIX}/lib)
+endif()
 
 ################################################################################
 # Installation and Deployment
@@ -409,7 +415,7 @@ if(${RCSW_CONFIG_SUMMARY})
 
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
   message(STATUS "Library type                                  : ${ColorBold}${EMIT_RCSW_CONFIG_LIBTYPE}${ColorReset} [RCSW_CONFIG_LIBTYPE={STATIC,SHARED}]")
-  message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN]")
+  message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN={CUSTOM,ZLOG,LOG4CL,SIMPLE}]")
   message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN_PATH}${ColorReset} [RCSW_CONFIG_ER_PLUGIN_PATH]")
   message(STATUS "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_CONFIG_NOALLOC}${ColorReset} [RCSW_CONFIG_NOALLOC]")
   message(STATUS "Always zero alloc'd memory before use         : ${ColorBold}${EMIT_RCSW_CONFIG_ZALLOC}${ColorReset} [RCSW_CONFIG_ZALLOC]")

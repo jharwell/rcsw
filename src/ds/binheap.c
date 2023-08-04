@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/binheap.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.binheap"
+#define RCSW_ER_MODNAME "rcsw_ds_binheap"
 #define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
