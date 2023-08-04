@@ -77,7 +77,11 @@ struct binheap* binheap_init(struct binheap* heap_in,
       .max_elts = params->max_elts,
       .elements = params->elements,
       .flags = (params->flags & ~RCSW_NOALLOC_HANDLE)};
-  dparams.flags |= RCSW_NOALLOC_HANDLE;
+  /*
+   * 2023-11-02 [JRH]: The heap relies on elts being zeroed initially (at least,
+   * my test code cb does, and other code might too).
+   */
+  dparams.flags |= RCSW_NOALLOC_HANDLE | RCSW_ZALLOC;
   dparams.max_elts += (dparams.max_elts == -1) ? 0 : 1;
 
   RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));

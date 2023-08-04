@@ -25,10 +25,6 @@
  ******************************************************************************/
 template<typename T>
 void run_test(void (*test)(struct adj_matrix_params *params)) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING, "Testing"); */
-  /* dbg_insmod(M_DS_STATIC_ADJ_MATRIX, "STATIC_adj_matrix"); */
-  /* dbg_mod_lvl_set(M_DS_STATIC_ADJ_MATRIX, DBG_V); */
   struct adj_matrix_params params;
   memset(&params, 0, sizeof(adj_matrix_params));
   params.flags = 0;
@@ -37,26 +33,36 @@ void run_test(void (*test)(struct adj_matrix_params *params)) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
 
-  for (size_t m = 0; m < 2; ++m) {
-    for (size_t k = 0; k < 2; ++k) {
-      for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-        /* cannot have matrix that is weighted but undirected */
-        if (k && !m) {
-          continue;
-        }
-        params.is_directed = (bool_t)m;
-        params.is_weighted = (bool_t)k;
-        params.n_vertices = TH_NUM_ITEMS;
-        params.flags = flags[i];
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
 
-        test(&params);
-      } /* for(i..) */
-    } /* for(k..) */
-  } /* for(m..) */
+      for (size_t m = 0; m < 2; ++m) {
+        for (size_t k = 0; k < 2; ++k) {
+          /* cannot have matrix that is weighted but undirected */
+          if (k && !m) {
+            continue;
+          }
+          params.is_directed = (bool_t)m;
+          params.is_weighted = (bool_t)k;
+          params.n_vertices = TH_NUM_ITEMS;
+          params.flags = applied;
+
+          test(&params);
+        } /* for(k..) */
+      } /* for(m..) */
+
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
 } /* run_test() */
 

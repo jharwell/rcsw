@@ -35,9 +35,8 @@
 #endif
 
 /*
- * If rcsw is used in a context where this is not defined it is almost
- * assuredly an error, buuuttttt RCSW might be needed to compile in weird
- * environments.
+ * If rcsw is used in a context where this is not defined it is almost assuredly
+ * an error, buuuttttt RCSW might need to compile in weird environments.
  */
 #if !defined(LIBRA_ERL)
 #define LIBRA_ERL LIBRA_ERL_ALL
@@ -45,7 +44,7 @@
 /* \endcond */
 
 /**
- * \brief The configured event reporting level.
+ * \brief The compile-time event reporting level.
  */
 #define RCSW_ERL LIBRA_ERL
 
@@ -59,17 +58,17 @@
 #define RCSW_ER_ENDC "\033[0m"   /* reset to default terminal text color */
 
 /**
- * The simple bare-bones logger. See docs for a detailed description.
- */
-#define RCSW_ER_PLUGIN_SIMPLE 1
-
-/**
  * A lighter/simpler version of log4c. See docs for a detailed description.
  */
 #define RCSW_ER_PLUGIN_LOG4CL 0
 
 /**
- * Specify that all logginggo to the log4c framework.
+ * The simple bare-bones logger. See docs for a detailed description.
+ */
+#define RCSW_ER_PLUGIN_SIMPLE 1
+
+/**
+ * Specify that all logging go to the log4c framework.
  *
  * This is the most full-featured of RCSW's built-in logging schemes, supporting
  * everything log4c does.

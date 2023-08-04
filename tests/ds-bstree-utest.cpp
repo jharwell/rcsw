@@ -77,19 +77,28 @@ static void run_test_remove(uint32_t extra_flags,
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
   };
-  for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    /* DBGN("Testing with %d items\n", j); */
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      for (int k = 0; k < 2; ++k) {
-        params.flags = flags[i] | extra_flags;
-        test(j, k, &params, verify_cb);
-      } /* for(k..) */
-    } /* for(i..) */
-  } /* for(j..) */
+
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+      for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
+        for (int k = 0; k < 2; ++k) {
+          params.flags = applied | extra_flags;
+          test(m, k, &params, verify_cb);
+        } /* for(k..) */
+      } /* for(m..) */
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
+
   th::ds_shutdown(&params);
 } /* run_test_remove() */
 

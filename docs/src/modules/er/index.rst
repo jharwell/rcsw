@@ -72,8 +72,11 @@ Plugins
 
    .. tab:: LOG4CL
 
-
       .. include:: plugin/log4cl.rst
+
+   .. tab:: LOG4C
+
+      Coming soon!
 
    .. tab:: Custom
 

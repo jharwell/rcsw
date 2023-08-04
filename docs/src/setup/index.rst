@@ -53,7 +53,7 @@ RCSW ``cmake`` Configuration
 
      - Default
 
-   * - ``RCSW_NOALLOC``
+   * - ``RCSW_CONFIG_NOALLOC``
 
      - Is dynamic heap memory allocation disallowed ? If TRUE, implies:
 
@@ -63,9 +63,9 @@ RCSW ``cmake`` Configuration
 
        where applicable for all modules.
 
-     - ``NO``  (heap memory allocation allowed)
+     - ``NO``  (heap memory allocation allowed).
 
-   * - ``RCSW_ZALLOC``
+   * - ``RCSW_CONFIG_ZALLOC``
 
      - Should all allocated memory (dynamically or by the application) be zeroed
        before use by RCSW ? See :c:macro:`RCSW_ZALLOC` for implications of this
@@ -73,7 +73,7 @@ RCSW ``cmake`` Configuration
 
      - ``NO``
 
-   * - ``RCSW_STDIO_PRINTF_BUFSIZE``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_BUFSIZE``
 
      - Internal ntoa() conversion buffer size in RCSW's printf()
        implementation. Must be big enough to hold one converted numeric number
@@ -81,7 +81,7 @@ RCSW ``cmake`` Configuration
 
      - 32
 
-   * - ``RCSW_STDIO_PRINTF_WITH_DEC``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_WITH_DEC``
 
      - Compile in support for the decimal notation floating point conversion
        specifiers:
@@ -93,7 +93,7 @@ RCSW ``cmake`` Configuration
      - ``YES``
 
 
-   * - ``RCSW_STDIO_PRINTF_WITH_EXP``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_WITH_EXP``
 
      - Compile in support for the exponential notation floating point conversion
        specifiers:
@@ -105,20 +105,20 @@ RCSW ``cmake`` Configuration
 
      - ``YES``
 
-   * - ``RCSW_STDIO_PRINTF_WITH_WRITEBACK``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK``
 
      - Compile in support for the length write-back specifier (%n).
 
      - ``YES``
 
-   * - ``RCSW_STDIO_PRINTF_DEFAULT_FLOAT_PREC``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC``
 
      - Set default precision for the floating point conversion specifiers (the C
        standard sets this at 6).
 
      - 6
 
-   * - ``RCSW_STDIO_PRINTF_EXP_DIGIT_THRESH``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH``
 
      - According to the C standard, printf() must be able to print any integral
        number in floating-point notation, regardless of length, when using %f,
@@ -127,7 +127,7 @@ RCSW ``cmake`` Configuration
 
      - 9
 
-   * - ``RCSW_STDIO_PRINTF_WITH_LL``
+   * - ``RCSW_CONFIG_STDIO_PRINTF_WITH_LL``
 
      - Support for the long long integral types (with the ll, z and t length
        modifiers) for specifiers:
@@ -144,7 +144,7 @@ RCSW ``cmake`` Configuration
 
      - ``YES``
 
-   * - ``RCSW_STDIO_MATH_LOG10_TERMS``
+   * - ``RCSW_CONFIG_STDIO_MATH_LOG10_TERMS``
 
      - The number of terms in a Taylor series expansion of log_10(x) to use for
        approximation - including the power-zero term (i.e. the value at the
@@ -152,14 +152,14 @@ RCSW ``cmake`` Configuration
 
      - 4
 
-   * - ``RCSW_STDIO_MATH_LOG10_CHECK_NULL``
+   * - ``RCSW_CONFIG_STDIO_MATH_LOG10_CHECK_NULL``
 
      - Be extra-safe, and don't assume format specifiers are completed correctly
        before the format string end. Requires runtime checking.
 
      - ``YES``
 
-   * - ``RCSW_STDIO_PUTCHAR``
+   * - ``RCSW_CONFIG_STDIO_PUTCHAR``
 
      - The name of the putchar()-like function that RCSW's printf()
        implementation should link with to write characters to stdout. Must have
@@ -168,7 +168,7 @@ RCSW ``cmake`` Configuration
      - ``putchar`` (assume linking with stdlibs OR that this is the name of your
        custom function).
 
-   * - ``RCSW_STDIO_GETCHAR``
+   * - ``RCSW_CONFIG_STDIO_GETCHAR``
 
      - The name of the getchar()-like function that RCSW's printf()
        implementation should link with to read characters from stdin. Must have
@@ -177,7 +177,7 @@ RCSW ``cmake`` Configuration
      - ``getchar`` (assume linking with stdlibs OR that this is the name of your
        custom function).
 
-   * - ``RCSW_NO_GRIND``
+   * - ``RCSW_CONFIG_NO_GRIND``
 
      - Compile out:
 
@@ -191,19 +191,21 @@ RCSW ``cmake`` Configuration
 
      - ``NO``
 
-   * - ``RCSW_ER_PLUGIN``
+   * - ``RCSW_CONFIG_ER_PLUGIN``
 
      - The default event reporting plugin to use. See :ref:`modules-er` for
        details.
 
-   * - ``RCSW_ER_PLUGIN_PATH``
+     - ``LOG4CL``
+
+   * - ``RCSW_CONFIG_ER_PLUGIN_PATH``
 
      - The path to the ``#include`` file for a custom ER plugin. See
        :ref:`modules-er` for details.
 
-     - ``LOG4CL``
+     - Empty
 
-   * - ``RCSW_PTR_ALIGN``
+   * - ``RCSW_CONFIG_PTR_ALIGN``
 
      - Override the pointer alignment used to store references to all
        application data which RCSW manages.
@@ -223,13 +225,13 @@ RCSW ``cmake`` Configuration
        - ARM - 1
        - Everything else - 1
 
-   * - ``RCSW_SUMMARY``
+   * - ``RCSW_CONFIG_SUMMARY``
 
      - Show a summary of all RCSW-specific variables when running ``cmake``.
 
      - ``YES``
 
-   * - ``RCSW_LIBTYPE``
+   * - ``RCSW_CONFIG_LIBTYPE``
 
      - What type of library to build RCSW as (SHARED or STATIC).
 

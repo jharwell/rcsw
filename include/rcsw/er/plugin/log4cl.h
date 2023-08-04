@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
 #include "rcsw/rcsw.h"
 #include "rcsw/ds/llist.h"
 
@@ -40,7 +41,8 @@
 
 #define RCSW_ER_PLUGIN_HANDLE(ID, NAME) log4cl_mod_query(ID)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) log4cl_mod_emit(HANDLE, LVL)
+#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL)           \
+  log4cl_mod_emit(HANDLE, RCSW_JOIN(RCSW_ERL_, LVL))
 
 #define RCSW_LOG4CL_NAMELEN 32
 

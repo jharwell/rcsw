@@ -39,18 +39,29 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_DS_SORTED,
     RCSW_DS_ORDERED,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
   };
   /* test with defined sizes */
-  for (int j = 1; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-      params.flags = flags[i];
-      test(j, &params);
-    } /* for(i...) */
-  } /* for(j...) */
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (int k = 1; k <= TH_NUM_ITEMS; ++k) {
+        params.flags = applied;
+        test(k, &params);
+      } /* for(k...) */
+
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
+
   th::ds_shutdown(&params);
 } /* run_test() */
 
