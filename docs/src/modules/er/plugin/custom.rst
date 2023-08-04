@@ -1,7 +1,7 @@
 A custom plugin which is defined exactly how you want in terms of modules,
 levels, etc. To integrate your plugin with RCSW, you must create a ``.h`` file
 with a few ``#define`` macros. Your ``.h`` file must be specified at configure
-time via ``-DRCSW_ER_PLUGIN_PATH=/path/to/your/file``.
+time via ``-DRCSW_CONFIG_ER_PLUGIN_PATH=/path/to/your/file``.
 
 .. IMPORTANT:: Your ``.h`` file is **NOT** installed/packaged with RCSW, so you
                will need to ensure that it is findable by any applications you
@@ -38,15 +38,9 @@ file):
        modules; should be idempotent. Can take any number of arguments of any
        type.
 
-     - No; if omitted then:
-
-       - The LOG4CL plugin will not work with RCSW modules.
-
-       - The SIMPLE plugin will still work with RCSW modules.
-
      - ``#define`` as nothing.
 
-   * - ``RCSW_ER_PLUGIN_SHUTDOWN()``
+   * - ``RCSW_ER_PLUGIN_DEINIT()``
 
      - A framework shutdown hook; should be idempotent. Should not take any
        arguments. Not used by RCSW currently.
@@ -55,7 +49,7 @@ file):
 
      - ``#define`` as nothing.
 
-   * - ``RCSW_ER_PLUGIN_REPORT(lvl, handle, id, name, msg, ...)``
+   * - ``RCSW_ER_PLUGIN_REPORT(LVL, HANDLE, ID, NAME, MSG, ...)``
 
      - The main ER plugin hook. Will be called as part of every
        :c:macro:`ER_WARN()`, etc. statement. Arguments:
@@ -73,6 +67,9 @@ file):
        - ``MSG`` - The message string
 
        - ``...`` - Any additional arguments for the message string
+
+     .. NOTE:: Because this macro is used as a statement inside RCSW's ER
+               machinery, it must end in ``;``.
 
      - Yes
 

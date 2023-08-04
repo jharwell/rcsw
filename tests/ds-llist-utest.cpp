@@ -45,27 +45,34 @@ static void run_test(llist_test1_t test) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
   };
-  for (size_t j = 3; j <= TH_NUM_ITEMS; ++j) {
-    for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-        params.flags = flags[i];
-        params.max_elts = j;
-        test(j, &params);
-    } /* for(i..) */
-  } /* for(j..) */
+
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (size_t m = 3; m <= TH_NUM_ITEMS; ++m) {
+        params.flags = applied;
+        params.max_elts = m;
+        test(m, &params);
+      } /* for(m..) */
+
+      applied &= ~flags[j];
+    } /* for(j..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
   RCSW_ER_DEINIT();
 } /* run_test() */
 
 template<typename T>
 static void run_test2(llist_test2_t test) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING,"Testing"); */
-  /* dbg_insmod(M_DS_LLIST,"LLIST"); */
-
   struct llist_params params;
   memset(&params, 0, sizeof(llist_params));
   params.flags = 0;
@@ -76,20 +83,29 @@ static void run_test2(llist_test2_t test) {
 
   uint32_t flags[] = {
     RCSW_NONE,
+    RCSW_ZALLOC,
     RCSW_NOALLOC_HANDLE,
     RCSW_NOALLOC_DATA,
     RCSW_NOALLOC_META,
   };
 
-  for (size_t k = 2; k <= TH_NUM_ITEMS; ++k) {
-    for (size_t j = 1; j <= TH_NUM_ITEMS; ++j) {
-      for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-        params.flags = flags[i];
-        params.max_elts = j+k;
-        test(k, j, &params);
-      } /* for(i..) */
+  uint32_t applied = 0;
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    applied |= flags[i];
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      applied |= flags[j];
+
+      for (size_t k = 2; k <= TH_NUM_ITEMS; ++k) {
+        for (size_t m = 1; m <= TH_NUM_ITEMS; ++m) {
+          params.flags = applied;
+          params.max_elts = m+k;
+          test(k, m, &params);
+        } /* for(m..) */
+      } /* for(k..) */
+      applied &= ~flags[j];
     } /* for(j..) */
-  } /* for(k..) */
+  } /* for(i..) */
+
   th::ds_shutdown(&params);
 } /* run_test() */
 

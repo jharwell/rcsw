@@ -15,16 +15,16 @@
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
+void* rcsw_alloc(void* ptr, size_t n_bytes, RCSW_UNUSED uint32_t flags) {
   void* ret = NULL;
 
-#if defined(RCSW_NOALLOC)
+#if defined(RCSW_CONFIG_NOALLOC)
   /*
    * Memory allocation is disabled entirely.
    */
   ret = ptr;
 
-#if defined(RCSW_ZALLOC)
+#if defined(RCSW_CONFIG_ZALLOC)
   memset(ret, 0, n_bytes);
 #else
   /*
@@ -34,7 +34,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   if (flags & RCSW_ZALLOC) {
     memset(ret, 0, n_bytes);
   }
-#endif /* RCSW_ZALLOC */
+#endif /* RCSW_CONFIG_ZALLOC */
 
 #else
   /*
@@ -50,7 +50,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
       (flags & RCSW_NOALLOC_META)) {
     ret = ptr;
   } else {
-#if defined(RCSW_ZALLOC)
+#if defined(RCSW_CONFIG_ZALLOC)
     ret = calloc(1, n_bytes);
 
 #else
@@ -64,10 +64,10 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
       memset(ret, 0, n_bytes);
     }
 
-#endif /* RCSW_ZALLOC */
+#endif /* RCSW_CONFIG_ZALLOC */
   }
 
-#endif /* RCSW_NOALLOC */
+#endif /* RCSW_CONFIG_NOALLOC */
 
   return ret;
 } /* rcsw_alloc() */
@@ -75,7 +75,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
 void rcsw_free(void* ptr, uint32_t flags) {
   RCSW_CHECK_PTR(ptr);
 
-#if defined(RCSW_NOALLOC)
+#if defined(RCSW_CONFIG_NOALLOC)
   /* memory allocation is disabled entirely--nothing to do */
   return;
 #else

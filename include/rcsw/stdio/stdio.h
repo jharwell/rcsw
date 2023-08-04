@@ -32,10 +32,17 @@ BEGIN_C_DECLS
  * The name of the putchar()-like function to send a character to stdout in some
  * way.
  *
- * \note weak attribute needed to link with the definition of the function in
- * another library/object file when the default visibility is hidden.
+ * \note We don't put a weak attribute on the decl of the putchar() function
+ * declaration, because that tells the linker "don't try to resolve this
+ * symbol", which it happily obeys, resulting in a NULL pointer
+ * dereference/segfault when the function is called if RCSW is built as a static
+ * library. If it is built as a dynamic library, normal putchar() should be
+ * available.
  */
-RCSW_API int RCSW_STDIO_PUTCHAR(int c) RCSW_ATTR(weak);
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
+RCSW_API int RCSW_STDIO_PUTCHAR(int c);
+RCSW_WARNING_DISABLE_POP()
 #endif
 
 #ifndef RCSW_STDIO_GETCHAR
@@ -47,10 +54,17 @@ RCSW_API int RCSW_STDIO_PUTCHAR(int c) RCSW_ATTR(weak);
  * The name of the getchar()-like function to get a character from stdout in
  * some way.
  *
- * \note weak attribute needed to link with the definition of the function in
- * another library/object file when the default visibility is hidden.
+ * \note We don't put a weak attribute on the decl of the getchar() function
+ * declaration, because that tells the linker "don't try to resolve this
+ * symbol", which it happily obeys, resulting in a NULL pointer
+ * dereference/segfault when the function is called if RCSW is built as a static
+ * library. If it is built as a dynamic library, normal getchar() should be
+ * available.
  */
-RCSW_API int RCSW_STDIO_GETCHAR(void) RCSW_ATTR(weak);
+RCSW_WARNING_DISABLE_PUSH()
+RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
+RCSW_API int RCSW_STDIO_GETCHAR(void);
+RCSW_WARNING_DISABLE_POP()
 #endif
 
 /*******************************************************************************

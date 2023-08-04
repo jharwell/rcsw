@@ -41,7 +41,7 @@ struct matrix* matrix_init(struct matrix* const matrix_in,
 
   matrix->elements = rcsw_alloc(params->elements,
                                 params->n_rows * params->n_cols * params->elt_size,
-                                params->flags & RCSW_NOALLOC_DATA);
+                                (params->flags & RCSW_NOALLOC_DATA) | RCSW_ZALLOC);
 
   RCSW_CHECK_PTR(matrix->elements);
   return matrix;

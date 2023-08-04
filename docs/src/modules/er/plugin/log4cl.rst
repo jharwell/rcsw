@@ -5,7 +5,7 @@ with RCSW can define a logging "module"; modules are file-based, and therefore
 you can't have multiple modules/loggers in a single file. If you architect your
 projects well, this should not be a burdensome restriction.
 
-Each module can be be enabled/disabled independently in a lightweight manner;
+Each module can be enabled/disabled independently in a lightweight manner;
 unlike log4j loggers, the enable/disable status of one logger/module does not
 have any effect on the status of another. That is, the hierarchy is "flat".
 
@@ -17,7 +17,7 @@ Each emitted logging statement is of the form::
 
   <RCSW_ER_MODULE_NAME> [LVL] <message>
 
-Where :c:macro:`RCSW_ER_MODNAME` is the #define defining the name of the
+Where :c:macro:`RCSW_ER_MODNAME` is the ``#define`` defining the name of the
 module. If it is not defined, ``__FILE_NAME__`` is used. ``LVL`` is one of
 [FATAL, ERROR, INFO, WARN, DEBUG, TRACE].
 

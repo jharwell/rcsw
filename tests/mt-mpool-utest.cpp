@@ -35,8 +35,9 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   RCSW_ER_INIT();
   RCSW_ER_INSMOD(ekLOG4CL_MT_MPOOL, "rcsw.mt.mpool");
   RCSW_ER_INSMOD(ekLOG4CL_DS_LLIST, "rcsw.ds.llist");
-  log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_ALL);
-  log4cl_mod_lvl_set(ekLOG4CL_DS_LLIST, RCSW_ERL_ALL);
+  /* log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_ALL); */
+  /* log4cl_mod_lvl_set(ekLOG4CL_DS_LLIST, RCSW_ERL_ALL); */
+
   struct mpool_params params;
   params.flags = 0;
   params.elt_size = sizeof(T);

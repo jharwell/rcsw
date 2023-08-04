@@ -169,8 +169,7 @@ static inline bool_t adj_matrix_edge_query(struct adj_matrix* const matrix,
   if (matrix->is_weighted) {
     return (!isnan(*(double*)adj_matrix_access(matrix, u, v)));
   } else {
-    return !util_zchk(adj_matrix_access(matrix, u, v),
-                              matrix->elt_size);
+    return !util_zchk(adj_matrix_access(matrix, u, v), matrix->elt_size);
   }
 }
 

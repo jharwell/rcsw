@@ -16,6 +16,7 @@
 #include "rcsw/rcsw.h"
 #include "rcsw/utils/time.h"
 #include "rcsw/common/alloc.h"
+#include "rcsw/common/flags.h"
 
 /*******************************************************************************
  * API Functions
