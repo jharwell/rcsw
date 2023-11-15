@@ -13,11 +13,11 @@
  ******************************************************************************/
 #include "rcsw/er/er.h"
 
-#if RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_SIMPLE
+#if RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_SIMPLE
 #include "rcsw/er/plugin/simple.h"
-#elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4CL
+#elif RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4CL
 #include "rcsw/er/plugin/log4cl.h"
-#elif RCSW_ER_PLUGIN == RCSW_ER_PLUGIN_ZLOG
+#elif RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_ZLOG
 #include "rcsw/er/plugin/zlog.h"
 #else
 /* assume a custom ER plugin */

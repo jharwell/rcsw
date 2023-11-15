@@ -74,20 +74,6 @@ if(NOT RCSW_CONFIG_NO_GRIND)
   set(RCSW_CONFIG_NO_GRIND NO)
 endif()
 
-set (RCSW_ONOFF_CONFIG
-  RCSW_CONFIG_STDIO_PRINTF_WITH_DEC
-  RCSW_CONFIG_STDIO_PRINTF_WITH_EXP
-  RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
-  RCSW_CONFIG_STDIO_PRINTF_WITH_LL
-  RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL
-  RCSW_CONFIG_NO_GRIND
-)
-set (RCSW_VALUE_CONFIG
-  RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
-  RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
-  RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
-  RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
-)
 
 if (NOT RCSW_CONFIG_STDIO_PUTCHAR)
   set(RCSW_CONFIG_STDIO_PUTCHAR putchar)
@@ -128,6 +114,35 @@ if(NOT RCSW_CONFIG_LIBTYPE)
   set(RCSW_CONFIG_LIBTYPE STATIC)
 endif()
 
+if(NOT RCSW_CONFIG_AL_TARGET)
+  set(RCSW_CONFIG_AL_TARGET "POSIX")
+endif()
+
+# Shared libraries don't make sense on bare-metal targets
+if("${RCSW_CONFIG_AL_TARGET}" MATCHES "NONE")
+  set(RCSW_CONFIG_LIBTYPE STATIC)
+endif()
+
+set (RCSW_ONOFF_CONFIG
+  RCSW_CONFIG_STDIO_PRINTF_WITH_DEC
+  RCSW_CONFIG_STDIO_PRINTF_WITH_EXP
+  RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
+  RCSW_CONFIG_STDIO_PRINTF_WITH_LL
+  RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL
+  RCSW_CONFIG_NO_GRIND
+  RCSW_CONFIG_NOALLOC
+  RCSW_CONFIG_ZALLOC
+)
+set (RCSW_VALUE_CONFIG
+  RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
+  RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
+  RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
+  RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
+  RCSW_CONFIG_STDIO_PUTCHAR
+  RCSW_CONFIG_STDIO_GETTCHAR
+  RCSW_CONFIG_PTR_ALIGN
+)
+
 ################################################################################
 # Components
 ################################################################################
@@ -137,6 +152,25 @@ libra_component_register_as_src(
   "${rcsw_SRC}"
   algorithm
   "src/algorithm")
+
+if("${RCSW_CONFIG_AL_TARGET}" MATCHES "POSIX")
+  libra_component_register_as_src(
+    rcsw_al_SRC
+    rcsw
+    "${rcsw_SRC}"
+    al
+    "src/al/posix")
+elseif("${RCSW_CONFIG_AL_TARGET}" MATCHES "NONE")
+  libra_component_register_as_src(
+    rcsw_al_SRC
+    rcsw
+    "${rcsw_SRC}"
+    al
+    "src/al/none")
+else()
+  message(FATAL_ERROR "AL target must be {POSIX,NONE}")
+endif()
+
 libra_component_register_as_src(
   rcsw_common_SRC
   rcsw
@@ -155,7 +189,6 @@ libra_component_register_as_src(
   "${rcsw_SRC}"
   ds
   "src/ds")
-
 
 # If we don't do this, then we have to use the mpicc/mpicxx C/C++
 # compiler wrappers even if we are not using MPI. (Slightly) better to
@@ -203,6 +236,7 @@ if (NOT rcsw_FIND_COMPONENTS)
   set(rcsw_FIND_COMPONENTS
     common
     algorithm
+    al
     ds
     er
     multithread
@@ -254,46 +288,26 @@ set_target_properties(${rcsw_LIBRARY}
 ########################################
 target_compile_definitions(${rcsw_LIBRARY}
   PUBLIC
-  RCSW_STDIO_PUTCHAR=${RCSW_CONFIG_STDIO_PUTCHAR}
-)
-
-target_compile_definitions(${rcsw_LIBRARY}
-  PUBLIC
   LIBRA_ERL=LIBRA_ERL_${LIBRA_ERL}
 )
 
 target_compile_definitions(${rcsw_LIBRARY}
   PUBLIC
-  RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_CONFIG_ER_PLUGIN}
+  RCSW_CONFIG_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_CONFIG_ER_PLUGIN}
 )
 target_compile_definitions(${rcsw_LIBRARY}
   PUBLIC
-  RCSW_ER_PLUGIN_PATH=${RCSW_CONFIG_ER_PLUGIN_PATH}
+  RCSW_CONFIG_ER_PLUGIN_PATH=${RCSW_CONFIG_ER_PLUGIN_PATH}
 )
+target_compile_definitions(${rcsw_LIBRARY}
+  PUBLIC
+  RCSW_CONFIG_AL_TARGET=RCSW_AL_TARGET_${RCSW_CONFIG_AL_TARGET}
+)
+
 target_compile_definitions(${rcsw_LIBRARY}
   PUBLIC
   LIBRA_FPC=LIBRA_FPC_${LIBRA_FPC}
 )
-
-target_compile_definitions(${rcsw_LIBRARY}
-  PUBLIC
-  RCSW_PTR_ALIGN=${RCSW_CONFIG_PTR_ALIGN}
-)
-
-if("${RCSW_CONFIG_NOALLOC}")
-  target_compile_definitions(${rcsw_LIBRARY}
-    PUBLIC
-    RCSW_CONFIG_NOALLOC
-  )
-endif()
-
-if("${RCSW_CONFIG_ZALLOC}")
-  target_compile_definitions(${rcsw_LIBRARY}
-    PUBLIC
-    RCSW_CONFIG_ZALLOC
-  )
-endif()
-
 
 foreach(config ${RCSW_ONOFF_CONFIG})
   if(${config})
@@ -352,7 +366,6 @@ libra_configure_exports_as(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 libra_register_target_for_install(${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 libra_register_headers_for_install(include/${rcsw_LIBRARY} ${CMAKE_INSTALL_PREFIX})
 
-
 # Deployment
 if(NOT CPACK_PACKAGE_NAME)
   set(CPACK_PACKAGE_NAME ${rcsw_LIBRARY})
@@ -392,6 +405,7 @@ if(${RCSW_CONFIG_SUMMARY})
 
   set(fields
     rcsw_VERSION
+    RCSW_CONFIG_AL_TARGET
     RCSW_CONFIG_LIBTYPE
     RCSW_CONFIG_ER_PLUGIN
     RCSW_CONFIG_ER_PLUGIN_PATH
@@ -414,6 +428,7 @@ if(${RCSW_CONFIG_SUMMARY})
   libra_config_summary_prepare_fields("${fields}")
 
   message(STATUS "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]")
+  message(STATUS "Target OS                                     : ${ColorBold}${EMIT_RCSW_CONFIG_AL_TARGET}${ColorReset} [RCSW_CONFIG_AL_TARGET={POSIX,NONE}]")
   message(STATUS "Library type                                  : ${ColorBold}${EMIT_RCSW_CONFIG_LIBTYPE}${ColorReset} [RCSW_CONFIG_LIBTYPE={STATIC,SHARED}]")
   message(STATUS "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN={CUSTOM,ZLOG,LOG4CL,SIMPLE}]")
   message(STATUS "Event reporting custom plugin path            : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN_PATH}${ColorReset} [RCSW_CONFIG_ER_PLUGIN_PATH]")
