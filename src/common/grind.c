@@ -15,6 +15,7 @@
 
 #include <math.h>
 
+#include "rcsw/al/clock.h"
 #define RCSW_ER_MODID ekLOG4CL_GRIND
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "grind")
 #include "rcsw/er/client.h"
@@ -330,9 +331,7 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
 }
 
 static struct timespec grind_gettime(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  return ts;
+  return clock_realtime();
 }
 
 /*******************************************************************************

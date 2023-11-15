@@ -11,21 +11,12 @@
  ******************************************************************************/
 #include "rcsw/utils/time.h"
 
-#include <time.h>
-
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
-BEGIN_C_DECLS
+#include "rcsw/al/clock.h"
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
-double time_monotonic_sec(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return time_ts2mono(&ts);
-} /* time_monotonic_sec() */
+BEGIN_C_DECLS
 
 double time_ts2mono(const struct timespec* const ts) {
   return ts->tv_sec + ts->tv_nsec * 1.0 / ONEE9;
@@ -76,18 +67,14 @@ void time_ts_diff(const struct timespec* const start,
 status_t time_ts_make_abs(const struct timespec* const in,
                           struct timespec* const out) {
   /* Get current time */
-  RCSW_CHECK(0 == clock_gettime(CLOCK_REALTIME, out));
+  *out = clock_realtime();
 
-  /*
-   * Convert from relative timeout to the abs timeout expected by
-   * sem_wait().
-   */
-  out->tv_nsec += in->tv_nsec;
-  out->tv_sec += in->tv_sec + (out->tv_nsec / ONEE9);
-  out->tv_nsec %= ONEE9;
+  time_ts_add(out, in);
+
   return OK;
 
 error:
   return ERROR;
-} /* time_ts_ref_conv() */
+} /* time_ts_make_abs() */
+
 END_C_DECLS

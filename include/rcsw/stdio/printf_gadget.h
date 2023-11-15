@@ -16,7 +16,7 @@
  ******************************************************************************/
 #include "rcsw/stdio/printf_config.h"
 
-#include "rcsw/common/types.h"
+#include "rcsw/al/types.h"
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/common/common.h"
 

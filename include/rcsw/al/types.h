@@ -1,6 +1,6 @@
 /**
  * \file types.h
- * \ingroup common
+ * \ingroup al
  * \brief Base type definitions for RCSW.
  *
  * \copyright 2017 John Harwell, All rights reserved.
@@ -9,6 +9,11 @@
  */
 
 #pragma once
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+ #include "rcsw/al/al.h"
 
 /*******************************************************************************
  * Basic Type Definitions
@@ -21,14 +26,15 @@
 #define __linux__ 1
 #endif
 
+
+#if defined(__bootstrap__) /* for stdlib-less bootstraps
+
 /*
  * The OS preprocessor macros are defined automatically by the compiler. To see
  * what the default macros for a gcc-like compiler are, issue the command:
  *
- * gcc -dM -E - < /dev/NULL
+ * gcc -dM -E - < /dev/null
  */
-
-#if defined(__nos__) /* for bare metal */
 
 /* typedefs */
 typedef unsigned long uint32_t;
@@ -38,6 +44,7 @@ typedef unsigned char uint8_t;
 typedef long int32_t;
 typedef short int16_t;
 typedef char int8_t;
+
 
 /* defines */
 #ifndef NULL
@@ -54,14 +61,14 @@ typedef enum {
   true  = 1
 } bool_t;
 
+/*
+ * For bare-metal applications we can still use the stdlib.
+ */
+#elif defined(__linux__) || defined(__none__)
 
-extern uint32_t errno;
-
-#elif defined(__linux__) || defined(__arm__)
-
+#include <stdint.h>
 #include <errno.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,7 +98,7 @@ typedef enum {
 
 
 #else
-#error UNKNOWN OS: __nos__, __linux__ suppored
+#error Bad AL target: {__none__, __linux__, __bootstrap__} supported
 #endif
 
 /*******************************************************************************
@@ -147,11 +154,11 @@ enum exec_type {
  *
  * This can be overriden at compile time.
  */
-#if (RCSW_PTR_ALIGN == 4)
+#if (RCSW_CONFIG_PTR_ALIGN == 4)
 typedef uint32_t dptr_t;
-#elif (RCSW_PTR_ALIGN == 2)
+#elif (RCSW_CONFIG_PTR_ALIGN == 2)
 typedef uint16_t dptr_t;
-#elif (RCSW_PTR_ALIGN == 1)
+#elif (RCSW_CONFIG_PTR_ALIGN == 1)
 typedef uint8_t dptr_t;
 #else
 #error RCSW currently supports [1,2,4] byte pointer alignment

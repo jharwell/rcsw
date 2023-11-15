@@ -56,14 +56,6 @@ RCSW_API void time_ts_diff(const struct timespec * __restrict__ start,
                            struct timespec * __restrict__ diff);
 
 /**
- * \brief Convert a relative timeout to an absolute one.
- *
- * Required for many POSIX functions. Uses the system realtime clock.
- */
-RCSW_API status_t time_ts_make_abs(const struct timespec * __restrict__ in,
-                                   struct timespec * __restrict__ out);
-
-/**
  * \brief Convert a timespec to a scalar monotonic count in seconds.
  */
 RCSW_API double time_ts2mono(const struct timespec* const ts) RCSW_PURE;
@@ -77,12 +69,5 @@ RCSW_API size_t time_ts2monons(const struct timespec* const ts) RCSW_PURE;
  * \brief Convert a scalar monotonic count in nanoseconds to a timespec.
  */
 RCSW_API struct timespec time_monons2ts(size_t val);
-
-/**
- * \brief Get the monotonic system time
- *
- * \return The time
- */
-RCSW_API double time_monotonic_sec(void);
 
 END_C_DECLS
