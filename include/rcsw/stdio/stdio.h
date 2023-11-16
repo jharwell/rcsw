@@ -23,11 +23,11 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-#ifndef RCSW_STDIO_PUTCHAR
-#define RCSW_STDIO_PUTCHAR putchar
-#else
+#ifndef RCSW_CONFIG_STDIO_PUTCHAR
+#define RCSW_CONFIG_STDIO_PUTCHAR putchar
+#endif
 /**
- * \brief RCSW_STDIO_PUTCHAR
+ * \brief RCSW_CONFIG_STDIO_PUTCHAR
  *
  * The name of the putchar()-like function to send a character to stdout in some
  * way.
@@ -41,15 +41,15 @@ BEGIN_C_DECLS
  */
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
-RCSW_API int RCSW_STDIO_PUTCHAR(int c);
+RCSW_API int RCSW_CONFIG_STDIO_PUTCHAR(int c);
 RCSW_WARNING_DISABLE_POP()
+
+#ifndef RCSW_CONFIG_STDIO_GETCHAR
+#define RCSW_CONFIG_STDIO_GETCHAR getchar
 #endif
 
-#ifndef RCSW_STDIO_GETCHAR
-#define RCSW_STDIO_GETCHAR getchar
-#else
 /**
- * \brief RCSW_STDIO_GETCHAR
+ * \brief RCSW_CONFIG_STDIO_GETCHAR
  *
  * The name of the getchar()-like function to get a character from stdout in
  * some way.
@@ -63,9 +63,8 @@ RCSW_WARNING_DISABLE_POP()
  */
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
-RCSW_API int RCSW_STDIO_GETCHAR(void);
+RCSW_API int RCSW_CONFIG_STDIO_GETCHAR(void);
 RCSW_WARNING_DISABLE_POP()
-#endif
 
 /*******************************************************************************
  * Function Prototypes
@@ -91,13 +90,9 @@ RCSW_API size_t stdio_puts(const char *const s);
  *
  * \param c The char to write.
  */
-#if !defined(RCSW_STDIO_PUTCHAR_UNDEF)
 static inline int stdio_putchar(int c) {
-  return RCSW_STDIO_PUTCHAR(c);
+  return RCSW_CONFIG_STDIO_PUTCHAR(c);
 }
-#else
-static inline void stdio_putchar(int c) {}
-#endif
 
 /**
  * \brief Get a character from stdin.
@@ -107,11 +102,9 @@ static inline void stdio_putchar(int c) {}
  *
  * \return The character received.
  */
-#if !defined(RCSW_STDIO_GETCHAR_UNDEF)
 static inline int stdio_getchar(void) {
-  return RCSW_STDIO_GETCHAR();
+  return RCSW_CONFIG_STDIO_GETCHAR();
 }
-#endif
 
 /**
  * \brief Convert a string to a integer.

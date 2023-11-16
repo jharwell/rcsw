@@ -1,7 +1,6 @@
 /**
- * \file fpc.h
- * \ingroup common
- * \brief Simple statistic and metric-gathering engine.
+ * \file grind.h
+ * \ingroup profile
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
@@ -11,13 +10,13 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/grind.h"
+#include "rcsw/profile/grind.h"
 
 #include <math.h>
 
 #include "rcsw/al/clock.h"
 #define RCSW_ER_MODID ekLOG4CL_GRIND
-#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "grind")
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "profile", "grind")
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"

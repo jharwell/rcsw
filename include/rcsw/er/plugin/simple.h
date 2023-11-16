@@ -17,11 +17,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-
 #include "rcsw/rcsw.h"
 #include "rcsw/stdio/printf.h"
 
