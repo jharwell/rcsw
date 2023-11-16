@@ -16,6 +16,8 @@
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Get the monotonic system time.
  *
@@ -30,13 +32,4 @@ RCSW_API struct timespec clock_monotime(void);
  */
 RCSW_API struct timespec clock_realtime(void);
 
-/**
- * \brief Convert a relative timeout to an absolute one using \ref
- * clock_realtime() as a basis.
- *
- * Required for many POSIX functions.
- *
- * \param rel A relative timout.
- */
-RCSW_API status_t clock_abs_timeout(const struct timespec * __restrict__ rel,
-                                    struct timespec * out);
+END_C_DECLS

@@ -20,6 +20,8 @@
 #include "rcsw/utils/hash.h"
 #include "rcsw/utils/mem.h"
 #include "rcsw/utils/time.h"
+#include "rcsw/al/clock.h"
+
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 
@@ -230,10 +232,10 @@ CATCH_TEST_CASE("time Test", "[utils]") {
 
   CATCH_REQUIRE(time_ts_make_abs(&t1, &t2) == OK);
 
-  double m1 = time_monotonic_sec();
+  struct timespec ts1 = clock_monotime();
   sleep(1);
-  double m2 = time_monotonic_sec();
-  CATCH_REQUIRE(m2 > m1);
+  struct timespec ts2 = clock_monotime();
+  CATCH_REQUIRE(time_ts2mono(&ts2) > time_ts2mono(&ts1));
 }
 
 CATCH_TEST_CASE("checksum Test", "[utils]") {

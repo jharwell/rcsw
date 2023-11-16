@@ -64,17 +64,14 @@ void time_ts_diff(const struct timespec* const start,
   }
 } /* time_ts_diff() */
 
-status_t time_ts_make_abs(const struct timespec* const in,
+status_t time_ts_make_abs(const struct timespec* const rel,
                           struct timespec* const out) {
   /* Get current time */
   *out = clock_realtime();
 
-  time_ts_add(out, in);
+  time_ts_add(out, rel);
 
   return OK;
-
-error:
-  return ERROR;
 } /* time_ts_make_abs() */
 
 END_C_DECLS

@@ -27,7 +27,16 @@
 #endif
 
 
-#if defined(__bootstrap__) /* for stdlib-less bootstraps
+#if defined(__bootstrap__) /* for stdlib-less bootstraps */
+
+/*
+ * These are OK to include because they are header-only, and don't rely on
+ * stdlib. -nostdinc would make including these an error, but I don't think that
+ * makes sense, as they provide much better/more accurate typedefs across ANY
+ * bootstrap platform.
+ */
+#include <limits.h>
+#include <stdint.h>
 
 /*
  * The OS preprocessor macros are defined automatically by the compiler. To see
@@ -37,14 +46,19 @@
  */
 
 /* typedefs */
-typedef unsigned long uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char uint8_t;
 
-typedef long int32_t;
 typedef short int16_t;
-typedef char int8_t;
+typedef uint32_t size_t;
+typedef signed long int64_t;
+typedef long ptrdiff_t;
+typedef long intmax_t;
+typedef int64_t int_fast64_t;
 
+extern uint32_t errno;
+
+#define EINVAL -1
 
 /* defines */
 #ifndef NULL
@@ -64,7 +78,7 @@ typedef enum {
 /*
  * For bare-metal applications we can still use the stdlib.
  */
-#elif defined(__linux__) || defined(__none__)
+#elif defined(__linux__) || defined(__baremetal__)
 
 #include <stdint.h>
 #include <errno.h>
@@ -98,7 +112,7 @@ typedef enum {
 
 
 #else
-#error Bad AL target: {__none__, __linux__, __bootstrap__} supported
+#error Bad AL target: {__baremetal__, __linux__, __bootstrap__} supported
 #endif
 
 /*******************************************************************************

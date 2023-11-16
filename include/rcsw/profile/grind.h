@@ -1,6 +1,7 @@
 /**
  * \file grind.h
- * \ingroup common
+ * \ingroup profile
+ *
  * \brief Simple statistic and metric-gathering engine.
  *
  * \copyright 2023 John Harwell, All rights reserved.
@@ -13,8 +14,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <time.h>
-
 #include "rcsw/rcsw.h"
 #include "rcsw/common/flags.h"
 
