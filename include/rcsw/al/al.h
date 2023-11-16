@@ -21,7 +21,7 @@
  * \brief Configuration setting to build the abstraction layer for bare-metal
  * applications.
  */
-#define RCSW_AL_TARGET_NONE 1
+#define RCSW_AL_TARGET_BAREMETAL 1
 
 /**
  * \brief Configuration setting to build the abstraction layer for
@@ -29,8 +29,8 @@
  */
 #define RCSW_AL_TARGET_BOOTSTRAP 2
 
-#if RCSW_CONFIG_AL_TARGET == RCSW_AL_TARGET_NONE
-#define __none__
+#if RCSW_CONFIG_AL_TARGET == RCSW_AL_TARGET_BAREMETAL
+#define __baremetal__
 #endif
 
 #if RCSW_CONFIG_AL_TARGET == RCSW_AL_TARGET_BOOTSTRAP

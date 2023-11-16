@@ -15,8 +15,8 @@
  * Includes
  ******************************************************************************/
 #include <float.h>
-#include <limits.h>
 
+#include "rcsw/al/types.h"
 #include "rcsw/common/common.h"
 
 /*******************************************************************************
@@ -92,10 +92,10 @@ static inline int stdio_exp2(double_with_bit_access x)
 
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_FLOAT_EQUAL()
-static inline bool stdio_isnan(double value) { return value != value; }
+static inline bool_t stdio_isnan(double value) { return value != value; }
 RCSW_WARNING_DISABLE_POP()
 
-static inline bool stdio_isinf(double value) { return value < -DBL_MAX || value > DBL_MAX; }
+static inline bool_t stdio_isinf(double value) { return value < -DBL_MAX || value > DBL_MAX; }
 
 // A floor function - but one which only works for numbers whose
 // floor value is representable by an int.

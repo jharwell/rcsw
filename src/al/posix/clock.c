@@ -32,14 +32,4 @@ struct timespec clock_realtime(void) {
   return ts;
 } /* clock_realtime() */
 
-status_t clock_abs_timeout(const struct timespec* const rel,
-                           struct timespec* out) {
-  /* Get current time */
-  *out = clock_realtime();
-
-  time_ts_add(out, rel);
-
-  return OK;
-} /* time_ts_make_abs() */
-
 END_C_DECLS

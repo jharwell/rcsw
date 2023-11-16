@@ -43,6 +43,10 @@ Developer Setup
 RCSW ``cmake`` Configuration
 ----------------------------
 
+.. NOTE:: All cmake configuration options which have a direct analogue in the
+          code are prefixed with ``RCSW_CONFIG_``; those that don't (e.g.,
+          ``RCSW_SUMMARY``) are prefixed with ``RCSW_``.
+
 .. list-table::
    :widths: 15,75,10
    :header-rows: 1
@@ -225,7 +229,7 @@ RCSW ``cmake`` Configuration
        - ARM - 1
        - Everything else - 1
 
-   * - ``RCSW_CONFIG_SUMMARY``
+   * - ``RCSW_SUMMARY``
 
      - Show a summary of all RCSW-specific variables when running ``cmake``.
 
@@ -236,3 +240,27 @@ RCSW ``cmake`` Configuration
      - What type of library to build RCSW as (SHARED or STATIC).
 
      - ``STATIC``
+
+   * - ``RCSW_BUILD_FOR``
+
+     - Meta-option defining what "platform" RCSW should build against/for. Valid
+       values:
+
+       - ``POSIX`` - Build for linux/POSIX-y OSes. This is the most full-featured
+         RCSW.
+
+       - ``BAREMETAL`` - Build for baremetal environments without an OS. Still
+         enables/uses stdlib from the selected compiler.
+
+       - ``BOOTSTRAP`` - Build for baremetal environments without an OS AND
+         without stdlib.
+
+
+     - ``POSIX``
+
+   * - ``RCSW_WITHOUT_STDIO``
+
+     - Meta-option to remove the STDIO module from compilation. Useful if you
+       don't need it to reduce compilation times.
+
+     - ``NO``
