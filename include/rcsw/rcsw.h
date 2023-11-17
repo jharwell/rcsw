@@ -33,8 +33,7 @@
 * \brief Miscellaneous things that I found interesting or useful, such as time
 * manipulation, checksumming, hashing, and memory manipulation/dumping (for
 * embedded systems).
-* \defgroup pulse pulse
+* \defgroup swbus swbus
 * \brief Fully connected publisher-subscriber software network where everyone
 * can talk to everyone else.
-* \defgroup adapter adapter
 */

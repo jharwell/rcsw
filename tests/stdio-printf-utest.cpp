@@ -31,7 +31,6 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch.hpp>
 
-#define RCSW_CONFIG_STDIO_PUTCHAR myputchar
 #include "rcsw/stdio/printf_internal.h"
 #include "rcsw/stdio/printf_config.h"
 #include "rcsw/stdio/printf.h"
@@ -131,8 +130,7 @@ int th_putchar(int c) {
 }
 END_C_DECLS
 
-void _out_usf(char character, void* arg)
-{
+static void _out_usf(char character, void* arg) {
   (void)arg;
   printf_buffer[printf_idx++] = character;
 }

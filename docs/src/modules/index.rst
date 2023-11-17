@@ -19,6 +19,6 @@ usages.
    ds.rst
    multithread.rst
    multiprocess.rst
-   pulse.rst
+   swbus.rst
    stdio.rst
    utils.rst

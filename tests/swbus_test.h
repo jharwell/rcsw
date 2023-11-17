@@ -1,14 +1,13 @@
 /**
- * \file pulse_test.h
- * \brief PULSE test harness definitions.
+ * \file swbus_test.h
+ * \brief SWBUS test harness definitions.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef _PULSE_TEST_H_
-#define _PULSE_TEST_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -55,7 +54,7 @@ struct cvt { /* current value table */
   uint32_t thr_cnt;  /* # of pthreads */
   struct thread_data thr_tbl[MAX_THREADS]; /* array of thread data */
   struct parms parms;       /* program parameters */
-  struct pulse_inst *pulse;
+  struct swbus_inst *swbus;
 };
 
 /*******************************************************************************
@@ -80,4 +79,3 @@ int create_threads(uint32_t n_cons,
                    uint32_t delay_usecs);
 
 
-#endif /*  _PULSE_TEST_H_  */

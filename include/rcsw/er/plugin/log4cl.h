@@ -68,7 +68,7 @@
     ekLOG4CL_MT_PCQUEUE,                        \
     ekLOG4CL_MT_MPOOL,                          \
     ekLOG4CL_UTILS,                             \
-    ekLOG4CL_PULSE,                             \
+    ekLOG4CL_SWBUS,                             \
     ekLOG4CL_STDIO,                             \
     ekLOG4CL_GRIND,                             \
     ekLOG4CL_DS_CORE,                           \

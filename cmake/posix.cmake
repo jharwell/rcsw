@@ -85,16 +85,16 @@ macro(rcsw_posix_configure_components)
       "src/multithread")
 
     libra_component_register_as_src(
-      rcsw_pulse_SRC
+      rcsw_swbus_SRC
       rcsw
       "${rcsw_SRC}"
-      pulse
-      "src/pulse")
+      swbus
+      "src/swbus")
 
     set(components
       ${components}
       multithread
-      pulse
+      swbus
     )
   endif()
 
