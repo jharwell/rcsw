@@ -1,5 +1,6 @@
-.. _modules-multiprocess:
+.. _modules/multiprocess:
 
+============
 Multiprocess
 ============
 

@@ -2211,10 +2211,11 @@ PREDEFINED             = __cplusplus= \
                          RCSW_PURE= \
                          RCSW_CONST= \
                          RCSW_EXPORT= \
-                         RCSW_ER_PLUGIN=RCSW_ER_PLUGIN_LOG4CL\
-                         RCSW_STDIO_PUTCHAR=RCSW_STDIO_PUTCHAR \
-                         RCSW_STDIO_GETCHAR=RCSW_STDIO_GETCHAR \
-                         RCSW_PTR_ALIGN=4\
+                         RCSW_CONFIG_ER_PLUGIN=RCSW_ER_PLUGIN_LOG4CL\
+                         RCSW_CONFIG_STDIO_PUTCHAR=RCSW_STDIO_PUTCHAR \
+                         RCSW_CONFIG_STDIO_GETCHAR=RCSW_STDIO_GETCHAR \
+                         RCSW_CONFIG_PTR_ALIGN=4\
+                         RCSW_CONFIG_AL_TARGET=POSIX\
                          BEGIN_C_DECLS= \
                          LIBRA_ERL_LVL=LIBRA_ERL_ALL\
                          LIBRA_FPC=LIBRA_FPC_RETURN\

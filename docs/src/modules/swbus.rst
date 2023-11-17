@@ -1,5 +1,6 @@
 .. _modules/swbus:
 
+====================
 Software Bus (SWBUS)
 ====================
 

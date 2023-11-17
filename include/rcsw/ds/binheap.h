@@ -157,14 +157,15 @@ static inline size_t binheap_size(const struct binheap* const heap) {
 }
 
 /**
- * \brief Get the number of empty elements in heap
+ * \brief Get the heap capacity.
  *
  * \param heap The heap handle.
  *
- * \return # of free elements
+ * \return # possible elements the heap can hold.
  */
-static inline size_t binheap_n_free(struct binheap * heap) {
-    return darray_capacity(&heap->arr) - darray_size(&heap->arr);
+static inline size_t binheap_capacity(struct binheap * heap) {
+  RCSW_FPC_NV(0, NULL != heap);
+  return darray_capacity(&heap->arr);
 }
 
 /**

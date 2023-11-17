@@ -1,5 +1,6 @@
-.. _ln-modules-utils:
+.. _modules/utils:
 
+=====
 Utils
 =====
 

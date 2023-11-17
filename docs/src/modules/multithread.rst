@@ -1,5 +1,6 @@
-.. _modules-multithread:
+.. _modules/multithread:
 
+===========
 Multithread
 ===========
 
