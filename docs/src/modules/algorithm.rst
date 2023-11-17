@@ -1,5 +1,6 @@
-.. _modules-algorithm:
+.. _modules/algorithm:
 
+==========
 Algorithms
 ==========
 

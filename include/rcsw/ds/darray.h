@@ -171,7 +171,7 @@ static inline size_t darray_size(const struct darray* const arr) {
 }
 
 /**
- * \brief Determine arr capacity.
+ * \brief Determine array capacity.
  *
  * \param arr The dynamic array handle.
  *
@@ -336,8 +336,9 @@ RCSW_API int darray_idx_query(const struct darray * arr, const void * e);
  * Returns the item at the specified index. There is NO upper bounds checking to
  * make sure that index < \ref darray_size().
  *
- * \param arr The darray handle
- * \param index The index to get the data for
+ * \param arr The darray handle.
+
+ * \param index The index to get the data for.
  *
  * \return: The element, or NULL if an error occurred
  */
@@ -422,7 +423,8 @@ RCSW_API status_t darray_map(struct darray *arr, void (*f)(void *e));
  *
  */
 RCSW_API status_t darray_inject(const struct darray * arr,
-                       void (*f)(void *e, void *res), void *result);
+                                void (*f)(void *e, void *res),
+                                void *result);
 
 /**
  * \brief Filter out elements into a new darray

@@ -30,7 +30,7 @@ END_C_DECLS
 /*******************************************************************************
  * RCSW ER Plugin Definitions
  ******************************************************************************/
-/* \cond INTERNAL */
+    /* \cond INTERNAL */
 
 /*
  * 2023-11-14 [JRH]: zlog doesn't come with a TRACE level, so we add one as
@@ -81,3 +81,4 @@ enum {
 #define RCSW_ER_PLUGIN_INSMOD(ID, NAME)
 
 #define RCSW_ER_PLUGIN_HANDLE(ID, NAME) zlog_get_category(NAME)
+/* \endcond */

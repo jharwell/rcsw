@@ -77,6 +77,8 @@ RCSW_API struct timespec time_monons2ts(size_t val);
  * Required for many POSIX functions.
  *
  * \param rel A relative timout.
+ *
+ * \param out The converted absolute timeout.
  */
 RCSW_API status_t time_ts_make_abs(const struct timespec * __restrict__ rel,
                                    struct timespec * out);

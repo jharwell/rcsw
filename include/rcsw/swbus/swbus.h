@@ -323,7 +323,7 @@ RCSW_API status_t swbus_publish(struct swbus * swb,
                                 const void* pkt);
 
 /**
- * \brief Reserve a buffer on a \ref swb instance.
+ * \brief Reserve a buffer on a \ref swbus instance.
  *
  * A suitable buffer will be found in the first pool large enough to contain the
  * packet and has free space.

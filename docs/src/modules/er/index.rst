@@ -1,4 +1,4 @@
-.. _modules-er:
+.. _modules/er:
 
 ====================
 Event Reporting (ER)

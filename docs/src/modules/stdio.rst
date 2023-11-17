@@ -1,5 +1,6 @@
-.. _modules-stdio:
+.. _modules/stdio:
 
+==============================
 Simple I/O Replacement Library
 ==============================
 

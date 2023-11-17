@@ -197,7 +197,7 @@ RCSW ``cmake`` Configuration
 
    * - ``RCSW_CONFIG_ER_PLUGIN``
 
-     - The default event reporting plugin to use. See :ref:`modules-er` for
+     - The default event reporting plugin to use. See :ref:`modules/er` for
        details.
 
      - ``LOG4CL``
@@ -205,7 +205,7 @@ RCSW ``cmake`` Configuration
    * - ``RCSW_CONFIG_ER_PLUGIN_PATH``
 
      - The path to the ``#include`` file for a custom ER plugin. See
-       :ref:`modules-er` for details.
+       :ref:`modules/er` for details.
 
      - Empty
 
