@@ -1,7 +1,7 @@
-.. _modules-pulse:
+.. _modules/swbus:
 
-PUbLisher SubscribEr (PULSE)
-============================
+Software Bus (SWBUS)
+====================
 
 A publisher subscriber system, in which any number of
 tasks/threads/processes/etc. can send arbitrarily sized packets to each other

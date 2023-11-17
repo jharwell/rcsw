@@ -1,6 +1,6 @@
 /**
- * \file pulse-test.cpp
- * \brief Test of PULSE features.
+ * \file swbus-test.cpp
+ * \brief Test of SWBUS features.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -16,15 +16,15 @@
 #include <thread>
 #include <mutex>
 
-#include "rcsw/pulse/pulse.h"
-#include "tests/pulse_test.h"
+#include "rcsw/swbus/swbus.h"
+#include "tests/swbus_test.h"
 #include "rcsw/er/client.h"
 #include "tests/ds_test.h"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using pulse_test = void(*)(const struct pulse_params* const params,
+using swbus_test = void(*)(const struct swbus_params* const params,
                            size_t n_threads);
 #define TH_MAX_POOLS 16
 #define TH_MAX_RXQS 16
@@ -36,10 +36,10 @@ using pulse_test = void(*)(const struct pulse_params* const params,
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-static void run_test(pulse_test test, size_t n_threads = 1) {
+static void run_test(swbus_test test, size_t n_threads = 1) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
 
-  struct pulse_params bus_params;
+  struct swbus_params bus_params;
   bus_params.max_pools = TH_MAX_POOLS;
   bus_params.max_rxqs = TH_MAX_RXQS;
   bus_params.max_subs = TH_MAX_SUBS;
@@ -60,7 +60,7 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
   uint32_t flags[] = {
     RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
-    RCSW_PULSE_ASYNC
+    RCSW_SWBUS_ASYNC
   };
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
@@ -82,65 +82,65 @@ static void run_test(pulse_test test, size_t n_threads = 1) {
  * Test Functions
  ******************************************************************************/
 /**
- * \brief Test PULSE initialization (verrrryyy simplistic sanity test).
+ * \brief Test SWBUS initialization (verrrryyy simplistic sanity test).
  */
-static void init_test(const struct pulse_params * params, size_t) {
-  struct pulse mypulse;
-  struct pulse *pulse;
+static void init_test(const struct swbus_params * params, size_t) {
+  struct swbus myswbus;
+  struct swbus *swbus;
 
-  pulse = pulse_init(&mypulse, params);
-  CATCH_REQUIRE(nullptr != pulse);
+  swbus = swbus_init(&myswbus, params);
+  CATCH_REQUIRE(nullptr != swbus);
 
-  pulse_destroy(pulse);
+  swbus_destroy(swbus);
 } /* init_test() */
 
 /**
  * \brief Test subscribing an RXQ to multiple packets. Doesn't test publishing.
  */
-static void subscribe_test(const struct pulse_params * params, size_t) {
-  struct pulse_rxq_ent rxq_buf[RXQ_SIZE];
-  struct pulse mypulse;
-  struct pulse * pulse;
+static void subscribe_test(const struct swbus_params * params, size_t) {
+  struct swbus_rxq_ent rxq_buf[RXQ_SIZE];
+  struct swbus myswbus;
+  struct swbus * swbus;
 
-  pulse = pulse_init(&mypulse, params);
-  CATCH_REQUIRE(nullptr != pulse);
+  swbus = swbus_init(&myswbus, params);
+  CATCH_REQUIRE(nullptr != swbus);
 
-  struct pcqueue * rxq = pulse_rxq_init(pulse, rxq_buf, RXQ_SIZE);
+  struct pcqueue * rxq = swbus_rxq_init(swbus, rxq_buf, RXQ_SIZE);
   CATCH_REQUIRE(nullptr != rxq);
 
   for (size_t i = 0; i < TH_MAX_SUBS; ++i) {
-    CATCH_REQUIRE(llist_size(pulse->subscribers) == i);
-    CATCH_REQUIRE(pulse_subscribe(pulse, rxq, i) == OK);
-    CATCH_REQUIRE(llist_size(pulse->subscribers) == i + 1);
+    CATCH_REQUIRE(llist_size(swbus->subscribers) == i);
+    CATCH_REQUIRE(swbus_subscribe(swbus, rxq, i) == OK);
+    CATCH_REQUIRE(llist_size(swbus->subscribers) == i + 1);
   } /* for() */
 
   for (size_t i = 0; i < TH_MAX_SUBS; ++i) {
-    CATCH_REQUIRE(llist_size(pulse->subscribers) == TH_MAX_SUBS - i);
-    CATCH_REQUIRE(pulse_unsubscribe(pulse, rxq, i) == OK);
-    CATCH_REQUIRE(llist_size(pulse->subscribers) == TH_MAX_SUBS - i - 1);
+    CATCH_REQUIRE(llist_size(swbus->subscribers) == TH_MAX_SUBS - i);
+    CATCH_REQUIRE(swbus_unsubscribe(swbus, rxq, i) == OK);
+    CATCH_REQUIRE(llist_size(swbus->subscribers) == TH_MAX_SUBS - i - 1);
   } /* for() */
 
-  CATCH_REQUIRE(llist_isempty(pulse->subscribers));
+  CATCH_REQUIRE(llist_isempty(swbus->subscribers));
 
-  pulse_destroy(pulse);
+  swbus_destroy(swbus);
 } /* subscribe_test() */
 
 /**
- * \brief Test serially filling all PULSE buffer pools.
+ * \brief Test serially filling all SWBUS buffer pools.
  *
  * - Publishing multiple packet types
  * - Pushing packets to multiple to multiple RXQs
  */
 
-static void serial_stress_test(const struct pulse_params * params, size_t) {
-  struct pulse mypulse;
-  struct pulse * pulse;
+static void serial_stress_test(const struct swbus_params * params, size_t) {
+  struct swbus myswbus;
+  struct swbus * swbus;
 
-  pulse = pulse_init(&mypulse, params);
-  CATCH_REQUIRE(nullptr != pulse);
+  swbus = swbus_init(&myswbus, params);
+  CATCH_REQUIRE(nullptr != swbus);
   uint8_t* buf = (uint8_t*)malloc(TH_RXQ_SIZE);
-  struct pcqueue * rxq = pulse_rxq_init(pulse, nullptr, TH_RXQ_SIZE);
-  struct pcqueue * rxq2 = pulse_rxq_init(pulse, nullptr, TH_RXQ_SIZE);
+  struct pcqueue * rxq = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
+  struct pcqueue * rxq2 = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
   CATCH_REQUIRE(nullptr != rxq);
   CATCH_REQUIRE(nullptr != rxq2);
 
@@ -148,23 +148,23 @@ static void serial_stress_test(const struct pulse_params * params, size_t) {
    * Subscribe to a packet ID, and fill the bus with packets corresponding to
    * that ID. The published data is invalid/ not initialized.
    */
-  CATCH_REQUIRE(pulse_subscribe(pulse, rxq, 0) == OK);
-  CATCH_REQUIRE(pulse_subscribe(pulse, rxq2, 0) == OK);
-  CATCH_REQUIRE(pulse_subscribe(pulse, rxq, 1) == OK);
-  CATCH_REQUIRE(pulse_subscribe(pulse, rxq2, 1) == OK);
+  CATCH_REQUIRE(swbus_subscribe(swbus, rxq, 0) == OK);
+  CATCH_REQUIRE(swbus_subscribe(swbus, rxq2, 0) == OK);
+  CATCH_REQUIRE(swbus_subscribe(swbus, rxq, 1) == OK);
+  CATCH_REQUIRE(swbus_subscribe(swbus, rxq2, 1) == OK);
 
   for (size_t i = 0; i < params->max_pools; ++i) {
-    struct mpool* bp = &pulse->pools[i];
+    struct mpool* bp = &swbus->pools[i];
     for (size_t j = 0; j < mpool_capacity(bp) / 2; ++j) {
       CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j);
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j);
-      CATCH_REQUIRE(pulse_publish(pulse,
+      CATCH_REQUIRE(swbus_publish(swbus,
                                   0,
                                   params->pools[i].elt_size,
                                   buf) == OK);
       CATCH_REQUIRE(pcqueue_size(rxq) == 2* j + 1);
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j + 1);
-      CATCH_REQUIRE(pulse_publish(pulse,
+      CATCH_REQUIRE(swbus_publish(swbus,
                                   1,
                                   params->pools[i].elt_size,
                                   buf) == OK);
@@ -179,8 +179,8 @@ static void serial_stress_test(const struct pulse_params * params, size_t) {
      * Dequeue packets for this buffer pool, verifying everything as we go.
      */
     for (size_t j = 0; j < mpool_capacity(bp); ++j) {
-      struct pulse_rxq_ent* ptr = pulse_rxq_front(rxq);
-      struct pulse_rxq_ent* ptr2 = pulse_rxq_front(rxq2);
+      struct swbus_rxq_ent* ptr = swbus_rxq_front(rxq);
+      struct swbus_rxq_ent* ptr2 = swbus_rxq_front(rxq2);
 
       CATCH_REQUIRE(nullptr != ptr);
       CATCH_REQUIRE(nullptr != ptr2);
@@ -192,40 +192,40 @@ static void serial_stress_test(const struct pulse_params * params, size_t) {
       CATCH_REQUIRE(pcqueue_size(rxq2) == TH_RXQ_SIZE - j);
       CATCH_REQUIRE(mpool_ref_count(bp, ptr->data) == 2);
 
-      CATCH_REQUIRE(OK == pulse_rxq_pop_front(rxq, ptr));
+      CATCH_REQUIRE(OK == swbus_rxq_pop_front(rxq, ptr));
       CATCH_REQUIRE(pcqueue_size(rxq) == TH_RXQ_SIZE - j - 1);
       CATCH_REQUIRE(mpool_ref_count(bp, ptr->data) == 1);
 
-      CATCH_REQUIRE(OK == pulse_rxq_pop_front(rxq2, ptr2));
+      CATCH_REQUIRE(OK == swbus_rxq_pop_front(rxq2, ptr2));
       CATCH_REQUIRE(pcqueue_size(rxq2) == TH_RXQ_SIZE - j - 1);
       CATCH_REQUIRE(mpool_ref_count(bp, ptr->data) == 0);
     } /* for(j..) */
   } /* for(i..) */
 
-  pulse_destroy(pulse);
+  swbus_destroy(swbus);
   free(buf);
 }
 /**
- * \brief Test PULSE in a concurrent setting
+ * \brief Test SWBUS in a concurrent setting
  *
  * - Publishing multiple packet types
  * - Pushing packets to multiple to multiple RXQs
  */
 
-static void concurrent_stress_test(const struct pulse_params * params,
+static void concurrent_stress_test(const struct swbus_params * params,
                                    size_t n_threads) {
-  struct pulse mypulse;
-  struct pulse * pulse;
+  struct swbus myswbus;
+  struct swbus * swbus;
 
-  pulse = pulse_init(&mypulse, params);
-  CATCH_REQUIRE(nullptr != pulse);
+  swbus = swbus_init(&myswbus, params);
+  CATCH_REQUIRE(nullptr != swbus);
   uint8_t* buf = (uint8_t*)malloc(TH_RXQ_SIZE);
   size_t n_publishers = n_threads;
   size_t n_consumers = 10; /* always 10 to make RXQ usage easier here */
   struct pcqueue* rxqs[10];
 
   for (size_t i = 0; i < n_consumers; ++i) {
-    rxqs[i] = pulse_rxq_init(pulse, nullptr, TH_RXQ_SIZE);
+    rxqs[i] = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
     CATCH_REQUIRE(nullptr != rxqs[i]);
   } /* for(i..) */
 
@@ -246,7 +246,7 @@ static void concurrent_stress_test(const struct pulse_params * params,
   };
   for (auto &pair : subscriptions) {
     for (size_t i = 0; i < pair.second.size(); ++i) {
-      CATCH_REQUIRE(pulse_subscribe(pulse,
+      CATCH_REQUIRE(swbus_subscribe(swbus,
                                     rxqs[pair.first],
                                     pair.second[i]) == OK);
     } /* for(i..) */
@@ -258,7 +258,7 @@ static void concurrent_stress_test(const struct pulse_params * params,
 
   auto pub_cb = [&]() {
                   for (size_t i = 0; i < TH_RXQ_SIZE * 2 / n_threads; ++i) {
-                    status_t rval = pulse_publish(pulse,
+                    status_t rval = swbus_publish(swbus,
                                          i % TH_MAX_PID,
                                          params->pools[rand() % params->max_pools].elt_size,
                                          buf);
@@ -274,7 +274,7 @@ static void concurrent_stress_test(const struct pulse_params * params,
                                         .tv_nsec = (rand()  % 1000) + 1};
                   auto& subs = subscriptions[id];
                   while (count < 100) {
-                    struct pulse_rxq_ent* ent = pulse_rxq_timedwait(pulse,
+                    struct swbus_rxq_ent* ent = swbus_rxq_timedwait(swbus,
                                                                     rxqs[id],
                                                                     &to);
                     if (nullptr == ent) {
@@ -288,7 +288,7 @@ static void concurrent_stress_test(const struct pulse_params * params,
 
                     mtx.unlock();
 
-                    rval = pulse_rxq_pop_front(rxqs[id],
+                    rval = swbus_rxq_pop_front(rxqs[id],
                                                ent);
                     mtx.lock();
                     checks.push_back(rval == OK);
@@ -324,35 +324,35 @@ static void concurrent_stress_test(const struct pulse_params * params,
   for (size_t i = 0; i < n_consumers; ++i) {
     auto& subs = subscriptions[i];
     while (!pcqueue_isempty(rxqs[i])) {
-      struct pulse_rxq_ent* ent = pulse_rxq_front(rxqs[i]);
+      struct swbus_rxq_ent* ent = swbus_rxq_front(rxqs[i]);
       CATCH_REQUIRE(std::find(subs.begin(),
                               subs.end(),
                               ent->pid) != subs.end());
-      CATCH_REQUIRE(OK == pulse_rxq_pop_front(rxqs[i],
+      CATCH_REQUIRE(OK == swbus_rxq_pop_front(rxqs[i],
                                               ent));
     }
   } /* for(i..) */
 
 
   for (size_t i = 0; i < params->max_pools; ++i) {
-    struct mpool* bp = &pulse->pools[i];
+    struct mpool* bp = &swbus->pools[i];
     CATCH_REQUIRE(llist_isfull(&bp->free));
     CATCH_REQUIRE(llist_isempty(&bp->alloc));
   }
 
-  pulse_destroy(pulse);
+  swbus_destroy(swbus);
   free(buf);
 }
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Init Test", "[pulse]") { run_test(init_test); }
-CATCH_TEST_CASE("Subscribe Test", "[pulse]") { run_test(subscribe_test); }
-CATCH_TEST_CASE("Serial Multi-RXQ, Multi-PID", "[pulse]") {
+CATCH_TEST_CASE("Init Test", "[swbus]") { run_test(init_test); }
+CATCH_TEST_CASE("Subscribe Test", "[swbus]") { run_test(subscribe_test); }
+CATCH_TEST_CASE("Serial Multi-RXQ, Multi-PID", "[swbus]") {
   run_test(serial_stress_test);
 }
-CATCH_TEST_CASE("Concurrent Multi-RXQ, Multi-PID", "[pulse]") {
+CATCH_TEST_CASE("Concurrent Multi-RXQ, Multi-PID", "[swbus]") {
   for (size_t i = 2; i < 10; ++i) {
     run_test(concurrent_stress_test, i);
   } /* for(i..) */

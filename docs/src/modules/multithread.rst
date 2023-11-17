@@ -23,7 +23,7 @@ The multithread library is comprised of the following modules:
 
    * - Memory pool
      - Used by threads to request/release memory chunks of a specified
-       size. Useful in publisher-subscriber settings (e.g., :class:`pulse`).
+       size. Useful in publisher-subscriber settings (e.g., :class:`swbus`).
 
      - :class:`mpool`
 
