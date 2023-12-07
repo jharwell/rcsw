@@ -226,7 +226,7 @@ static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
  * \return The initialized list, or NULL if an ERROR occurred
  */
 RCSW_API struct darray *darray_init(struct darray *arr_in,
-                           const struct darray_params * params) RCSW_CHECK_RET;
+                           const struct darray_params * params) RCSW_WUR;
 
 /**
  * \brief Delete a darray

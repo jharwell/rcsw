@@ -8,7 +8,7 @@ set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 21)
+set(PROJECT_VERSION_PATCH 22)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -32,11 +32,15 @@ endif()
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
 elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
   set(RCSW_CONFIG_LIBTYPE STATIC)
-elseif("${RCSW_BUILD_FOR}" MATCHES "BOOTSTRAP" )
-  set(RCSW_CONFIG_LIBTYPE STATIC)
-  set(RCSW_CONFIG_NOALLOC YES)
-  set(RCSW_CONFIG_ER_PLUGIN SIMPLE)
-  set(LIBRA_STDLIB NO CACHE BOOL "" FORCE)
+  if(${LIBRA_NOSTDLIB})
+      set(RCSW_CONFIG_NOALLOC YES)
+      set(RCSW_CONFIG_ER_PLUGIN SIMPLE)
+      if(${RCSW_WITHOUT_STDIO})
+        message(FATAL_ERROR "RCSW requires RCSW_WITHOUT_STDIO=NO when
+building for baremetal without the standard library.")
+      endif()
+  # set(LIBRA_STDLIB NO CACHE BOOL "" FORCE)
+  endif()
 endif()
 
 if (NOT RCSW_SUMMARY)
@@ -124,11 +128,15 @@ if(NOT RCSW_CONFIG_ER_PLUGIN)
 endif()
 
 ########################################
+# Tools
+########################################
+if(NOT RCSW_CONFIG_TOOL_NO_GRIND)
+  set(RCSW_CONFIG_TOOL_NO_GRIND NO)
+endif()
+
+########################################
 # Misc.
 ########################################
-if(NOT RCSW_CONFIG_NO_GRIND)
-  set(RCSW_CONFIG_NO_GRIND NO)
-endif()
 
 if(NOT LIBRA_FPC)
   set(LIBRA_FPC  RETURN)
@@ -159,11 +167,8 @@ if("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
 elseif("${RCSW_BUILD_FOR}" MATCHES "POSIX")
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/posix.cmake)
   rcsw_posix_configure_components()
-elseif("${RCSW_BUILD_FOR}" MATCHES "BOOTSTRAP")
-  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/bootstrap.cmake)
-  rcsw_bootstrap_configure_components()
 else()
-  message(FATAL_ERROR "AL target must be {POSIX,BAREMETAL,BOOTSTRAP}")
+  message(FATAL_ERROR "AL target must be {POSIX,BAREMETAL}")
 endif()
 
 libra_requested_components_check(rcsw)
@@ -234,7 +239,7 @@ set (RCSW_ONOFF_CONFIG
   RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
   RCSW_CONFIG_STDIO_PRINTF_WITH_LL
   RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL
-  RCSW_CONFIG_NO_GRIND
+  RCSW_CONFIG_TOOL_NO_GRIND
   RCSW_CONFIG_NOALLOC
   RCSW_CONFIG_ZALLOC
 )
@@ -254,7 +259,7 @@ set (RCSW_VALUE_CONFIG
   RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
   RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
   RCSW_CONFIG_STDIO_PUTCHAR
-  RCSW_CONFIG_STDIO_GETTCHAR
+  RCSW_CONFIG_STDIO_GETCHAR
   RCSW_CONFIG_PTR_ALIGN
 )
 foreach(config ${RCSW_VALUE_CONFIG})
@@ -354,7 +359,7 @@ if(${RCSW_SUMMARY})
     RCSW_CONFIG_PTR_ALIGN
     RCSW_CONFIG_NOALLOC
     RCSW_CONFIG_ZALLOC
-    RCSW_CONFIG_NO_GRIND
+    RCSW_CONFIG_TOOL_NO_GRIND
     RCSW_WITHOUT_STDIO
     RCSW_CONFIG_STDIO_GETCHAR
     RCSW_CONFIG_STDIO_PUTCHAR
@@ -397,7 +402,7 @@ if(${RCSW_SUMMARY})
     message(STATUS "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_WITHOUT_STDIO}${ColorReset} [RCSW_WITHOUT_STDIO]")
   endif()
 
-  message(STATUS "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_NO_GRIND}${ColorReset} [RCSW_CONFIG_NO_GRIND]")
+  message(STATUS "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}${ColorReset} [RCSW_CONFIG_TOOL_NO_GRIND]") 
   message("")
   message("${BoldBlue}--------------------------------------------------------------------------------${ColorReset}")
 

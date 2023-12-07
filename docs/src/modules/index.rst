@@ -15,6 +15,7 @@ usages.
 .. toctree::
 
    algorithm.rst
+   boot.rst
    er/index.rst
    ds.rst
    multithread.rst

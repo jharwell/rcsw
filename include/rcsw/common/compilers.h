@@ -151,6 +151,34 @@
 
 #endif /* RCSW_ATTR */
 
+#if defined(RCSW_ISR)
+#error RCSW_ISR defined!
+
+#else
+
+/**
+ * \def RCSW_ISR
+ *
+ * Mark a function as an interrupt service routine (ISR).
+ */
+#define RCSW_ISR __attribute__((interrupt))
+
+#endif /* RCSW_ISR */
+
+#if defined(RCSW_SECTION)
+#error RCSW_SECTION defined!
+
+#else
+
+/**
+ * \def RCSW_SECTION
+ *
+ * Mark something as a belonging in a specific section.
+ */
+#define RCSW_SECTION(SECTION) __attribute__((section(SECTION)))
+
+#endif /* RCSW_SECTION */
+
 #if defined(RCSW_CONST)
 #error RCSW_CONST defined!
 
@@ -217,7 +245,7 @@
 #define RCSW_UNUSED
 #define RCSW_PURE
 #define RCSW_DEAD
-#define RCSW_CHECK_RET
+#define RCSW_WUR
 
 #elif defined(__clang__) || defined(__GNUC__)
 
@@ -252,18 +280,18 @@
 
 #endif /* RCSW_UNUSED */
 
-#if defined(RCSW_CHECK_RET)
-#error RCSW_CHECK_RET defined!
+#if defined(RCSW_WUR)
+#error RCSW_WUR defined!
 
 #else
 
 /**
- * \def RCSW_CHECK_RET Shorthand for enhancing compile checking of return value
+ * \def RCSW_WUR Shorthand for enhancing compile checking of return value
  * usage.
  */
-#define RCSW_CHECK_RET __attribute__((warn_unused_result))
+#define RCSW_WUR __attribute__((warn_unused_result))
 
-#endif /* RCSW_CHECK_RET */
+#endif /* RCSW_WUR */
 
 #if defined(RCSW_PURE)
 #error RCSW_PURE defined!

@@ -27,58 +27,11 @@
 #endif
 
 
-#if defined(__bootstrap__) /* for stdlib-less bootstraps */
 
 /*
- * These are OK to include because they are header-only, and don't rely on
- * stdlib. -nostdinc would make including these an error, but I don't think that
- * makes sense, as they provide much better/more accurate typedefs across ANY
- * bootstrap platform.
+ * For Linux applications.
  */
-#include <limits.h>
-#include <stdint.h>
-
-/*
- * The OS preprocessor macros are defined automatically by the compiler. To see
- * what the default macros for a gcc-like compiler are, issue the command:
- *
- * gcc -dM -E - < /dev/null
- */
-
-/* typedefs */
-typedef unsigned short uint16_t;
-typedef unsigned char uint8_t;
-
-typedef short int16_t;
-typedef uint32_t size_t;
-typedef signed long int64_t;
-typedef long ptrdiff_t;
-typedef long intmax_t;
-typedef int64_t int_fast64_t;
-
-extern uint32_t errno;
-
-#define EINVAL -1
-
-/* defines */
-#ifndef NULL
-#define NULL ((void *)0)
-#endif /* NULL */
-
-#if defined(true) || defined(false)
-#undef true
-#undef false
-#endif
-
-typedef enum {
-  false = 0,
-  true  = 1
-} bool_t;
-
-/*
- * For bare-metal applications we can still use the stdlib.
- */
-#elif defined(__linux__) || defined(__baremetal__)
+#if defined(__linux__)
 
 #include <stdint.h>
 #include <errno.h>
@@ -110,9 +63,82 @@ typedef enum {
 #define bool_t bool
 #endif
 
+/*
+ * For bare-metal applications with no OS (can still use stdlib)
+ */
+#elif defined(__baremetal__)
+
+
+/*
+ * For stdlib-less bare-metal applications.
+ */
+#if defined(__nostdlib__)
+
+/*
+ * These are OK to include because they are header-only, and don't rely on
+ * stdlib. -nostdinc would make including these an error, but I don't think that
+ * makes sense, as they provide much better/more accurate typedefs across ANY
+ * bootstrap platform.
+ */
+#include <limits.h>
+#include <stdint.h>
+
+/*
+ * The OS preprocessor macros are defined automatically by the compiler. To see
+ * what the default macros for a gcc-like compiler are, issue the command:
+ *
+ * gcc -dM -E - < /dev/null
+ */
+
+/* typedefs */
+typedef unsigned short uint16_t;
+typedef unsigned char uint8_t;
+
+typedef short int16_t;
+/* typedef uint32_t size_t; */
+/* typedef signed long int64_t; */
+/* typedef long ptrdiff_t; */
+/* typedef long intmax_t; */
+/* typedef int64_t int_fast64_t; */
+
+extern uint32_t errno;
+
+#define EINVAL -1
+
+/* defines */
+#ifndef NULL
+#define NULL ((void *)0)
+#endif /* NULL */
+
+#if defined(true) || defined(false)
+#undef true
+#undef false
+#endif
+
+#define bool_t bool
+/* typedef enum { */
+/*   false = 0, */
+/*   true  = 1 */
+/* } bool_t; */
+
+#else /* we can use stdlib */
+
+#define bool_t bool
+
+#include <stdint.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <assert.h>
+#endif
 
 #else
-#error Bad AL target: {__baremetal__, __linux__, __bootstrap__} supported
+#error Bad AL target: {__baremetal__, __linux__} supported
 #endif
 
 /*******************************************************************************
@@ -133,7 +159,6 @@ typedef enum {
     /** Return this when a function fails. */
     ERROR    = -1,
 } status_t;
-
 
 /**
  * \brief A runtime exec method switch for SOMETHING.
@@ -168,6 +193,12 @@ enum exec_type {
  *
  * This can be overriden at compile time.
  */
+/*
+ * Pointer alignment not relevant for bare-metal targets, because none of the
+ * data structures or more complex modules are built.
+ */
+#if !defined(__baremetal__)
+
 #if (RCSW_CONFIG_PTR_ALIGN == 4)
 typedef uint32_t dptr_t;
 #elif (RCSW_CONFIG_PTR_ALIGN == 2)
@@ -175,5 +206,7 @@ typedef uint16_t dptr_t;
 #elif (RCSW_CONFIG_PTR_ALIGN == 1)
 typedef uint8_t dptr_t;
 #else
-#error RCSW currently supports [1,2,4] byte pointer alignment
+#error No pointer alignment defined. RCSW currently supports [1,2,4] byte pointer alignment.
+#endif
+
 #endif

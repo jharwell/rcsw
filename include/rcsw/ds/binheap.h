@@ -224,7 +224,7 @@ static inline size_t binheap_height(const struct binheap * heap) {
  * \return The initialized heap, or NULL if an error occurred.
  */
 RCSW_API struct binheap *binheap_init(struct binheap *heap_in,
-                             const struct binheap_params * params) RCSW_CHECK_RET;
+                             const struct binheap_params * params) RCSW_WUR;
 
 /**
  * \brief Destroy a heap. Any further use of the heap handle after calling this

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
 RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
-                            uint32_t flags) RCSW_CHECK_RET;
+                            uint32_t flags) RCSW_WUR;
 
 /**
  * \brief Destroy a reader/writer fair lock

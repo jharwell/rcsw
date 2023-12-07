@@ -1,6 +1,6 @@
 /**
  * \file grind.h
- * \ingroup profile
+ * \ingroup tool
  *
  * \brief Simple statistic and metric-gathering engine.
  *

@@ -300,7 +300,7 @@
                           handle,               \
                           RCSW_ER_MODID,        \
                           RCSW_ER_MODNAME,      \
-                          msg "\n",             \
+                          msg "\r\n",           \
                           ## __VA_ARGS__)       \
   }
 

@@ -20,12 +20,15 @@
  * Macros
  ******************************************************************************/
 /* these macros operate on single characters */
-#define STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
-#define STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
-#define STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
-#define STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
-#define STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
-#define STDIO_ISALPHA(c)                                            \
+#define RCSW_STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
+#define RCSW_STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
+#define RCSW_STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
+#define RCSW_STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
+#define RCSW_STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
+#define RCSW_STDIO_ISHEX(c) (RCSW_STDIO_ISDIGIT(c) ||           \
+                             ((c) >= 'a' && (c) <= 'f') ||              \
+                             ((c) >= 'A' && (c) <= 'F') ? 1 : 0)
+#define RCSW_STDIO_ISALPHA(c)                                           \
   ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
 
 /*******************************************************************************
@@ -42,11 +45,28 @@ BEGIN_C_DECLS
  * \param dest Destination of copy.
  * \param src Source of copy.
  * \param n # of bytes to copy.
- * \return Memory pointed to by dest
+ *
+ * \return Memory pointed to by dest.
  */
 RCSW_API void* stdio_memcpy(void* __restrict__ dest,
-                   const void* __restrict__ src,
-                   size_t n);
+                            const void* __restrict__ src,
+                            size_t n);
+
+/**
+ * \brief Set memory.
+ *
+ * Fills the first \p n bytes of the memory area pointed to by \p dest with the
+ * constant byte \p c.
+ *
+ * \param dest Destination of copy.
+ * \param c The byte to use.
+ * \param n # of bytes to copy.
+ *
+ * \return Memory pointed to by dest.
+ */
+RCSW_API void* stdio_memset(void* __restrict__ dest,
+                            int c,
+                            size_t n);
 
 /**
  * \brief Convert a char to upper case.
@@ -116,7 +136,7 @@ RCSW_API void stdio_strrev(char *s, size_t len);
  *          found.
  */
 RCSW_API const char *stdio_strstr(const char * haystack,
-                         const char * needle) RCSW_PURE;
+                                  const char * needle) RCSW_PURE;
 
 /**
  * \brief Search a string for a character.
@@ -150,8 +170,8 @@ RCSW_API const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
  * \return Pointer to dest.
  */
 RCSW_API char *stdio_strncpy(char * __restrict__ dest,
-                    const char * __restrict__ src,
-                    size_t n);
+                             const char * __restrict__ src,
+                             size_t n);
 
 /**
  * \brief Copy one string over another.
@@ -214,7 +234,7 @@ RCSW_API int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
  * \return The updated string.
  */
 RCSW_API char *stdio_strrep(const char * __restrict__ original,
-                   const char * __restrict__ pattern,
-                   const char * __restrict__ replacement,
-                   char * __restrict__ new_str);
+                            const char * __restrict__ pattern,
+                            const char * __restrict__ replacement,
+                            char * __restrict__ new_str);
 END_C_DECLS

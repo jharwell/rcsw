@@ -232,7 +232,7 @@ static inline status_t adj_matrix_transpose(struct adj_matrix* const matrix) {
  * \return The initialized adjacency matrix, or NULL if an error occurred.
  */
 RCSW_API struct adj_matrix* adj_matrix_init(struct adj_matrix* matrix_in,
-                                            const struct adj_matrix_params* params) RCSW_CHECK_RET;
+                                            const struct adj_matrix_params* params) RCSW_WUR;
 
 /**
  * \brief Destroy an adjacency matrix. Any further use of the provided handle is

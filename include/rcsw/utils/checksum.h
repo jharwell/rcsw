@@ -27,7 +27,7 @@ BEGIN_C_DECLS
  * \param n_bytes # bytes in buffer
  * \param seed Starting value for checksum
  *
- * \return computed 8-bit checksum
+ * \return Computed 8-bit checksum
  */
 RCSW_API uint8_t xchks8(const uint8_t * buf,
                         size_t n_bytes,

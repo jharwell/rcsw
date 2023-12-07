@@ -259,7 +259,7 @@ RCSW_LOCAL status_t bstree_insert_internal(struct bstree * tree,
  */
 RCSW_LOCAL struct bstree *bstree_init_internal(struct bstree *tree_in,
                                     const struct bstree_params * params,
-                                    size_t node_size) RCSW_CHECK_RET;
+                                    size_t node_size) RCSW_WUR;
 
 
 /*******************************************************************************

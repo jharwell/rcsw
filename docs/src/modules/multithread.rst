@@ -8,7 +8,7 @@ A collection of modules for programming in multithreaded environments (obviously
 all thread safe).
 
 .. NOTE:: Provides some wrappers around POSIX multithread primitives (e.g.,
-          sem_t) which may seem unncessary, BUT provides a small Platform
+          sem_t) which may seem unnecessary, BUT provides a small Platform
           Abstraction Layer (PAL) so that applications can use the same API on
           Linux, RTEMS, etc.
 

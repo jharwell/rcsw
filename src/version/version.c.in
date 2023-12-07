@@ -22,7 +22,7 @@ struct meta_info kMetadata = {
     .license = {
       .abbrev = RCSW_LICENSE_SHORT(MIT, RCSW),
       .full = RCSW_LICENSE_FULL(MIT, RCSW),
-      .copyright = RCSW_COPYRIGHT(2022, John Harwell)
+      .copyright = RCSW_COPYRIGHT(2023, John Harwell)
     },
   },
   .build = {

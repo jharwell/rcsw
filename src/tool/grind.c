@@ -1,6 +1,6 @@
 /**
  * \file grind.h
- * \ingroup profile
+ * \ingroup tool
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
@@ -10,7 +10,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/profile/grind.h"
+#include "rcsw/tool/grind.h"
 
 #include <math.h>
 

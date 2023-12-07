@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  * \return The initialized sorter, or NULL if an error occurred.
  */
 struct omp_radix_sorter* omp_radix_sorter_init(
-    const struct omp_radix_sorter_params* const params) RCSW_CHECK_RET;
+    const struct omp_radix_sorter_params* const params) RCSW_WUR;
 
 /**
  * \brief Deallocate/destroy a sorter after use.

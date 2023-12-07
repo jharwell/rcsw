@@ -34,7 +34,7 @@
 //
 // ... otherwise bad things will happen.
 struct printf_output_gadget {
-  void (*cb)(char c, void* extra_arg);
+  void (*cb)(int c, void* extra_arg);
   void* extra_cb_arg;
   char* buffer;
   printf_size_t pos;
@@ -57,7 +57,7 @@ static inline struct printf_output_gadget gadget_init(void) {
 }
 
 static inline struct printf_output_gadget gadget_init_with_cb(
-    void (*cb)(char, void*),
+    void (*cb)(int, void*),
     void* extra_arg) {
   struct printf_output_gadget result = gadget_init();
   result.cb = cb;
@@ -117,7 +117,7 @@ static inline void gadget_append_termination(
   gadget->buffer[null_char_pos] = '\0';
 }
 
-static inline void putchar_wrapper(char c, void* unused) {
+static inline void putchar_wrapper(int c, void* unused) {
   (void) unused;
   stdio_putchar(c);
 }

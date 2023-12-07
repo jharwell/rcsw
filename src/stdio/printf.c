@@ -40,7 +40,7 @@ BEGIN_C_DECLS
 // internal ASCII string to printf_size_t conversion
 static printf_size_t stdio_atou(const char** str) {
   printf_size_t i = 0U;
-  while (STDIO_ISDIGIT(**str)) {
+  while (RCSW_STDIO_ISDIGIT(**str)) {
     i = i * 10U + (printf_size_t)(*((*str)++) - '0');
   }
   return i;
@@ -95,7 +95,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
 
     // evaluate width field
     printf_size_t width = 0U;
-    if (STDIO_ISDIGIT(*format)) {
+    if (RCSW_STDIO_ISDIGIT(*format)) {
       width = (printf_size_t)stdio_atou(&format);
     } else if (*format == '*') {
       const int w = va_arg(args, int);
@@ -113,7 +113,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
     if (*format == '.') {
       flags |= FLAGS_PRECISION;
       ADVANCE_IN_FORMAT_STRING(format);
-      if (STDIO_ISDIGIT(*format)) {
+      if (RCSW_STDIO_ISDIGIT(*format)) {
         precision = (printf_size_t)stdio_atou(&format);
       } else if (*format == '*') {
         const int precision_ = va_arg(args, int);
@@ -444,7 +444,7 @@ int stdio_vsprintf(char* s, const char* format, va_list arg) {
   return stdio_vsnprintf(s, PRINTF_MAX_BUF_SIZE, format, arg);
 }
 
-int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
+int stdio_vusfprintf(void (*out)(int c, void* extra_arg),
                      void* extra_arg,
                      const char* format,
                      va_list arg) {
@@ -476,7 +476,7 @@ int stdio_snprintf(char* s, size_t n, const char* format, ...) {
   return ret;
 }
 
-int stdio_usfprintf(void (*out)(char c, void* extra_arg),
+int stdio_usfprintf(void (*out)(int c, void* extra_arg),
                     void* extra_arg,
                     const char* format,
                     ...) {
