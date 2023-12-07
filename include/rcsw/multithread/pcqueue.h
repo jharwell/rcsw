@@ -136,7 +136,7 @@ static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
  * \return The initialized queue, or NULL if an error occurred.
  */
 RCSW_API struct pcqueue * pcqueue_init(struct pcqueue *pcqueue_in,
-                                       const struct pcqueue_params * params) RCSW_CHECK_RET;
+                                       const struct pcqueue_params * params) RCSW_WUR;
 
 /**
  * \brief Destroy a producer-consumer queue.

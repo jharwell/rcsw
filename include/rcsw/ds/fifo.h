@@ -169,7 +169,7 @@ static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
  * \return The initialized FIFO, or NULL if an error occurred.
  */
 RCSW_API struct fifo *fifo_init(struct fifo *fifo_in,
-                                const struct fifo_params * params) RCSW_CHECK_RET;
+                                const struct fifo_params * params) RCSW_WUR;
 
 /**
  * \brief Destroy a FIFO.

@@ -280,7 +280,7 @@ static inline size_t llist_meta_space(size_t max_elts) {
  * \return The initialized list, or NULL if an error occured.
  */
 RCSW_API struct llist *llist_init(struct llist *list_in,
-                         const struct llist_params *params) RCSW_CHECK_RET;
+                         const struct llist_params *params) RCSW_WUR;
 
 /**
  * \brief Destroy a \ref llist

@@ -70,14 +70,17 @@ void stdio_strrev(char* const s, size_t len) {
 } /* stdio_strrev() */
 
 size_t stdio_strlen(const char* const s) {
+  RCSW_FPC_NV(0, NULL != s);
+
   char const* p;
-  for (p = s; *p; p++) {
-  }
+  for (p = s; *p; p++) {}
 
   return (size_t)(p - s);
 } /* stdio_strlen() */
 
 size_t stdio_strnlen(const char* const s, size_t maxsize) {
+  RCSW_FPC_NV(0, NULL != s);
+
   char const* p;
   for (p = s; *p && maxsize--; p++) {
   }
@@ -163,6 +166,7 @@ int stdio_strcmp(const char* const s1, const char* const s2) {
 
 int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
   size_t i = 0;
+
   const char* t1 = (const char*)s1;
   const char* t2 = (const char*)s2;
 
@@ -210,5 +214,15 @@ void* stdio_memcpy(void* const __restrict__ dest,
   }
   return dest;
 } /* stdio_memcpy() */
+
+void* stdio_memset(void* const __restrict__ dest,
+                   int c,
+                   size_t n) {
+  char* d = dest;
+  for (size_t i = 0; i < n; i++) {
+    d[i] = c;
+  }
+  return dest;
+} /* stdio_memset() */
 
 END_C_DECLS

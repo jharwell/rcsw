@@ -30,11 +30,11 @@ macro(rcsw_posix_configure_components)
     "src/ds")
 
   libra_component_register_as_src(
-    rcsw_profile_SRC
+    rcsw_tool_SRC
     rcsw
     "${rcsw_SRC}"
-    profile
-    "src/profile")
+    tool
+    "src/tool")
 
   libra_component_register_as_src(
     rcsw_er_SRC
@@ -58,6 +58,7 @@ macro(rcsw_posix_configure_components)
     profile
     er
     utils
+    tool
   )
 
   # If we don't do this, then we have to use the mpicc/mpicxx C/C++

@@ -251,7 +251,7 @@ RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue *const queue);
  * \return Initialized swb instance, or NULL if an error occurred.
  */
 RCSW_API struct swbus *swbus_init(struct swbus *swb_in,
-                                  const struct swbus_params * params) RCSW_CHECK_RET;
+                                  const struct swbus_params * params) RCSW_WUR;
 
 /**
  * \brief Destroy a \ref swbus instance
@@ -276,7 +276,7 @@ RCSW_API void swbus_destroy(struct swbus *swb);
  */
 RCSW_API struct pcqueue *swbus_rxq_init(struct swbus * swb,
                                         void * buf_p,
-                                        uint32_t n_entries) RCSW_CHECK_RET;
+                                        uint32_t n_entries) RCSW_WUR;
 
 /**
  * \brief Subscribe the specified RXQ to the specified packet ID.
@@ -381,7 +381,7 @@ RCSW_API status_t swbus_publish_release(struct swbus* swb,
  * occurred.
  */
 RCSW_API struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb,
-                                              struct pcqueue * queue) RCSW_CHECK_RET;
+                                              struct pcqueue * queue) RCSW_WUR;
 
 /**
  * \brief Wait (until a timeout) until the given receive queue is not empty.
@@ -400,7 +400,7 @@ RCSW_API struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb,
  */
 RCSW_API struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus* swb,
                                                    struct pcqueue * queue,
-                                                   struct timespec * to) RCSW_CHECK_RET;
+                                                   struct timespec * to) RCSW_WUR;
 
 /**
  * \brief Remove and release the front element from the selected receive queue.

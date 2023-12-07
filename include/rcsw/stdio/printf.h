@@ -33,7 +33,7 @@ BEGIN_C_DECLS
 /**
  * An implementation of the C standard's printf()
  *
- * \note This function relies on an implementation of \ref RCSW_STDIO_PUTCHAR()
+ * \note This function relies on an implementation of \ref stdio_putchar()
  * which you must provide; this decouples printf() from OS/hw details of exactly
  * _how_ to send a char to stdout.
  *
@@ -77,8 +77,8 @@ RCSW_API int stdio_sprintf(char* s, const char* format, ...) RCSW_ATTR_PRINTF(2,
  * \brief Same as \ref stdio_sprintf(), but you pass a va_list directly.
  */
 RCSW_API int stdio_vsprintf(char* s,
-                   const char* format,
-                   va_list arg) RCSW_ATTR_PRINTF(2, 0);
+                            const char* format,
+                            va_list arg) RCSW_ATTR_PRINTF(2, 0);
 
 /**
  * An implementation of the C standard's snprintf()
@@ -104,24 +104,24 @@ RCSW_API int stdio_vsprintf(char* s,
  *         fully and successfully printed.
  */
 RCSW_API int stdio_snprintf(char* s,
-                    size_t n,
-                    const char* format,
-                    ...) RCSW_ATTR_PRINTF(3, 4);
+                            size_t n,
+                            const char* format,
+                            ...) RCSW_ATTR_PRINTF(3, 4);
 
 /**
  * \brief Same as \ref stdio_snprintf(), but you pass a va_list directly.
  */
 RCSW_API int stdio_vsnprintf(char* s,
-                    size_t count,
-                    const char* format,
-                    va_list arg) RCSW_ATTR_PRINTF(3, 0);
+                             size_t count,
+                             const char* format,
+                             va_list arg) RCSW_ATTR_PRINTF(3, 0);
 
 /**
  * printf/vprintf with user-specified output function
  *
  * An alternative to \ref stdio_printf(), in which the output function is
  * specified dynamically (usf=User Specified Function), rather than \ref
- * RCSW_STDIO_PUTCHAR() being used.
+ * stdio_putchar() being used.
  *
  * \param out An output function which takes one character and a type-erased
  *            additional parameters.
@@ -138,17 +138,17 @@ RCSW_API int stdio_vsnprintf(char* s,
  * \return The number of characters for which the output f unction was invoked,
  *         not counting the terminating null character.
  */
-RCSW_API int stdio_usfprintf(void (*out)(char c, void* extra_arg),
-                    void* extra_arg,
-                    const char* format,
-                    ...) RCSW_ATTR_PRINTF(3, 4);
+RCSW_API int stdio_usfprintf(void (*out)(int c, void* extra_arg),
+                             void* extra_arg,
+                             const char* format,
+                             ...) RCSW_ATTR_PRINTF(3, 4);
 
 /**
  * \brief Same as \ref stdio_usfprintf(), but you pass a va_list directly.
  */
-RCSW_API int stdio_vusfprintf(void (*out)(char c, void* extra_arg),
-                     void* extra_arg,
-                     const char* format,
-                     va_list arg) RCSW_ATTR_PRINTF(3, 0);
+RCSW_API int stdio_vusfprintf(void (*out)(int c, void* extra_arg),
+                              void* extra_arg,
+                              const char* format,
+                              va_list arg) RCSW_ATTR_PRINTF(3, 0);
 
 END_C_DECLS

@@ -246,14 +246,12 @@ RCSW ``cmake`` Configuration
      - Meta-option defining what "platform" RCSW should build against/for. Valid
        values:
 
-       - ``POSIX`` - Build for linux/POSIX-y OSes. This is the most full-featured
-         RCSW.
+       - ``POSIX`` - Build for linux/POSIX-y OSes. This is the most
+         full-featured RCSW.
 
        - ``BAREMETAL`` - Build for baremetal environments without an OS. Still
-         enables/uses stdlib from the selected compiler.
-
-       - ``BOOTSTRAP`` - Build for baremetal environments without an OS AND
-         without stdlib.
+         enables/uses stdlib from the selected compiler. If you don't want/need
+         stdlib, then you can also pass ``LIBRA_NOSTDLIB``.
 
 
      - ``POSIX``

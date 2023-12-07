@@ -15,6 +15,14 @@
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
+int stdio_putchar(int c) {
+  return RCSW_CONFIG_STDIO_PUTCHAR(c);
+}
+
+int stdio_getchar(void) {
+  return RCSW_CONFIG_STDIO_GETCHAR();
+}
+
 size_t stdio_puts(const char* const s) {
   size_t i;
   for (i = 0; i < stdio_strlen(s); i++) {

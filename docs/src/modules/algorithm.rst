@@ -31,4 +31,3 @@ A general purpose set of *serial* algorithms. Includes:
   quicksort or mergesort--this one is much slower.
 
 - Radix sort: :c:func:`radix_sort()`.
-

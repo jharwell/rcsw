@@ -20,6 +20,8 @@
 
                      (let ((defs-list (list
                                        "LIBRA_ER=LIBRA_ERL_ALL"
+                                       "RCSW_PTR_ALIGN=4"
+                                       "RCSW_CONFIG_PTR_ALIGN=4"
                                        )
                              ))
                        (setq flycheck-clang-definitions defs-list)

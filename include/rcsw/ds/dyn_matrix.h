@@ -182,7 +182,7 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
  * \return The initialized matrix, or NULL if an error occurred.
  */
 RCSW_API struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
-                                            const struct dyn_matrix_params* params) RCSW_CHECK_RET;
+                                            const struct dyn_matrix_params* params) RCSW_WUR;
 
 /**
  * \brief Destroy a dynamic matrix.

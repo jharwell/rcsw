@@ -68,7 +68,7 @@
 /**
  * \def RCSW_UNIQUE_ID(prefix)
  *
- * Generate a translation unit unique identifier using gcc's __COUNTER__.
+ * Generate a translation unit unique identifier using \c __COUNTER__.
  */
 #define RCSW_UNIQUE_ID(prefix) RCSW_JOIN(RCSW_JOIN(__UNIQUE_ID_,        \
                                                    prefix),             \
@@ -80,7 +80,7 @@
 /**
  * \def RCSW_MIN_(t1, t2, min1, min2, a, b)
  *
- * Gets the minimum of (\a a, \a b) while also performing a type comparison. If
+ * Gets the minimum of (\c a, \c b) while also performing a type comparison. If
  * the arguments do not have the same type, a compiler warning will be
  * issued. You have to EXPLICITLY cast, which is a good thing. Don't want to get
  * weird behavior when taking the max/min of different types.The type checking
@@ -96,7 +96,7 @@
 /**
  * \def RCSW_MAX_(t1, t2, min1, min2, a, b)
  *
- * Gets the maximum of (\a a, \a b) while also performing a type comparison. If
+ * Gets the maximum of (\c a, \c b) while also performing a type comparison. If
  * the arguments do not have the same type, a compiler warning will be
  * issued. You have to EXPLICITLY cast, which is a good thing. Don't want to get
  * weird behavior when taking the max/min of different types.The type checking
@@ -249,7 +249,7 @@
 
 /**
  * \def RCSW_FIELD_SIZEOF(t, f)
- * Get the size of a field in a struct \a t named \a f.
+ * Get the size of a field in a struct \c t named \c f.
  */
 #define RCSW_FIELD_SIZEOF(t, f) (sizeof(((t *)0)->f))
 
@@ -265,17 +265,17 @@
   }
 
 /**
- * \def RCSW_CHECK_PTR(ptr) Check a pointer \a ptr in a function.
+ * \def RCSW_CHECK_PTR(ptr) Check a pointer \c ptr in a function.
  *
- * If \a ptr is NULL, go to the error/bailout section for function (you
+ * If \c ptr is NULL, go to the error/bailout section for function (you
  * must have a label called \c error in your function).
  */
 #define RCSW_CHECK_PTR(ptr) RCSW_CHECK(NULL != (ptr))
 
 /**
- * \def RCSW_CHECK_FD(fd) Check a file descriptor \a fd in a function.
+ * \def RCSW_CHECK_FD(fd) Check a file descriptor \c fd in a function.
  *
- * If the descriptor \a fd is invalid (i.e. < 0), go to the error/bailout
+ * If the descriptor \c fd is invalid (i.e. < 0), go to the error/bailout
  * section for function (you must have a label called \c error in your
  * function).
  */

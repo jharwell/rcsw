@@ -276,7 +276,7 @@ static inline size_t hashmap_meta_space(size_t n_buckets) {
  * \return  The initialized hashmap, or NULL if an error occurred
  */
 RCSW_API struct hashmap *hashmap_init(struct hashmap *map_in,
-                                      const struct hashmap_params * params) RCSW_CHECK_RET;
+                                      const struct hashmap_params * params) RCSW_WUR;
 
 /**
  * \brief destroy a hashmap. Any further use of the hashmap after calling this

@@ -202,7 +202,7 @@ static inline size_t mpool_capacity(const struct mpool* const pool) {
  * \return The initialized pool, or NULL if an error occurred.
  */
 RCSW_API struct mpool*mpool_init(struct mpool * pool_in,
-                                 const struct mpool_params * params) RCSW_CHECK_RET;
+                                 const struct mpool_params * params) RCSW_WUR;
 
 /**
  * \brief Destroy a \ref mpool.

@@ -199,7 +199,7 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
  * \return The initialized ringbuffer, or NULL if an error occurred.
  */
 RCSW_API struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
-                             const struct rbuffer_params * params) RCSW_CHECK_RET;
+                             const struct rbuffer_params * params) RCSW_WUR;
 
 /**
  * \brief Delete a ringbuffer.

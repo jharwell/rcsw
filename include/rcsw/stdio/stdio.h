@@ -73,46 +73,42 @@ RCSW_WARNING_DISABLE_POP()
 /**
  * \brief Write a string to stdout.
  *
- * This routine writes a string to stdout WITHOUT a newline (this is different
- * than the GNUC version).
+ * Write a string to stdout WITHOUT a newline (this is different than the GNUC
+ * version).
  *
  * \param s The string to write.
  *
- * \return The number of bytes written
+ * \return The number of bytes written.
  */
-RCSW_API size_t stdio_puts(const char *const s);
+RCSW_API size_t stdio_puts(const char *s);
 
 /**
  * \brief Write a character to stdout.
  *
- * This routine is the implementation-specific "write a char to stdout"
- * function.  On x86, it is a wrapper around the putchar() function.
+ * The implementation-specific "write a char to stdout" function which uses \ref
+ * RCSW_CONFIG_STDIO_PUTCHAR().
  *
  * \param c The char to write.
  */
-static inline int stdio_putchar(int c) {
-  return RCSW_CONFIG_STDIO_PUTCHAR(c);
-}
+RCSW_API int stdio_putchar(int c);
 
 /**
  * \brief Get a character from stdin.
  *
- * This routine is the implementation-specific "get a char from stdin" function.
- * On x86, it is a wrapper() around the getchar() function.
+ * The implementation-specific "get a char from stdin" function which uses \ref
+ * RCSW_CONFIG_STDIO_GETCHAR().
  *
  * \return The character received.
  */
-static inline int stdio_getchar(void) {
-  return RCSW_CONFIG_STDIO_GETCHAR();
-}
+RCSW_API int stdio_getchar(void);
 
 /**
  * \brief Convert a string to a integer.
  *
- * This routine converts a string representing an integer in the specified
- * base. Any leading whitespace is stripped.  If the string is a hex number, it
- * must have a 0x prefix. If the string represents a hex number but does not
- * have a 0x prefix, the result is undefined.
+ * Convert a string representing an integer in the specified base. Any leading
+ * whitespace is stripped.  If the string is a hex number, it must have a 0x
+ * prefix. If the string represents a hex number but does not have a 0x prefix,
+ * the result is undefined.
  *
  * \param s The string to convert
  * \param base The base the string is in (10, 16, etc.)
@@ -126,10 +122,10 @@ RCSW_API int stdio_atoi(const char *s, int base) RCSW_PURE;
 /**
  * \brief Convert an integer into a decimal string.
  *
- * This routine converts an integer into a decimal string representing the value
- * of the original integer. Negative numbers are supported. For uniformity, a
- * '+' sign is prepended to the string of all converted positive numbers. Only
- * supports 32-bit integers.
+ * Convert an integer into a decimal string representing the value of the
+ * original integer. Supports negative numbers. For uniformity, a '+' sign is
+ * prepended to the string of all converted positive numbers. Only supports
+ * 32-bit integers.
  *
  * \param n The number to convert
  * \param s The string to fill.
@@ -141,9 +137,9 @@ RCSW_API char *stdio_itoad(int32_t n, char *s);
 /**
  * \brief Convert an integer into a hexadecimal string.
  *
- * This routine converts an integer into a hexadecimal string representing the
- * value of the original integer. If i is negative, it will be treated as
- * size_t. Only supports 32-bit integers.
+ * Convert an integer into a hexadecimal string representing the value of the
+ * original integer. If i is negative, it will be treated as size_t. Only
+ * supports 32-bit integers.
  *
  * \param i The number to convert.
  * \param s The string to fill.
