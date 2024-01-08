@@ -26,6 +26,7 @@
 #include "rcsw/ds/rbuffer.h"
 #include "rcsw/ds/adj_matrix.h"
 #include "rcsw/ds/matrix.h"
+#include "rcsw/ds/multififo.h"
 
 #include "tests/ds_test.h"
 
@@ -69,6 +70,7 @@ class element_generator {
     e.value1 = -1;
     return e;
   }
+
   template <typename U = T,
             typename std::enable_if<std::is_same<U, element1>::value,
                                     int>::type = 0>
@@ -95,6 +97,10 @@ class element_generator {
       e.value1 = m_i;
     } else if (ekDEC_VALS == m_type) {
       e.value1 = m_max_elts - m_i;
+    } else if (ekPACKED_VALS == m_type) {
+      auto upper = (m_i & (-1UL << std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2));
+      auto lower = (m_i & (-1UL >> (std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2)));
+      e.value1 = upper | lower;
     } else {
       e.value1 = rand() % m_max_elts;
     }
@@ -105,7 +111,7 @@ class element_generator {
  private:
   enum gen_elt_type m_type;
   int               m_max_elts;
-  int               m_i;
+  int64_t           m_i;
 };
 
 /* Test data element for all data structures */
@@ -232,6 +238,7 @@ bool_t iter_func(void *e) {
 status_t ds_init(darray_params *const params);
 status_t ds_init(rbuffer_params *const params);
 status_t ds_init(fifo_params *const params);
+status_t ds_init(multififo_params *const params);
 status_t ds_init(llist_params *const params);
 status_t ds_init(binheap_params *const params);
 status_t ds_init(adj_matrix_params *const params);

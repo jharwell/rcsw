@@ -76,6 +76,7 @@
     ekLOG4CL_DS_CSMATRIX,                       \
     ekLOG4CL_COMMON,                            \
     ekLOG4CL_DS_FIFO,                           \
+    ekLOG4CL_DS_MULTIFIFO,                      \
     ekLOG4CL_DS_RAWFIFO,                        \
     ekLOG4CL_ALGORITHM,                         \
     ekLOG4CL_DS_RBTREE,                         \

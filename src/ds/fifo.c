@@ -35,10 +35,10 @@ struct fifo* fifo_init(struct fifo* fifo_in,
 
   RCSW_CHECK_PTR(fifo);
   fifo->flags = params->flags;
-
+  fifo->elt_size = params->elt_size;
   struct rbuffer_params rb_params = { .printe = params->printe,
                                  .cmpe = NULL,
-                                 .elt_size = params->elt_size,
+                                 .elt_size = fifo->elt_size,
                                  .max_elts = params->max_elts,
                                  .elements = params->elements,
                                  .flags = params->flags };

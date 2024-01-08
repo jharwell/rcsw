@@ -28,6 +28,7 @@
 #define TH_NUM_ITEMS    16
 #define TH_NUM_BUCKETS  10
 #define NUM_MERGE_ITEMS 10
+#define TH_MULTIFIFO_CHILDREN 1
 
 /*******************************************************************************
  * Structure Definitions
@@ -35,7 +36,8 @@
 enum gen_elt_type {
   ekINC_VALS,
   ekDEC_VALS,
-  ekRAND_VALS
+  ekRAND_VALS,
+  ekPACKED_VALS
 };
 
 struct hashmap_params;
