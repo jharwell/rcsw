@@ -130,7 +130,7 @@ int th_putchar(int c) {
 }
 END_C_DECLS
 
-static void _out_usf(char character, void* arg) {
+static void _out_usf(int character, void* arg) {
   (void)arg;
   printf_buffer[printf_idx++] = character;
 }
@@ -168,7 +168,7 @@ PRINTF_TEST_CASE(fctprintf) {
 }
 
 // output function type
-typedef void (*out_usf_type_)(char character, void* arg);
+typedef void (*out_usf_type_)(int character, void* arg);
 
 
 static void vusfprintf_builder_1(out_usf_type_ f, char* buffer, ...)

@@ -41,8 +41,7 @@ struct fifo_params {
   size_t elt_size;
 
   /**
-   * Maximum number of elements allowed
-   * fifo).
+   * Maximum number of elements allowed.
    */
   size_t max_elts;
 
@@ -53,7 +52,7 @@ struct fifo_params {
 };
 
 /**
- * \brief Out general purpose FIFO.
+ * \brief General purpose FIFO.
  *
  * This implementation is more full-featured than \ref rawfifo, but is not safe
  * to use in ISRs.
@@ -63,6 +62,11 @@ struct fifo {
    * Underlying ringbuffer the FIFO is built on top of.
    */
   struct rbuffer rb;
+
+  /**
+   * Size of elements in bytes.
+   */
+  size_t elt_size;
 
   /**
    * Run-time configuration parameters. Valid flags are:
@@ -149,12 +153,12 @@ static inline void* fifo_front(const struct fifo* const fifo) {
  * specified size
  *
  * \param max_elts # of desired elements the FIFO will hold
- * \param el_size size of elements in bytes
+ * \param elt_size size of elements in bytes
  *
  * \return The total # of bytes the application would need to allocate
  */
-static inline size_t fifo_element_space(size_t max_elts, size_t el_size) {
-    return rbuffer_element_space(max_elts, el_size);
+static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
+    return rbuffer_element_space(max_elts, elt_size);
 }
 
 /**

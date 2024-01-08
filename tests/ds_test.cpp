@@ -44,6 +44,16 @@ status_t ds_init(fifo_params *const params) {
   return OK;
 }
 
+status_t ds_init(multififo_params *const params) {
+  RCSW_ER_MODULE_INIT();
+  params->elements =
+      reinterpret_cast<dptr_t*>(malloc(multififo_element_space(params->elt_size,
+                                                               TH_NUM_ITEMS)));
+  params->meta = reinterpret_cast<dptr_t*>(malloc(multififo_meta_space(params->elt_size,
+                                                                       TH_MULTIFIFO_CHILDREN)));
+  return OK;
+}
+
 status_t ds_init(llist_params *const params) {
   RCSW_ER_MODULE_INIT();
   /*  *2 is to allow the splice_tests() succeed without segfault */
