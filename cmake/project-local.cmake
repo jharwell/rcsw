@@ -1,14 +1,11 @@
 ################################################################################
 # General Configuration
 ################################################################################
-# We might be linking with a shared library
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 set(rcsw_CHECK_LANGUAGE "C")
 
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 23)
+set(PROJECT_VERSION_PATCH 24)
 set(rcsw_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 libra_configure_version(
@@ -30,8 +27,12 @@ endif()
 
 # Shared libraries don't make sense on bare-metal/freestranding targets
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
+  # We might be linking with a shared library
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
   set(RCSW_CONFIG_LIBTYPE STATIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+
   if(${LIBRA_NOSTDLIB})
       set(RCSW_CONFIG_NOALLOC YES)
       set(RCSW_CONFIG_ER_PLUGIN SIMPLE)

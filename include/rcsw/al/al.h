@@ -25,7 +25,8 @@
 
 /**
  * \brief Configuration setting to build the abstraction layer for
- * bootstraps. Different from NONE in that nothing from stdlib is used/included.
+ * bootstraps. Different from BAREMETAL in that nothing from stdlib is
+ * used/included.
  */
 #define RCSW_AL_TARGET_BOOTSTRAP 2
 

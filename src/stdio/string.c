@@ -164,14 +164,14 @@ int stdio_strcmp(const char* const s1, const char* const s2) {
   return (*s1 - *s2);
 } /* stdio_strcmp() */
 
+#include "rcsw/er/client.h"
+
 int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
   size_t i = 0;
 
   const char* t1 = (const char*)s1;
   const char* t2 = (const char*)s2;
 
-  /* special case: if len == 0, then by definition all strings are equivalent
-   * up to the zeroth character */
   if (len == 0) {
     return 0;
   }
@@ -187,7 +187,14 @@ int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
     t1++;
     t2++;
   }
-  return (*s1 - *s2);
+
+  /*
+   * When we get either, we either have matched up to len or there was a
+   * mismatch, so return the difference of the last two bytes checked: if we
+   * matched up to len this will be 0, and if there was a mismatch they won't be
+   * equal and we will return something other than 0.
+   */
+  return (*t1 - *t2);
 } /* stdio_strncmp() */
 
 int stdio_tolower(int c) {

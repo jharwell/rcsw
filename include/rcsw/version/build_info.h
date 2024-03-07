@@ -48,5 +48,15 @@ struct build_info {
    * Revelant compiler flags used to build the library/application.
    */
   const char*         compiler_flags;
+
+  /**
+   * The date of the build.
+   */
+  const char*         date;
+
+  /**
+   * The time of the build.
+   */
+  const char*         time;
   /* clang-format on */
 };

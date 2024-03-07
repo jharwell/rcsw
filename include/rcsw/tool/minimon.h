@@ -65,6 +65,29 @@ struct minimon_params {
    * input/output, and always uses stdio_putchar()/\ref stdio_getchar().
    */
   struct minimon_stream_callbacks stream1;
+
+  /**
+   * \brief The list of additional cmds to support beyond the builtins.
+   */
+  struct minimon_cmd* cmds;
+
+  /**
+   * \brief The # of cmds in the list.
+   */
+  size_t n_cmds;
+
+  /**
+   * \brief If TRUE, include the builtin MINIMON cmds. Otherwise, omit them. The
+   * HELP cmd is always included.
+   */
+  bool include_builtin;
+
+  /**
+   * \brief if TRUE, show the full help menu on \ref minimon_start(). Useful to
+   * disable if you have lots of cmds to allow the user to more easily check
+   * build info, etc.
+   */
+  bool help_on_start;
 };
 
 /**
@@ -79,8 +102,7 @@ union minimon_cmd_arg {
 };
 
 /**
- * \brief Representation of a single parameter for a \ref minimon_cmd: type,
- * help string, is it required, etc.
+ * \brief Representation of a single parameter for a \ref minimon_cmd.
  */
 struct minimon_cmd_param {
   const char* name;
@@ -135,6 +157,7 @@ struct minimon {
   struct minimon_stream_callbacks stream1;
   struct minimon_cmd cmds[MINIMON_MAX_CMDS];
   struct minimon_irq_callbacks irqcb;
+  bool_t help_on_start;
 };
 
 /*******************************************************************************
