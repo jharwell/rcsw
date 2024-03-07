@@ -51,7 +51,7 @@
 
 #define RCSW_ER_SIMPLE_WARN_PRINT(NAME, MSG, ...)           \
   {                                                             \
-  RCSW_ER_PLUGIN_PRINTF(NAME " [WARN  ] "  MSG, \
+  RCSW_ER_PLUGIN_PRINTF(NAME " [WARN ] "  MSG, \
                         ## __VA_ARGS__);                        \
   }
 

@@ -70,9 +70,7 @@
  *
  * Generate a translation unit unique identifier using \c __COUNTER__.
  */
-#define RCSW_UNIQUE_ID(prefix) RCSW_JOIN(RCSW_JOIN(__UNIQUE_ID_,        \
-                                                   prefix),             \
-                                         __COUNTER__)
+#define RCSW_UNIQUE_ID(prefix) RCSW_JOIN(prefix, __COUNTER__)
 
 /*******************************************************************************
  * Comparison Macros

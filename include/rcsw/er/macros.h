@@ -13,6 +13,7 @@
  ******************************************************************************/
 #include "rcsw/er/er.h"
 #include "rcsw/rcsw.h"
+#include "rcsw/common/compilers.h"
 
 /*******************************************************************************
  * Macros when ER is enabled for FATAL events:

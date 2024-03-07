@@ -292,33 +292,40 @@ static struct minimon g_minimon;
  * \param num Pointer to the parsed number, to be filled
  */
 static status_t mini_validate_int(char *numstr, uint32_t* num) {
-  uint32_t length;
-  uint32_t is_hex = 0;
-
-  if (stdio_strncmp( "0X", numstr, 2) == 0) {
-    is_hex = 1;
-    numstr += 2;
-  }
+  size_t length;
+  bool_t is_hex = 0;
 
   length = stdio_strlen(numstr);
 
   /* validate string length */
-  if ( (length == 0) || (length > 10) || (is_hex && (length > 8)) ) {
+  if ((length == 0) || (length > 10)) {
+    ER_ERR("Token length %zu outside of permissible range [1-10]",
+           length);
     return ERROR;
+  }
+  if (stdio_strncmp(numstr, "0X", 2) == 0 ||
+      stdio_strncmp(numstr, "0x", 2) == 0) {
+    is_hex = true;
+    ER_TRACE("Token '%s' is hexadecimal", numstr);
+    numstr += 2;
+    length -= 2;
   }
 
   /* check string contents for illegal characters */
-  for (uint32_t i = 0; i < length; i++ ) {
+  for (size_t i = 0; i < length; i++) {
     if (!RCSW_STDIO_ISHEX(numstr[i])) {
+      ER_ERR("Token contains illegial char '%c' at idx=%zu",
+             numstr[i],
+             i);
       return ERROR;
     }
   }
 
   if (is_hex) {
-    numstr-=2;
-    *num = (uint32_t)stdio_atoi(numstr,16);
+    numstr -= 2;
+    *num = (uint32_t)stdio_atoi(numstr, 16);
   } else {
-    *num = (uint32_t)stdio_atoi(numstr,10);
+    *num = (uint32_t)stdio_atoi(numstr, 10);
   }
   return OK;
 } /* mini_validate_int() */
@@ -360,11 +367,11 @@ static status_t mini_validate_args(uint32_t argc,
 
   /* validate parameter count */
   if ((argc - 1) < min_params) {
-    ER_ERR("Too few arguments");
+    ER_ERR("Too few arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
   if ((argc - 1) > max_params) {
-    ER_ERR("Too many arguments");
+    ER_ERR("Too many arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
 
@@ -378,6 +385,7 @@ static status_t mini_validate_args(uint32_t argc,
         break;
       case ekMINIMON_PARAM_STR:
         args[i].s = argv[i+1];
+        break;
       default:
         break;
     } /* switch() */
@@ -444,10 +452,10 @@ static uint32_t mini_parse(char *buffer, char **argv) {
   while (buffer[i]) {
     if ((buffer[i] == ' ') || (buffer[i] == ',')) {
       buffer[i++] = 0;
-      last_was_space = 1;
+      last_was_space = true;
     } else if (last_was_space) {
       argv[j++] = &buffer[i++];
-      last_was_space = 0;
+      last_was_space = false;
     } else {
       i++;
     }
@@ -463,24 +471,26 @@ static uint32_t mini_parse(char *buffer, char **argv) {
 static void mini_dispatch(int argc, char **argv) {
   bool_t cmd_found = false;
   union minimon_cmd_arg args[MINIMON_CMD_MAX_ARGS];
+  stdio_memset(&args, 0, sizeof(args));
 
-  if (*argv[0] == '\0' ) { /* ignore null commands */
+  if (*argv[0] == '\0') { /* ignore null commands */
     return;
   }
 
   /* select a command from dispatch list and call the corresponding handler. */
   for (size_t i = 0; i < MINIMON_MAX_CMDS; ++i) {
     struct minimon_cmd* cmd = &g_minimon.cmds[i];
+
     if (0 == stdio_strlen(cmd->name)) {
       break;
     }
 
-    if (!stdio_strncmp(cmd->name, argv[0], MINIMON_CMD_MAX_NAMELEN) ) {
+    if (!stdio_strncmp(cmd->name, argv[0], stdio_strlen(argv[0]))) {
       ER_DEBUG("Found matching cmd '%s'", cmd->name);
       /* setup default arguments */
       for (size_t j = 0; j < MINIMON_CMD_MAX_ARGS; ++j) {
         if (!cmd->params[j].required) {
-          args[i] = cmd->params[j].dflt;
+          args[j] = cmd->params[j].dflt;
         }
       } /* for(j..) */
 
@@ -564,21 +574,7 @@ static void mini_cmd_help_all(const char* cmdname, ...) {
   va_end(args);
 
   if (NULL == target) {
-    stdio_printf("\r\n--------------------------------------------------------------------------------\r\n"
-                 "This is MINIMON, %s.\r\n"
-                 "GIT_REV=%s\r\n"
-                 "GIT_DIFF=%s\r\n"
-                 "GIT_TAG=%s\r\n"
-                 "GIT_BRANCH=%s\r\n"
-                 "CFLAGS=%s\r\n"
-                 "--------------------------------------------------------------------------------\r\n"
-                 "AVAILABLE COMMANDS:\r\n",
-                 kMetadata.version.version,
-                 kMetadata.build.git_rev,
-                 kMetadata.build.git_diff,
-                 kMetadata.build.git_tag,
-                 kMetadata.build.git_branch,
-                 kMetadata.build.compiler_flags);
+    stdio_printf("AVAILABLE COMMANDS:\r\n");
 
     for (size_t i = 0; i < MINIMON_MAX_CMDS; ++i) {
       /* print the help for one cmd */
@@ -586,12 +582,13 @@ static void mini_cmd_help_all(const char* cmdname, ...) {
       mini_cmd_help(cmd, ekMINIMON_HELP_SHORT);
     } /* for(i..) */
 
-    stdio_printf("\r\nAll cmds are shown in lower case and all parameters are "
+    stdio_printf("\r\n"
+                 "All cmds are shown in lower case and all parameters are "
                  "shown in UPPER case\r\n"
                  "for clarity. Parameters in [] are OPTIONAL; parameters in <> "
                  "are REQUIRED.\r\n\r\n"
-                 "To see detailed info about a specific cmd, do 'help CMD', where CMD"
-                 "is the cmd\r\nyou're interested in.\r\n\r\n");
+                 "To see detailed info about a specific cmd, do 'help CMD', "
+                 "where CMD is the cmd\r\nyou're interested in.\r\n\r\n");
   } else {
     for (size_t i = 0; i < MINIMON_MAX_CMDS; ++i) {
       /* print the help for one cmd */
@@ -616,11 +613,11 @@ static void mini_cmd_read(const char* cmdname, ...) {
   for (uint32_t i = 0; i < size; i++) {
     if ((i % sizeof(uint32_t)) == 0) {
       /* show starting address for next set of 4 words */
-      stdio_printf("\r\n%#8lX: ", (uintptr_t)(addrp + i));
+      stdio_printf("\r\n0x%08lX: ", (uintptr_t)(addrp + i));
     }
 
     /* do the actual read and display it */
-    stdio_printf("%#8X ", addrp[i]);
+    stdio_printf("0x%8X ", addrp[i]);
   }
 } /* mini_cmd_read() */
 
@@ -831,18 +828,33 @@ static void mini_cmd_send(const char* cmdname, ...) {
  * API Functions
  ******************************************************************************/
 void minimon_init(const struct minimon_params* params) {
+  size_t user_start;
+  if (!params->include_builtin) {
+    /* HELP cmd is always available */
+    stdio_memcpy(g_minimon.cmds,
+                 g_minimon_builtin_cmds,
+                 sizeof(struct minimon_cmd));
+    user_start = 1;
+  } else {
+    stdio_memcpy(g_minimon.cmds,
+                 g_minimon_builtin_cmds,
+                 sizeof(g_minimon_builtin_cmds));
+    user_start = RCSW_ARRAY_ELTS(g_minimon_builtin_cmds);
+  }
+  /* Add user cmds */
+  stdio_memcpy(g_minimon.cmds + user_start,
+               params->cmds,
+               params->n_cmds * sizeof(struct minimon_cmd));
 
-  stdio_memcpy(g_minimon.cmds,
-               g_minimon_builtin_cmds,
-               sizeof(g_minimon_builtin_cmds));
   if (NULL != params) {
-      g_minimon.irqcb = params->irqcb;
-      g_minimon.stream1.putchar = params->stream1.putchar;
-      g_minimon.stream1.getchar = params->stream1.getchar;
+    g_minimon.irqcb = params->irqcb;
+    g_minimon.stream1.putchar = params->stream1.putchar;
+    g_minimon.stream1.getchar = params->stream1.getchar;
   }
 
   g_minimon.stream0.putchar = stdio_putchar;
   g_minimon.stream0.getchar = stdio_getchar;
+  g_minimon.help_on_start = params->help_on_start;
 }
 
 void minimon_start(void) {
@@ -852,11 +864,38 @@ void minimon_start(void) {
 
   stdio_memset(cmdline, 0, sizeof(cmdline));
 
+  /* emit version info */
+  char buf[512];
+  stdio_snprintf(buf, sizeof(buf),
+  "\r\n--------------------------------------------------------------------------------\r\n"
+               "This is MINIMON, %s.\r\n"
+               "GIT_REV=%s\r\n"
+               "GIT_DIFF=%s\r\n"
+               "GIT_TAG=%s\r\n"
+               "GIT_BRANCH=%s\r\n"
+               "CFLAGS=%s\r\n"
+               "BUILD DATE=%s\r\n"
+               "BUILD TIME=%s\r\n"
+               "--------------------------------------------------------------------------------\r\n",
+               kMetadata.version.version,
+               kMetadata.build.git_rev,
+               kMetadata.build.git_diff,
+               kMetadata.build.git_tag,
+               kMetadata.build.git_branch,
+               kMetadata.build.compiler_flags,
+               kMetadata.build.date,
+               kMetadata.build.time);
+  stdio_puts(buf);
+
   /* display the monitor tag line */
-  mini_cmd_help_all("help", NULL);
+  if (g_minimon.help_on_start) {
+    mini_cmd_help_all("help", NULL);
+  } else {
+    stdio_printf("Type 'help' for a list of available cmds\r\n");
+  }
   stdio_printf("-> ");
 
-  while(1) {
+  while (1) {
     cmdline[0] = '\0';
     mini_readline(cmdline, sizeof(cmdline));   /* read line */
     /*
