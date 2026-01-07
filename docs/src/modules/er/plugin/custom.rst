@@ -1,9 +1,7 @@
 A custom plugin which is defined exactly how you want in terms of modules,
 levels, etc. To integrate your plugin with RCSW, you must create a ``.h`` file
-with a few ``#define`` macros. Your ``.h`` file must be specified at configure
-time via ``-DRCSW_CONFIG_ER_PLUGIN_PATH=/path/to/your/file``.  If your plugin
-uses :c:macro:`RCSW_ER_MODID`, it should support 64-bit IDs if you want to use
-RCSW with it.
+with a few ``#define`` macros. If your plugin uses :c:macro:`RCSW_ER_MODID`, it
+should support 64-bit IDs if you want to use RCSW with it.
 
 .. IMPORTANT:: Your ``.h`` file is **NOT** installed/packaged with RCSW, so you
                will need to ensure that it is findable by any applications you

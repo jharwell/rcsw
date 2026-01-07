@@ -1,1 +1,6 @@
-./libra/cmake/project.cmake
+cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
+
+project(rcsw C)
+
+find_package(libra CONFIG REQUIRED)
+include(libra/project)

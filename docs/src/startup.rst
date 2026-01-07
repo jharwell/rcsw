@@ -1,25 +1,21 @@
 .. SPDX-License-Identifier: MIT
 
-.. _setup:
+.. _startup:
 
-===============
-Setting Up RCSW
-===============
+.. _startup/dev:
+
+===========================
+Setting Up RCSW (Developer)
+===========================
 
 
-.. _setup-devel:
-
-Developer Setup
-===============
-
-#. RCSW uses :ref:`libra:main` so go to :ref:`libra:usage-req` and install any
-   needed packages.
+#. RCSW uses :ref:`libra:main` so go to :ref:`libra:startup` and install (CMake
+   or conan package flavor).
 
 #. Clone RCSW and init LIBRA::
 
      git clone git@github.com:jharwell/rcsw.git
      cd rcsw
-     git submodule update --init --remote --recursive
 
 #. Build RCSW. From the root of the repo::
 
@@ -33,12 +29,11 @@ Developer Setup
                   build configuration, so check them to make sure you are
                   building what you think you are.
 
-
    You can pass any option as part of ``<ARGS>`` that LIBRA supports (see
    :ref:`libra:usage-capabilities`) or that RCSW supports (see
    :ref:`setup-cmake`).
 
-.. _setup-cmake:
+.. _startup/cmake:
 
 RCSW ``cmake`` Configuration
 ----------------------------

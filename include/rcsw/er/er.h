@@ -84,11 +84,6 @@
  */
 #define RCSW_ER_PLUGIN_ZLOG 2
 
-/**
- * Specify that all logging go to a custom reporting macro.
- */
-#define RCSW_ER_PLUGIN_CUSTOM 3
-
 /*******************************************************************************
  * Macros
  ******************************************************************************/
