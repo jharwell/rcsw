@@ -69,7 +69,7 @@ static inline struct printf_output_gadget gadget_init_with_cb(
 static inline struct printf_output_gadget gadget_init_with_buf(
     char* buffer,
     size_t buffer_size) {
-  printf_size_t usable_buffer_size = RCSW_MIN(buffer_size,
+  printf_size_t usable_buffer_size = (printf_size_t)RCSW_MIN(buffer_size,
                                               (size_t)PRINTF_MAX_BUF_SIZE);
 
   struct printf_output_gadget result = gadget_init();

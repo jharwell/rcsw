@@ -56,7 +56,7 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   RCSW_CHECK_PTR(the_pool->nodes);
 
   struct llist_params llist_params = {
-    .max_elts = params->max_elts,
+    .max_elts = (int)params->max_elts,
     .elt_size = params->elt_size,
     .cmpe = NULL,
     .meta = (dptr_t*)the_pool->nodes,
@@ -167,7 +167,7 @@ status_t mpool_timedreq(struct mpool* const the_pool,
   llist_append(&the_pool->alloc, ptr);
 
   /* One more THING using this chunk */
-  size_t idx = ((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
+  size_t idx = (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
   the_pool->refs[idx]++;
 
   if (NULL != chunk) {
@@ -288,14 +288,14 @@ int mpool_ref_query(struct mpool* const the_pool, const void* const ptr) {
   RCSW_CHECK(RCSW_IS_BETWEENHO((const uint8_t*)ptr,
                                (uint8_t*)the_pool->elements,
                                (uint8_t*)the_pool->elements + memsize));
-  return ((const uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
+  return (int)((size_t)((const uint8_t*)ptr - (uint8_t*)the_pool->elements)) / (int)the_pool->elt_size;
 
 error:
   return -1;
 } /* mpool_ref_query() */
 
 size_t mpool_ref_count(struct mpool* const the_pool, const void* const ptr) {
-  RCSW_FPC_NV(-1, NULL != the_pool, NULL != ptr);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != the_pool, NULL != ptr);
 
   /*
    * If this is not true, then ptr did not come from this pool, or has not
@@ -303,7 +303,7 @@ size_t mpool_ref_count(struct mpool* const the_pool, const void* const ptr) {
    */
   int idx = mpool_ref_query(the_pool, ptr);
   RCSW_CHECK(-1 != idx);
-  return the_pool->refs[idx];
+  return (size_t)the_pool->refs[idx];
 
 error:
   return 0;

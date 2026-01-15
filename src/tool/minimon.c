@@ -413,7 +413,7 @@ static void mini_readline(char *buf, int  size) {
 
   /* read characters until newline is read or the buffer is filled */
   do {
-    c = stdio_getchar();
+    c = (char)stdio_getchar();
     if (c == '\0') {
       continue;
     }
@@ -495,7 +495,7 @@ static void mini_dispatch(int argc, char **argv) {
       } /* for(j..) */
 
       /* validate arguments */
-      status_t status = mini_validate_args(argc, argv, cmd->params, args);
+      status_t status = mini_validate_args((uint32_t)argc, argv, cmd->params, args);
 
       /* call command handler */
       if (OK == status) {
@@ -669,7 +669,7 @@ static void mini_cmd_load(const char* cmdname, ...) {
   stdio_printf("Receiving %d bytes...", size);
 
   while (n_bytes_rx < size) {
-    hold_buf.byte[n_bytes_rx % sizeof(uint32_t)] = mini_data_byte_get(&g_minimon);
+    hold_buf.byte[n_bytes_rx % sizeof(uint32_t)] = (uint8_t)mini_data_byte_get(&g_minimon);
 
     /* write each word as it is formed */
     if (0 == ((n_bytes_rx+1) % sizeof(uint32_t))) {
@@ -699,7 +699,7 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
 
   const char* header = "$SEND";
   int n = stdio_snprintf(tmp, sizeof(tmp), "%s,%d", header, current_chunk);
-  uint8_t checksum = xchks8((uint8_t*)tmp + 1, n - 1, 0);
+  uint8_t checksum = xchks8((uint8_t*)tmp + 1, (size_t)(n - 1), 0);
   stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
 
   while (n_bytes_tx < size) {
@@ -713,7 +713,7 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
 
     /* get next word */
     n = stdio_snprintf(tmp, sizeof(tmp), ",%d", addrp[n_bytes_tx]);
-    checksum = xchks8((uint8_t*)tmp, n, checksum);
+    checksum = xchks8((uint8_t*)tmp, (size_t)n, checksum);
     stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
 
     /*
@@ -743,8 +743,8 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
        */
       if (n_bytes_tx < size) {
         int n1 = stdio_snprintf(tmp, sizeof(tmp), "%s", header);
-        int n2 = stdio_snprintf(tmp + n1, sizeof(tmp) - n1, ",%d", current_chunk);
-        checksum = xchks8((uint8_t*)tmp + 1, n1 + n2 - 1, checksum);
+        int n2 = stdio_snprintf(tmp + n1, sizeof(tmp) - (size_t)n1, ",%d", current_chunk);
+        checksum = xchks8((uint8_t*)tmp + 1, (size_t)(n1 + n2 - 1), checksum);
         stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
       }
     }
@@ -907,7 +907,7 @@ void minimon_start(void) {
     /* If the line isn't empty, parse it and use it */
     if (stdio_strlen((char*)cmdline) > 0) {
       ER_DEBUG("Parsing cmd");
-      argc = mini_parse(cmdline, argv);
+      argc = (char)mini_parse(cmdline, argv);
 
       ER_DEBUG("Attempting dispatch: argc=%d,argv[0]=%s", argc, argv[0]);
       mini_dispatch(argc, argv);

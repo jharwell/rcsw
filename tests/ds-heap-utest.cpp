@@ -12,7 +12,7 @@
 #include <limits.h>
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch.hpp>
+#include <catch/catch.hpp>
 
 #include "rcsw/ds/binheap.h"
 #include "rcsw/utils/utils.h"
@@ -147,7 +147,7 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
   CATCH_REQUIRE(binheap_size(heap) == (size_t)params->max_elts);
 
   size_t old_elts = binheap_size(heap);
-  T minmax;
+  T minmax{};
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     minmax.value1 = INT_MIN;

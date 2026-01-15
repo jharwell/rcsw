@@ -77,12 +77,12 @@ char* stdio_itoad(int32_t n, char* s) {
     s[i++] = '+';
   }
   while (n > 0) {
-    s[i++] = '0' + n % 10;
+    s[i++] = (char)((int)'0' + (int)(n % 10));
     n /= 10;
   }
 
   s[i] = '\0';
-  stdio_strrev(s + 1, i - 1);
+  stdio_strrev(s + 1, (size_t)(i - 1));
   return s;
 } /* stdio_itoad() */
 

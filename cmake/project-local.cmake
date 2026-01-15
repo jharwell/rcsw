@@ -3,12 +3,11 @@
 # ##############################################################################
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 25)
+set(PROJECT_VERSION_PATCH 26)
 set(rcsw_VERSION
     "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
 )
 
-set(LIBRA_SUMMARY NO)
 libra_configure_source_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c rcsw_components_SRC)
@@ -241,18 +240,18 @@ endif()
 # Include directories
 # ##############################################################################
 target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC $<BUILD_INTERFACE:${rcsw_DIR}/include>
-         $<BUILD_INTERFACE:${LIBRA_DEPS_PREFIX}/include>
-         $<INSTALL_INTERFACE:include>)
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${rcsw_DIR}/include>
+                         $<INSTALL_INTERFACE:include>)
 
 # ##############################################################################
 # Link Libraries
 # ##############################################################################
-target_link_libraries(${PROJECT_NAME} pthread dl m)
+target_link_libraries(${PROJECT_NAME} PUBLIC pthread dl m)
 
 if("${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "ZLOG")
-  target_link_libraries(${PROJECT_NAME} zlog)
+  target_include_directories(
+    ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${LIBRA_DEPS_PREFIX}/include>)
+  target_link_libraries(${PROJECT_NAME} PUBLIC zlog)
   target_link_directories(${PROJECT_NAME} PUBLIC ${LIBRA_DEPS_PREFIX}/lib)
 endif()
 

@@ -47,7 +47,7 @@ BEGIN_C_DECLS
  */
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_VLA()
-static size_t partition(void* const a,
+static int partition(void* const a,
                         int min_index,
                         int max_index,
                         size_t elt_size,
@@ -58,36 +58,36 @@ static size_t partition(void* const a,
   uint8_t* const arr = a;
 
   /* chose pivot element */
-  uint8_t* const pivot = arr + (min_index * elt_size);
+  uint8_t* const pivot = arr + (min_index * (int)elt_size);
 
   uint8_t tmp[elt_size];
   left = min_index;
   right = max_index;
 
   while (left < right) {
-    while (cmpe(arr + (left * elt_size), pivot) <= 0 && left < max_index) {
+    while (cmpe(arr + (left * (int)elt_size), pivot) <= 0 && left < max_index) {
       left++;
     }
 
     /* move right while item > pivot */
-    while (cmpe(arr + (right * elt_size), pivot) > 0 && right > 0) {
+    while (cmpe(arr + (right * (int)elt_size), pivot) > 0 && right > 0) {
       right--;
     }
     /* at this point arr[left] must be > pivot and arr[right]
      * must be < pivot, so swap them if the position pointers have not
      * crossed */
     if (left < right) {
-      memmove(&tmp, arr + (left * elt_size), elt_size);
-      memmove(arr + (left * elt_size), arr + (right * elt_size), elt_size);
-      memmove(arr + (right * elt_size), &tmp, elt_size);
+      memmove(&tmp, arr + (left * (int)elt_size), elt_size);
+      memmove(arr + (left * (int)elt_size), arr + (right * (int)elt_size), elt_size);
+      memmove(arr + (right * (int)elt_size), &tmp, elt_size);
     }
   } /* while() */
 
   /* arr[right] is <= pivot and in the upper half so swap it and the
    * item in the first position */
   memmove(&tmp, pivot, elt_size);
-  memmove(arr + (min_index * elt_size), arr + (right * elt_size), elt_size);
-  memmove(arr + (right * elt_size), &tmp, elt_size);
+  memmove(arr + (min_index * (int)elt_size), arr + (right * (int)elt_size), elt_size);
+  memmove(arr + (right * (int)elt_size), &tmp, elt_size);
   return right;
 } /* partition() */
 RCSW_WARNING_DISABLE_POP()
@@ -368,15 +368,15 @@ void insertion_sort(void* arr,
 
   int i, j;
   for (i = 1; i < (int)n_elts; ++i) {
-    memcpy(key, (uint8_t*)arr + (i * elt_size), elt_size);
+    memcpy(key, (uint8_t*)arr + (i * (int)elt_size), elt_size);
     j = i - 1;
-    while (j >= 0 && cmpe((uint8_t*)arr + (j * elt_size), key) > 0) {
-      memmove((uint8_t*)arr + ((j + 1) * elt_size),
-              (uint8_t*)arr + (j * elt_size),
+    while (j >= 0 && cmpe((uint8_t*)arr + (j * (int)elt_size), key) > 0) {
+      memmove((uint8_t*)arr + ((j + 1) * (int)elt_size),
+              (uint8_t*)arr + (j * (int)elt_size),
               elt_size);
       --j;
     } /* while() */
-    memcpy((uint8_t*)arr + ((j + 1) * elt_size), key, elt_size);
+    memcpy((uint8_t*)arr + ((j + 1) * (int)elt_size), key, elt_size);
   } /* for(j..) */
 } /* insertion_sort() */
 RCSW_WARNING_DISABLE_POP()

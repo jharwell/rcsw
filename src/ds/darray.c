@@ -126,7 +126,7 @@ struct darray* darray_init(struct darray* arr_in,
     arr->elements = rcsw_alloc(params->elements,
                                params->init_size * params->elt_size,
                                params->flags & RCSW_NOALLOC_DATA);
-    arr->capacity = params->max_elts;
+    arr->capacity = (size_t)params->max_elts;
   } else {
     RCSW_CHECK(-1 == params->max_elts ||
                params->init_size < (size_t)params->max_elts);
@@ -251,7 +251,7 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
   }
 
   if (darray_size(arr) == 1) {
-    memset(darray_data_get(arr, index), 0xFFFFFFFF, arr->elt_size);
+    memset(darray_data_get(arr, index), -1, arr->elt_size);
     arr->current--;
     return OK;
   }
@@ -275,7 +275,7 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
    * If the array load factor is below 0.25, then shrink the array, in
    * accordance with O(1) amortized deletions from the array.
    */
-  if (arr->current / (float)arr->capacity <= 0.25) {
+  if ((float)(arr->current) / (float)arr->capacity <= 0.25) {
     if (!(arr->flags & RCSW_NOALLOC_DATA)) {
       RCSW_CHECK(OK == darray_shrink(arr, arr->capacity / 2));
     }
@@ -305,7 +305,7 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
                        arr->cmpe,
                        arr->elt_size,
                        0,
-                       arr->current - 1);
+                       (int)(arr->current - 1));
   } else {
     for (size_t i = 0; i < arr->current; ++i) {
       if (arr->cmpe(e, darray_data_get(arr, i)) == 0) {
@@ -374,9 +374,9 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
     ER_DEBUG("Already sorted: nothing to do\n");
   } else {
     if (type == ekEXEC_REC) {
-      qsort_rec(arr->elements, 0, arr->current - 1, arr->elt_size, arr->cmpe);
+      qsort_rec(arr->elements, 0, (int)arr->current - 1, arr->elt_size, arr->cmpe);
     } else if (type == ekEXEC_ITER) {
-      qsort_iter(arr->elements, arr->current - 1, arr->elt_size, arr->cmpe);
+      qsort_iter(arr->elements, (int)arr->current - 1, arr->elt_size, arr->cmpe);
     } else {
       return ERROR; /* bad sort type */
     }

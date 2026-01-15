@@ -44,10 +44,10 @@ status_t omp_kernel2d_convolve1(float const* const __restrict__ input,
         for (int is = 0; is < 3; ++is) {
           for (int js = 0; js < 3; ++js) {
             /* global image indices */
-            int const g_i = i + (is - 1);
-            int const g_j = j + (js - 1);
+            int const g_i = (int)i + (is - 1);
+            int const g_j = (int)j + (js - 1);
 
-            v += kernel[is][js] * input[g_j + (g_i * width)];
+            v += kernel[is][js] * input[(size_t)g_j + ((size_t)g_i * width)];
           } /* for(js..) */
         } /* for(is..) */
 

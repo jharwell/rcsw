@@ -75,7 +75,7 @@ class element_generator {
             typename std::enable_if<std::is_same<U, element1>::value,
                                     int>::type = 0>
   U next(void) {
-    U e;
+    U e{};
     if (ekINC_VALS == m_type) {
       e.value1 = m_i;
     } else if (ekDEC_VALS == m_type) {
@@ -91,7 +91,7 @@ class element_generator {
             typename std::enable_if<!std::is_same<U, element1>::value,
                                     int>::type = 0>
   T next(void) {
-    T e;
+    T e{};
     e.value2 = 17;
     if (ekINC_VALS == m_type) {
       e.value1 = m_i;

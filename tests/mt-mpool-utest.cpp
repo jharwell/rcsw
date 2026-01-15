@@ -14,7 +14,7 @@
 
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch.hpp>
+#include <catch/catch.hpp>
 
 #include "rcsw/multithread/mpool.h"
 

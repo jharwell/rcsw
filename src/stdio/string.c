@@ -59,7 +59,7 @@ char* stdio_strrep(const char* const __restrict__ original,
 } /* stdio_strrep() */
 
 void stdio_strrev(char* const s, size_t len) {
-  int i = 0, j = len - 1; /* account for null byte */
+  int i = 0, j = (int)(len - 1); /* account for null byte */
 
   for (; i < j; i++, j--) {
     /* swap without temporary because I can */
@@ -227,7 +227,7 @@ void* stdio_memset(void* const __restrict__ dest,
                    size_t n) {
   char* d = dest;
   for (size_t i = 0; i < n; i++) {
-    d[i] = c;
+    d[i] = (char)c;
   }
   return dest;
 } /* stdio_memset() */

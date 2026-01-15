@@ -11,15 +11,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
   posix-parametric-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu20.04:2023-11-14
+      image: jharwell/ubuntu24.04-rcsw:2026-01-16
     strategy:
       matrix:
         build_type:
-          - OPT
-          - DEV
+          - Release
+          - Debug
 
         ptr_align:
           - 1
@@ -38,6 +39,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install LIBRA
+        shell: bash
+        run: |
+
+          git clone https://github.com/jharwell/libra.git
+          mkdir -p libra/build && cd libra/build && cmake .. && make install
 
       - name: Build=${{ matrix.build_type }}
         shell: bash
@@ -89,12 +96,12 @@ jobs:
   baremetal-stdlib-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu20.04:2023-11-14
+      image: jharwell/ubuntu24.04-rcsw:2026-01-16
     strategy:
       matrix:
         build_type:
-          - OPT
-          - DEV
+          - Release
+          - Debug
 
         ptr_align:
           - 1
@@ -103,6 +110,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Install LIBRA
+        shell: bash
+        run: |
+
+          git clone https://github.com/jharwell/libra.git
+          mkdir -p libra/build && cd libra/build && cmake .. && make install
 
       - name: Baremetal stdlib build=${{ matrix.build_type }}
         shell: bash
@@ -129,12 +143,12 @@ jobs:
   baremetal-nostdlib-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu20.04:2023-11-14
+      image: jharwell/ubuntu24.04-rcsw:2026-01-16
     strategy:
       matrix:
         build_type:
-          - OPT
-          - DEV
+          - Release
+          - Debug
 
         ptr_align:
           - 1
@@ -143,6 +157,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install LIBRA
+        shell: bash
+        run: |
+
+          git clone https://github.com/jharwell/libra.git
+          mkdir -p libra/build && cd libra/build && cmake .. && make install
 
       - name: Baremetal nostdlib build=${{ matrix.build_type }}
         shell: bash
@@ -175,12 +195,12 @@ jobs:
       - baremetal-nostdlib-build
 
     container:
-      image: jharwell/ubuntu20.04:2023-11-14
+      image: jharwell/ubuntu24.04-rcsw:2026-01-16
     strategy:
       matrix:
         build_type:
-          - OPT
-          - DEV
+          - Release
+          - Debug
 
         ptr_align:
           - 1
@@ -194,6 +214,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install LIBRA
+        shell: bash
+        run: |
+
+          git clone https://github.com/jharwell/libra.git
+          mkdir -p libra/build && cd libra/build && cmake .. && make install
 
       - name: Memcheck
         shell: bash
@@ -253,7 +279,7 @@ jobs:
           # Normal tests
           make build-and-test -j$(nproc)
 
-          make coverage-report
+          make lcov-report
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
@@ -272,11 +298,18 @@ jobs:
     needs:
       - posix-build-and-test
     container:
-      image: jharwell/ubuntu22.04:2023-04-12
+      image: jharwell/ubuntu22.04-rcsw:2023-04-12
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
+      - name: Install LIBRA
+        shell: bash
+        run: |
+
+          git clone https://github.com/jharwell/libra.git
+          mkdir -p libra/build && cd libra/build && cmake .. make install
+
       - name: Build for release
         shell: bash
         run: |
@@ -291,7 +324,7 @@ jobs:
 
           cmake  \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DCMAKE_BUILD_TYPE=DEV \
+          -DCMAKE_BUILD_TYPE=Debug \
           -DLIBRA_DEPS_PREFIX=/usr \
           -DCPACK_PACKAGE_NAME=rcsw-dev \
           ..
@@ -300,7 +333,7 @@ jobs:
 
           cmake  \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DCMAKE_BUILD_TYPE=OPT \
+          -DCMAKE_BUILD_TYPE=Release \
           -DLIBRA_DEPS_PREFIX=/usr \
           -DCPACK_PACKAGE_NAME=rcsw-opt \
           ..
@@ -372,6 +405,7 @@ jobs:
         run: |
           cd ppa
           cp ../build/*.deb .
+          cp ../build/*.rpm .
           ls -al ..
           echo  "${{ secrets.RCSW_GPG_SECRET_KEY }}" | base64 --decode | gpg --import
           ./scripts/update-packages.sh

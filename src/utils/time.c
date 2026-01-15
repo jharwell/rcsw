@@ -19,17 +19,17 @@
 BEGIN_C_DECLS
 
 double time_ts2mono(const struct timespec* const ts) {
-  return ts->tv_sec + ts->tv_nsec * 1.0 / ONEE9;
+  return (double)ts->tv_sec + (double)ts->tv_nsec * 1.0 / ONEE9;
 } /* time_ts2mono() */
 
 size_t time_ts2monons(const struct timespec* const ts) {
-  return ts->tv_sec * ONEE9 + ts->tv_nsec;
+  return (size_t)ts->tv_sec * ONEE9 + (size_t)ts->tv_nsec;
 } /* time_ts2mono() */
 
 struct timespec time_monons2ts(size_t val) {
   struct timespec ts;
-  ts.tv_sec = val / ONEE9;
-  ts.tv_nsec = val % ONEE9;
+  ts.tv_sec = (long int)(val / ONEE9);
+  ts.tv_nsec = (long int)(val % ONEE9);
   return ts;
 } /* time_monons2ts() */
 

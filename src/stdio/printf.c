@@ -334,7 +334,7 @@ static inline void format_string_loop(struct printf_output_gadget* output,
           out_reversed(output, ")llun(", 6, width, flags);
         } else {
           printf_size_t l =
-              stdio_strnlen(p, precision ? precision : PRINTF_MAX_BUF_SIZE);
+              (printf_size_t)stdio_strnlen(p, precision ? precision : PRINTF_MAX_BUF_SIZE);
           // pre padding
           if (flags & FLAGS_PRECISION) {
             l = (l < precision ? l : precision);

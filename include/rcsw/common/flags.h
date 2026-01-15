@@ -25,7 +25,7 @@
  * Applicable to all RCSW modules. Whether or not it applies to a specific part
  * of a module will be documented for each module.
  */
-#define RCSW_NOALLOC_HANDLE 0x1
+#define RCSW_NOALLOC_HANDLE (uint32_t)(0x1)
 
 /**
  * \brief Declare that the space for datablocks/data the THING will directly

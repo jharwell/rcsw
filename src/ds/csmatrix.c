@@ -133,7 +133,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
       .init_size = params->n_nz_elts,
       .cmpe = NULL,
       .printe = NULL,
-      .max_elts = params->n_nz_elts,
+      .max_elts = (int)params->n_nz_elts,
       .elt_size = sizeof(int),
       .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->inner_indices, &inner_params));
@@ -142,7 +142,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
 
       .cmpe = NULL,
       .printe = NULL,
-      .max_elts = params->n_rows + 1,
+      .max_elts = (int)params->n_rows + 1,
       .elt_size = sizeof(int),
       .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
   RCSW_CHECK(NULL != darray_init(&matrix->outer_starts, &count_params));
@@ -151,7 +151,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* const matrix_in,
                        .init_size = params->n_nz_elts,
       .cmpe = NULL,
       .printe = NULL,
-      .max_elts = params->n_nz_elts,
+      .max_elts = (int)params->n_nz_elts,
       .elt_size = csmatrix_type_size(matrix),
       .flags = RCSW_NOALLOC_HANDLE | RCSW_DS_ORDERED};
 
@@ -239,10 +239,10 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
   int* row_start = &csmatrix_outer_starts(matrix)[row];
   assert(row_start);
   size_t j = 0;
-  int rsize = csmatrix_rsize(matrix, row);
+  size_t rsize = csmatrix_rsize(matrix, row);
 
   while ((rsize > 0) &&
-         (int)col > csmatrix_inner_indices(matrix)[row_start[0] + j]) {
+         (int)col > csmatrix_inner_indices(matrix)[(size_t)row_start[0] + j]) {
     rsize--;
     j++;
   } /* while() */
@@ -252,9 +252,9 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
            col,
            row_start[0],
            csmatrix_rsize(matrix, row),
-           row_start[0] + j);
-  RCSW_CHECK(OK == darray_insert(&matrix->inner_indices, &col, row_start[0] + j));
-  RCSW_CHECK(OK == darray_insert(&matrix->values, e, row_start[0] + j));
+           (size_t)row_start[0] + j);
+  RCSW_CHECK(OK == darray_insert(&matrix->inner_indices, &col, (size_t)row_start[0] + j));
+  RCSW_CHECK(OK == darray_insert(&matrix->values, e, (size_t)row_start[0] + j));
 
   /*
    * Update outer starts (must be after insertions or indices don't line up).
@@ -279,7 +279,7 @@ status_t csmatrix_entry_add(struct csmatrix* const matrix,
     }
   }
   matrix->n_eff_cols = RCSW_MAX(col, matrix->n_eff_cols);
-  struct col_pair pair = { .row = row, .inner_index = row_start[0] + j };
+  struct col_pair pair = { .row = (int)row, .inner_index = (int)((size_t)row_start[0] + j )};
   RCSW_CHECK(OK == llist_append(&matrix->cols[col], &pair));
 
   matrix->csizes[col]++;
@@ -294,7 +294,7 @@ int csmatrix_inner_index_get(const struct csmatrix* const matrix,
                              size_t col) {
   RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
 
-  size_t row_start = *(int*)darray_data_get(&matrix->outer_starts, row);
+  size_t row_start = (size_t)*(int*)darray_data_get(&matrix->outer_starts, row);
   size_t rsize = csmatrix_rsize(matrix, row);
 
   /*
@@ -304,7 +304,7 @@ int csmatrix_inner_index_get(const struct csmatrix* const matrix,
 
   for (i = row_start; i < row_start + rsize; ++i) {
     if (*(int*)darray_data_get(&matrix->inner_indices, i) == (int)col) {
-      return i;
+      return (int)i;
     }
   } /* for(i..) */
   return -1;
@@ -321,7 +321,7 @@ status_t csmatrix_entry_set(struct csmatrix* const matrix,
 
   int i = csmatrix_inner_index_get(matrix, row, col);
   RCSW_CHECK(-1 != i);
-  RCSW_CHECK(OK == darray_data_set(&matrix->values, i, e));
+  RCSW_CHECK(OK == darray_data_set(&matrix->values, (size_t)i, e));
   return OK;
 
 error:
@@ -336,7 +336,7 @@ void* csmatrix_entry_get(const struct csmatrix* const matrix,
   int index = csmatrix_inner_index_get(matrix, row, col);
   RCSW_CHECK(-1 != index);
 
-  return darray_data_get(&matrix->values, index);
+  return darray_data_get(&matrix->values, (size_t)index);
 
 error:
   return NULL;
@@ -366,7 +366,7 @@ status_t csmatrix_calc_clists(struct csmatrix* const matrix) {
     int* links = csmatrix_row(matrix, i);
     size_t rsize = csmatrix_rsize(matrix, i);
     for (size_t j = 0; j < rsize; ++j) {
-      struct col_pair pair = { .row = i, .inner_index = links[0] + j };
+      struct col_pair pair = { .row = (int)i, .inner_index = (int)((size_t)(links[0]) + j )};
 
       RCSW_CHECK(OK == llist_append(&matrix->cols[links[j]], &pair));
     } /* for(j..) */
@@ -394,14 +394,14 @@ status_t csmatrix_vmult(const struct csmatrix* const matrix,
     double* vals = csmatrix_values(matrix) + i;
     for (int j = 0; j < row_end - row_start; ++j) {
       res += csmatrix_entry_mult(
-          matrix, vals + j, darray_data_get(vector_in, cols[j]));
+          matrix, vals + j, darray_data_get(vector_in, (size_t)cols[j]));
       ER_TRACE("Multiply in[(%zu, %d) -> %zu]=%f * vector[%d]=%f = %f",
                i,
                cols[j],
                vals + j - csmatrix_values(matrix),
                vals[j],
                cols[j],
-               *(double*)darray_data_get(vector_in, cols[j]),
+               *(double*)darray_data_get(vector_in, (size_t)cols[j]),
                res);
     } /* for(j..) */
     RCSW_CHECK(OK == darray_data_set(vector_out, i, &res));
@@ -435,7 +435,7 @@ status_t csmatrix_cols_normalize(struct csmatrix* const matrix) {
     LLIST_FOREACH(matrix->cols + i, next, col) {
       struct col_pair* pair = (struct col_pair*)col->data;
       double res = csmatrix_entry_div(
-          matrix, csmatrix_entry_get(matrix, pair->row, i), &total);
+          matrix, csmatrix_entry_get(matrix, (size_t)pair->row, i), &total);
 
       csmatrix_values(matrix)[pair->inner_index] = res;
     }
@@ -477,7 +477,7 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* const matrix) {
            pair->row,
            i,
            val);
-      RCSW_CHECK(OK == csmatrix_entry_add(new, true, i, pair->row, &val));
+      RCSW_CHECK(OK == csmatrix_entry_add(new, true, i, (size_t)pair->row, &val));
     }
   } /* for(i..) */
 

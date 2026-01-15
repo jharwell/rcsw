@@ -10,7 +10,7 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch.hpp>
+#include <catch/catch.hpp>
 
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree_node.h"

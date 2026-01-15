@@ -58,7 +58,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
      * nodes for root and nil, hence the +2.
      */
     tree->space.node_map = (struct allocm_entry*)params->meta;
-    allocm_init(tree->space.node_map, params->max_elts + 2);
+    allocm_init(tree->space.node_map, (size_t)(params->max_elts + 2));
     tree->space.nodes =
         (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
   }
@@ -74,7 +74,7 @@ struct bstree* bstree_init_internal(struct bstree* tree_in,
      * nodes for root and nil, hence the +2.
      */
     tree->space.db_map = (struct allocm_entry*)params->elements;
-    allocm_init(tree->space.db_map, params->max_elts + 2);
+    allocm_init(tree->space.db_map, (size_t)(params->max_elts + 2));
     tree->space.datablocks = (dptr_t*)(tree->space.db_map + params->max_elts + 2);
   }
 

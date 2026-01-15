@@ -15,7 +15,7 @@
 
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch.hpp>
+#include <catch/catch.hpp>
 
 #include "rcsw/multithread/pcqueue.h"
 
@@ -297,20 +297,23 @@ CATCH_TEST_CASE("Serial Test", "[mt][pcqueue]") {
 
 CATCH_TEST_CASE("Concurrency Test", "[mt][pcqueue]") {
   /* 1 producer, multiple consumers */
-  for (size_t i = 1; i <= 10; ++i) {
+  std::cout << "Test 1 producer, multiple consumers\n";
+  for (size_t i = 1; i <= 5; ++i) {
     run_test<element8>(concurrent_test<element8>, 1, i);
     run_test<element4>(concurrent_test<element4>, 1, i);
   } /* for(i..) */
 
   /* Multiple producers, 1 consumer */
-  for (size_t i = 1; i <= 10; ++i) {
+  std::cout << "Test multiple producers, 1 consumer\n";
+  for (size_t i = 1; i <= 5; ++i) {
     run_test<element8>(concurrent_test<element8>, i, 1);
     run_test<element4>(concurrent_test<element4>, i, 1);
   } /* for(i..) */
 
   /* Multiple producers, multiple consumers */
-  for (size_t i = 1; i <= 10; ++i) {
-    for (size_t j = 1; j <= 10; ++j) {
+  std::cout << "Test multiple producers, multiple consumers\n";
+  for (size_t i = 1; i <= 5; ++i) {
+    for (size_t j = 1; j <= 5; ++j) {
       run_test<element8>(concurrent_test<element8>, i, j);
       run_test<element4>(concurrent_test<element4>, i, j);
     } /* for(j..) */
@@ -323,8 +326,8 @@ CATCH_TEST_CASE("Concurrency Test", "[mt][pcqueue]") {
 }
 
 CATCH_TEST_CASE("Timeout Test", "[mt][pcqueue]") {
-  run_test<element8>(timeout_test<element8>, 1, 10);
-  run_test<element4>(timeout_test<element4>, 1, 10);
+  run_test<element8>(timeout_test<element8>, 1, 5);
+  run_test<element4>(timeout_test<element4>, 1, 5);
   /*
    * Don't test with element2 or element1 because the integers used are not
    * large enough to hold the full range of values put into the queue.

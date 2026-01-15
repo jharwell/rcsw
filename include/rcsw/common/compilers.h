@@ -22,7 +22,7 @@
  * \def RCSW_PRAGMA(X) Indirection to get the argument to the pragma as a
  * string.
  */
-#define RCSW_PRAGMA(X) _Pragma(RCSW_XSTR(X))
+#define RCSW_PRAGMA(X) _Pragma(#X)
 
 #else
 #error Unknown compiler
@@ -36,10 +36,10 @@
  */
 #if defined(__INTEL_COMPILER)
 
-#define RCSW_WARNING_DISABLE_PUSH(...)          \
+#define RCSW_WARNING_DISABLE_PUSH()             \
   RCSW_PRAGMA(warning push)
 
-#define RCSW_WARNING_DISABLE_POP(...)           \
+#define RCSW_WARNING_DISABLE_POP()              \
   RCSW_PRAGMA(warning pop)
 
 #define RCSW_WARNING_DISABLE(X) RCSW_PRAGMA(warning disable X)
@@ -50,10 +50,10 @@
  */
 #elif defined(__clang__)
 
-#define RCSW_WARNING_DISABLE_PUSH(...)          \
+#define RCSW_WARNING_DISABLE_PUSH()          \
   RCSW_PRAGMA(clang diagnostic push)
 
-#define RCSW_WARNING_DISABLE_POP(...)           \
+#define RCSW_WARNING_DISABLE_POP()           \
   RCSW_PRAGMA(clang diagnostic pop)
 
 /*
@@ -61,14 +61,14 @@
  * that GCC does *NOT* support, so we need a separate case.
  */
 #define RCSW_WARNING_DISABLE(X) \
-  RCSW_PRAGMA(clang diagnostic ignored RCSW_XSTR(X))
+  RCSW_PRAGMA(clang diagnostic ignored #X)
 
 #elif defined(__GNUC__)
 
-#define RCSW_WARNING_DISABLE_PUSH(...)                \
+#define RCSW_WARNING_DISABLE_PUSH()             \
   RCSW_PRAGMA(GCC diagnostic push)
 
-#define RCSW_WARNING_DISABLE_POP(...)            \
+#define RCSW_WARNING_DISABLE_POP()            \
   RCSW_PRAGMA(GCC diagnostic pop)
 
 /**
@@ -77,7 +77,7 @@
  * ending scope. This should *NOT* be used willy-nilly; 99% of the time
  * compilers emit warnings for a good reason.
  */
-#define RCSW_WARNING_DISABLE(X) RCSW_PRAGMA(GCC diagnostic ignored RCSW_XSTR(X))
+#define RCSW_WARNING_DISABLE(X) RCSW_PRAGMA(GCC diagnostic ignored #X)
 
 #endif /* __GNUC__ */
 

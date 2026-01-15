@@ -32,9 +32,9 @@ int bsearch_iter(const void* const a,
   const uint8_t* const arr = a;
   while (low <= high) {
     int index = (low + high) / 2;
-    if (cmpe(arr + (index * elt_size), e) == 0) { /* found a match */
+    if (cmpe(arr + (index * (int)elt_size), e) == 0) { /* found a match */
       return (int)index;
-    } else if (cmpe(e, arr + (index * elt_size)) < 0) { /* left half */
+    } else if (cmpe(e, arr + (index * (int)elt_size)) < 0) { /* left half */
       high = index - 1;
     } else { /* right half */
       low = index + 1;
@@ -62,7 +62,7 @@ int bsearch_rec(const void* const in,
   }
   int mid = (high + low) / 2;
   const uint8_t* const arr = in;
-  int rval = cmpe(elt, arr + (elt_size * mid));
+  int rval = cmpe(elt, arr + ((int)elt_size * mid));
 
   if (0 == rval) { /* found a match */
     return mid;

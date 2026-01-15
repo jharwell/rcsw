@@ -93,7 +93,8 @@ struct binheap_params {
  * A heap in which the smallest/largest element is guaranteed to always be on
  * the top of the heap; other elements can be in any order.
  *
- * Implemented using a binary tree inside a \ref darray.
+ * Implemented using a binary tree inside a \ref darray, starting at index
+ * 1. Index 0 is used for a temp element for swapping elements during sifting.
  */
 struct binheap {
   /**
@@ -210,7 +211,8 @@ static inline void* binheap_peek(const struct binheap * heap) {
  * \brief Get the current height of a \ref binheap
  */
 static inline size_t binheap_height(const struct binheap * heap) {
-  return (size_t)(log10(binheap_size(heap)) / log10(2));
+  size_t size = binheap_size(heap);
+  return (size_t)(log10((double)size) / log10(2));
 }
 
 /**

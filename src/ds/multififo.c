@@ -48,7 +48,7 @@ error:
 static void multififo_children_status_update(struct multififo* fifo) {
   for (size_t i = 0; i < fifo->children.count; ++i) {
     if (fifo_isempty(&fifo->children.fifos[i])) {
-      fifo->front_refmask &= ~(1 << i);
+      fifo->front_refmask &= (uint8_t)(~(1UL << i));
     }
   } /* for(i..) */
 } /* multififo_children_status_update() */

@@ -48,7 +48,7 @@ struct llist* llist_init(struct llist* list_in,
     /* initialize free list of llist_nodes */
     list->space.node_map = (struct allocm_entry*)params->meta;
     list->space.nodes = (struct llist_node*)(list->space.node_map + params->max_elts);
-    allocm_init(list->space.node_map, params->max_elts);
+    allocm_init(list->space.node_map, (size_t)params->max_elts);
   }
 
   if (params->flags & RCSW_NOALLOC_DATA) {
@@ -59,7 +59,7 @@ struct llist* llist_init(struct llist* list_in,
     /* initialize free list of data elements */
     list->space.db_map = (struct allocm_entry*)params->elements;
     list->space.datablocks = (dptr_t*)(list->space.db_map + params->max_elts);
-    allocm_init(list->space.db_map, params->max_elts);
+    allocm_init(list->space.db_map, (size_t)params->max_elts);
   }
 
   if (params->cmpe == NULL && !(params->flags & RCSW_DS_LLIST_DB_PTR)) {

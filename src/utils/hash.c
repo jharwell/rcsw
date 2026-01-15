@@ -29,11 +29,11 @@ BEGIN_C_DECLS
 uint32_t hash_default(const void* const data, size_t len) {
   RCSW_FPC_NV(0, NULL != data, len > 0);
 
-  const char* const key = data;
+  const unsigned char* const key = data;
   uint32_t hash = 0;
 
   for (size_t i = 0; i < len; ++i) {
-    hash += (uint32_t)key[i];
+    hash += key[i];
     hash += (hash << 10);
     hash ^= (hash >> 6);
   } /* for(i...) */
@@ -47,11 +47,11 @@ uint32_t hash_default(const void* const data, size_t len) {
 
 uint32_t hash_fnv1a(const void* const data, size_t len) {
   RCSW_FPC_NV(0, NULL != data, len > 0);
-  const char* const key = data;
+  const unsigned char* const key = data;
   uint32_t hash = FNV_OFFSET_BASIS;
 
   for (size_t i = 0; i < len; i++) {
-    hash ^= (uint32_t)key[i];
+    hash ^= key[i];
     hash *= FNV_PRIME;
   }
   return hash;
@@ -60,12 +60,12 @@ uint32_t hash_fnv1a(const void* const data, size_t len) {
 uint32_t hash_djb(const void* const data, size_t len) {
   RCSW_FPC_NV(0, NULL != data, len > 0);
 
-  const char* const key = data;
+  const unsigned char* const key = data;
   uint32_t hash = 5381;
   size_t i;
 
   for (i = 0; i < len; i++) {
-    hash = ((hash << 5) + hash) + (uint32_t)key[i]; /* hash * 33 + c */
+    hash = ((hash << 5) + hash) + key[i]; /* hash * 33 + c */
   }
 
   return hash;

@@ -21,7 +21,7 @@
  * API Functions
  ******************************************************************************/
 size_t alg_arr_largest_num(const size_t* const array, size_t n_elts) {
-  RCSW_FPC_NV(-1, NULL != array);
+  RCSW_FPC_NV(0, NULL != array);
   size_t largest = 0;
 
   for (size_t i = 0; i < n_elts; i++) {

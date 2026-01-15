@@ -55,7 +55,8 @@ static void grind_report_stats(const struct grinder* the_grinder,
   DPRINTF("Minimum            : %zu ns\n", min);
 
   /* get average time */
-  double mean = grindee_data_sum(grindee) / (double)grindee->tsize;
+  size_t sum = grindee_data_sum(grindee);
+  double mean = (double)sum / (double)grindee->tsize;
 
   DPRINTF("Mean               : %.8e ns\n", mean);
 
@@ -63,10 +64,10 @@ static void grind_report_stats(const struct grinder* the_grinder,
   double RCSW_UNUSED std_dev = 0.0;
   double variance = 0.0;
   for (size_t i = 0; i < grindee->tsize; i++) {
-    variance += pow(grindee->table[i] - mean, 2.0);
+    variance += pow((double)grindee->table[i] - mean, 2.0);
   }
 
-  variance /= grindee->tsize;
+  variance /= (double)grindee->tsize;
   std_dev = sqrt(variance);
 
   DPRINTF("Variance           : %.8e\n", variance);
@@ -99,7 +100,8 @@ static void grind_report_hist(const struct grinder* const the_grinder,
   for (size_t i = 0; i < grindee->tsize; ++i) {
     for (size_t j = 1; j <= 50; ++j) {
       if (RCSW_IS_BETWEENHO(
-              grindee->table[i], min + (j - 1) * binsize, min + j * binsize)) {
+              (double)grindee->table[i], (double)min + (double)(j - 1) * binsize,
+              (double)min + (double)j * binsize)) {
         hist_arr[j - 1]++;
         bin_count_max = RCSW_MAX(bin_count_max, hist_arr[j - 1]);
       }
@@ -114,11 +116,11 @@ static void grind_report_hist(const struct grinder* const the_grinder,
       DPRINTF("%8zu | ", i);
     } else {
       DPRINTF("%8zu.%08zu sec | ",
-              (size_t)(min + i * binsize) / ONEE9,
-              (size_t)(min + i * binsize) % ONEE9);
+              (size_t)((double)min + (double)i * binsize) / ONEE9,
+              (size_t)((double)min + (double)i * binsize) % ONEE9);
     }
-    double scale = hist_arr[i] / (double)bin_count_max;
-    size_t fill = (size_t)(scale * xmax);
+    double scale = (double)hist_arr[i] / (double)bin_count_max;
+    size_t fill = (size_t)(scale * (double)xmax);
     for (size_t j = 0; j < fill; ++j) {
       DPRINTF("*");
     } /* for(j..) */
@@ -189,9 +191,9 @@ static void grind_report_count(const struct grinder* const the_grinder,
   /* get average time */
   double mean = 0;
   for (size_t i = 0; i < grindee->tsize; ++i) {
-    mean += grindee->table[i];
+    mean += (double)grindee->table[i];
   }
-  mean /= grindee->tsize;
+  mean /= (double)grindee->tsize;
 
   DPRINTF("Mean               : %.8f\n", mean);
 
@@ -199,10 +201,10 @@ static void grind_report_count(const struct grinder* const the_grinder,
   RCSW_UNUSED double std_dev = 0;
   double variance = 0;
   for (size_t i = 0; i < grindee->tsize; i++) {
-    variance += pow(grindee->table[i] - mean, 2);
+    variance += pow((double)grindee->table[i] - mean, 2);
   }
 
-  variance /= grindee->tsize;
+  variance /= (double)grindee->tsize;
   std_dev = sqrt(variance);
 
   DPRINTF("Variance           : %.8f\n", variance);
@@ -695,10 +697,11 @@ int grind_report_utilization2(const struct grinder* const the_grinder,
   char* buf_ptr = buf;
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = the_grinder->interval.tv_sec +
-              (the_grinder->interval.tv_nsec / 1000000000.0);
+    divisor = (double)the_grinder->interval.tv_sec +
+              ((double)the_grinder->interval.tv_nsec / 1000000000.0);
   } else { /* use the cumulative total time of ALL grindees */
-    divisor = grind_sum_all(the_grinder);
+    size_t sum = grind_sum_all(the_grinder);
+    divisor = (double)sum;
   }
 
   buf_ptr += sprintf(buf_ptr, "Interval: %.8f", divisor);
@@ -712,9 +715,9 @@ int grind_report_utilization2(const struct grinder* const the_grinder,
                        "  %-15.15s  %-18zu   %3.2f",
                        grindee->name,
                        inst_total,
-                       (inst_total / divisor) * 100.0);
+                       ((double)inst_total / divisor) * 100.0);
   }
-  return buf_ptr - buf;
+  return (int)(buf_ptr - buf);
 } /* grind_report_utilization2() */
 
 status_t grind_report_utilization(const struct grinder* const the_grinder) {
@@ -728,10 +731,11 @@ status_t grind_report_utilization(const struct grinder* const the_grinder) {
   double divisor;
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = the_grinder->interval.tv_sec * ONEE9 +
-              the_grinder->interval.tv_nsec / 1000000000;
+    divisor = (double)the_grinder->interval.tv_sec * ONEE9 +
+              (double)the_grinder->interval.tv_nsec / 1000000000;
   } else { /* use the cumulative total time of ALL grindees */
-    divisor = grind_sum_all(the_grinder);
+    size_t sum = grind_sum_all(the_grinder);
+    divisor = (double)sum;
   }
 
   DPRINTF("Interval: %.8f", divisor);
@@ -743,7 +747,7 @@ status_t grind_report_utilization(const struct grinder* const the_grinder) {
     DPRINTF("%-15.15s   %-18zu    %3.2f%%",
             grindee->name,
             inst_total,
-            (inst_total / divisor) * 100.0);
+            ((double)inst_total / divisor) * 100.0);
   }
 
   return OK;
@@ -769,13 +773,14 @@ double grind_get_utilization(struct grinder* the_grinder,
   inst_total = grindee_data_sum(grindee);
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = the_grinder->interval.tv_sec * ONEE9 +
-              the_grinder->interval.tv_nsec / ONEE9;
+    divisor = (double)the_grinder->interval.tv_sec * ONEE9 +
+              (double)the_grinder->interval.tv_nsec / ONEE9;
   } else { /* use the cumulative total time of ALL grindees */
-    divisor = grind_sum_all(the_grinder);
+    size_t sum = grind_sum_all(the_grinder);
+    divisor = (double)sum;
   }
 
-  return (inst_total / divisor) * 100.0;
+  return ((double)inst_total / divisor) * 100.0;
 
 error:
   return -1;
@@ -808,7 +813,7 @@ int grindee_lookup(const struct grinder* const the_grinder,
                    const char* const name) {
   for (size_t i = 0; i < the_grinder->n_inst; ++i) {
     if (strcmp(the_grinder->grindees[i].name, name) == 0) {
-      return i;
+      return (int)i;
       break;
     }
   }

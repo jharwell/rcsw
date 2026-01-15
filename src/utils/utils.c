@@ -58,7 +58,7 @@ status_t util_string_gen(char* const buf, size_t len) {
   size_t n_chars = len - 1;
   size_t i;
   for (i = 0; i < n_chars; ++i) {
-    buf[i] = random() % (126 - 33 + 1) + 33;
+    buf[i] = (char)(random() % (126 - 33 + 1) + 33);
   }
   buf[n_chars] = '\0';
 

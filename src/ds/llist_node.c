@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/llist_node.h"
 
-#define RCSW_ER_MODNAME "rcsw_ds_llist"
+#define RCSW_ER_MODNAME "rcsw.ds.llist"
 #define RCSW_ER_MODID ekLOG4CL_DS_LLIST
 #include "rcsw/common/fpc.h"
 #include "rcsw/er/client.h"
@@ -55,7 +55,7 @@ error:
 
 void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
   if (list->flags & RCSW_NOALLOC_META) {
-    int index = node - list->space.nodes;
+    int index = (int)(node - list->space.nodes);
 
     allocm_mark_free(list->space.node_map + index);
 
@@ -113,7 +113,7 @@ void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
   }
 
   if (list->flags & RCSW_NOALLOC_DATA) {
-    size_t block_idx = ((uint8_t*)datablock - (uint8_t*)list->space.datablocks) / list->elt_size;
+    size_t block_idx = (size_t)((uint8_t*)datablock - (uint8_t*)list->space.datablocks) / list->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(list->space.db_map + block_idx);
@@ -136,7 +136,7 @@ dptr_t* llist_node_datablock_alloc(struct llist* const list) {
     int alloc_idx =
         allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
-    datablock = (void*)((uint8_t*)list->space.datablocks + alloc_idx * list->elt_size);
+    datablock = (void*)((uint8_t*)list->space.datablocks + (size_t)alloc_idx * list->elt_size);
 
     /* mark data block as inuse */
     allocm_mark_inuse(list->space.db_map + alloc_idx);

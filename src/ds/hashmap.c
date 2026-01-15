@@ -33,7 +33,7 @@ BEGIN_C_DECLS
  */
 static size_t hashmap_bucket_index(const struct hashmap* const map,
                                    const struct darray* const bucket) {
-  return (bucket - map->space.buckets) % sizeof(struct darray);
+  return (size_t)(bucket - map->space.buckets) % sizeof(struct darray);
 }
 
 /**
@@ -74,7 +74,7 @@ static dptr_t* hashmap_db_alloc(const struct hashmap* const map) {
 
   int alloc_idx = allocm_probe(map->space.db_map, map->max_elts, search_idx);
   RCSW_CHECK(-1 != alloc_idx);
-  dptr_t* datablock = (void*)((uint8_t*)map->space.datablocks + (alloc_idx * map->elt_size));
+  dptr_t* datablock = (void*)((uint8_t*)map->space.datablocks + ((size_t)alloc_idx * map->elt_size));
 
   /* mark data block as in use */
   allocm_mark_inuse(map->space.db_map + alloc_idx);
@@ -99,7 +99,7 @@ static void hashmap_db_dealloc(const struct hashmap* const map,
   if (NULL == datablock) {
     return;
   }
-  size_t block_index = ((const uint8_t*)datablock - (uint8_t*)map->space.datablocks) / (map->elt_size);
+  size_t block_index = (size_t)((const uint8_t*)datablock - (uint8_t*)map->space.datablocks) / (map->elt_size);
 
   /* mark data block as available */
   allocm_mark_free(map->space.db_map + block_index);
@@ -271,7 +271,7 @@ struct darray* hashmap_query(const struct hashmap* const map,
   RCSW_FPC_NV(NULL, map != NULL, key != NULL);
 
   uint32_t hash = map->hash(key, RCSW_HASHMAP_KEYSIZE);
-  uint32_t bucket_n = hash % map->n_buckets;
+  uint32_t bucket_n = (uint32_t)(hash % map->n_buckets);
 
   if (hash_out != NULL) {
     *hash_out = hash;
@@ -293,7 +293,7 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   struct darray* bucket = hashmap_query(map, key, &hash);
 
   map->last_used = bucket;
-  bucket_index = hashmap_bucket_index(map, bucket);
+  bucket_index = (int)hashmap_bucket_index(map, bucket);
 
   node_index = darray_idx_query(bucket, &node);
 
@@ -426,7 +426,7 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
   memcpy(&node.key, key, RCSW_HASHMAP_KEYSIZE);
 
   int node_index = darray_idx_query(bucket, &node);
-  int bucket_index = hashmap_bucket_index(map, bucket);
+  int bucket_index = (int)hashmap_bucket_index(map, bucket);
 
   if (node_index == -1) {
     if (!(map->flags & RCSW_DS_HASHMAP_LINPROB)) {
@@ -490,23 +490,23 @@ status_t hashmap_gather(const struct hashmap* const map,
   *stats = map->stats;
 
   stats->n_buckets = map->n_buckets;
-  stats->collision_ratio = ((double)stats->n_collisions / map->stats.n_adds);
+  stats->collision_ratio = ((double)stats->n_collisions / (double)map->stats.n_adds);
   stats->sorted = map->sorted;
 
   /* get highest/lowest/average bucket utilization */
-  size_t max = 0;
-  size_t min = -1;
+  int max = 0;
+  int min = -1;
   double average = 0;
   size_t i;
 
   for (i = 0; i < map->n_buckets; i++) {
-    max = RCSW_MAX(map->space.buckets[i].current, max);
-    min = RCSW_MIN(map->space.buckets[i].current, min);
+    max = (int)RCSW_MAX((int)map->space.buckets[i].current, max);
+    min = (int)RCSW_MIN((int)map->space.buckets[i].current, min);
     average +=
         ((double)map->space.buckets[i].current) / map->space.buckets[0].max_elts;
   }
 
-  stats->average_util = average / map->n_buckets;
+  stats->average_util = average / (double)map->n_buckets;
   stats->max_util = (double)max / map->space.buckets[0].max_elts;
   stats->min_util = (double)min / map->space.buckets[0].max_elts;
 
@@ -569,8 +569,9 @@ void hashmap_print_dist(const struct hashmap* const map) {
       continue;
     }
 
-    double scale = darray_size(&map->space.buckets[i]) / (double)max_node_count;
-    size_t fill = (size_t)(scale * xmax);
+    size_t size = darray_size(&map->space.buckets[i]);
+    double scale = (double)size / (double)max_node_count;
+    size_t fill = (size_t)(scale * (double)xmax);
     for (size_t j = 0; j < fill; ++j) {
       DPRINTF("*");
     } /* for(j..) */

@@ -78,7 +78,7 @@ static uint32_t crc32_brown_table[] = {
  * API Functions
  ******************************************************************************/
 uint8_t xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
-  RCSW_FPC_NV(-1, buf != NULL);
+  RCSW_FPC_NV((uint8_t)0xFF, buf != NULL);
 
   uint8_t chks8 = seed;
 
@@ -93,7 +93,7 @@ uint8_t xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
 } /* xchks8() */
 
 uint16_t xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
-  RCSW_FPC_NV(-1,
+  RCSW_FPC_NV((uint16_t)0xFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
@@ -111,7 +111,7 @@ uint16_t xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
 } /* xchks16() */
 
 uint32_t xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
-  RCSW_FPC_NV(-1,
+  RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
@@ -129,7 +129,7 @@ uint32_t xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
 } /* xchks32() */
 
 uint8_t achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
-  RCSW_FPC_NV(-1, buf != NULL);
+  RCSW_FPC_NV(0xFF, buf != NULL);
 
   uint8_t chks8 = seed;
 
@@ -141,7 +141,7 @@ uint8_t achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
 } /* achks8() */
 
 uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
-  RCSW_FPC_NV(-1,
+  RCSW_FPC_NV(0xFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
@@ -154,7 +154,7 @@ uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
 } /* achks16() */
 
 uint32_t achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
-  RCSW_FPC_NV(-1,
+  RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
@@ -169,7 +169,7 @@ uint32_t achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
 } /* achks32() */
 
 uint32_t crc32_brown(const uint8_t* buf, uint32_t crc, size_t size) {
-  RCSW_FPC_NV(-1, NULL != buf, size > 0);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, size > 0);
   const uint8_t* p;
 
   p = buf;
@@ -198,7 +198,7 @@ void crc32_ethl_init(void) {
 } /* crc32_ethl_init() */
 
 uint32_t crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
-  RCSW_FPC_NV(-1, NULL != buf, n_bytes > 0);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
   uint32_t crc;
 
   /* if lookup table not already initialized, initialize it */
@@ -214,7 +214,7 @@ uint32_t crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
 } /* crc32_ethl() */
 
 uint32_t crc32_eth(const uint8_t* const buf, size_t n_bytes) {
-  RCSW_FPC_NV(-1, NULL != buf, n_bytes > 0);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
   int i, j;
   uint32_t crc, mask;
   uint32_t poly = RCSW_REV32(CRC32_ETH_POLYNOMIAL);

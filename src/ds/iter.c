@@ -37,7 +37,7 @@ ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
       if (ekITER_FORWARD == type) {
         iter->index = 0;
       } else if (ekITER_BACKWARD == type) {
-        iter->index = darray_size(da) - 1;
+        iter->index = (int)darray_size(da) - 1;
       }
     } break;
     case ekRCSW_DS_LLIST: {
@@ -55,7 +55,7 @@ ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
       iter = &rb->iter;
       iter->rb = ds;
       if (ekITER_FORWARD == type) {
-        iter->index = rb->start;
+        iter->index = (int)rb->start;
       } else if (ekITER_BACKWARD == type) {
         iter->index = -1;
       }
@@ -94,7 +94,7 @@ ds_filter_init(void* const ds, enum ds_tag tag, bool_t (*f)(void* e)) {
       struct rbuffer* rb = ds;
       iter = &rb->iter;
       iter->rb = ds;
-      iter->index = rb->start;
+      iter->index = (int)rb->start;
     } break;
     default:
       return NULL;
@@ -130,26 +130,26 @@ void* ds_iter_next(struct ds_iterator* const iter) {
       if (ekITER_FORWARD == iter->type) {
         while ((size_t)iter->index < iter->arr->current) {
           if (iter->classify &&
-              !iter->classify(darray_data_get(iter->arr, iter->index))) {
+              !iter->classify(darray_data_get(iter->arr, (size_t)iter->index))) {
             iter->index++;
             continue;
           }
-          return darray_data_get(iter->arr, iter->index++);
+          return darray_data_get(iter->arr, (size_t)iter->index++);
         } /* while() */
       } else {
         while (iter->index >= 0) {
           if (iter->classify &&
-              !iter->classify(darray_data_get(iter->arr, iter->index))) {
+              !iter->classify(darray_data_get(iter->arr, (size_t)iter->index))) {
             iter->index--;
             continue;
           }
-          return darray_data_get(iter->arr, iter->index--);
+          return darray_data_get(iter->arr, (size_t)iter->index--);
         } /* while() */
       }
       break;
     case ekRCSW_DS_RBUFFER:
       if (ekITER_FORWARD == iter->type) {
-        size_t idx = (iter->rb->start + iter->index) % iter->rb->max_elts;
+        size_t idx = (iter->rb->start + (size_t)iter->index) % iter->rb->max_elts;
 
         while ((size_t)iter->index < iter->rb->current) {
           if (iter->classify &&
@@ -163,15 +163,15 @@ void* ds_iter_next(struct ds_iterator* const iter) {
       } else {
         while (iter->index != (int)iter->rb->start) {
           if (-1 == iter->index) {
-            iter->index = iter->rb->start;
+            iter->index = (int)iter->rb->start;
           }
-          iter->index = (iter->index + rbuffer_size(iter->rb) - 1) %
-                        rbuffer_size(iter->rb);
+          iter->index = (int)(((size_t)iter->index + rbuffer_size(iter->rb) - 1) %
+                              rbuffer_size(iter->rb));
           if (iter->classify &&
-              !iter->classify(rbuffer_data_get(iter->rb, iter->index))) {
+              !iter->classify(rbuffer_data_get(iter->rb, (size_t)iter->index))) {
             continue;
           }
-          return rbuffer_data_get(iter->rb, iter->index);
+          return rbuffer_data_get(iter->rb, (size_t)iter->index);
         } /* while() */
       }
       break;

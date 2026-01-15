@@ -29,7 +29,7 @@ int allocm_probe(struct allocm_entry* map, size_t max_elts, size_t index) {
 
   while (!wrap || (i != index)) {
     if (map[i].value == -1) {
-      ret = i;
+      ret = (int)i;
       break;
     }
     /* wrapped around to index 0 */

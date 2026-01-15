@@ -82,7 +82,7 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree,
     return;
   }
   if (tree->flags & RCSW_NOALLOC_DATA) {
-    size_t idx = ((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) / tree->elt_size;
+    size_t idx = (size_t)((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) / tree->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(tree->space.db_map + idx);
@@ -117,7 +117,7 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
     /* mark data block as in use */
     allocm_mark_inuse(tree->space.db_map + alloc_idx);
 
-    datablock = (uint8_t*)tree->space.datablocks + (alloc_idx * tree->elt_size);
+    datablock = (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->elt_size);
   } else {
     datablock = rcsw_alloc(NULL, tree->elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
@@ -357,8 +357,8 @@ size_t bstree_node_height(const struct bstree* const tree,
   if (node->parent == node || node->left == node || node->right == node) {
     return 0;
   }
-  int height_l = bstree_node_height(tree, node->left);
-  int height_r = bstree_node_height(tree, node->right);
+  size_t height_l = bstree_node_height(tree, node->left);
+  size_t height_r = bstree_node_height(tree, node->right);
 
   return (RCSW_MAX(height_l, height_r) + 1);
 } /* bstree_node_height() */

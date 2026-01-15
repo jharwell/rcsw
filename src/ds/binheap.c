@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/binheap.h"
 
-#define RCSW_ER_MODNAME "rcsw_ds_binheap"
+#define RCSW_ER_MODNAME "rcsw.ds.binheap"
 #define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
 #include "rcsw/er/client.h"
 #include "rcsw/common/fpc.h"
@@ -40,7 +40,7 @@ static void binheap_sift_down(struct binheap* heap, size_t m);
 static void binheap_sift_up(struct binheap* heap, size_t i);
 
 /**
- * \brief Swap two elements in the heap using the temporary slot.
+ * \brief Swap two elements in the heap using the temporary slot (index 0).
  *
  * \param heap The heap handle.
  * \param i1 Index of element #1
@@ -74,18 +74,21 @@ struct binheap* binheap_init(struct binheap* heap_in,
       .printe = params->printe,
       .cmpe = params->cmpe,
       .elt_size = params->elt_size,
-      .max_elts = params->max_elts,
+      .max_elts = (int)params->max_elts,
       .elements = params->elements,
       .flags = (params->flags & ~RCSW_NOALLOC_HANDLE)};
-  /*
-   * 2023-11-02 [JRH]: The heap relies on elts being zeroed initially (at least,
-   * my test code cb does, and other code might too).
-   */
-  dparams.flags |= RCSW_NOALLOC_HANDLE | RCSW_ZALLOC;
+  dparams.flags |= RCSW_NOALLOC_HANDLE;
   dparams.max_elts += (dparams.max_elts == -1) ? 0 : 1;
 
   RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));
   RCSW_CHECK(OK == darray_set_size(&heap->arr, 1));
+
+  /*
+   * 2026-01-17 [JRH]: We either have to tell darray to zero all allocated
+   * memory (safer, but slower), OR zero the first element in the array, as that
+   * is used for comparison during insertion.
+   */
+  memset(heap->arr.elements, 0, heap->arr.elt_size);
 
   ER_DEBUG("init_size=%zu max_elts=%zu elt_size=%zu flags=0x%08x",
              params->init_size,
@@ -205,6 +208,7 @@ void binheap_print(const struct binheap* const heap) {
  * Static Functions
  ******************************************************************************/
 static void binheap_sift_down(struct binheap* const heap, size_t m) {
+  RCSW_FPC_V(NULL != heap);
   size_t l_child = RCSW_BINHEAP_LCHILD(m);
   size_t r_child = RCSW_BINHEAP_RCHILD(m);
   size_t n_elts = binheap_size(heap);

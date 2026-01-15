@@ -68,7 +68,7 @@ RCSW_API size_t time_ts2monons(const struct timespec* const ts) RCSW_PURE;
 /**
  * \brief Convert a scalar monotonic count in nanoseconds to a timespec.
  */
-RCSW_API struct timespec time_monons2ts(size_t val);
+RCSW_API struct timespec time_monons2ts(size_t val) RCSW_CONST;
 
 /**
  * \brief Convert a relative timeout to an absolute one using \ref

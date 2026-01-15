@@ -146,7 +146,7 @@
  * If not specified, defined as -1.
  */
 #if !defined(RCSW_ER_MODID)
-#define RCSW_ER_MODID (-1)
+#define RCSW_ER_MODID (0xFFFFFFFF)
 #endif
 
 /**

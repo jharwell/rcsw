@@ -133,12 +133,12 @@ status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter) {
 
   int m;
   /* Get largest # in array to get total # of digits */
-  m = alg_arr_largest_num(sorter->data, sorter->n_elts);
+  m = (int)alg_arr_largest_num(sorter->data, sorter->n_elts);
   memset(sorter->cum_prefix_sums,
          0,
          sizeof(size_t) * sorter->base * sorter->n_threads);
 
-  for (int exp = 1; m / exp > 0; exp *= sorter->base) {
+  for (int exp = 1; m / exp > 0; exp *= (int)sorter->base) {
     RCSW_CHECK(OK == omp_radix_sorter_step(sorter, exp));
   } /* for(exp...) */
   ER_INFO("Finished sorting");
@@ -169,7 +169,7 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
 #pragma omp parallel for num_threads(sorter->n_threads) schedule(static)
   for (size_t i = 0; i < sorter->n_elts; ++i) {
     fifo_add(sorter->bins + (i / sorter->chunk_size) * sorter->base +
-                 ((sorter->data[i] / digit) % sorter->base),
+             ((sorter->data[i] / (size_t)digit) % sorter->base),
              sorter->data + i);
   } /* for(i..) */
   ER_DEBUG("Finished sorting digit %d", digit);
