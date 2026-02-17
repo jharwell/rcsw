@@ -30,7 +30,8 @@ struct meta_info kMetadata = {
     .git_diff = "@LIBRA_GIT_DIFF@",
     .git_tag = "@LIBRA_GIT_TAG@",
     .git_branch = "@LIBRA_GIT_BRANCH@",
-    .compiler_flags = "@LIBRA_C_FLAGS_BUILD@",
+    .compile_flags = "@LIBRA_TARGET_FLAGS_COMPILE@",
+    .link_flags = "@LIBRA_TARGET_FLAGS_LINK@",
     .date = __DATE__,
     .time = __TIME__
   }

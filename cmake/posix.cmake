@@ -51,69 +51,56 @@ macro(rcsw_posix_configure_components)
     "src/utils")
 
   set(components
-    core
-    algorithm
-    al
-    ds
-    profile
-    er
-    utils
-    tool
-  )
+      core
+      algorithm
+      al
+      ds
+      profile
+      er
+      utils
+      tool)
 
-  # If we don't do this, then we have to use the mpicc/mpicxx C/C++
-  # compiler wrappers even if we are not using MPI. (Slightly) better to
-  # do it this way I think.
-  if (${LIBRA_MP})
+  # If we don't do this, then we have to use the mpicc/mpicxx C/C++ compiler
+  # wrappers even if we are not using MPI. (Slightly) better to do it this way I
+  # think.
+  if(${RCSW_MP})
     libra_component_register_as_src(
       rcsw_multiprocess_SRC
       rcsw
       "${rcsw_SRC}"
       multiprocess
       "src/multiprocess")
-    set(components
-      ${components}
-      multiprocess
-    )
+    set(components ${components} multiprocess)
   endif()
 
-  if (${LIBRA_MT})
-    libra_component_register_as_src(
-      rcsw_multithread_SRC
-      rcsw
-      "${rcsw_SRC}"
-      multithread
-      "src/multithread")
+  libra_component_register_as_src(
+    rcsw_multithread_SRC
+    rcsw
+    "${rcsw_SRC}"
+    multithread
+    "src/multithread")
 
-    libra_component_register_as_src(
-      rcsw_swbus_SRC
-      rcsw
-      "${rcsw_SRC}"
-      swbus
-      "src/swbus")
+  libra_component_register_as_src(
+    rcsw_swbus_SRC
+    rcsw
+    "${rcsw_SRC}"
+    swbus
+    "src/swbus")
 
-    set(components
-      ${components}
-      multithread
-      swbus
-    )
-  endif()
+  set(components ${components} multithread swbus)
 
-  if (NOT ${RCSW_WITHOUT_STDIO})
+  if(NOT ${RCSW_WITHOUT_STDIO})
     libra_component_register_as_src(
       rcsw_stdio_SRC
       rcsw
       "${rcsw_SRC}"
       stdio
       "src/stdio")
-    set(components
-      ${components}
-      stdio
-    )
+    set(components ${components} stdio)
   endif()
 
   # Root project (not used in find_package())
-  if (NOT rcsw_FIND_COMPONENTS)
+  if(NOT rcsw_FIND_COMPONENTS)
     set(rcsw_FIND_COMPONENTS ${components})
   endif()
 endmacro()

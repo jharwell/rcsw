@@ -279,7 +279,7 @@ jobs:
           # Normal tests
           make build-and-test -j$(nproc)
 
-          make lcov-report
+          make lcov-report VERBOSE=1
 
       - name: Coveralls
         uses: coverallsapp/github-action@master

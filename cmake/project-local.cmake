@@ -3,13 +3,13 @@
 # ##############################################################################
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 26)
+set(PROJECT_VERSION_PATCH 27)
 set(rcsw_VERSION
     "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
 )
 
 libra_configure_source_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
+  ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c rcsw_components_SRC)
 
 # ##############################################################################
@@ -31,7 +31,7 @@ elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
   set(RCSW_CONFIG_LIBTYPE STATIC)
   set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
 
-  if(${LIBRA_NOSTDLIB})
+  if(${LIBRA_STDLIB} MATCHES "NONE")
     set(RCSW_CONFIG_NOALLOC YES)
     set(RCSW_CONFIG_ER_PLUGIN SIMPLE)
     if(${RCSW_WITHOUT_STDIO})
@@ -180,7 +180,7 @@ foreach(component ${rcsw_FIND_COMPONENTS})
   endif()
 endforeach()
 
-add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE} ${rcsw_components_SRC})
+libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE} ${rcsw_components_SRC})
 
 # Setting this results in TWO files being installed: the actual library with the
 # version embedded, and a symlink to the actual library with the same name sans
@@ -261,10 +261,9 @@ endif()
 # Installation, but only on POSIX/linux platforms. For embedded platforms it
 # doesn't make sense.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
-  libra_configure_exports(${PROJECT_NAME} ${CMAKE_INSTALL_PREFIX})
-  libra_register_target_for_install(${PROJECT_NAME} ${CMAKE_INSTALL_PREFIX})
-  libra_register_headers_for_install(include/${PROJECT_NAME}
-                                     ${CMAKE_INSTALL_PREFIX})
+  libra_configure_exports(${PROJECT_NAME})
+  libra_register_target_for_install(${PROJECT_NAME})
+  libra_register_headers_for_install(include/${PROJECT_NAME})
 
   # Deployment
   if(NOT CPACK_PACKAGE_NAME)
@@ -273,16 +272,12 @@ if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
 
   libra_register_copyright_for_install(${PROJECT_NAME}
                                        ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/changelog")
-    libra_register_changelog_for_install(${PROJECT_NAME}
-                                         ${CMAKE_CURRENT_SOURCE_DIR}/changelog)
-  endif()
 
-  set(RCSW_SUMMARY
+  set(RCSW_PKG_SUMMARY
       "Collection of Reusable C SoftWare (RCSW) modules for embedded programming"
   )
 
-  set(RCSW_DESCRIPTION
+  set(RCSW_PKG_DESCRIPTION
       "Collection of reusable C software modules for embedded programming,
 styled after the C++ STL. Features:
 
@@ -312,8 +307,8 @@ This is a ${RCSW_CONFIG_LIBTYPE} library, built for ${RCSW_BUILD_FOR}:
 
   libra_configure_cpack(
     "DEB;RPM"
-    ${RCSW_SUMMARY}
-    ${RCSW_DESCRIPTION}
+    ${RCSW_PKG_SUMMARY}
+    ${RCSW_PKG_DESCRIPTION}
     "John Harwell"
     "https://jharwell.github.io/rcsw"
     "John Harwell <john.r.harwell@gmail.com>")

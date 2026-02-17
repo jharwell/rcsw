@@ -882,7 +882,7 @@ void minimon_start(void) {
                kMetadata.build.git_diff,
                kMetadata.build.git_tag,
                kMetadata.build.git_branch,
-               kMetadata.build.compiler_flags,
+               kMetadata.build.compile_flags,
                kMetadata.build.date,
                kMetadata.build.time);
   stdio_puts(buf);
