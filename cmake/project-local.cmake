@@ -3,18 +3,11 @@
 # ##############################################################################
 set(PROJECT_VERSION_MAJOR 1)
 set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 27)
+set(PROJECT_VERSION_PATCH 28)
 set(rcsw_VERSION
     "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
 )
 
-libra_configure_source_file(
-  ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c rcsw_components_SRC)
-
-# ##############################################################################
-# Configuration Options
-# ##############################################################################
 if(NOT RCSW_BUILD_FOR)
   set(RCSW_BUILD_FOR "POSIX")
 endif()
@@ -38,13 +31,12 @@ elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
       message(FATAL_ERROR "RCSW requires RCSW_WITHOUT_STDIO=NO when
 building for baremetal without the standard library.")
     endif()
-    # set(LIBRA_STDLIB NO CACHE BOOL "" FORCE)
   endif()
 endif()
 
-if(NOT RCSW_SUMMARY)
-  set(RCSW_SUMMARY YES)
-endif()
+libra_configure_source_file(
+  ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c rcsw_components_SRC)
 
 # ##############################################################################
 # Memory
@@ -130,11 +122,6 @@ endif()
 # ##############################################################################
 # Misc.
 # ##############################################################################
-
-if(NOT LIBRA_FPC)
-  set(LIBRA_FPC RETURN)
-endif()
-
 if(NOT RCSW_CONFIG_PTR_ALIGN)
   # We know x86 can handle 1 byte-aligned addresses; add other architectures
   # here as needed.
@@ -168,7 +155,6 @@ else()
 endif()
 
 libra_requested_components_check(rcsw)
-
 # ##############################################################################
 # Libraries
 # ##############################################################################
@@ -181,6 +167,8 @@ foreach(component ${rcsw_FIND_COMPONENTS})
 endforeach()
 
 libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE} ${rcsw_components_SRC})
+# Available whether installed or subdirectory via CPM
+add_library(rcsw::rcsw ALIAS rcsw)
 
 # Setting this results in TWO files being installed: the actual library with the
 # version embedded, and a symlink to the actual library with the same name sans
@@ -317,134 +305,132 @@ endif()
 # ##############################################################################
 # Status
 # ##############################################################################
-if(${RCSW_SUMMARY})
+set(fields
+    rcsw_VERSION
+    RCSW_BUILD_FOR
+    RCSW_CONFIG_LIBTYPE
+    RCSW_CONFIG_ER_PLUGIN
+    RCSW_CONFIG_PTR_ALIGN
+    RCSW_CONFIG_NOALLOC
+    RCSW_CONFIG_ZALLOC
+    RCSW_CONFIG_TOOL_NO_GRIND
+    RCSW_WITHOUT_STDIO
+    RCSW_CONFIG_STDIO_GETCHAR
+    RCSW_CONFIG_STDIO_PUTCHAR
+    RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
+    RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
+    RCSW_CONFIG_STDIO_PRINTF_WITH_DEC
+    RCSW_CONFIG_STDIO_PRINTF_WITH_EXP
+    RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
+    RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
+    RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
+    RCSW_CONFIG_STDIO_PRINTF_WITH_LL
+    RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL)
 
-  message("")
-  message(
-    "${BoldBlue}--------------------------------------------------------------------------------"
-  )
-  message("${BoldBlue}                           RCSW Configuration Summary")
-  message(
-    "${BoldBlue}--------------------------------------------------------------------------------"
-  )
-  message("")
+libra_config_summary_prepare_fields("${fields}")
 
-  set(fields
-      rcsw_VERSION
-      RCSW_BUILD_FOR
-      RCSW_CONFIG_LIBTYPE
-      RCSW_CONFIG_ER_PLUGIN
-      RCSW_CONFIG_PTR_ALIGN
-      RCSW_CONFIG_NOALLOC
-      RCSW_CONFIG_ZALLOC
-      RCSW_CONFIG_TOOL_NO_GRIND
-      RCSW_WITHOUT_STDIO
-      RCSW_CONFIG_STDIO_GETCHAR
-      RCSW_CONFIG_STDIO_PUTCHAR
-      RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
-      RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
-      RCSW_CONFIG_STDIO_PRINTF_WITH_DEC
-      RCSW_CONFIG_STDIO_PRINTF_WITH_EXP
-      RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
-      RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
-      RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
-      RCSW_CONFIG_STDIO_PRINTF_WITH_LL
-      RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL)
+function(rcsw_message type msg)
+  message(${type} "[RCSW] ${msg}")
+endfunction()
 
-  libra_config_summary_prepare_fields("${fields}")
+message(
+  "${BoldBlue}--------------------------------------------------------------------------------"
+)
+message("${BoldBlue}                           RCSW Configuration Summary")
+message(
+  "${BoldBlue}--------------------------------------------------------------------------------"
+)
 
-  message(
-    STATUS
-      "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]"
-  )
-  message(
-    STATUS
-      "Building for                                  : ${ColorBold}${EMIT_RCSW_BUILD_FOR}${ColorReset} [RCSW_BUILD_FOR={POSIX,BAREMETAL}]"
-  )
-  message(
-    STATUS
-      "Library type                                  : ${ColorBold}${EMIT_RCSW_CONFIG_LIBTYPE}${ColorReset} [RCSW_CONFIG_LIBTYPE={STATIC,SHARED}]"
-  )
-  message(
-    STATUS
-      "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN={ZLOG,LOG4CL,SIMPLE}]"
-  )
-  message(
-    STATUS
-      "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_CONFIG_NOALLOC}${ColorReset} [RCSW_CONFIG_NOALLOC]"
-  )
-  message(
-    STATUS
-      "Always zero alloc'd memory before use         : ${ColorBold}${EMIT_RCSW_CONFIG_ZALLOC}${ColorReset} [RCSW_CONFIG_ZALLOC]"
-  )
-  message(
-    STATUS
-      "Data pointer alignment                        : ${ColorBold}${EMIT_RCSW_CONFIG_PTR_ALIGN}${ColorReset} [RCSW_CONFIG_PTR_ALIGN={1,2,4}]"
-  )
+rcsw_message(
+  STATUS
+  "Version                                       : ${ColorBold}${EMIT_rcsw_VERSION}${ColorReset} [rcsw_VERSION]"
+)
+rcsw_message(
+  STATUS
+  "Building for                                  : ${ColorBold}${EMIT_RCSW_BUILD_FOR}${ColorReset} [RCSW_BUILD_FOR={POSIX,BAREMETAL}]"
+)
+rcsw_message(
+  STATUS
+  "Library type                                  : ${ColorBold}${EMIT_RCSW_CONFIG_LIBTYPE}${ColorReset} [RCSW_CONFIG_LIBTYPE={STATIC,SHARED}]"
+)
+rcsw_message(
+  STATUS
+  "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN={ZLOG,LOG4CL,SIMPLE}]"
+)
+rcsw_message(
+  STATUS
+  "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_CONFIG_NOALLOC}${ColorReset} [RCSW_CONFIG_NOALLOC]"
+)
+rcsw_message(
+  STATUS
+  "Always zero alloc'd memory before use         : ${ColorBold}${EMIT_RCSW_CONFIG_ZALLOC}${ColorReset} [RCSW_CONFIG_ZALLOC]"
+)
+rcsw_message(
+  STATUS
+  "Data pointer alignment                        : ${ColorBold}${EMIT_RCSW_CONFIG_PTR_ALIGN}${ColorReset} [RCSW_CONFIG_PTR_ALIGN={1,2,4}]"
+)
 
-  if(NOT ${RCSW_WITHOUT_STDIO})
-    message(
-      STATUS
-        "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_WITHOUT_STDIO}${ColorReset} [RCSW_WITHOUT_STDIO]"
-    )
-    message(
-      STATUS
-        "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_GETCHAR}${ColorReset} [RCSW_CONFIG_STDIO_GETCHAR]"
-    )
-    message(
-      STATUS
-        "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}${ColorReset} [RCSW_CONFIG_STDIO_PUTCHAR]"
-    )
-    message(
-      STATUS
-        "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_MATH_LOG10_TERMS}${ColorReset} [RCSW_CONFIG_STDIO_MATH_LOG10_TERMS]"
-    )
-    message(
-      STATUS
-        "stdio printf() buffer size                    : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_BUFSIZE}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_BUFSIZE]"
-    )
-    message(
-      STATUS
-        "stdio printf() support for decimals           : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_DEC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_DEC]"
-    )
-    message(
-      STATUS
-        "stdio printf() support for exponentials       : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_EXP}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_EXP]"
-    )
-    message(
-      STATUS
-        "stdio printf() support for writeback          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK]"
-    )
-    message(
-      STATUS
-        "stdio printf() default float precision        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC]"
-    )
-    message(
-      STATUS
-        "stdio printf() decimal -> exp digit threshold : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH]"
-    )
-    message(
-      STATUS
-        "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_LL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_LL]"
-    )
-    message(
-      STATUS
-        "stdio printf() fmt string safety check        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL]"
-    )
-  else()
-    message(
-      STATUS
-        "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_WITHOUT_STDIO}${ColorReset} [RCSW_WITHOUT_STDIO]"
-    )
-  endif()
-
-  message(
+if(NOT ${RCSW_WITHOUT_STDIO})
+  rcsw_message(
     STATUS
-      "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}${ColorReset} [RCSW_CONFIG_TOOL_NO_GRIND]"
+    "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_WITHOUT_STDIO}${ColorReset} [RCSW_WITHOUT_STDIO]"
   )
-  message("")
-  message(
-    "${BoldBlue}--------------------------------------------------------------------------------${ColorReset}"
+  rcsw_message(
+    STATUS
+    "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_GETCHAR}${ColorReset} [RCSW_CONFIG_STDIO_GETCHAR]"
   )
-
+  rcsw_message(
+    STATUS
+    "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}${ColorReset} [RCSW_CONFIG_STDIO_PUTCHAR]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_MATH_LOG10_TERMS}${ColorReset} [RCSW_CONFIG_STDIO_MATH_LOG10_TERMS]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() buffer size                    : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_BUFSIZE}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_BUFSIZE]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for decimals           : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_DEC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_DEC]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for exponentials       : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_EXP}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_EXP]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for writeback          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() default float precision        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() decimal -> exp digit threshold : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_LL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_LL]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() fmt string safety check        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL]"
+  )
+else()
+  rcsw_message(
+    STATUS
+    "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_WITHOUT_STDIO}${ColorReset} [RCSW_WITHOUT_STDIO]"
+  )
 endif()
+
+rcsw_message(
+  STATUS
+  "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}${ColorReset} [RCSW_CONFIG_TOOL_NO_GRIND]"
+)
+
+message(
+  "${BoldBlue}--------------------------------------------------------------------------------"
+)

@@ -566,7 +566,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
     } /* for(j..) */
 } /* mini_cmd_help() */
 
-static void mini_cmd_help_all(const char* cmdname, ...) {
+static void mini_cmd_help_all(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
@@ -601,7 +601,7 @@ static void mini_cmd_help_all(const char* cmdname, ...) {
   }
 } /* mini_cmd_help() */
 
-static void mini_cmd_read(const char* cmdname, ...) {
+static void mini_cmd_read(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
@@ -621,7 +621,7 @@ static void mini_cmd_read(const char* cmdname, ...) {
   }
 } /* mini_cmd_read() */
 
-static void mini_cmd_write(const char* cmdname, ...) {
+static void mini_cmd_write(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
@@ -635,7 +635,7 @@ static void mini_cmd_write(const char* cmdname, ...) {
   }
 } /* mini_cmd_write() */
 
-static void mini_cmd_jump(const char* cmdname, ...) {
+static void mini_cmd_jump(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
   va_start(args, cmdname);
   vfp_t func = va_arg(args, vfp_t);
@@ -654,7 +654,7 @@ static void mini_cmd_jump(const char* cmdname, ...) {
   asm volatile ( "nop ; nop ; nop" );
 } /* mini_cmd_jump() */
 
-static void mini_cmd_load(const char* cmdname, ...) {
+static void mini_cmd_load(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
@@ -803,7 +803,7 @@ static void mini_cmd_send_text(uint32_t* addrp, uint32_t size) {
       } /* for(i...) */
   } /* while(...) */
 }
-static void mini_cmd_send(const char* cmdname, ...) {
+static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
