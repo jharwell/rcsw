@@ -9,9 +9,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/rbuffer.h"
 #include "rcsw/utils/utils.h"
@@ -21,8 +20,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using rbuffer_test_t = void(*)(int len,
-                               struct rbuffer_params *params);
+using rbuffer_test_t = void (*)(int len, struct rbuffer_params *params);
 
 /*******************************************************************************
  * Test Helper Functions
@@ -32,19 +30,17 @@ static void run_test(rbuffer_test_t test) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
   struct rbuffer_params params;
   memset(&params, 0, sizeof(rbuffer_params));
-  params.flags = 0;
-  params.cmpe = th::cmpe<T>;
-  params.printe = th::printe<T>;
+  params.flags    = 0;
+  params.cmpe     = th::cmpe<T>;
+  params.printe   = th::printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);
 
-  uint32_t flags[] = {
-    RCSW_NONE,
-    RCSW_ZALLOC,
-    RCSW_NOALLOC_HANDLE,
-    RCSW_NOALLOC_DATA,
-    RCSW_DS_RBUFFER_AS_FIFO
-  };
+  uint32_t flags[] = {RCSW_NONE,
+                      RCSW_ZALLOC,
+                      RCSW_NOALLOC_HANDLE,
+                      RCSW_NOALLOC_DATA,
+                      RCSW_DS_RBUFFER_AS_FIFO};
 
   uint32_t applied = 0;
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
@@ -67,9 +63,9 @@ static void run_test(rbuffer_test_t test) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void rdwr_test(int len, struct rbuffer_params* params) {
+static void rdwr_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
+  struct rbuffer  myrb;
 
   params->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   rb = rbuffer_init(&myrb, params);
@@ -86,7 +82,7 @@ static void rdwr_test(int len, struct rbuffer_params* params) {
 
   /* verify rbuffer contents */
   for (int i = 0; i < len; ++i) {
-    T* e = (T*)rbuffer_data_get(rb, i);
+    T *e = (T *)rbuffer_data_get(rb, i);
     CATCH_REQUIRE(i == e->value1);
     CATCH_REQUIRE(i == rbuffer_index_query(rb, e));
   } /* for() */
@@ -101,17 +97,17 @@ static void rdwr_test(int len, struct rbuffer_params* params) {
   rbuffer_destroy(rb);
 } /* rdwr_test() */
 
-template<typename T>
-static void overwrite_test(int len, struct rbuffer_params *  params) {
+template <typename T>
+static void overwrite_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
-  T arr[TH_NUM_ITEMS*TH_NUM_ITEMS];
+  struct rbuffer  myrb;
+  T               arr[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
   params->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   rb = rbuffer_init(&myrb, params);
 
-  unsigned tail = 0;
-  unsigned count = 0;
+  unsigned                 tail  = 0;
+  unsigned                 count = 0;
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   /* test overwriting */
@@ -122,15 +118,12 @@ static void overwrite_test(int len, struct rbuffer_params *  params) {
     if (i >= len) {
       tail++;
     }
-    count = 0;
-    T * ep = nullptr;
-    struct ds_iterator *iter = ds_iter_init(rb,
-                                            ekRCSW_DS_RBUFFER,
-                                            ekITER_FORWARD);
-    while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
-      CATCH_REQUIRE(memcmp(ep,
-                           &arr[tail+count+rb->start],
-                           sizeof(T)) == 0);
+    count                  = 0;
+    T                  *ep = nullptr;
+    struct ds_iterator *iter =
+      ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
+    while ((ep = (T *)ds_iter_next(iter)) != nullptr) {
+      CATCH_REQUIRE(memcmp(ep, &arr[tail + count + rb->start], sizeof(T)) == 0);
       count++;
     } /* while() */
   } /* for() */
@@ -138,11 +131,11 @@ static void overwrite_test(int len, struct rbuffer_params *  params) {
   rbuffer_destroy(rb);
 } /* overwrite_test() */
 
-template<typename T>
-static void map_test(int len, struct rbuffer_params * params) {
+template <typename T>
+static void map_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
-  int arr[TH_NUM_ITEMS];
+  struct rbuffer  myrb;
+  int             arr[TH_NUM_ITEMS];
 
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(rb != nullptr);
@@ -150,7 +143,7 @@ static void map_test(int len, struct rbuffer_params * params) {
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
 
   for (int i = 0; i < len; i++) {
-    T e = g.next();
+    T e    = g.next();
     arr[i] = i;
     CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
   } /* for() */
@@ -160,17 +153,17 @@ static void map_test(int len, struct rbuffer_params * params) {
   for (int i = 0; i < len; ++i) {
     T e;
     CATCH_REQUIRE(rbuffer_remove(rb, &e) == OK);
-    CATCH_REQUIRE(arr[i] == e.value1 +1);
+    CATCH_REQUIRE(arr[i] == e.value1 + 1);
   } /* for() */
 
   rbuffer_destroy(rb);
 } /* map_test() */
 
-template<typename T>
-static void fifo_test(int len, struct rbuffer_params * params) {
+template <typename T>
+static void fifo_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
-  T arr[TH_NUM_ITEMS];
+  struct rbuffer  myrb;
+  T               arr[TH_NUM_ITEMS];
 
   if (!(params->flags &= RCSW_DS_RBUFFER_AS_FIFO)) {
     return;
@@ -182,18 +175,18 @@ static void fifo_test(int len, struct rbuffer_params * params) {
 
   /* fill the FIFO, verifying it does not allow addition of items once full */
   unsigned curr_old, start_old;
-  for (int i = 0; i < len*2; ++i) {
+  for (int i = 0; i < len * 2; ++i) {
     T e = g.next();
     if (i < len) {
       arr[i] = e;
       CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
     } else {
-      curr_old = rb->current;
+      curr_old  = rb->current;
       start_old = rb->start;
       CATCH_REQUIRE(rbuffer_add(rb, &e) == ERROR);
       CATCH_REQUIRE(errno == ENOSPC);
       CATCH_REQUIRE((curr_old == rb->current && start_old == rb->start));
-      T* e2 = (T*)rbuffer_front(rb);
+      T *e2 = (T *)rbuffer_front(rb);
       CATCH_REQUIRE(e2->value1 == arr[0].value1);
     }
   } /* for() */
@@ -205,10 +198,10 @@ static void fifo_test(int len, struct rbuffer_params * params) {
       T e;
       CATCH_REQUIRE(rbuffer_remove(rb, &e) == OK);
       CATCH_REQUIRE(arr[0].value1 == e.value1);
-      memmove(arr, arr+1, sizeof(arr) - sizeof(T));
+      memmove(arr, arr + 1, sizeof(arr) - sizeof(T));
     } else {
-      T e = g.next();
-      arr[len -1] = e;
+      T e          = g.next();
+      arr[len - 1] = e;
       CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
     }
   } /* for() */
@@ -217,10 +210,10 @@ static void fifo_test(int len, struct rbuffer_params * params) {
 } /* fifo_test() */
 
 template <typename T>
-static void inject_test(int len, struct rbuffer_params * params) {
+static void inject_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
-  int sum = 0;
+  struct rbuffer  myrb;
+  int             sum = 0;
 
   rb = rbuffer_init(&myrb, params);
   CATCH_REQUIRE(nullptr != rb);
@@ -240,10 +233,10 @@ static void inject_test(int len, struct rbuffer_params * params) {
 } /* inject_test() */
 
 template <typename T>
-static void iter_test(int len, struct rbuffer_params * params) {
+static void iter_test(int len, struct rbuffer_params *params) {
   struct rbuffer *rb;
-  struct rbuffer myrb;
-  int arr[TH_NUM_ITEMS * TH_NUM_ITEMS];
+  struct rbuffer  myrb;
+  int             arr[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
   params->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   rb = rbuffer_init(&myrb, params);
@@ -256,12 +249,11 @@ static void iter_test(int len, struct rbuffer_params * params) {
   } /* for() */
 
   /* test iteration of without overwriting */
-  T* e;
-  struct ds_iterator * iter = ds_filter_init(rb,
-                                             ekRCSW_DS_RBUFFER,
-                                             th::iter_func<T>);
+  T                  *e;
+  struct ds_iterator *iter =
+    ds_filter_init(rb, ekRCSW_DS_RBUFFER, th::iter_func<T>);
   CATCH_REQUIRE(iter != nullptr);
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   } /* while() */
 
@@ -271,7 +263,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
   CATCH_REQUIRE(iter);
   size_t count = 0;
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE((size_t)e->value1 == count);
     count++;
   } /* while() */
@@ -283,7 +275,7 @@ static void iter_test(int len, struct rbuffer_params * params) {
   iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_BACKWARD);
   CATCH_REQUIRE(nullptr != iter);
   count = 0;
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE((size_t)e->value1 == len - count - 1);
     count++;
   } /* while() */
@@ -306,10 +298,10 @@ static void iter_test(int len, struct rbuffer_params * params) {
 
     /* verify iteration */
     count = 0;
-    T* ep = nullptr;
-    iter = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
-    while ((ep = (T*)ds_iter_next(iter)) != nullptr) {
-      CATCH_REQUIRE(ep->value1 == arr[tail+count+rb->start]);
+    T *ep = nullptr;
+    iter  = ds_iter_init(rb, ekRCSW_DS_RBUFFER, ekITER_FORWARD);
+    while ((ep = (T *)ds_iter_next(iter)) != nullptr) {
+      CATCH_REQUIRE(ep->value1 == arr[tail + count + rb->start]);
       count++;
     } /* while() */
   } /* for() */
@@ -345,7 +337,7 @@ CATCH_TEST_CASE("FIFO Test", "[ds][rbuffer]") {
   run_test<element8>(fifo_test<element8>);
 }
 CATCH_TEST_CASE("Inject Test", "[ds][rbuffer]") {
-run_test<element1>(inject_test<element1>);
+  run_test<element1>(inject_test<element1>);
   run_test<element2>(inject_test<element2>);
   run_test<element4>(inject_test<element4>);
   run_test<element8>(inject_test<element8>);

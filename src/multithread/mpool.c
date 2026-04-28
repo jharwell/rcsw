@@ -13,17 +13,17 @@
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "mpool")
 #define RCSW_ER_MODID ekLOG4CL_MT_MPOOL
-#include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/rcsw.h"
 #include "rcsw/common/alloc.h"
+#include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
+#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct mpool* mpool_init(struct mpool* const pool_in,
+struct mpool* mpool_init(struct mpool* const              pool_in,
                          const struct mpool_params* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
@@ -34,10 +34,10 @@ struct mpool* mpool_init(struct mpool* const pool_in,
 
   RCSW_CHECK_PTR(the_pool);
 
-  the_pool->flags = params->flags;
+  the_pool->flags    = params->flags;
   the_pool->elt_size = params->elt_size;
   the_pool->max_elts = params->max_elts;
-  the_pool->flags = params->flags;
+  the_pool->flags    = params->flags;
 
   ER_INFO("Init memory pool: max_elts=%zu,elt_size=%zu",
           the_pool->max_elts,
@@ -58,17 +58,18 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   struct llist_params llist_params = {
     .max_elts = (int)params->max_elts,
     .elt_size = params->elt_size,
-    .cmpe = NULL,
-    .meta = (dptr_t*)the_pool->nodes,
-    .flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
+    .cmpe     = NULL,
+    .meta     = (dptr_t*)the_pool->nodes,
+    .flags    = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
              RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META,
   };
 
   /* initialize free/alloc lists */
   RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
   for (size_t i = 0; i < the_pool->max_elts; ++i) {
-    RCSW_CHECK(OK == llist_append(&the_pool->free,
-                                  (uint8_t*)the_pool->elements + i * the_pool->elt_size));
+    RCSW_CHECK(
+      OK == llist_append(&the_pool->free,
+                         (uint8_t*)the_pool->elements + i * the_pool->elt_size));
 
   } /* for() */
   size_t n_bytes = llist_meta_space(params->max_elts);
@@ -82,15 +83,12 @@ struct mpool* mpool_init(struct mpool* const pool_in,
   RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
 
   /* initialize reference counting */
-  the_pool->refs = rcsw_alloc(NULL,
-                              params->max_elts * sizeof(int),
-                              RCSW_ZALLOC);
+  the_pool->refs = rcsw_alloc(NULL, params->max_elts * sizeof(int), RCSW_ZALLOC);
   RCSW_CHECK_PTR(the_pool->refs);
 
   /* initialize locks */
-  RCSW_CHECK_PTR(csem_init(&the_pool->slots_avail,
-                           the_pool->max_elts,
-                           RCSW_NOALLOC_HANDLE));
+  RCSW_CHECK_PTR(
+    csem_init(&the_pool->slots_avail, the_pool->max_elts, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(mutex_init(&the_pool->mutex, RCSW_NOALLOC_HANDLE));
 
   return the_pool;
@@ -135,7 +133,8 @@ void* mpool_req(struct mpool* const the_pool) {
   llist_append(&the_pool->alloc, ptr);
 
   /* One more THING using this chunk */
-  size_t idx = (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
+  size_t idx =
+    (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
   the_pool->refs[idx]++;
 
   mutex_unlock(&the_pool->mutex);
@@ -149,9 +148,9 @@ void* mpool_req(struct mpool* const the_pool) {
   return ptr;
 } /* mpool_req() */
 
-status_t mpool_timedreq(struct mpool* const the_pool,
+status_t mpool_timedreq(struct mpool* const          the_pool,
                         const struct timespec* const to,
-                        void** chunk) {
+                        void**                       chunk) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != to);
 
   ER_DEBUG("Wait for buffer to become available: n_free=%zu,n_alloc=%zu",
@@ -167,7 +166,8 @@ status_t mpool_timedreq(struct mpool* const the_pool,
   llist_append(&the_pool->alloc, ptr);
 
   /* One more THING using this chunk */
-  size_t idx = (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
+  size_t idx =
+    (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
   the_pool->refs[idx]++;
 
   if (NULL != chunk) {
@@ -193,8 +193,7 @@ status_t mpool_release(struct mpool* const the_pool, void* const ptr) {
   ER_DEBUG("Attempting release of buf=%p", ptr);
 
   int index = mpool_ref_query(the_pool, ptr);
-  ER_CHECK(-1 != index,
-           "Buffer %p not found", ptr);
+  ER_CHECK(-1 != index, "Buffer %p not found", ptr);
 
   mutex_lock(&the_pool->mutex);
 
@@ -254,8 +253,7 @@ error:
   return rstat;
 } /* mpool_ref_add() */
 
-status_t mpool_ref_remove(struct mpool* const the_pool,
-                          const void* const ptr) {
+status_t mpool_ref_remove(struct mpool* const the_pool, const void* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
 
   status_t rstat = ERROR;
@@ -288,7 +286,8 @@ int mpool_ref_query(struct mpool* const the_pool, const void* const ptr) {
   RCSW_CHECK(RCSW_IS_BETWEENHO((const uint8_t*)ptr,
                                (uint8_t*)the_pool->elements,
                                (uint8_t*)the_pool->elements + memsize));
-  return (int)((size_t)((const uint8_t*)ptr - (uint8_t*)the_pool->elements)) / (int)the_pool->elt_size;
+  return (int)((size_t)((const uint8_t*)ptr - (uint8_t*)the_pool->elements)) /
+         (int)the_pool->elt_size;
 
 error:
   return -1;

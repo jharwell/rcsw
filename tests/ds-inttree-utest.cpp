@@ -9,25 +9,22 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-#include "rcsw/ds/rbtree.h"
+#include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree.h"
-#include "rcsw/ds/bstree_node.h"
+#include "rcsw/ds/rbtree.h"
 #include "rcsw/utils/utils.h"
-
+#include "tests/ds_bstree_test.hpp"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
-#include "tests/ds_bstree_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using inttree_test_t = void(*)(int len,
-                               struct bstree_params *params);
+using inttree_test_t = void (*)(int len, struct bstree_params *params);
 
 /*******************************************************************************
  * Global Variables
@@ -40,7 +37,7 @@ int n_elements; /* global var for # elements in RBTREE */
 static void run_test(inttree_test_t test) {
   struct bstree_params params;
   memset(&params, 0, sizeof(bstree_params));
-  params.flags = 0;
+  params.flags    = 0;
   params.elt_size = sizeof(struct interval_data);
   params.max_elts = TH_NUM_ITEMS;
   th::ds_init(&params);
@@ -78,8 +75,8 @@ static void run_test(inttree_test_t test) {
  * \brief Test inserting nodes in an interval tree and verifying
  */
 static void inttree_insert_test(int len, struct bstree_params *params) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree       *tree;
+  struct bstree        mytree;
   struct interval_data arr1[TH_NUM_ITEMS];
 
   tree = inttree_init(&mytree, params);
@@ -90,22 +87,22 @@ static void inttree_insert_test(int len, struct bstree_params *params) {
    * auxiliary field is being updated properly through rotations.
    */
   for (int i = 0; i < len; ++i) {
-    struct interval_data e;
-    struct interval_data * e_ptr;
-    e.low = i;
+    struct interval_data  e;
+    struct interval_data *e_ptr;
+    e.low  = i;
     e.high = i + 10;
 
     CATCH_REQUIRE(OK == inttree_insert(tree, &e));
     arr1[i] = e;
-    e_ptr = (interval_data*)bstree_data_query(tree, &arr1[i].low);
+    e_ptr   = (interval_data *)bstree_data_query(tree, &arr1[i].low);
     CATCH_REQUIRE(NULL != e_ptr);
     CATCH_REQUIRE(e_ptr->low == arr1[i].low);
     CATCH_REQUIRE(e_ptr->high == arr1[i].high);
   }
   /* verify all data in tree */
   for (int i = 0; i < len; ++i) {
-    struct interval_data * e_ptr;
-    e_ptr = (interval_data*)bstree_data_query(tree, &arr1[i].low);
+    struct interval_data *e_ptr;
+    e_ptr = (interval_data *)bstree_data_query(tree, &arr1[i].low);
     CATCH_REQUIRE(e_ptr != NULL);
     CATCH_REQUIRE(e_ptr->low == arr1[i].low);
     CATCH_REQUIRE(e_ptr->high == arr1[i].high);
@@ -118,8 +115,8 @@ static void inttree_insert_test(int len, struct bstree_params *params) {
  * \brief Test removeing nodes in an interval tree and verifying
  */
 static void inttree_remove_test(int len, struct bstree_params *params) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree       *tree;
+  struct bstree        mytree;
   struct interval_data arr1[TH_NUM_ITEMS];
 
   tree = inttree_init(&mytree, params);
@@ -130,9 +127,9 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
    * elsewhere)
    */
   for (int i = 0; i < len; ++i) {
-    struct interval_data e;
-    struct interval_data * e_ptr;
-    e.low = i;
+    struct interval_data  e;
+    struct interval_data *e_ptr;
+    e.low  = i;
     e.high = i + 10;
     /* tree 1 */
     CATCH_REQUIRE(OK == inttree_insert(tree, &e));
@@ -147,12 +144,13 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
     old_count = tree->current;
     CATCH_REQUIRE(bstree_remove(tree, &arr1[remove_index].low) == OK);
     CATCH_REQUIRE(bstree_data_query(tree, &arr1[remove_index].low) == NULL);
-    CATCH_REQUIRE(tree->current == old_count -1);
+    CATCH_REQUIRE(tree->current == old_count - 1);
 
     n_elements = tree->current;
-    CATCH_REQUIRE(bstree_traverse(tree,
-                                  (th::bst::bst_verify_cb)th::bst::verify_nodes_int,
-                                  ekTRAVERSE_INORDER) == OK);
+    CATCH_REQUIRE(
+      bstree_traverse(tree,
+                      (th::bst::bst_verify_cb)th::bst::verify_nodes_int,
+                      ekTRAVERSE_INORDER) == OK);
   } /* for() */
 
   bstree_destroy(tree);
@@ -162,11 +160,11 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
  * \brief Test overlap search for interval trees
  */
 static void inttree_overlap_test(int len, struct bstree_params *params) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree       *tree;
+  struct bstree        mytree;
   struct interval_data insert_arr[TH_NUM_ITEMS];
   struct interval_data search_arr[TH_NUM_ITEMS];
-  bool overlap_arr[TH_NUM_ITEMS];
+  bool                 overlap_arr[TH_NUM_ITEMS];
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     tree = inttree_init(&mytree, params);
@@ -180,10 +178,10 @@ static void inttree_overlap_test(int len, struct bstree_params *params) {
    * elsewhere)
    */
   for (int i = 0; i < len; ++i) {
-    struct interval_data e;
-    struct interval_data * e_ptr;
-    e.low = i*4;
-    e.high = e.low + i*5;
+    struct interval_data  e;
+    struct interval_data *e_ptr;
+    e.low  = i * 4;
+    e.high = e.low + i * 5;
     CATCH_REQUIRE(OK == inttree_insert(tree, &e));
     insert_arr[i] = e;
   } /* for() */
@@ -192,14 +190,16 @@ static void inttree_overlap_test(int len, struct bstree_params *params) {
    * Build query intervals and overlap arrays
    */
   for (int i = 0; i < len; ++i) {
-    search_arr[i].low = rand() % 4;
+    search_arr[i].low  = rand() % 4;
     search_arr[i].high = search_arr[i].low + rand() % 5;
-    overlap_arr[i] = false;
+    overlap_arr[i]     = false;
     for (int j = 0; j < len; ++j) {
-      if (search_arr[i].low < insert_arr[j].low && search_arr[i].high >= insert_arr[j].low) {
+      if (search_arr[i].low < insert_arr[j].low &&
+          search_arr[i].high >= insert_arr[j].low) {
         overlap_arr[i] = true;
       }
-      if (search_arr[i].low >= insert_arr[j].low && search_arr[i].low <= insert_arr[j].high) {
+      if (search_arr[i].low >= insert_arr[j].low &&
+          search_arr[i].low <= insert_arr[j].high) {
         overlap_arr[i] = true;
       }
     } /* for(j..) */
@@ -226,12 +226,8 @@ static void inttree_overlap_test(int len, struct bstree_params *params) {
  * Test Cases
  ******************************************************************************/
 /* Internal Tree tests */
-CATCH_TEST_CASE("Insert Test", "[ds][inttree]") {
-  run_test(inttree_insert_test);
-}
-CATCH_TEST_CASE("Remove Test", "[ds][inttree]") {
-  run_test(inttree_remove_test);
-}
+CATCH_TEST_CASE("Insert Test", "[ds][inttree]") { run_test(inttree_insert_test); }
+CATCH_TEST_CASE("Remove Test", "[ds][inttree]") { run_test(inttree_remove_test); }
 CATCH_TEST_CASE("Overlap Test", "[ds][inttree]") {
   run_test(inttree_overlap_test);
 }

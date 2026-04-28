@@ -10,7 +10,7 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree_node.h"
@@ -64,7 +64,8 @@ int verify_nodes_rb(const struct bstree* const tree,
   int height;
   CATCH_REQUIRE(tree->root->red == 0);
   CATCH_REQUIRE(tree->nil->red == 0);
-  CATCH_REQUIRE(tree->root->parent == nil);
+                         struct bstree_node* parent = tree->root->parent;
+  CATCH_REQUIRE(parent == nil);
 
   /*
    * Verify children are < current node if a left child, and > current node

@@ -17,11 +17,11 @@
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "darray")
 #define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
-#include "rcsw/er/client.h"
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/fpc.h"
 #include "rcsw/common/alloc.h"
+#include "rcsw/common/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Forward Declarations
@@ -29,7 +29,7 @@
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * Static Functions
+ * Private API
  ******************************************************************************/
 /**
  * \brief Increase the capacity of a darray by a set amount
@@ -47,11 +47,11 @@ static status_t darray_extend(struct darray* const arr, size_t size) {
   }
 
   size_t old_size = size;
-  arr->capacity = size;
+  arr->capacity   = size;
 
   /* use tmp var to preserve orignal list in case of failure */
   void* tmp = NULL;
-  tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
+  tmp       = realloc(arr->elements, arr->capacity * arr->elt_size);
 
   RCSW_CHECK_PTR(tmp);
   arr->elements = tmp;
@@ -59,7 +59,7 @@ static status_t darray_extend(struct darray* const arr, size_t size) {
   return OK;
 
 error:
-  errno = ENOMEM;
+  errno         = ENOMEM;
   arr->capacity = old_size;
   return ERROR;
 } /* darray_extend() */
@@ -83,7 +83,7 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
   RCSW_FPC_NV(ERROR, arr != NULL);
 
   size_t old_size = arr->capacity;
-  arr->capacity = size;
+  arr->capacity   = size;
 
   if (arr->capacity > 0) {
     ER_CHECK(!(arr->flags & RCSW_NOALLOC_DATA),
@@ -91,7 +91,7 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
     void* tmp = realloc(arr->elements, arr->capacity * arr->elt_size);
     RCSW_CHECK_PTR(tmp);
     arr->elements = tmp;
-    arr->current = RCSW_MIN(arr->capacity - 1, arr->current);
+    arr->current  = RCSW_MIN(arr->capacity - 1, arr->current);
   } else { /* the array has become empty--don't free() the array */
     arr->current = 0;
   }
@@ -99,27 +99,23 @@ static status_t darray_shrink(struct darray* const arr, size_t size) {
   return OK;
 
 error:
-  errno = EAGAIN;
+  errno         = EAGAIN;
   arr->capacity = old_size;
   return ERROR;
 } /* darray_shrink() */
 
-
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct darray* darray_init(struct darray* arr_in,
+struct darray* darray_init(struct darray*                    arr_in,
                            const struct darray_params* const params) {
-  RCSW_FPC_NV(NULL,
-              params != NULL,
-              params->elt_size > 0,
-              params->max_elts != 0);
+  RCSW_FPC_NV(NULL, params != NULL, params->elt_size > 0, params->max_elts != 0);
 
   struct darray* arr = rcsw_alloc(arr_in,
                                   sizeof(struct darray),
                                   params->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(arr);
-  arr->flags = params->flags;
+  arr->flags    = params->flags;
   arr->elements = NULL;
 
   if (params->flags & RCSW_NOALLOC_DATA) {
@@ -134,7 +130,7 @@ struct darray* darray_init(struct darray* arr_in,
     if (arr->capacity > 0) {
       arr->elements = rcsw_alloc(params->elements,
                                  params->init_size * params->elt_size,
-                                 RCSW_NONE);
+                                 params->flags & RCSW_ZALLOC);
     }
   }
   /*
@@ -152,18 +148,18 @@ struct darray* darray_init(struct darray* arr_in,
   }
 
   arr->elt_size = params->elt_size;
-  arr->current = 0;
+  arr->current  = 0;
 
-  arr->cmpe = params->cmpe;
+  arr->cmpe   = params->cmpe;
   arr->printe = params->printe;
   arr->sorted = false;
 
   ER_DEBUG("Capacity=%zu init_size=%zu max_elts=%d elt_size=%zu flags=0x%08x",
-       arr->capacity,
-       params->init_size,
-       arr->max_elts,
-       arr->elt_size,
-       arr->flags);
+           arr->capacity,
+           params->init_size,
+           arr->max_elts,
+           arr->elt_size,
+           arr->flags);
   return arr;
 
 error:
@@ -199,8 +195,9 @@ status_t darray_data_clear(struct darray* const arr) {
   return OK;
 } /* darray_clear() */
 
-status_t
-darray_insert(struct darray* const arr, const void* const e, size_t index) {
+status_t darray_insert(struct darray* const arr,
+                       const void* const    e,
+                       size_t               index) {
   RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, (index <= arr->current));
 
   /* cannot insert--no space left */
@@ -219,8 +216,9 @@ darray_insert(struct darray* const arr, const void* const e, size_t index) {
   if (arr->flags & RCSW_DS_ORDERED) {
     /* shift all elements between index and end of list over by one */
     for (size_t i = arr->current; i > index; --i) {
-      ds_elt_copy(
-          darray_data_get(arr, i), darray_data_get(arr, i - 1), arr->elt_size);
+      ds_elt_copy(darray_data_get(arr, i),
+                  darray_data_get(arr, i - 1),
+                  arr->elt_size);
     } /* for() */
   } else { /* if not, just move element at index to end of array */
     memmove(darray_data_get(arr, arr->current),
@@ -286,8 +284,9 @@ error:
   return ERROR;
 } /* darray_remove() */
 
-status_t
-darray_idx_serve(const struct darray* const arr, void* const e, size_t index) {
+status_t darray_idx_serve(const struct darray* const arr,
+                          void* const                e,
+                          size_t                     index) {
   RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index <= arr->current);
   memmove(e, darray_data_get(arr, index), arr->elt_size);
   return OK;
@@ -323,8 +322,8 @@ void* darray_data_get(const struct darray* const arr, size_t index) {
 } /* darray_data_get() */
 
 status_t darray_data_set(const struct darray* const arr,
-                         size_t index,
-                         const void* const e) {
+                         size_t                     index,
+                         const void* const          e) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != e);
   return ds_elt_copy((uint8_t*)arr->elements + index * arr->elt_size,
                      e,
@@ -374,7 +373,11 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
     ER_DEBUG("Already sorted: nothing to do\n");
   } else {
     if (type == ekEXEC_REC) {
-      qsort_rec(arr->elements, 0, (int)arr->current - 1, arr->elt_size, arr->cmpe);
+      qsort_rec(arr->elements,
+                0,
+                (int)arr->current - 1,
+                arr->elt_size,
+                arr->cmpe);
     } else if (type == ekEXEC_ITER) {
       qsort_iter(arr->elements, (int)arr->current - 1, arr->elt_size, arr->cmpe);
     } else {
@@ -389,19 +392,16 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
 struct darray* darray_filter(struct darray* const arr,
                              bool_t (*pred)(const void* const e),
                              uint32_t flags,
-                             void* elements) {
-  RCSW_FPC_NV(NULL,
-              NULL != arr,
-              NULL != pred,
-              !(flags & RCSW_NOALLOC_HANDLE));
+                             void*    elements) {
+  RCSW_FPC_NV(NULL, NULL != arr, NULL != pred, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct darray_params params = { .init_size = 0,
-                                  .cmpe = arr->cmpe,
-                                  .printe = arr->printe,
-                                  .elt_size = arr->elt_size,
-                                  .max_elts = arr->max_elts,
-                                  .flags = flags,
-                                  .elements = elements};
+  struct darray_params params = {.init_size = 0,
+                                 .cmpe      = arr->cmpe,
+                                 .printe    = arr->printe,
+                                 .elt_size  = arr->elt_size,
+                                 .max_elts  = arr->max_elts,
+                                 .flags     = flags,
+                                 .elements  = elements};
 
   struct darray* farr = darray_init(NULL, &params);
   RCSW_CHECK_PTR(farr);
@@ -424,11 +424,12 @@ struct darray* darray_filter(struct darray* const arr,
     }
   } /* for() */
 
-  ER_DEBUG("%zu %zu-byte elements filtered out into new list. %zu elements remain "
-           "in original list.\n",
-           n_removed,
-           arr->elt_size,
-           arr->current);
+  ER_DEBUG(
+    "%zu %zu-byte elements filtered out into new list. %zu elements remain "
+    "in original list.\n",
+    n_removed,
+    arr->elt_size,
+    arr->current);
   return farr;
 
 error:
@@ -437,23 +438,22 @@ error:
 } /* darray_filter() */
 
 struct darray* darray_copy(const struct darray* const arr,
-                           uint32_t flags,
-                           void* elements) {
+                           uint32_t                   flags,
+                           void*                      elements) {
   RCSW_FPC_NV(NULL, arr != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
   struct darray_params params = {.init_size = arr->current,
-                                 .cmpe = arr->cmpe,
-                                 .printe = arr->printe,
-                                 .elt_size = arr->elt_size,
-                                 .max_elts = arr->max_elts,
-                                 .flags = flags,
-                                 .elements = elements
-  };
+                                 .cmpe      = arr->cmpe,
+                                 .printe    = arr->printe,
+                                 .elt_size  = arr->elt_size,
+                                 .max_elts  = arr->max_elts,
+                                 .flags     = flags,
+                                 .elements  = elements};
 
   struct darray* carr = darray_init(NULL, &params);
   RCSW_CHECK_PTR(carr);
   carr->current = arr->current;
-  carr->sorted = arr->sorted;
+  carr->sorted  = arr->sorted;
 
   /*
    * Copy items into new list, if it makes sense to do so. Don't use
@@ -491,6 +491,5 @@ status_t darray_inject(const struct darray* const arr,
 
   return OK;
 } /* darray_inject() */
-
 
 END_C_DECLS

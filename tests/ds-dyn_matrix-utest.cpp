@@ -12,9 +12,8 @@
  * Includes
  ******************************************************************************/
 #include <limits.h>
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/dyn_matrix.h"
 #include "tests/ds_test.h"
@@ -23,16 +22,15 @@
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
-void run_test(void (*test)(struct dyn_matrix_params *params)) {
+template <typename T>
+void run_test(void (*test)(struct dyn_matrix_params* params)) {
   struct dyn_matrix_params params;
   memset(&params, 0, sizeof(dyn_matrix_params));
   params.elt_size = sizeof(T);
-  params.n_cols = TH_NUM_ITEMS;
-  params.n_rows = TH_NUM_ITEMS;
-  params.printe = th::printe<T>;
+  params.n_cols   = TH_NUM_ITEMS;
+  params.n_rows   = TH_NUM_ITEMS;
+  params.printe   = th::printe<T>;
   CATCH_REQUIRE(th::ds_init(&params) == OK);
-
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -51,7 +49,7 @@ void run_test(void (*test)(struct dyn_matrix_params *params)) {
         for (size_t n = 1; n <= 10; ++n) {
           params.n_cols = m;
           params.n_rows = n;
-          params.flags = applied;
+          params.flags  = applied;
           test(&params);
         } /* for(m..) */
       } /* for(n..) */
@@ -60,43 +58,42 @@ void run_test(void (*test)(struct dyn_matrix_params *params)) {
     } /* for(j..) */
   } /* for(i..) */
 
-
   th::ds_shutdown(&params);
 } /* run_test() */
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 static void addremove_test(struct dyn_matrix_params* params) {
-  struct dyn_matrix *matrix;
-  struct dyn_matrix mymatrix;
+  struct dyn_matrix* matrix;
+  struct dyn_matrix  mymatrix;
 
   matrix = dyn_matrix_init(&mymatrix, params);
 
   CATCH_REQUIRE(nullptr != matrix);
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(0 ==
+                    memcmp(&val, dyn_matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == dyn_matrix_clear(matrix, i, j));
-      CATCH_REQUIRE(true == util_zchk(dyn_matrix_access(matrix, i, j),
-                                        sizeof(T)));
+      CATCH_REQUIRE(true ==
+                    util_zchk(dyn_matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
   dyn_matrix_destroy(matrix);
 }
 
-template<typename T>
+template <typename T>
 static void transpose_test(struct dyn_matrix_params* params) {
-  struct dyn_matrix *matrix;
-  struct dyn_matrix mymatrix;
+  struct dyn_matrix* matrix;
+  struct dyn_matrix  mymatrix;
 
   matrix = dyn_matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
@@ -111,17 +108,16 @@ static void transpose_test(struct dyn_matrix_params* params) {
   }
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(0 ==
+                    memcmp(&val, dyn_matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == dyn_matrix_clear(matrix, i, j));
-      CATCH_REQUIRE(util_zchk(dyn_matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(util_zchk(dyn_matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -134,7 +130,7 @@ static void transpose_test(struct dyn_matrix_params* params) {
 
       CATCH_REQUIRE(e1->value1 == e2->value1);
       if constexpr (!std::is_same<T, element1>::value) {
-          CATCH_REQUIRE(e1->value2 == e2->value2);
+        CATCH_REQUIRE(e1->value2 == e2->value2);
       }
     } /* for(j..) */
   } /* for(..) */
@@ -142,10 +138,10 @@ static void transpose_test(struct dyn_matrix_params* params) {
   dyn_matrix_destroy(matrix);
 }
 
-template<typename T>
+template <typename T>
 static void print_test(struct dyn_matrix_params* params) {
-  struct dyn_matrix *matrix;
-  struct dyn_matrix mymatrix;
+  struct dyn_matrix* matrix;
+  struct dyn_matrix  mymatrix;
 
   dyn_matrix_print(NULL);
   matrix = dyn_matrix_init(&mymatrix, params);
@@ -153,17 +149,17 @@ static void print_test(struct dyn_matrix_params* params) {
 
   CATCH_REQUIRE(nullptr != matrix);
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == dyn_matrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 == memcmp(&val, dyn_matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(0 ==
+                    memcmp(&val, dyn_matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == dyn_matrix_clear(matrix, i, j));
-      CATCH_REQUIRE(true == util_zchk(dyn_matrix_access(matrix, i, j),
-                                        sizeof(T)));
+      CATCH_REQUIRE(true ==
+                    util_zchk(dyn_matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 

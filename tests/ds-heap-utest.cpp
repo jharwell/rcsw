@@ -10,47 +10,44 @@
  * Includes
  ******************************************************************************/
 #include <limits.h>
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/binheap.h"
-#include "rcsw/utils/utils.h"
 #include "rcsw/utils/mem.h"
+#include "rcsw/utils/utils.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 static void run_test(void (*test)(enum gen_elt_type,
                                   struct binheap_params *params),
                      enum gen_elt_type type) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
   struct binheap_params params;
   memset(&params, 0, sizeof(binheap_params));
-  params.flags = 0;
-  params.cmpe = th::cmpe<T>;
-  params.printe = th::printe<T>;
+  params.flags    = 0;
+  params.cmpe     = th::cmpe<T>;
+  params.printe   = th::printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);
 
-  uint32_t flags[] = {
-    RCSW_NONE,
-    RCSW_ZALLOC,
-    RCSW_NOALLOC_HANDLE,
-    RCSW_NOALLOC_DATA,
-    RCSW_DS_BINHEAP_MIN
-  };
+  uint32_t flags[] = {RCSW_NONE,
+                      RCSW_ZALLOC,
+                      RCSW_NOALLOC_HANDLE,
+                      RCSW_NOALLOC_DATA,
+                      RCSW_DS_BINHEAP_MIN};
   uint32_t applied = 0;
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     applied |= flags[i];
     for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
       applied |= flags[j];
       for (int m = 1; m < TH_NUM_ITEMS; ++m) {
-        params.flags = applied;
-        params.max_elts = m;
+        params.flags     = applied;
+        params.max_elts  = m;
         params.init_size = 0;
         test(type, &params);
       } /* for(m..) */
@@ -62,17 +59,15 @@ static void run_test(void (*test)(enum gen_elt_type,
   RCSW_ER_DEINIT();
 } /* run_test() */
 
-template<typename T>
-static void verify_heap(struct binheap* heap) {
+template <typename T>
+static void verify_heap(struct binheap *heap) {
   size_t i = 0;
 
   while (++i <= binheap_size(heap)) {
-    T* parent = (T*)darray_data_get(&heap->arr, i);
-
+    T *parent = (T *)darray_data_get(&heap->arr, i);
 
     if (RCSW_BINHEAP_LCHILD(i) <= binheap_size(heap)) {
-      T* l_child = (T*)darray_data_get(&heap->arr,
-                                       RCSW_BINHEAP_LCHILD(i));
+      T *l_child = (T *)darray_data_get(&heap->arr, RCSW_BINHEAP_LCHILD(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, l_child) <= 0);
       } else {
@@ -80,8 +75,7 @@ static void verify_heap(struct binheap* heap) {
       }
     }
     if (RCSW_BINHEAP_RCHILD(i) <= binheap_size(heap)) {
-      T* r_child = (T*)darray_data_get(&heap->arr,
-                                                   RCSW_BINHEAP_RCHILD(i));
+      T *r_child = (T *)darray_data_get(&heap->arr, RCSW_BINHEAP_RCHILD(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, r_child) <= 0);
       } else {
@@ -94,11 +88,10 @@ static void verify_heap(struct binheap* heap) {
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-template<typename T>
-static void insert_test(enum gen_elt_type type, struct binheap_params * params) {
+template <typename T>
+static void insert_test(enum gen_elt_type type, struct binheap_params *params) {
   struct binheap *heap = nullptr;
-  struct binheap myheap;
-
+  struct binheap  myheap;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     CATCH_REQUIRE(nullptr == binheap_init(nullptr, params));
@@ -124,10 +117,10 @@ static void insert_test(enum gen_elt_type type, struct binheap_params * params) 
   binheap_destroy(heap);
 } /* insert_test() */
 
-template<typename T>
-static void delete_test(gen_elt_type type, struct binheap_params * params) {
+template <typename T>
+static void delete_test(gen_elt_type type, struct binheap_params *params) {
   struct binheap *heap;
-  struct binheap myheap;
+  struct binheap  myheap;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     heap = binheap_init(&myheap, params);
@@ -147,7 +140,7 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
   CATCH_REQUIRE(binheap_size(heap) == (size_t)params->max_elts);
 
   size_t old_elts = binheap_size(heap);
-  T minmax{};
+  T      minmax{};
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     minmax.value1 = INT_MIN;
@@ -156,8 +149,7 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
   }
 
   while (!binheap_isempty(heap)) {
-    size_t index = std::max<int>(rand() % binheap_size(heap),
-                                                 1);
+    size_t index = std::max<int>(rand() % binheap_size(heap), 1);
     CATCH_REQUIRE(OK == binheap_delete_key(heap, index, &minmax));
     CATCH_REQUIRE(ERROR == binheap_delete_key(nullptr, index, &minmax));
     CATCH_REQUIRE(binheap_size(heap) == old_elts - 1);
@@ -168,10 +160,10 @@ static void delete_test(gen_elt_type type, struct binheap_params * params) {
   binheap_destroy(heap);
 } /* delete_test() */
 
-template<typename T>
-static void make_test(gen_elt_type type, struct binheap_params * params) {
+template <typename T>
+static void make_test(gen_elt_type type, struct binheap_params *params) {
   struct binheap *heap;
-  struct binheap myheap;
+  struct binheap  myheap;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     heap = binheap_init(&myheap, params);
@@ -181,7 +173,6 @@ static void make_test(gen_elt_type type, struct binheap_params * params) {
 
   CATCH_REQUIRE(nullptr != heap);
   T arr[TH_NUM_ITEMS];
-
 
   th::element_generator<T> g(type, params->max_elts);
   for (size_t i = 0; i < params->max_elts; ++i) {
@@ -195,10 +186,11 @@ static void make_test(gen_elt_type type, struct binheap_params * params) {
   binheap_destroy(heap);
 } /* make_test() */
 
-template<typename T>
-static void structure_test(enum gen_elt_type type, struct binheap_params * params) {
+template <typename T>
+static void structure_test(enum gen_elt_type      type,
+                           struct binheap_params *params) {
   struct binheap *heap;
-  struct binheap myheap;
+  struct binheap  myheap;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     heap = binheap_init(&myheap, params);
@@ -233,8 +225,8 @@ static void structure_test(enum gen_elt_type type, struct binheap_params * param
   binheap_destroy(heap);
 } /* make_test() */
 
-template<typename T>
-static void print_test(gen_elt_type type, struct binheap_params * params) {
+template <typename T>
+static void print_test(gen_elt_type type, struct binheap_params *params) {
   struct binheap *heap;
 
   params->flags &= ~RCSW_NOALLOC_HANDLE;
@@ -244,7 +236,7 @@ static void print_test(gen_elt_type type, struct binheap_params * params) {
   CATCH_REQUIRE(nullptr != heap);
   binheap_print(heap);
 
-  T arr[TH_NUM_ITEMS];
+  T                        arr[TH_NUM_ITEMS];
   th::element_generator<T> g(type, params->max_elts);
 
   for (size_t i = 0; i < params->max_elts; ++i) {
@@ -262,8 +254,6 @@ static void print_test(gen_elt_type type, struct binheap_params * params) {
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("insert() Test", "[ds][binheap]") {
-
-
   run_test<element8>(insert_test<element8>, ekINC_VALS);
   run_test<element8>(insert_test<element8>, ekDEC_VALS);
   run_test<element8>(insert_test<element8>, ekRAND_VALS);
@@ -279,7 +269,6 @@ CATCH_TEST_CASE("insert() Test", "[ds][binheap]") {
   run_test<element1>(insert_test<element1>, ekINC_VALS);
   run_test<element1>(insert_test<element1>, ekDEC_VALS);
   run_test<element1>(insert_test<element1>, ekRAND_VALS);
-
 }
 CATCH_TEST_CASE("delete() Test", "[ds][binheap]") {
   run_test<element8>(delete_test<element8>, ekINC_VALS);

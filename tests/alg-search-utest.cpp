@@ -11,20 +11,19 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
+#include "rcsw/algorithm/search.h"
+#include "rcsw/algorithm/sort.h"
+#include "rcsw/utils/mem.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
-#include "rcsw/algorithm/search.h"
-#include "rcsw/utils/mem.h"
-#include "rcsw/algorithm/sort.h"
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 void test_bsearch(size_t n_elts) {
   th::element_set<T> data1(n_elts);
   data1.data_gen();

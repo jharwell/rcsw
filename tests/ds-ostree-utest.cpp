@@ -9,23 +9,20 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-#include "rcsw/ds/ostree.h"
 #include "rcsw/ds/bstree_node.h"
+#include "rcsw/ds/ostree.h"
 #include "rcsw/utils/utils.h"
-
+#include "tests/ds_bstree_test.hpp"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
-#include "tests/ds_bstree_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using ostree_test_t = void(*)(int len,
-                              struct bstree_params *params);
+using ostree_test_t = void (*)(int len, struct bstree_params *params);
 
 /*******************************************************************************
  * Global Variables
@@ -38,10 +35,10 @@ int n_elements; /* global var for # elements in RBTREE */
 static void run_test(ostree_test_t test) {
   struct bstree_params params;
   memset(&params, 0, sizeof(bstree_params));
-  params.flags = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
+  params.flags    = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
   params.elt_size = sizeof(struct element8);
   params.max_elts = TH_NUM_ITEMS;
-  params.cmpkey = th::cmpe<element8>;
+  params.cmpkey   = th::cmpe<element8>;
   th::ds_init(&params);
 
   uint32_t flags[] = {
@@ -76,8 +73,8 @@ static void run_test(ostree_test_t test) {
  * \brief Test rank for OStrees.
  */
 static void ostree_select_test(int len, struct bstree_params *params) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree  *tree;
+  struct bstree   mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
@@ -101,7 +98,7 @@ static void ostree_select_test(int len, struct bstree_params *params) {
     for (int j = 0; j <= i; ++j) {
       struct ostree_node *node = ostree_select(tree, RCSW_OSTREE_ROOT(tree), j);
       CATCH_REQUIRE(NULL != node);
-      CATCH_REQUIRE(((struct element8*)node->data)->value1 ==
+      CATCH_REQUIRE(((struct element8 *)node->data)->value1 ==
                     insert_arr[j].value1);
     } /* for(j..) */
   } /* for(i..) */
@@ -115,12 +112,11 @@ static void ostree_select_test(int len, struct bstree_params *params) {
     CATCH_REQUIRE(NULL == bstree_data_query(tree, &insert_arr[i].value1));
 
     /* verify statistics as we delete */
-    for (int j = i+1; j < len; ++j) {
-      struct ostree_node *node = ostree_select(tree,
-                                               RCSW_OSTREE_ROOT(tree),
-                                               j - i - 1);
+    for (int j = i + 1; j < len; ++j) {
+      struct ostree_node *node =
+        ostree_select(tree, RCSW_OSTREE_ROOT(tree), j - i - 1);
       CATCH_REQUIRE(NULL != node);
-      CATCH_REQUIRE(((struct element8*)node->data)->value1 ==
+      CATCH_REQUIRE(((struct element8 *)node->data)->value1 ==
                     insert_arr[j].value1);
     } /* for(j..) */
   } /* for(i..) */
@@ -132,8 +128,8 @@ static void ostree_select_test(int len, struct bstree_params *params) {
  * \brief Test select for OStrees.
  */
 static void ostree_rank_test(int len, struct bstree_params *params) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree  *tree;
+  struct bstree   mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];
 
   tree = ostree_init(&mytree, params);
@@ -152,9 +148,8 @@ static void ostree_rank_test(int len, struct bstree_params *params) {
 
     /* verify statistics as we build */
     for (int j = 0; j <= i; ++j) {
-      struct ostree_node * node = ostree_node_query(tree,
-                                                    RCSW_OSTREE_ROOT(tree),
-                                                    &insert_arr[j]);
+      struct ostree_node *node =
+        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j]);
       CATCH_REQUIRE(NULL != node);
       CATCH_REQUIRE(j == ostree_rank(tree, node));
     } /* for(j..) */
@@ -170,9 +165,8 @@ static void ostree_rank_test(int len, struct bstree_params *params) {
 
     /* verify statistics as we delete */
     for (int j = i + 1; j < len; ++j) {
-      struct ostree_node* node = ostree_node_query(tree,
-                                                   RCSW_OSTREE_ROOT(tree),
-                                                   &insert_arr[j].value1);
+      struct ostree_node *node =
+        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j].value1);
       CATCH_REQUIRE(NULL != node);
       CATCH_REQUIRE(j - i - 1 == ostree_rank(tree, node));
     } /* for(j..) */
@@ -184,10 +178,6 @@ static void ostree_rank_test(int len, struct bstree_params *params) {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Select Test", "[ds][ostree]") {
-  run_test(ostree_select_test);
-}
+CATCH_TEST_CASE("Select Test", "[ds][ostree]") { run_test(ostree_select_test); }
 
-CATCH_TEST_CASE("Rank Test", "[ds][ostree]") {
-  run_test(ostree_rank_test);
-}
+CATCH_TEST_CASE("Rank Test", "[ds][ostree]") { run_test(ostree_rank_test); }
