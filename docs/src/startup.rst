@@ -191,9 +191,96 @@ Instrumentation
 
    :default: NO
 
-   Compile out the timing/profiling macros
-   :c:macro:`RCSW_GRIND_START()`, :c:macro:`RCSW_GRIND_END()`,
-   :c:macro:`RCSW_GRIND_COUNT()`, and :c:macro:`RCSW_GRIND_TICK()`.
-   Allows timing instrumentation to be left in application source and
-   enabled only when profiling is needed, without runtime cost
-   otherwise.
+     - ``putchar`` (assume linking with stdlibs OR that this is the name of your
+       custom function).
+
+   * - ``RCSW_CONFIG_STDIO_GETCHAR``
+
+     - The name of the getchar()-like function that RCSW's printf()
+       implementation should link with to read characters from stdin. Must have
+       same signature as getchar().
+
+     - ``getchar`` (assume linking with stdlibs OR that this is the name of your
+       custom function).
+
+   * - ``RCSW_CONFIG_NO_GRIND``
+
+     - Compile out:
+
+       - :c:macro:`RCSW_GRIND_START()`
+       - :c:macro:`RCSW_GRIND_END()`
+       - :c:macro:`RCSW_GRIND_COUNT()`
+       - :c:macro:`RCSW_GRIND_TICK()`
+
+       This variable enables you to leave in timing collection in application
+       code, and only collect it when you need to.
+
+     - ``NO``
+
+   * - ``RCSW_CONFIG_ER_PLUGIN``
+
+     - The default event reporting plugin to use. See :ref:`modules/er` for
+       details.
+
+     - ``LOG4CL``
+
+   * - ``RCSW_CONFIG_ER_PLUGIN_PATH``
+
+     - The path to the ``#include`` file for a custom ER plugin. See
+       :ref:`modules/er` for details.
+
+     - Empty
+
+   * - ``RCSW_CONFIG_PTR_ALIGN``
+
+     - Override the pointer alignment used to store references to all
+       application data which RCSW manages.
+
+       Some architectures can handle trying to use a ``uint32_t*`` to access
+       something where ``addr % (sizeof(uint32_t)) > 0``, and on others doing so
+       will cause a hardware trap.  Generally you want to use higher alignments
+       to store data, as that results in better cache line usage, but this is
+       not always possible. RCSW tries to detect the best value for alignment,
+       but if it is being built for a novel architecture it will fall back on
+       storing everything internally using byte pointers for safety. You can
+       override this if you know better.
+
+       Must be [1,2,4].
+
+     - - x86 - 4
+       - ARM - 1
+       - Everything else - 1
+
+   * - ``RCSW_SUMMARY``
+
+     - Show a summary of all RCSW-specific variables when running ``cmake``.
+
+     - ``YES``
+
+   * - ``RCSW_CONFIG_LIBTYPE``
+
+     - What type of library to build RCSW as (SHARED or STATIC).
+
+     - ``STATIC``
+
+   * - ``RCSW_BUILD_FOR``
+
+     - Meta-option defining what "platform" RCSW should build against/for. Valid
+       values:
+
+       - ``POSIX`` - Build for linux/POSIX-y OSes. This is the most
+         full-featured RCSW.
+
+       - ``BAREMETAL`` - Build for baremetal environments without an OS. Still
+         enables/uses stdlib from the selected compiler. If you don't want/need
+         stdlib, then you can also pass ``LIBRA_NOSTDLIB``.
+
+
+     - ``POSIX``
+
+   * - ``RCSW_CONFIG_NO_STDIO``
+
+     - Meta-option to remove the STDIO module from compilation. Useful if you
+       don't need it to reduce compilation times.
+
+     - ``NO``

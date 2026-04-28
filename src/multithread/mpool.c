@@ -37,6 +37,7 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   the_pool->flags    = params->flags;
   the_pool->elt_size = params->elt_size;
   the_pool->max_elts = params->max_elts;
+  the_pool->flags    = params->flags;
 
   ER_INFO("Init memory pool: max_elts=%zu,elt_size=%zu",
           the_pool->max_elts,

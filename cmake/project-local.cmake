@@ -9,33 +9,7 @@ cpmaddpackage(
   VERSION
   3.7.0)
 
-# 2026-04-29 [JRH]: We always build as static lib to avoid annoying issues with
-# putchar_() needing to be exported from RCSW.
-cpmaddpackage(
-  NAME
-  printf
-  GITHUB_REPOSITORY
-  eyalroz/printf
-  VERSION
-  6.3.0
-  OPTIONS
-  "BUILD_SHARED_LIBS OFF"
-  "PRINTF_SUPPORT_DECIMAL_SPECIFIERS ON"
-  "PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS ON"
-  "PRINTF_SUPPORT_WRITEBACK_SPECIFIER ON"
-  "PRINTF_SUPPORT_LONG_LONG ON"
-  "PRINTF_NTOA_BUFFER_SIZE 32"
-  "PRINTF_DEFAULT_FLOAT_PRECISION 6"
-  "PRINTF_MAX_INTEGRAL_DIGITS_FOR_DECIMAL 9"
-  "PRINTF_CHECK_FOR_NUL_IN_FORMAT_SPECIFIER ON")
-
-# Override the printf target's include path to avoid collision with rcsw/include
-# and system headers
-set_target_properties(printf PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                        "${printf_SOURCE_DIR}/src")
-
-file(WRITE "${CMAKE_BINARY_DIR}/include/eyalroz/printf.h"
-     "#include \"${printf_SOURCE_DIR}/src/printf/printf.h\"\n")
+list(APPEND CMAKE_PREFIX_PATH ${catch2_BINARY_DIR})
 
 set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain)
 
@@ -75,6 +49,23 @@ set(RCSW_CONFIG_STDIO_PUTCHAR
 set(RCSW_CONFIG_STDIO_GETCHAR
     getchar
     CACHE STRING "stdio getchar() replacement function")
+set(RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
+    32
+    CACHE STRING "printf() internal buffer size")
+set(RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
+    6
+    CACHE STRING "printf() default float precision")
+set(RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
+    9
+    CACHE STRING "printf() decimal-to-exponential digit threshold")
+set(RCSW_CONFIG_STDIO_MATH_LOG10_TERMS
+    4
+    CACHE STRING "Taylor expansion terms for log10()")
+option(RCSW_CONFIG_STDIO_PRINTF_WITH_DEC "printf() decimal support" ON)
+option(RCSW_CONFIG_STDIO_PRINTF_WITH_EXP "printf() exponential support" ON)
+option(RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK "printf() writeback support" ON)
+option(RCSW_CONFIG_STDIO_PRINTF_WITH_LL "printf() long long support" ON)
+option(RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL "printf() format string safety" ON)
 
 # ##############################################################################
 # Platform-specific overrides
@@ -154,8 +145,16 @@ target_compile_definitions(
   PUBLIC RCSW_CONFIG_AL_TARGET=RCSW_AL_TARGET_${RCSW_BUILD_FOR})
 
 # Boolean options: define the symbol only when ON
-foreach(config IN ITEMS RCSW_CONFIG_TOOL_NO_GRIND RCSW_CONFIG_NOALLOC
-                        RCSW_CONFIG_ZALLOC)
+foreach(
+  config IN
+  ITEMS RCSW_CONFIG_STDIO_PRINTF_WITH_DEC
+        RCSW_CONFIG_STDIO_PRINTF_WITH_EXP
+        RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK
+        RCSW_CONFIG_STDIO_PRINTF_WITH_LL
+        RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL
+        RCSW_CONFIG_TOOL_NO_GRIND
+        RCSW_CONFIG_NOALLOC
+        RCSW_CONFIG_ZALLOC)
   if(${config})
     target_compile_definitions(${PROJECT_NAME} PRIVATE ${config})
   endif()
@@ -165,6 +164,15 @@ endforeach()
 foreach(config IN ITEMS RCSW_CONFIG_STDIO_PUTCHAR RCSW_CONFIG_STDIO_GETCHAR
                         RCSW_CONFIG_PTR_ALIGN)
   target_compile_definitions(${PROJECT_NAME} PUBLIC ${config}=${${config}})
+endforeach()
+
+foreach(
+  config IN
+  ITEMS RCSW_CONFIG_STDIO_PRINTF_BUFSIZE
+        RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC
+        RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH
+        RCSW_CONFIG_STDIO_MATH_LOG10_TERMS)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE ${config}=${${config}})
 endforeach()
 
 get_target_property(target_type ${PROJECT_NAME} TYPE)
@@ -190,25 +198,19 @@ target_link_libraries(${PROJECT_NAME} PUBLIC pthread dl m)
 if("${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "ZLOG")
   target_link_libraries(${PROJECT_NAME} PUBLIC zlog)
 endif()
-if(NOT RCSW_CONFIG_NO_STDIO)
-  target_link_libraries(${PROJECT_NAME} PRIVATE printf)
-endif()
 
 # ##############################################################################
 # Installation and deployment
 # ##############################################################################
 # Only applies to POSIX/Linux; embedding targets don't install.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
-  libra_configure_exports(TARGET ${PROJECT_NAME} COMPATIBILITY SameMinorVersion)
-  libra_register_target_for_install(${PROJECT_NAME})
-  libra_register_headers_for_install(include/${PROJECT_NAME})
+  libra_configure_exports(${PROJECT_NAME})
+  libra_install_target(${PROJECT_NAME} INCLUDE_DIR include/${PROJECT_NAME})
+  libra_install_copyright(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 
   if(NOT CPACK_PACKAGE_NAME)
     set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
   endif()
-
-  libra_register_copyright_for_install(${PROJECT_NAME}
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 
   set(RCSW_PKG_SUMMARY
       "Collection of Reusable C SoftWare (RCSW) modules for embedded programming"
@@ -231,7 +233,16 @@ This is a ${RCSW_CONFIG_LIBTYPE} library, built for ${RCSW_BUILD_FOR}:\n\
   * RCSW_CONFIG_TOOL_NO_GRIND=${RCSW_CONFIG_TOOL_NO_GRIND}\n\
   * RCSW_CONFIG_NO_STDIO=${RCSW_CONFIG_NO_STDIO}\n\
   * RCSW_CONFIG_STDIO_GETCHAR=${RCSW_CONFIG_STDIO_GETCHAR}\n\
-  * RCSW_CONFIG_STDIO_PUTCHAR=${RCSW_CONFIG_STDIO_PUTCHAR}")
+  * RCSW_CONFIG_STDIO_PUTCHAR=${RCSW_CONFIG_STDIO_PUTCHAR}\n\
+  * RCSW_CONFIG_STDIO_MATH_LOG10_TERMS=${RCSW_CONFIG_STDIO_MATH_LOG10_TERMS}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_BUFSIZE=${RCSW_CONFIG_STDIO_PRINTF_BUFSIZE}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_WITH_DEC=${RCSW_CONFIG_STDIO_PRINTF_WITH_DEC}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_WITH_EXP=${RCSW_CONFIG_STDIO_PRINTF_WITH_EXP}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK=${RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC=${RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH=${RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_WITH_LL=${RCSW_CONFIG_STDIO_PRINTF_WITH_LL}\n\
+  * RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL=${RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL}")
 
   libra_configure_cpack(
     "DEB;RPM"
@@ -305,18 +316,61 @@ rcsw_message(
   "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}${ColorReset} [RCSW_CONFIG_TOOL_NO_GRIND]"
 )
 
-rcsw_message(
-  STATUS
-  "Build STDIO module                            : ${ColorBold}${EMIT_RCSW_CONFIG_NO_STDIO}${ColorReset} [RCSW_CONFIG_NO_STDIO]"
-)
-rcsw_message(
-  STATUS
-  "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_GETCHAR}${ColorReset} [RCSW_CONFIG_STDIO_GETCHAR]"
-)
-rcsw_message(
-  STATUS
-  "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}${ColorReset} [RCSW_CONFIG_STDIO_PUTCHAR]"
-)
+if(NOT ${RCSW_CONFIG_NO_STDIO})
+  rcsw_message(
+    STATUS
+    "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_CONFIG_NO_STDIO}${ColorReset} [RCSW_CONFIG_NO_STDIO]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_GETCHAR}${ColorReset} [RCSW_CONFIG_STDIO_GETCHAR]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}${ColorReset} [RCSW_CONFIG_STDIO_PUTCHAR]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio math taylor expansion terms             : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_MATH_LOG10_TERMS}${ColorReset} [RCSW_CONFIG_STDIO_MATH_LOG10_TERMS]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() buffer size                    : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_BUFSIZE}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_BUFSIZE]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for decimals           : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_DEC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_DEC]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for exponentials       : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_EXP}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_EXP]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for writeback          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_WRITEBACK]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() default float precision        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_DEFAULT_FLOAT_PREC]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() decimal -> exp digit threshold : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_EXP_DIGIT_THRESH]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() support for long long          : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_WITH_LL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_WITH_LL]"
+  )
+  rcsw_message(
+    STATUS
+    "stdio printf() fmt string safety check        : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL}${ColorReset} [RCSW_CONFIG_STDIO_PRINTF_CHECK_NULL]"
+  )
+else()
+  rcsw_message(
+    STATUS
+    "Skip building STDIO module                    : ${ColorBold}${EMIT_RCSW_CONFIG_NO_STDIO}${ColorReset} [RCSW_CONFIG_NO_STDIO]"
+  )
+endif()
 
 message(
   "${BoldBlue}--------------------------------------------------------------------------------"
