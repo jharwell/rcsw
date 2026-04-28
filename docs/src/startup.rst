@@ -251,7 +251,7 @@ RCSW ``cmake`` Configuration
 
      - ``POSIX``
 
-   * - ``RCSW_WITHOUT_STDIO``
+   * - ``RCSW_CONFIG_NO_STDIO``
 
      - Meta-option to remove the STDIO module from compilation. Useful if you
        don't need it to reduce compilation times.

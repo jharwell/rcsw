@@ -37,9 +37,9 @@ RUN apt-get update && apt-get install -y \
     g++-14 \
     git-extras \
     lintian \
-    gdb \
     valgrind \
-    gcovr
+    gcovr \
+    ninja-build
 
 
 # Devel
@@ -51,17 +51,6 @@ RUN apt-get update && apt-get install -y \
     doxygen \
     curl
 
-RUN pip3 install --break-system-packages \
-    sphinx \
-    sphinx-rtd-theme \
-    sphinx-argparse \
-    sphinx-tabs \
-    sphinx-last-updated-by-git \
-    sphinxcontrib-doxylink \
-    autoapi \
-    graphviz \
-    breathe \
-    exhale
 
 ################################################################################
 # Install RCSW packages
@@ -72,6 +61,3 @@ RUN cd zlog && \
     mkdir build && cd build && \
     cmake .. && \
     make -j $(nproc) install
-
-# Devel
-RUN apt-get update && apt-get install -y catch

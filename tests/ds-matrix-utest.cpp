@@ -12,9 +12,8 @@
  * Includes
  ******************************************************************************/
 #include <limits.h>
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/matrix.h"
 #include "tests/ds_test.h"
@@ -23,14 +22,14 @@
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
-static void test_runner(void (*test)(struct matrix_params *params)) {
+template <typename T>
+static void test_runner(void (*test)(struct matrix_params* params)) {
   struct matrix_params params;
   memset(&params, 0, sizeof(matrix_params));
   params.elt_size = sizeof(T);
-  params.n_cols = TH_NUM_ITEMS;
-  params.n_rows = TH_NUM_ITEMS;
-  params.printe = th::printe<T>;
+  params.n_cols   = TH_NUM_ITEMS;
+  params.n_rows   = TH_NUM_ITEMS;
+  params.printe   = th::printe<T>;
   CATCH_REQUIRE(th::ds_init(&params) == OK);
 
   uint32_t flags[] = {
@@ -50,11 +49,10 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
         for (size_t m = 1; m <= TH_NUM_ITEMS; ++m) {
           params.n_cols = k;
           params.n_rows = m;
-          params.flags = applied;
+          params.flags  = applied;
           test(&params);
         } /* for(m..) */
       } /* for(k..) */
-
 
       applied &= ~flags[j];
     } /* for(j..) */
@@ -66,10 +64,10 @@ static void test_runner(void (*test)(struct matrix_params *params)) {
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 static void addremove_test(struct matrix_params* params) {
-  struct matrix *matrix;
-  struct matrix mymatrix;
+  struct matrix* matrix;
+  struct matrix  mymatrix;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     CATCH_REQUIRE(nullptr == matrix_init(NULL, params));
@@ -77,46 +75,40 @@ static void addremove_test(struct matrix_params* params) {
   matrix = matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
-
   CATCH_REQUIRE(nullptr != matrix);
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == matrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 == memcmp(&val,
-                                matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j),
-                                        sizeof(T)));
+      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
   matrix_destroy(matrix);
 }
 
-template<typename T>
+template <typename T>
 static void transpose_test(struct matrix_params* params) {
-  struct matrix *matrix;
-  struct matrix mymatrix;
+  struct matrix* matrix;
+  struct matrix  mymatrix;
 
   matrix = matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == matrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j),
-                                sizeof(T)));
+      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -132,7 +124,7 @@ static void transpose_test(struct matrix_params* params) {
 
         CATCH_REQUIRE(e1->value1 == e2->value1);
         if constexpr (!std::is_same<T, element1>::value) {
-            CATCH_REQUIRE(e1->value2 == e1->value2);
+          CATCH_REQUIRE(e1->value2 == e1->value2);
         }
       } /* for(j..) */
     } /* for(..) */
@@ -140,16 +132,16 @@ static void transpose_test(struct matrix_params* params) {
   matrix_destroy(matrix);
 }
 
-template<typename T>
+template <typename T>
 static void print_test(struct matrix_params* params) {
-  struct matrix *matrix;
-  struct matrix mymatrix;
+  struct matrix* matrix;
+  struct matrix  mymatrix;
 
   matrix = matrix_init(&mymatrix, params);
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                         params->n_rows * params->n_cols);
+                             params->n_rows * params->n_cols);
 
   for (size_t i = 0; i < params->n_rows; ++i) {
     for (size_t j = 0; j < params->n_cols; ++j) {

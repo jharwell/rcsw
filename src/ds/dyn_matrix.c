@@ -13,8 +13,8 @@
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "dyn_matrix")
 #define RCSW_ER_MODID ekLOG4CL_DS_DYN_MATRIX
-#include "rcsw/er/client.h"
 #include "rcsw/common/alloc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * API Functions
@@ -23,41 +23,37 @@ BEGIN_C_DECLS
 
 struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
                                    const struct dyn_matrix_params* const params) {
-  RCSW_FPC_NV(NULL,
-              NULL != params,
-              params->n_rows > 0,
-              params->n_cols > 0)
-      RCSW_ER_MODULE_INIT();
+  RCSW_FPC_NV(NULL, NULL != params, params->n_rows > 0, params->n_cols > 0)
+  RCSW_ER_MODULE_INIT();
 
   struct dyn_matrix* matrix = rcsw_alloc(matrix_in,
                                          sizeof(struct dyn_matrix),
                                          params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(matrix);
-  matrix->flags = params->flags;
+  matrix->flags    = params->flags;
   matrix->elt_size = params->elt_size;
-  matrix->printe = params->printe;
-  matrix->n_rows = params->n_rows;
-  matrix->n_cols = params->n_cols;
+  matrix->printe   = params->printe;
+  matrix->n_rows   = params->n_rows;
+  matrix->n_cols   = params->n_cols;
 
-  struct darray_params handle_params = { .init_size = matrix->n_rows ,
-                                     .cmpe = NULL,
-                                     .printe = NULL,
-                                     .elements = NULL,
-                                     .elt_size = sizeof(struct darray),
-                                     .max_elts = -1,
-                                     .flags = 0 };
-  matrix->rows = darray_init(NULL, &handle_params);
+  struct darray_params handle_params = {.init_size = matrix->n_rows,
+                                        .cmpe      = NULL,
+                                        .printe    = NULL,
+                                        .elements  = NULL,
+                                        .elt_size  = sizeof(struct darray),
+                                        .max_elts  = -1,
+                                        .flags     = RCSW_ZALLOC};
+  matrix->rows                       = darray_init(NULL, &handle_params);
   RCSW_CHECK_PTR(matrix->rows);
 
-  struct darray_params row_params = {  .init_size =
-                                   matrix->n_cols ,
-                                  .cmpe = NULL,
-                                  .printe = NULL,
-                                  .elements = NULL,
-                                  .elt_size = matrix->elt_size,
-                                  .max_elts = -1,
-                                  .flags = RCSW_NOALLOC_HANDLE };
+  struct darray_params row_params = {.init_size = matrix->n_cols,
+                                     .cmpe      = NULL,
+                                     .printe    = NULL,
+                                     .elements  = NULL,
+                                     .elt_size  = matrix->elt_size,
+                                     .max_elts  = -1,
+                                     .flags = RCSW_NOALLOC_HANDLE | RCSW_ZALLOC};
 
   for (size_t i = 0; i < matrix->n_rows; ++i) {
     RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
@@ -82,9 +78,9 @@ void dyn_matrix_destroy(struct dyn_matrix* const matrix) {
 } /* dyn_matrix_destroy() */
 
 status_t dyn_matrix_set(struct dyn_matrix* const matrix,
-                            size_t u,
-                            size_t v,
-                            const void* const w) {
+                        size_t                   u,
+                        size_t                   v,
+                        const void* const        w) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
   if (u >= matrix->n_rows || v >= matrix->n_cols) {
     RCSW_CHECK(OK == dyn_matrix_resize(matrix, u + 1, v + 1));
@@ -96,26 +92,24 @@ error:
   return ERROR;
 } /* dyn_matrix_set() */
 
-status_t dyn_matrix_resize(struct dyn_matrix* const matrix,
-                           size_t u,
-                           size_t v) {
+status_t dyn_matrix_resize(struct dyn_matrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
 
   ER_DEBUG("Resizing matrix [%zu x %zu] -> [%zu x %zu]",
-       matrix->n_rows,
-       matrix->n_cols,
-       RCSW_MAX(matrix->n_rows, u),
-       RCSW_MAX(matrix->n_cols, v));
+           matrix->n_rows,
+           matrix->n_cols,
+           RCSW_MAX(matrix->n_rows, u),
+           RCSW_MAX(matrix->n_cols, v));
 
   if (u >= matrix->n_rows) {
     RCSW_CHECK(OK == darray_resize(matrix->rows, u));
-    struct darray_params row_params = {  .init_size = matrix->n_cols ,
-                                    .cmpe = NULL,
-                                    .printe = NULL,
-                                    .elements = NULL,
-                                    .elt_size = matrix->elt_size,
-                                    .max_elts = -1,
-                                    .flags = RCSW_NOALLOC_HANDLE };
+    struct darray_params row_params = {.init_size = matrix->n_cols,
+                                       .cmpe      = NULL,
+                                       .printe    = NULL,
+                                       .elements  = NULL,
+                                       .elt_size  = matrix->elt_size,
+                                       .max_elts  = -1,
+                                       .flags     = RCSW_NOALLOC_HANDLE};
 
     for (size_t i = matrix->n_rows; i < u; ++i) {
       RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));

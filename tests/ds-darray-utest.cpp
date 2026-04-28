@@ -9,19 +9,18 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-#include "rcsw/ds/darray.h"
 #include "rcsw/algorithm/sort.h"
+#include "rcsw/ds/darray.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 static void run_test(void (*test)(int len, struct darray_params *params)) {
   /* dbg_init(); */
   /* dbg_insmod(M_TESTING,"Testing"); */
@@ -29,13 +28,12 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
 
   struct darray_params params;
   memset(&params, 0, sizeof(darray_params));
-  params.flags = 0;
-  params.cmpe = th::cmpe<T>;
-  params.printe = th::printe<T>;
-  params.elt_size = sizeof(T);
+  params.flags     = 0;
+  params.cmpe      = th::cmpe<T>;
+  params.printe    = th::printe<T>;
+  params.elt_size  = sizeof(T);
   params.init_size = 0;
   CATCH_REQUIRE(th::ds_init(&params) == OK);
-
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -61,7 +59,6 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
     } /* for(j..) */
   } /* for(i..) */
 
-
   th::ds_shutdown(&params);
 } /* run_test() */
 
@@ -71,7 +68,7 @@ static void run_test(void (*test)(int len, struct darray_params *params)) {
 template <typename T>
 static void addremove_test(int len, struct darray_params *params) {
   struct darray *_arr;
-  struct darray my_arr;
+  struct darray  my_arr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     CATCH_REQUIRE(nullptr == darray_init(nullptr, params));
@@ -89,7 +86,7 @@ static void addremove_test(int len, struct darray_params *params) {
     arr[i] = g.next();
     /* arr[i].value1 += 1; */
 
-    if (rand() % 2) {  /* prepend */
+    if (rand() % 2) { /* prepend */
       CATCH_REQUIRE(darray_insert(_arr, &arr[i], 0) == OK);
     } else { /* append */
       CATCH_REQUIRE(darray_insert(_arr, &arr[i], _arr->current) == OK);
@@ -118,8 +115,8 @@ static void addremove_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void delete_test(int len, struct darray_params *params) {
-  struct darray* _arr;
-  struct darray my_arr;
+  struct darray *_arr;
+  struct darray  my_arr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr = darray_init(&my_arr, params);
@@ -152,13 +149,13 @@ static void delete_test(int len, struct darray_params *params) {
 
   if (len / 2 > 0) {
     if (_arr->flags & RCSW_NOALLOC_DATA) {
-      CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_size(_arr)/ 2));
+      CATCH_REQUIRE(ERROR == darray_resize(_arr, darray_size(_arr) / 2));
     } else {
-      CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr)/ 2));
+      CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr) / 2));
       CATCH_REQUIRE(darray_size(_arr) == (size_t)(len / 2 - 1));
     }
   } else {
-    CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr)/ 2));
+    CATCH_REQUIRE(OK == darray_resize(_arr, darray_size(_arr) / 2));
     CATCH_REQUIRE(darray_size(_arr) == 0);
   }
   darray_destroy(_arr);
@@ -166,8 +163,8 @@ static void delete_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void contains_test(int len, struct darray_params *params) {
-  struct darray* _arr;
-  struct darray my_arr;
+  struct darray *_arr;
+  struct darray  my_arr;
 
   T arr[TH_NUM_ITEMS];
 
@@ -195,8 +192,8 @@ static void contains_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void filter_test(int len, struct darray_params *params) {
-  struct darray* _arr1, *_arr2;
-  struct darray my_arr;
+  struct darray *_arr1, *_arr2;
+  struct darray  my_arr;
 
   T arr[TH_NUM_ITEMS];
 
@@ -234,8 +231,8 @@ static void filter_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void copy_test(int len, struct darray_params *params) {
-  struct darray* _arr1, *_arr2;
-  struct darray my_arr;
+  struct darray *_arr1, *_arr2;
+  struct darray  my_arr;
 
   T arr[TH_NUM_ITEMS];
 
@@ -252,7 +249,6 @@ static void copy_test(int len, struct darray_params *params) {
     arr[i] = g.next();
     CATCH_REQUIRE(darray_insert(_arr1, &arr[i], _arr1->current) == OK);
   }
-
 
   if (!(params->flags & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_HANDLE))) {
     _arr2 = darray_copy(_arr1, params->flags, nullptr);
@@ -273,8 +269,8 @@ static void copy_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void sort_test(int len, struct darray_params *params) {
-  struct darray* _arr1;
-  struct darray my_arr;
+  struct darray *_arr1;
+  struct darray  my_arr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     _arr1 = darray_init(&my_arr, params);
@@ -291,16 +287,16 @@ static void sort_test(int len, struct darray_params *params) {
     CATCH_REQUIRE(darray_insert(_arr1, &e, _arr1->current) == OK);
   }
 
-  if (rand() %2) {
+  if (rand() % 2) {
     darray_sort(_arr1, ekEXEC_ITER);
   } else {
     darray_sort(_arr1, ekEXEC_REC);
   }
 
   /* validate sorting */
-  for (int i = 0; i < len-1; i++) {
-    CATCH_REQUIRE(((T*)darray_data_get(_arr1, i))->value1 <=
-            ((T*)darray_data_get(_arr1, i+1))->value1);
+  for (int i = 0; i < len - 1; i++) {
+    CATCH_REQUIRE(((T *)darray_data_get(_arr1, i))->value1 <=
+                  ((T *)darray_data_get(_arr1, i + 1))->value1);
   } /* for() */
 
   darray_destroy(_arr1);
@@ -308,8 +304,8 @@ static void sort_test(int len, struct darray_params *params) {
 
 template <typename T>
 static void binarysearch_test(int len, struct darray_params *params) {
-  struct darray* _arr1;
-  struct darray my_arr;
+  struct darray *_arr1;
+  struct darray  my_arr;
 
   T arr[TH_NUM_ITEMS];
 
@@ -338,9 +334,9 @@ static void binarysearch_test(int len, struct darray_params *params) {
 } /* binarysearch_test() */
 
 template <typename T>
-static void inject_test(int len, struct darray_params * params) {
+static void inject_test(int len, struct darray_params *params) {
   struct darray *arr;
-  struct darray myarr;
+  struct darray  myarr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
@@ -366,9 +362,9 @@ static void inject_test(int len, struct darray_params * params) {
 } /* inject_test() */
 
 template <typename T>
-static void iter_test(int len, struct darray_params * params) {
+static void iter_test(int len, struct darray_params *params) {
   struct darray *arr;
-  struct darray myarr;
+  struct darray  myarr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
@@ -384,13 +380,12 @@ static void iter_test(int len, struct darray_params * params) {
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  T * e;
-  struct ds_iterator * iter = ds_filter_init(arr,
-                                             ekRCSW_DS_DARRAY,
-                                             th::iter_func<T>);
+  T                  *e;
+  struct ds_iterator *iter =
+    ds_filter_init(arr, ekRCSW_DS_DARRAY, th::iter_func<T>);
   CATCH_REQUIRE(nullptr != iter);
 
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
@@ -398,7 +393,7 @@ static void iter_test(int len, struct darray_params * params) {
   CATCH_REQUIRE(nullptr != iter);
 
   size_t count = 0;
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
     count++;
   }
@@ -408,7 +403,7 @@ static void iter_test(int len, struct darray_params * params) {
   CATCH_REQUIRE(nullptr != iter);
 
   count = 0;
-  while ((e = (T*)ds_iter_next(iter)) != nullptr) {
+  while ((e = (T *)ds_iter_next(iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == len - (decltype(T::value1))count - 1);
     count++;
   }
@@ -418,9 +413,9 @@ static void iter_test(int len, struct darray_params * params) {
 } /* iter_test() */
 
 template <typename T>
-static void map_test(int len, struct darray_params * params) {
+static void map_test(int len, struct darray_params *params) {
   struct darray *arr;
-  struct darray myarr;
+  struct darray  myarr;
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
     arr = darray_init(&myarr, params);
@@ -448,8 +443,8 @@ static void map_test(int len, struct darray_params * params) {
 
 template <typename T>
 static void print_test(int len, struct darray_params *params) {
-  struct darray* _arr;
-  struct darray my_arr;
+  struct darray *_arr;
+  struct darray  my_arr;
 
   T arr[TH_NUM_ITEMS];
 

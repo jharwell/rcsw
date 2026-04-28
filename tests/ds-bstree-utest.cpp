@@ -9,18 +9,16 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
-#include "rcsw/ds/rbtree.h"
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/bstree_node.h"
+#include "rcsw/ds/rbtree.h"
 #include "rcsw/utils/utils.h"
-
+#include "tests/ds_bstree_test.hpp"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
-#include "tests/ds_bstree_test.hpp"
 
 /*******************************************************************************
  * Global Variables
@@ -30,15 +28,15 @@ int n_elements; /* global var for # elements in RBTREE */
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
-static void run_test(uint32_t extra_flags,
-                     th::bst::test_t test,
+template <typename T>
+static void run_test(uint32_t               extra_flags,
+                     th::bst::test_t        test,
                      th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
   memset(&params, 0, sizeof(bstree_params));
-  params.flags = 0;
-  params.cmpkey = th_key_cmp;
-  params.printe = th::printe<T>;
+  params.flags    = 0;
+  params.cmpkey   = th_key_cmp;
+  params.printe   = th::printe<T>;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_ITEMS;
   th::ds_init(&params);
@@ -62,15 +60,15 @@ static void run_test(uint32_t extra_flags,
   th::ds_shutdown(&params);
 } /* run_test() */
 
-template<typename T>
-static void run_test_remove(uint32_t extra_flags,
-                            th::bst::rm_test_t test,
+template <typename T>
+static void run_test_remove(uint32_t               extra_flags,
+                            th::bst::rm_test_t     test,
                             th::bst::bst_verify_cb verify_cb) {
   struct bstree_params params;
   memset(&params, 0, sizeof(bstree_params));
-  params.flags = 0;
-  params.cmpkey = th_key_cmp;
-  params.printe = th::printe<T>;
+  params.flags    = 0;
+  params.cmpkey   = th_key_cmp;
+  params.printe   = th::printe<T>;
   params.elt_size = sizeof(T);
   params.max_elts = TH_NUM_ITEMS;
   th::ds_init(&params);
@@ -98,7 +96,6 @@ static void run_test_remove(uint32_t extra_flags,
     } /* for(j..) */
   } /* for(i..) */
 
-
   th::ds_shutdown(&params);
 } /* run_test_remove() */
 
@@ -112,14 +109,14 @@ static void run_test_remove(uint32_t extra_flags,
  * data of the specified size and verifies the integrity of the BSTREE
  * after each insertion.
  */
-template<typename T>
-static void insert_test(int len,
-                        struct bstree_params *params,
+template <typename T>
+static void insert_test(int                    len,
+                        struct bstree_params  *params,
                         th::bst::bst_verify_cb verify_cb) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree *tree;
+  struct bstree  mytree;
 
-  T data_arr[TH_NUM_ITEMS];
+  T   data_arr[TH_NUM_ITEMS];
   int key_arr[TH_NUM_ITEMS];
 
   if (params->flags & RCSW_NOALLOC_HANDLE) {
@@ -133,13 +130,13 @@ static void insert_test(int len,
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
-    T e = g.next();
+    util_string_gen((char *)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    T  e = g.next();
     T *e_ptr;
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
     data_arr[i] = e;
-    key_arr[i] = rand_key;
-    e_ptr = (T*)bstree_data_query(tree, &key_arr[i]);
+    key_arr[i]  = rand_key;
+    e_ptr       = (T *)bstree_data_query(tree, &key_arr[i]);
     CATCH_REQUIRE(nullptr != e_ptr);
     CATCH_REQUIRE(e_ptr->value1 == data_arr[i].value1);
   } /* for() */
@@ -149,19 +146,16 @@ static void insert_test(int len,
 
   /* verify all data in the trees */
   for (int i = 0; i < len; ++i) {
-    T * e_ptr;
-    e_ptr = (T*)bstree_data_query(tree, &key_arr[i]);
+    T *e_ptr;
+    e_ptr = (T *)bstree_data_query(tree, &key_arr[i]);
     CATCH_REQUIRE(e_ptr != nullptr);
     CATCH_REQUIRE(e_ptr->value1 == data_arr[i].value1);
   } /* for() */
 
   /* verify BSTREE structure */
   n_elements = tree->current;
-  CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                ekTRAVERSE_PREORDER) == OK);
-  CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                ekTRAVERSE_POSTORDER) == OK);
-
+  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, ekTRAVERSE_PREORDER) == OK);
+  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, ekTRAVERSE_POSTORDER) == OK);
 
   bstree_destroy(tree);
 
@@ -173,13 +167,13 @@ static void insert_test(int len,
 /**
  * \brief Test printing the tree.
  */
-template<typename T>
-static void print_test(int len,
+template <typename T>
+static void print_test(int                   len,
                        struct bstree_params *params,
                        th::bst::bst_verify_cb) {
-  struct bstree* tree;
+  struct bstree *tree;
 
-  T data_arr[TH_NUM_ITEMS];
+  T   data_arr[TH_NUM_ITEMS];
   int key_arr[TH_NUM_ITEMS];
 
   bstree_print(nullptr);
@@ -193,13 +187,13 @@ static void print_test(int len,
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
-    T e = g.next();
+    util_string_gen((char *)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    T  e = g.next();
     T *e_ptr;
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
     data_arr[i] = e;
-    key_arr[i] = rand_key;
-    e_ptr = (T*)bstree_data_query(tree, &key_arr[i]);
+    key_arr[i]  = rand_key;
+    e_ptr       = (T *)bstree_data_query(tree, &key_arr[i]);
     CATCH_REQUIRE(nullptr != e_ptr);
     CATCH_REQUIRE(e_ptr->value1 == data_arr[i].value1);
   } /* for() */
@@ -215,17 +209,17 @@ static void print_test(int len,
  * data of the specified size and tests removing elements from them in both the
  * order they were inserted, and reverse- insert order.
  */
-template<typename T>
-static void remove_test(int len,
-                        int remove_type,
-                        struct bstree_params *params,
+template <typename T>
+static void remove_test(int                    len,
+                        int                    remove_type,
+                        struct bstree_params  *params,
                         th::bst::bst_verify_cb verify_cb) {
-  struct bstree* tree;
-  struct bstree mytree;
+  struct bstree *tree;
+  struct bstree  mytree;
 
   struct bstree_node arr1[TH_NUM_ITEMS];
-  T data_arr[TH_NUM_ITEMS];
-  int key_arr[TH_NUM_ITEMS];
+  T                  data_arr[TH_NUM_ITEMS];
+  int                key_arr[TH_NUM_ITEMS];
 
   tree = bstree_init(&mytree, params);
   CATCH_REQUIRE((nullptr != tree));
@@ -237,35 +231,34 @@ static void remove_test(int len,
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS, params->max_elts);
   for (int i = 0; i < len; ++i) {
     int rand_key;
-    util_string_gen((char*)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
+    util_string_gen((char *)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);
     T e = g.next();
     CATCH_REQUIRE(OK == bstree_insert(tree, &rand_key, &e));
     data_arr[i] = e;
-    key_arr[i] = rand_key;
+    key_arr[i]  = rand_key;
   } /* for() */
 
   /* test removing random elements until the tree is empty */
   unsigned old_count;
   for (int i = 0; i < len; ++i) {
-    int remove_index = (remove_type == 0)? i : len - i - 1;
+    int remove_index = (remove_type == 0) ? i : len - i - 1;
 
     /* tree 1 */
     CATCH_REQUIRE(bstree_data_query(tree, &key_arr[remove_index]) != nullptr);
     old_count = tree->current;
     CATCH_REQUIRE(bstree_remove(tree, &key_arr[remove_index]) == OK);
     CATCH_REQUIRE(bstree_data_query(tree, &key_arr[remove_index]) == nullptr);
-    CATCH_REQUIRE(tree->current == old_count -1);
+    CATCH_REQUIRE(tree->current == old_count - 1);
 
     /* Verify relative ordering of the nodes in the trees after
      * removal. Need the len - 1 so that I don't try to traverse a tree when
      * there is only a single node in it.
      */
-    if (i >= len -1) {
+    if (i >= len - 1) {
       continue;
     }
     n_elements = tree->current;
-    CATCH_REQUIRE(bstree_traverse(tree, verify_cb,
-                                  ekTRAVERSE_INORDER) == OK);
+    CATCH_REQUIRE(bstree_traverse(tree, verify_cb, ekTRAVERSE_INORDER) == OK);
   } /* for() */
 
   /* check the trees are now empty */
@@ -290,18 +283,10 @@ CATCH_TEST_CASE("Insert Test", "[ds][bstree]") {
 }
 
 CATCH_TEST_CASE("Remove Test", "[ds][bstree]") {
-  run_test_remove<element1>(0,
-                            remove_test<element1>,
-                            th::bst::verify_nodes_bst);
-  run_test_remove<element2>(0,
-                            remove_test<element2>,
-                            th::bst::verify_nodes_bst);
-  run_test_remove<element4>(0,
-                            remove_test<element4>,
-                            th::bst::verify_nodes_bst);
-  run_test_remove<element8>(0,
-                            remove_test<element8>,
-                            th::bst::verify_nodes_bst);
+  run_test_remove<element1>(0, remove_test<element1>, th::bst::verify_nodes_bst);
+  run_test_remove<element2>(0, remove_test<element2>, th::bst::verify_nodes_bst);
+  run_test_remove<element4>(0, remove_test<element4>, th::bst::verify_nodes_bst);
+  run_test_remove<element8>(0, remove_test<element8>, th::bst::verify_nodes_bst);
 }
 
 CATCH_TEST_CASE("Print Test", "[ds][bstree]") {

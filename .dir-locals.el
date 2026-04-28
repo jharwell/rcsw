@@ -4,43 +4,40 @@
 
 ;;; Code:
 (
- (c-mode .
-         ((eval  . (progn
+ (nil . ((projectile-project-compilation-cmd . "clibra build")))
 
-                     (let ((includes-list (list
-                                           (substitute-in-file-name "$rcsw/include")
-                                           (substitute-in-file-name "$rcsw/ext")
-                                           (concat (projectile-project-root) "include")
-                                           )
-                                          ))
-                       (setq flycheck-clang-include-path includes-list)
-                       (setq flycheck-gcc-include-path includes-list)
-                       (setq cc-search-directories includes-list)
-                       )
+ (nil . ((projectile-project-compilation-cmd . "clibra build")
 
-                     (let ((defs-list (list
-                                       "LIBRA_ER=LIBRA_ERL_ALL"
-                                       "RCSW_PTR_ALIGN=4"
-                                       "RCSW_CONFIG_PTR_ALIGN=4"
-                                       )
-                             ))
-                       (setq flycheck-clang-definitions defs-list)
-                       (setq flycheck-gcc-definitions defs-list)
-                       )
+         ;; Must be eval-d/set globally, not set buffer-local, because
+         ;; that's what LSP expects.
+         (eval . (setq lsp-clients-clangd-executable
+                       (substitute-in-file-name "clangd"))
+               )
+         ))
 
-                       (setq flycheck-clang-args '("-std=gnu11"))
-                       (setq flycheck-gcc-args '("-std=gnu11"))
-                     )
-                 ))
-         )
- (nil . ((eval .
-               (progn
-                 (add-to-list 'projectile-globally-ignored-directories
-                              "docs/_build")
-                 (add-to-list 'projectile-globally-ignored-directories
-                              "docs/_api")
-                 )
-               ))
-      )
-)
-;;; end of .dir-locals.el
+ (c-ts-mode . (
+                 (c-ts-mode-indent-offset . 2)
+                 (indent-tabs-mode . nil)
+                 (tab-width . 2)
+
+              ;; Must be eval-d/set globally, not set buffer-local,
+              ;; because that's what LSP expects.
+              (eval . (progn
+                        (setq lsp-clients-clangd-args
+                              (list "--header-insertion=iwyu"
+                                    "--header-insertion-decorators=true"
+                                    ;; This required because I open files from
+                                    ;; the repo, which is in the symlinked ~/git
+                                    ;; directory, but cmake resolves all
+                                    ;; symlinks when it generates the
+                                    ;; compdb. clangd does EXACT path matching
+                                    ;; to find the compdb entry for a file, so
+                                    ;; without this it says "can't find file",
+                                    ;; falls back to internal defaults.
+                                    (substitute-in-file-name "--path-mappings=$rcsw=/opt/$USER/git/thesis/rcsw,/opt/$USER/git/thesis/rcsw=$rcsw")))
+                        (setq clang-format-style
+                              (concat "file:"
+                                      (expand-file-name
+                                       (substitute-in-file-name "$libra/dots/.clang-format"))))))
+              ))
+ )

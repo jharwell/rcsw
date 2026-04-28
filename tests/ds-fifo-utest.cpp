@@ -9,9 +9,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/fifo.h"
 #include "rcsw/utils/utils.h"
@@ -21,22 +20,21 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using fifo_test_t = void(*)(int len, struct fifo_params *params);
+using fifo_test_t = void (*)(int len, struct fifo_params *params);
 
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
-template<typename T>
+template <typename T>
 static void run_test(fifo_test_t test) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
 
   struct fifo_params params;
   memset(&params, 0, sizeof(fifo_params));
-  params.flags = 0;
-  params.printe = th::printe<T>;
+  params.flags    = 0;
+  params.printe   = th::printe<T>;
   params.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&params) == OK);
-
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -52,7 +50,7 @@ static void run_test(fifo_test_t test) {
       applied |= flags[j];
 
       for (int k = 1; k < TH_NUM_ITEMS; ++k) {
-        params.flags = applied;
+        params.flags    = applied;
         params.max_elts = k;
         test(k, &params);
       } /* for(k..) */
@@ -69,10 +67,10 @@ static void run_test(fifo_test_t test) {
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
-template<typename T>
-static void rdwr_test(int len, struct fifo_params *  params) {
+template <typename T>
+static void rdwr_test(int len, struct fifo_params *params) {
   struct fifo *fifo;
-  struct fifo myfifo;
+  struct fifo  myfifo;
 
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE(nullptr != fifo);
@@ -101,10 +99,10 @@ static void rdwr_test(int len, struct fifo_params *  params) {
   fifo_destroy(fifo);
 } /* rdwr_test() */
 
-template<typename T>
-static void map_test(int, struct fifo_params *  params) {
+template <typename T>
+static void map_test(int, struct fifo_params *params) {
   struct fifo *fifo;
-  struct fifo myfifo;
+  struct fifo  myfifo;
 
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE((nullptr != fifo));
@@ -118,10 +116,10 @@ static void map_test(int, struct fifo_params *  params) {
   fifo_destroy(fifo);
 } /* map_test() */
 
-template<typename T>
-static void inject_test(int, struct fifo_params *  params) {
+template <typename T>
+static void inject_test(int, struct fifo_params *params) {
   struct fifo *fifo;
-  struct fifo myfifo;
+  struct fifo  myfifo;
 
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE(nullptr != fifo);
@@ -135,10 +133,10 @@ static void inject_test(int, struct fifo_params *  params) {
   fifo_destroy(fifo);
 } /* inject_test() */
 
-template<typename T>
-static void print_test(int len, struct fifo_params *  params) {
+template <typename T>
+static void print_test(int len, struct fifo_params *params) {
   struct fifo *fifo;
-  struct fifo myfifo;
+  struct fifo  myfifo;
 
   fifo = fifo_init(&myfifo, params);
   CATCH_REQUIRE(nullptr != fifo);
@@ -153,7 +151,6 @@ static void print_test(int len, struct fifo_params *  params) {
       CATCH_REQUIRE(fifo_add(fifo, &e) == ERROR);
     }
   } /* for() */
-
 
   /* verify fifo contents */
   for (int i = 0; i < len; ++i) {

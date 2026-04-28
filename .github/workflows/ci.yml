@@ -15,7 +15,7 @@ jobs:
   posix-parametric-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:2026-01-16
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       matrix:
         build_type:
@@ -39,64 +39,42 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Install LIBRA
-        shell: bash
-        run: |
-
-          git clone https://github.com/jharwell/libra.git
-          mkdir -p libra/build && cd libra/build && cmake .. && make install
-
       - name: Build=${{ matrix.build_type }}
         shell: bash
         run: |
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-          mkdir -p build && cd build
 
           cmake  \
-          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          --preset debug \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_DEPS_PREFIX=/usr/local \
-          -DLIBRA_TESTS=yes \
-          -DLIBRA_CODE_COV=YES \
-          -DLIBRA_MT=YES \
-          -DLIBRA_ERL=ALL \
-          -DLIBRA_VALGRIND_COMPAT=YES \
           -DRCSW_BUILD_FOR=POSIX \
           -DRCSW_CONFIG_STDIO_PUTCHAR=putchar \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
           -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
           -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
           -DRCSW_CONFIG_LIBTYPE=SHARED \
-          ..
 
 
-          make -j$(nproc)
+          cmake --build --preset debug
 
           cmake  \
-          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          --preset debug \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_DEPS_PREFIX=/usr/local \
-          -DLIBRA_TESTS=yes \
-          -DLIBRA_CODE_COV=YES \
-          -DLIBRA_MT=YES \
-          -DLIBRA_ERL=ALL \
-          -DLIBRA_VALGRIND_COMPAT=YES \
           -DRCSW_BUILD_FOR=POSIX \
           -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
           -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
           -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
           -DRCSW_CONFIG_LIBTYPE=STATIC \
-          ..
 
-          make -j$(nproc)
+          cmake --build --preset debug
 
   baremetal-stdlib-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:2026-01-16
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       matrix:
         build_type:
@@ -110,13 +88,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install LIBRA
-        shell: bash
-        run: |
-
-          git clone https://github.com/jharwell/libra.git
-          mkdir -p libra/build && cd libra/build && cmake .. && make install
 
       - name: Baremetal stdlib build=${{ matrix.build_type }}
         shell: bash
@@ -124,26 +95,23 @@ jobs:
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-          mkdir -p build && cd build
 
           # Use SIMPLE builtin plugin--LOG4CL requires data structures which
           # aren't built.
-          cmake  \
+          cmake  --preset debug \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_ERL=ALL \
           -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
           -DRCSW_BUILD_FOR=BAREMETAL \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
           -DRCSW_CONFIG_LIBTYPE=STATIC \
-          ..
 
-          make -j$(nproc)
+          cmake --build --preset debug
 
 
   baremetal-nostdlib-build:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:2026-01-16
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       matrix:
         build_type:
@@ -157,34 +125,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Install LIBRA
-        shell: bash
-        run: |
-
-          git clone https://github.com/jharwell/libra.git
-          mkdir -p libra/build && cd libra/build && cmake .. && make install
-
       - name: Baremetal nostdlib build=${{ matrix.build_type }}
         shell: bash
         run: |
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-          mkdir -p build && cd build
 
           # Use SIMPLE builtin plugin--LOG4CL requires data structures which
           # aren't built.
-          cmake  \
+          cmake  --preset debug \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_ERL=ALL \
           -DLIBRA_NOSTDLIB=YES \
           -DRCSW_BUILD_FOR=BAREMETAL \
           -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
           -DRCSW_CONFIG_LIBTYPE=STATIC \
-          ..
 
-          make -j$(nproc)
+          cmake --build --preset debug
 
 
   posix-build-and-test:
@@ -195,7 +153,7 @@ jobs:
       - baremetal-nostdlib-build
 
     container:
-      image: jharwell/ubuntu24.04-rcsw:2026-01-16
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       matrix:
         build_type:
@@ -211,46 +169,25 @@ jobs:
           - YES
           - NO
 
-
     steps:
       - uses: actions/checkout@v3
-      - name: Install LIBRA
-        shell: bash
-        run: |
-
-          git clone https://github.com/jharwell/libra.git
-          mkdir -p libra/build && cd libra/build && cmake .. && make install
-
       - name: Memcheck
         shell: bash
         run: |
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-          mkdir -p build && cd build
           sudo apt-get install valgrind
 
-          cmake  \
-          -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_DEPS_PREFIX=/usr/local \
-          -DLIBRA_TESTS=yes \
-          -DLIBRA_CODE_COV=YES \
-          -DLIBRA_MT=YES \
-          -DLIBRA_ERL=NONE \
-          -DLIBRA_VALGRIND_COMPAT=YES \
-          -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
-          -DRCSW_BUILD_FOR=POSIX \
+          cmake --preset ci-valgrind \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
-          -DRCSW_CONFIG_LIBTYPE=STATIC \
-          ..
+          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          make all-tests -j$(nproc)
+          cmake --build --preset ci-valgrind --target all-tests
 
-          # Run under valgrind (only with no ER because that slows things down a
-          # lot)
-          ctest -T memcheck --verbose --output-on-failure
+          # --test-dir shouldn't be needed, but it is because ctest +memcheck
+          # don't resolve the binary dir for reasons unknown, as of 3.31
+          ctest --preset ci-valgrind --test-dir build -T memcheck
 
       - name: Generate coverage
         shell: bash
@@ -258,28 +195,14 @@ jobs:
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-          mkdir -p build && cd build
 
-          cmake  \
-          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          cmake --preset ci-coverage \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_DEPS_PREFIX=/usr/local \
-          -DLIBRA_TESTS=yes \
-          -DLIBRA_CODE_COV=YES \
-          -DLIBRA_MT=YES \
-          -DLIBRA_ERL=ALL \
-          -DLIBRA_VALGRIND_COMPAT=YES \
-          -DRCSW_BUILD_FOR=POSIX \
-          -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
           -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
-          -DRCSW_CONFIG_LIBTYPE=STATIC \
-          ..
+          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          # Normal tests
-          make build-and-test -j$(nproc)
-
-          make lcov-report VERBOSE=1
+          cmake --build --preset ci-coverage --target build-and-test
+          cmake --build --preset ci-coverage --target lcov-report
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
@@ -303,12 +226,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install LIBRA
-        shell: bash
-        run: |
-
-          git clone https://github.com/jharwell/libra.git
-          mkdir -p libra/build && cd libra/build && cmake .. make install
 
       - name: Build for release
         shell: bash
@@ -320,36 +237,27 @@ jobs:
           git submodule update --init --remote --recursive
           git changelog --start-tag 1.2.0 -n -x > changelog
 
-          mkdir -p build && cd build
-
-          cmake  \
+          cmake  --preset debug \
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DCMAKE_BUILD_TYPE=Debug \
-          -DLIBRA_DEPS_PREFIX=/usr \
-          -DCPACK_PACKAGE_NAME=rcsw-dev \
-          ..
+          -DCPACK_PACKAGE_NAME=rcsw-dev
 
-          make package -j$(nproc)
 
-          cmake  \
+          cmake --build --preset debug --target package
+
+          cmake  --preset debug \
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DCMAKE_BUILD_TYPE=Release \
-          -DLIBRA_DEPS_PREFIX=/usr \
-          -DCPACK_PACKAGE_NAME=rcsw-opt \
-          ..
+          -DCPACK_PACKAGE_NAME=rcsw-opt
 
-          make package -j$(nproc)
+          cmake --build --preset release --target package
 
           lintian *.deb
 
       - name: Tag release
         shell: bash
         run: |
-          VERSION_MAJOR=$(sed -nE 's/.*PROJECT_VERSION_MAJOR ([0-9]+).*/\1/p' cmake/project-local.cmake)
-          VERSION_MINOR=$(sed -nE 's/.*PROJECT_VERSION_MINOR ([0-9]+).*/\1/p' cmake/project-local.cmake)
-          VERSION_PATCH=$(sed -nE 's/.*PROJECT_VERSION_PATCH ([0-9]+).*/\1/p' cmake/project-local.cmake)
-          PACKAGE_VERSION=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH
-
+          PACKAGE_VERSION=$(sed -nE 's/.*VERSION ([0-9]+\.([0-9]+\.([0-9]+).*/\1/p' CMakeLists.txt)
 
           if [ "${{ github.ref }}" = "refs/heads/devel" ]; then
             RELEASE_VERSION=${PACKAGE_VERSION}.beta

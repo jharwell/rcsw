@@ -11,9 +11,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
@@ -111,18 +110,19 @@ CATCH_TEST_CASE("Convert Test", "[stdio]") {
   CATCH_REQUIRE(stdio_atoi("    +1234", 10) == 1234);
 
   char buf[20];
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, false),"0") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, false), "0") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, false), "1") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, false), "64") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, false), "fe87") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x234, buf, false), "234") == 0);
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x10000000, buf, false), "10000000") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0x10000000, buf, false), "10000000") ==
+                0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFFF, buf, false), "fffffff") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFFF, buf, false), "ffffff") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFFF, buf, false), "fffff") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xFFFF, buf, false), "ffff") == 0);
 
-  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, true),"0x0") == 0);
+  CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0, buf, true), "0x0") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(1, buf, true), "0x1") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(100, buf, true), "0x64") == 0);
   CATCH_REQUIRE(stdio_strcmp(stdio_itoax(0xfe87, buf, true), "0xfe87") == 0);

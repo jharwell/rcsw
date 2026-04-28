@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 
-project(rcsw)
+project(rcsw VERSION 1.2.29)
 
 # ##############################################################################
 # Packaging bootstrap
