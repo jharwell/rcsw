@@ -67,9 +67,8 @@ RCSW_API int RCSW_CONFIG_STDIO_GETCHAR(void);
 RCSW_WARNING_DISABLE_POP()
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
-
 /**
  * \brief Write a string to stdout.
  *
@@ -80,7 +79,7 @@ RCSW_WARNING_DISABLE_POP()
  *
  * \return The number of bytes written.
  */
-RCSW_API size_t stdio_puts(const char *s);
+RCSW_API size_t stdio_puts(const char* s);
 
 /**
  * \brief Write a character to stdout.
@@ -117,7 +116,7 @@ RCSW_API int stdio_getchar(void);
  *
  * \todo This does not currently work if the string to be converted is INT_MIN.
  */
-RCSW_API int stdio_atoi(const char *s, int base) RCSW_PURE;
+RCSW_API int stdio_atoi(const char* s, int base) RCSW_PURE;
 
 /**
  * \brief Convert an integer into a decimal string.
@@ -132,7 +131,7 @@ RCSW_API int stdio_atoi(const char *s, int base) RCSW_PURE;
  *
  * \return The converted string.
  */
-RCSW_API char *stdio_itoad(int32_t n, char *s);
+RCSW_API char* stdio_itoad(int32_t n, char* s);
 
 /**
  * \brief Convert an integer into a hexadecimal string.
@@ -147,6 +146,6 @@ RCSW_API char *stdio_itoad(int32_t n, char *s);
  *
  * \return The converted string.
  */
-RCSW_API char *stdio_itoax(uint32_t i, char *s, bool_t add_0x);
+RCSW_API char* stdio_itoax(uint32_t i, char* s, bool_t add_0x);
 
 END_C_DECLS

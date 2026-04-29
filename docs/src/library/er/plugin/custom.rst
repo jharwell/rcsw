@@ -11,9 +11,9 @@ should support 64-bit IDs if you want to use RCSW with it.
 Required plugin file contents (you can of course have whatever else you want in
 the file):
 
-.. tabs::
+.. tab-set::
 
-   .. tab:: ``RCSW_ER_PLUGIN_REPORT()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_REPORT()``
 
       The main ER plugin hook. Will be called as part of every
       :c:macro:`ER_WARN()`, etc. statement. Arguments:
@@ -38,8 +38,8 @@ the file):
 Optional plugin file contents (you can of course have whatever else you want in
 the file):
 
-.. tabs::
-   .. tab:: ``RCSW_ER_PLUGIN_PRINTF``
+.. tab-set::
+   .. tab-item:: ``RCSW_ER_PLUGIN_PRINTF``
 
        The name of the ``printf()``-like function which has the same signature;
        used to define the :c:macro:`PRINTF()` / :c:macro:`DPRINTF()` macros.
@@ -47,20 +47,20 @@ the file):
        If omitted, you can't use the :c:macro:`PRINTF()` / :c:macro:`DPRINTF()`
        macros. If you want to omit it, ``#define`` as nothing.
 
-   .. tab:: ``RCSW_ER_PLUGIN_INIT()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_INIT()``
 
        A framework initialization hook which RCSW will call in its internal
        modules; should be idempotent. Can take any number of arguments of any
        type. If it is not needed by your plugin, ``#define`` as nothing.
 
-   .. tab:: ``RCSW_ER_PLUGIN_DEINIT()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_DEINIT()``
 
       A framework shutdown hook; should be idempotent. Can take any number of
       arguments of any type. If it is not needed by your plugin ``#define`` as
       nothing.
 
 
-   .. tab:: ``RCSW_ER_PLUGIN_INSMOD()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_INSMOD()``
 
       Arguments:
 
@@ -71,7 +71,7 @@ the file):
       Install/enable a module with the specified ID and name. If not needed by
       your plugin, ``#define`` as nothing.
 
-   .. tab:: ``RCSW_ER_PLUGIN_HANDLE()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_HANDLE()``
 
       Arguments:
 
@@ -89,7 +89,7 @@ the file):
 
       If not needed by your plugin ``#define`` as nothing.
 
-   .. tab:: ``RCSW_ER_PLUGIN_LVL_CHECK()``
+   .. tab-item:: ``RCSW_ER_PLUGIN_LVL_CHECK()``
 
       Arguments:
 

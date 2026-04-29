@@ -1,10 +1,15 @@
 /**
  * \file utils.h
  * \ingroup utils
- * \brief Miscellaneous utility functions/macros/definitions/etc.
+ * \brief Miscellaneous utility functions, macros, and bit manipulation
+ * helpers.
  *
- * A catch all for random things I found interesting that didn't fit anywhere
- * else.
+ * Provides: bit manipulation macros (masking, reversal, reflection,
+ * endianness swapping), alignment macros, array utilities, and small
+ * helper functions that do not belong to a more specific module.
+ *
+ * All functions and macros are available on both POSIX and baremetal
+ * targets unless noted otherwise.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -73,22 +78,19 @@
 #define RCSW_REFL32(v) ((uint32_t)reflect(((v)), 32))
 
 /**
- * Convert 8-bit binary to hexadecimal.
+ * \defgroup rcsw_bin Binary-to-hex Conversion
+ * Convert binary literals to their hexadecimal equivalents at
+ * compile time.
+ * @{
  */
-#define RCSW_BIN8(b) (RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b)))
-
-/**
- * Convert 16-bit binary to hexadecimal.
- */
-#define RCSW_BIN16(b1, b0)                                              \
+#define RCSW_BIN8(b)   (RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b)))
+#define RCSW_BIN16(b1, b0)                                                   \
   (((BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_HEXIFY(b0))
-
-/**
- * Convert 32-bit binary to hexadecimal.
- */
-#define RCSW_BIN32(b3, b4, b1, b0)                                      \
-  ((((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b4))) << 8) +          \
-    RCSW_BIN8(b3))(((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) + RCSW_BIN8(b0)))
+#define RCSW_BIN32(b3, b4, b1, b0)                                           \
+  ((((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b4))) << 8) +              \
+    RCSW_BIN8(b3))(((RCSW_BIN8_HEXIFY((uint8_t)RCSW_BIN8_HEXIFY(b1))) << 8) \
+    + RCSW_BIN8(b0)))
+/** @} */
 
 /* \cond INTERNAL */
 #define RCSW_HEXIFY (n)(0x##n##LU)
@@ -101,9 +103,10 @@
 
 /* \endcond */
 
-
-/** Miscellaneous bit manipulation */
+/** \brief Width in bits of type \p t. */
 #define RCSW_BIT_WIDTH(t) (sizeof(t) * 8)
+
+/** \brief Value with only the top bit of type \p t set. */
 #define RCSW_TOPBIT(t) (1 << (BIT_WIDTH(t) - 1))
 
 #define RCSW_GEN_M32(name, num) name = (1 << (num)),
@@ -112,146 +115,149 @@
 /*******************************************************************************
  * Alignment Macros
  ******************************************************************************/
-/** Pointer alignment checking */
-#define RCSW_IS_MEM_ALIGNED(p, byte_count) ((((uintptr_t)(p)) % (byte_count)) == 0)
+/** \brief True if pointer \p p is aligned to \p byte_count bytes. */
+#define RCSW_IS_MEM_ALIGNED(p, byte_count) \
+    ((((uintptr_t)(p)) % (byte_count)) == 0)
 
-/** Size alignment checking */
-#define RCSW_IS_SIZE_ALIGNED(size, power_of_two) (((size) & ((power_of_two)-1)) == 0)
+/** \brief True if \p size is a multiple of \p power_of_two. */
+#define RCSW_IS_SIZE_ALIGNED(size, power_of_two) \
+    (((size) & ((power_of_two) - 1)) == 0)
 
-/** Align a requested size to the requested power of 2  */
-#define RCSW_ALIGN_SIZE(size, power_of_two)                  \
-    (((size) + (power_of_two)-1) & ~((power_of_two)-1))
+/** \brief Round \p size up to the next multiple of \p power_of_two. */
+#define RCSW_ALIGN_SIZE(size, power_of_two) \
+    (((size) + (power_of_two) - 1) & ~((power_of_two) - 1))
 
 /*******************************************************************************
  * Endianness Macros
  ******************************************************************************/
 /**
- * \brief Test if the architecture is little endian without relying on compiler.
+ * \brief Test for little-endian architecture at runtime.
  *
- * Cons: run-time determination.
+ * \note This is a run-time check, not a compile-time constant.
  */
 #define RCSW_IS_LITTLE_ENDIAN() (((*(short *)"21") & 0xFF) == '2')
 
 /**
- * Test if the architecture is big endian without relying on compiler macros.
+ * \brief Test for big-endian architecture at runtime.
  *
- * Cons: run-time determination.
+ * \note This is a run-time check, not a compile-time constant.
  */
 #define RCSW_IS_BIG_ENDIAN() (((*(short *)"21") & 0xFF) == '1')
 
-/** Explicitly change the endianness of a 16-bit number. */
-#define RCSW_BSWAP16(w16) ((((w16)&0xFF00) >> 8) | (((w16)&0xFF) << 8))
+/** \brief Swap the byte order of a 16-bit value. */
+#define RCSW_BSWAP16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
 
-/** Explicitly change the endiannes of a 32-bit number. */
-#define RCSW_BSWAP32(w32)                                            \
-    ((((w32)&0xFF000000) >> 24) | (((w32)&0xFF0000) >> 8) |     \
-     (((w32)&0xFF00) << 8) | (((w32)&0xFF) << 24))
+/** \brief Swap the byte order of a 32-bit value. */
+#define RCSW_BSWAP32(w32)                                                    \
+    ((((w32) & 0xFF000000) >> 24) | (((w32) & 0xFF0000) >> 8) |             \
+     (((w32) & 0xFF00) << 8)      | (((w32) & 0xFF) << 24))
 
-/** Explicit change the endianness of a 64-bit number */
+/** \brief Swap the byte order of a 64-bit value. */
 #define RCSW_BSWAP64(w64)                                                    \
-    (((uint64_t)RCSW_BSWAP32(RCSW_M64L32(w64)) << 32) | \
+    (((uint64_t)RCSW_BSWAP32(RCSW_M64L32(w64)) << 32) |                     \
      ((uint64_t)(RCSW_BSWAP32(RCSW_M64U32(w64) >> 32))))
 
-/** Not an endianness change, but still useful sometimes */
-#define RCSW_BSWAP32_16(w32) ((((w32)&0xFFFF0000) >> 16) | (((w32)&0xFFFF) << 16))
+/** \brief Swap the two 16-bit halves of a 32-bit value (not a byte swap). */
+#define RCSW_BSWAP32_16(w32) \
+    ((((w32) & 0xFFFF0000) >> 16) | (((w32) & 0xFFFF) << 16))
 
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/** \brief Lookup table for 8-bit bit-reversal. Used by \ref RCSW_REVL8. */
 RCSW_API extern const uint8_t rcsw_util_revtable[];
 
 /*******************************************************************************
  * API Functions
  ******************************************************************************/
 /**
- * \brief Ensure a value is in the range [0, 255]. Value may be nearby after
- *        scaling due to floating point rounding.
+ * \brief Clamp a float to [0, 255].
  *
- * \param v The value to round.
+ * Values may drift slightly outside this range after floating-point
+ * scaling; this function corrects them.
  *
- * \return The rounded value.
+ * \param v The value to clamp.
+ *
+ * \return The clamped value.
  */
 RCSW_PURE static inline float utils_clamp_f255(float v) {
     if (v < 0) {
         return 0.0F;
     }
     if (v > 255.0F) {
-      return 255.0F;
+        return 255.0F;
     }
     return v;
-} /* utils_clam_f255() */
+}
 
 /**
- * \brief Reverse the bytes an array.
+ * \brief Reverse the bytes of an array in place.
  *
- * \param arr The byte array to reverse.
- *
- * \param size # of bytes in array.
- *
+ * \param arr  The byte array to reverse.
+ * \param size Number of bytes in the array.
  */
 RCSW_API void arr8_reverse(void* arr, size_t size);
 
 /**
- * \brief Generate permutations from elements within an array.
+ * \brief Generate all permutations of elements [start, size) in \p arr.
  *
- * From element "start" to element "size" - 1.
+ * \p fp is called once with each permutation.
  *
- * \param arr The array of integers to permute.
- * \param size # elements in array.
- * \param start Start position in array to permute
- * \param fp A callback which each permutation is handed to in turn.
+ * \param arr   Array of uint32_t elements to permute.
+ * \param size  Total number of elements in \p arr.
+ * \param start Index from which to begin permuting.
+ * \param fp    Callback invoked for each permutation.
  */
 RCSW_API void arr32_permute(uint32_t *arr, size_t size, size_t start,
                             void (*fp)(uint32_t * elt));
 
 /**
- * \brief Swap two 32-bit elements in an array.
+ * \brief Swap two elements in a uint32_t array.
  *
- * \param v The array
- * \param i Index #1
- * \param j Index #2
+ * \param v Array containing the elements.
+ * \param i Index of the first element.
+ * \param j Index of the second element.
  */
 RCSW_API void arr32_elt_swap(uint32_t * v, size_t i, size_t j);
 
 /**
- * \brief Generate a random alpha-numeric string of known length.
+ * \brief Fill \p buf with a random printable ASCII string.
  *
- * Buf is filled with len - 1 alpha-numeric characters and a NULL byte at the
- * end such that strlen(buf) = len -1 after this function executes.
+ * Fills \p len - 1 characters from the printable ASCII range [33, 126]
+ * and appends a null terminator, so \c strlen(buf) == len - 1 afterward.
  *
- * \param buf The buffer to fill.
- * \param len The # of characters to put in the string, -1 for the NULL byte.
+ * \param buf Buffer to fill. Must be at least \p len bytes.
+ * \param len Total buffer size including the null terminator.
  *
- * \return \ref status_t.
+ * \return \ref status_t
  */
 RCSW_API status_t util_string_gen(char * buf, size_t len);
 
 /**
+ * \brief Reflect the lowest \p n_bits bits of \p data about their center.
  *
- * \brief Reflect N bits about the center position.
+ * Bit 0 swaps with bit n_bits-1, bit 1 with bit n_bits-2, and so on.
+ * Used internally by CRC computation routines.
  *
- * Starting from the LSB up to \p n_bits, reflect around the dividing line
- * between bits 14-15.
+ * \param data   The value whose bits are to be reflected.
+ * \param n_bits Number of bits to reflect (counted from LSB).
  *
- * \param data The data to reflect.
- * \param n_bits # of bits to reflect.
- *
- * \return The reflected data.
+ * \return The reflected value.
  */
 RCSW_API uint32_t util_reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
 
 /**
- * \brief Utility function to check if an element is 0.
+ * \brief Test whether all bytes of an element are zero.
  *
- * If the element is larger than double, a for() loop is used. Otherwise
- * pointers are used.
+ * Uses pointer comparisons for elements up to \c sizeof(double); falls
+ * back to a byte loop for larger elements.
  *
- * \param elt Element to check.
- * \param elt_size Size of element in bytes.
+ * \param elt      Pointer to the element to test.
+ * \param elt_size Size of the element in bytes.
  *
- * \return \ref bool_t
+ * \return \ref bool_t TRUE if all bytes are zero.
  */
 RCSW_API bool_t util_zchk(void *elt, size_t elt_size);
 

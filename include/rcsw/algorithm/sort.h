@@ -21,16 +21,23 @@
 BEGIN_C_DECLS
 
 /**
- * \brief Sort an array using quicksort
+ * \brief Sort an array using recursive quicksort.
  *
- * This routine sorts an array by using a recursive implementation of
- * quicksort, rather than an iterative one, so some efficiency is lost.
+ * Average case O(n log n); worst case O(n²). The pivot is always the
+ * lowest-index element in the current partition, so already-sorted or
+ * nearly-sorted input degrades to O(n²). If your data may be pre-sorted,
+ * prefer \ref mergesort_rec() or \ref mergesort_iter(), which guarantee
+ * O(n log n).
  *
- * \param a The input array
- * \param min_index Starting index
- * \param max_index Ending index
- * \param el_size Size of elements in bytes
- * \param cmpe Comparision function for elements
+ * \warning Passing already-sorted or nearly-sorted input will degrade
+ *          performance to O(n²) due to the fixed first-element pivot
+ *          strategy.
+ *
+ * \param a         The input array.
+ * \param min_index Starting index (inclusive).
+ * \param max_index Ending index (inclusive).
+ * \param el_size   Size of each element in bytes.
+ * \param cmpe      Comparison function for elements.
  */
 RCSW_API void qsort_rec(void *a, int min_index, int max_index,
                         size_t el_size,
@@ -38,15 +45,23 @@ RCSW_API void qsort_rec(void *a, int min_index, int max_index,
                                     const void *const e2));
 
 /**
- * \brief Sort an array using quicksort
+ * \brief Sort an array using iterative quicksort.
  *
- * This routine sorts an array by using an iterative, rather than a recursive,
- * implementation.
+ * Average case O(n log n); worst case O(n²). Uses a VLA-based auxiliary
+ * stack sized to the input range (max_index elements); avoid very large
+ * inputs on constrained stacks. The pivot is always the lowest-index
+ * element, so already-sorted input degrades to O(n²) for the same reason
+ * as \ref qsort_rec(). If your data may be pre-sorted, prefer \ref
+ * mergesort_rec() or \ref mergesort_iter().
  *
- * \param a Array to sort
- * \param max_index Starting index
- * \param el_size  Size of elements in bytes
- * \param cmpe Comparision function for elements
+ * \warning Passing already-sorted or nearly-sorted input will degrade
+ *          performance to O(n²) due to the fixed first-element pivot
+ *          strategy.
+ *
+ * \param a         Array to sort.
+ * \param max_index Maximum index to sort up to (i.e., sorts [0, max_index]).
+ * \param el_size   Size of each element in bytes.
+ * \param cmpe      Comparison function for elements.
  */
 RCSW_API void qsort_iter(void *a, int max_index, size_t el_size,
                          int (*cmpe)(const void *const e1, const void *const e2));
@@ -54,14 +69,14 @@ RCSW_API void qsort_iter(void *a, int max_index, size_t el_size,
 /**
  * \brief Sort an array of non-negative integers using radix sort
  *
- * \param arr The array to sort
+ * O(nk) time and space, where k is the number of digits in the maximum
+ * element value for the given base. Non-comparative; integer keys only.
  *
- * \param tmp Temporary array to hold elements as they are sorted. Must be at
- *            least as large as the array to sort
- *
- * \param n_elts # elements in array
- *
- * \param base Base of numbers (10, 8, 16, etc.)
+ * \param arr    The array to sort.
+ * \param tmp    Temporary array used during sorting. Must be at least as
+ *               large as \p arr.
+ * \param n_elts Number of elements in \p arr and \p tmp.
+ * \param base   Numeric base for digit decomposition (e.g., 10, 8, 16).
  */
 RCSW_API void radix_sort(size_t *arr,
                            size_t *tmp,
@@ -69,12 +84,17 @@ RCSW_API void radix_sort(size_t *arr,
                            size_t base);
 
 /**
- * \brief Sort an array using insertion sort
+ * \brief Sort an array using insertion sort.
  *
- * \param arr The array to sort
- * \param n_elts # elements in the array (must be >=3)
- * \param elt_size Size of elements in the array in bytes
- * \param cmpe Comparison function for elements
+ * O(n²) average and worst case. Only appropriate for very small arrays or
+ * arrays that are known to be nearly sorted. For general use prefer \ref
+ * qsort_rec(), \ref qsort_iter(), \ref mergesort_rec(), or \ref
+ * mergesort_iter().
+ *
+ * \param arr      The array to sort.
+ * \param n_elts   Number of elements in the array (must be >= 3).
+ * \param elt_size Size of each element in bytes.
+ * \param cmpe     Comparison function for elements.
  */
 RCSW_API void insertion_sort(void *arr, size_t n_elts, size_t elt_size,
                                int (*cmpe)(const void *const e1,
@@ -85,19 +105,17 @@ RCSW_API void insertion_sort(void *arr, size_t n_elts, size_t elt_size,
  * RCSW Private Functions
  ******************************************************************************/
 /**
- * \brief Sort a linked list using iterative mergesort
+ * \brief Sort a linked list using iterative mergesort.
  *
- * This function sorts a linked list using at iterative implementation of
- * mergesort It has minimal stack/memory requirements, beyond a few local
- * variables.  It can be used to sort any singly or doubly linked list. It is
- * assumed that the list has at least 2 items in it.
+ * O(n log n). Minimal stack/memory requirements beyond a few local
+ * variables. Can sort any singly or doubly linked list. The list must
+ * have at least 2 items.
  *
- * \param list The list to sort
- * \param cmpe A comparison function for the data managed by each node
- * \param isdouble true if the list to be sorted is doubly linked
+ * \param list     The list to sort.
+ * \param cmpe     Comparison function for node data.
+ * \param isdouble TRUE if the list is doubly linked.
  *
- * \return A pointer to the sorted list
- *
+ * \return Pointer to the sorted list head.
  */
 RCSW_LOCAL struct llist_node *mergesort_iter(struct llist_node *list,
                                              int (*cmpe)(const void *const e1,
@@ -105,17 +123,15 @@ RCSW_LOCAL struct llist_node *mergesort_iter(struct llist_node *list,
                                              bool_t isdouble);
 
 /**
- * \brief Sort a linked list using recursive mergesort
+ * \brief Sort a linked list using recursive mergesort.
  *
- * This function sorts a linked list using a recursive implementation of
- * mergesort. It has a complexity of O(NLogN). It can be used to sort any
- * singly or doubly linked list.
+ * O(n log n). Can sort any singly or doubly linked list.
  *
- * \param list The list to sort
- * \param cmpe A comparison function for the data managed by each node
- * \param isdouble true if the list to be sorted is doubly linked
+ * \param list     The list to sort.
+ * \param cmpe     Comparison function for node data.
+ * \param isdouble TRUE if the list is doubly linked.
  *
- * \return A pointer to the sorted list
+ * \return Pointer to the sorted list head.
  */
 RCSW_LOCAL struct llist_node *mergesort_rec(struct llist_node *list,
                                             int (*cmpe)(const void *const e1,
@@ -123,19 +139,16 @@ RCSW_LOCAL struct llist_node *mergesort_rec(struct llist_node *list,
                                             bool_t isdouble);
 
 /**
- * \brief Sort an array of non-negative ints via counting sort, as part of radix
- * sort
+ * \brief Sort an array of non-negative integers via counting sort.
  *
- * \param arr The array to sort
+ * Internal helper used by \ref radix_sort(). Processes one digit of each
+ * element at a time.
  *
- * \param tmp Temporary array to hold elements as they are sorted. Must be at
- *            least as large as \p arr.
- *
- * \param n_elts # elements in \p arr and \p tmp.
- *
- * \param digit Current digit being processed.
- *
- * \param base The base of the numbers to be sorted; must be <= 16.
+ * \param arr    The array to sort.
+ * \param tmp    Temporary array; must be at least as large as \p arr.
+ * \param n_elts Number of elements in \p arr and \p tmp.
+ * \param digit  Current digit position being processed.
+ * \param base   Numeric base; must be <= 16.
  *
  * \return \ref status_t
  */
@@ -146,18 +159,19 @@ RCSW_LOCAL status_t radix_counting_sort(size_t *arr,
                                         size_t base);
 
 /**
- * \brief Count how many values are less than \p arr[i] for \p digit.
+ * \brief Compute prefix sums for one digit pass of radix sort.
  *
- * \param arr The array to sort.
+ * Internal helper used by \ref radix_sort(). Counts how many values are
+ * less than arr[i] for the given digit position.
  *
- * \param n_elts # elements in \p arr.
+ * \param arr         The array being sorted.
+ * \param n_elts      Number of elements in \p arr.
+ * \param digit       Current digit position being processed.
+ * \param base        Numeric base; must be <= 16.
+ * \param prefix_sums Output array (same size as \p arr) to receive prefix
+ *                    sums.
  *
- * \param digit Current digit being processed.
- *
- * \param base The base of the numbers to be sorted; must be <= 16.
- *
- * \param prefix_sums Empty array of same cardinality as \p arr to store prefix
- *                    sums in.
+ * \return \ref status_t
  */
 RCSW_LOCAL status_t radix_sort_prefix_sum(const size_t* arr,
                                           size_t n_elts,

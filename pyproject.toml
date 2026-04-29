@@ -1,0 +1,49 @@
+[project]
+name = "rcsw"
+
+# TODO: This should be sourced from the canonical version for the repo
+version = "0.0.1"
+
+description = "Reuseable C Software++"
+authors = [
+    {name= "John Harwell", email = "john.r.harwell@gmail.com"},
+]
+dependencies = [
+
+]
+
+requires-python = ">=3.12"
+keywords = []
+classifiers = [
+]
+
+
+[dependency-groups]
+docs = [
+    "sphinx",
+    "docutils",
+    "sphinx-rtd-theme",
+    "sphinx-argparse",
+    "sphinx-tabs",
+    "sphinx-copybutton",
+    "sphinxcontrib-moderncmakedomain",
+    "sphinx-design",
+    "tomli",
+    "sphinxcontrib-napoleon",
+    "psutil",
+    "sphinx-last-updated-by-git",
+    "graphviz",
+    "sphinx-autoapi",
+    "toml",
+    "breathe",
+    "exhale",
+    "sphinx-autobuild",
+    "sphinxcontrib-video",
+    "sphinxcontrib-plantuml"
+]
+dev = [
+    {include-group ="docs"},
+]
+
+[project.urls]
+Homepage = "https://jharwell.github.io/rcsw"

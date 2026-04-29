@@ -9,6 +9,7 @@ import pathlib
 import subprocess
 import textwrap
 import datetime
+import urllib.request
 
 # -- Path setup --------------------------------------------------------------
 
@@ -22,79 +23,51 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 # sphinx uses python by default, so set to cpp
-primary_domain = 'cpp'
-highlight_language = 'cpp'
+primary_domain = 'c'
+highlight_language = 'c'
 
 today = datetime.date.today()
 project = 'RCSW'
 copyright = f'{today.year}, John Harwell'
 author = 'John Harwell'
 
+opener = urllib.request.build_opener()
+opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
+urllib.request.install_opener(opener)
 
-version_major = subprocess.run(("grep "
-                                "PROJECT_VERSION_MAJOR "
-                                "../cmake/project-local.cmake |"
-                                "grep -Eo [0-9]+"),
-                               shell=True,
-                               check=True,
-                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
-version_minor = subprocess.run(("grep "
-                                "PROJECT_VERSION_MINOR "
-                                "../cmake/project-local.cmake |"
-                                "grep -Eo [0-9]+"),
-                               shell=True,
-                               check=True,
-                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
-version_patch = subprocess.run(("grep "
-                                "PROJECT_VERSION_PATCH "
-                                "../cmake/project-local.cmake |"
-                                "grep -Eo [0-9]+"),
-                               shell=True,
-                               check=True,
-                               stdout=subprocess.PIPE).stdout.decode().strip('\n')
+
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = f'{version_major}.{version_minor}.{version_patch}'
+version = subprocess.run(("grep "
+                          "\"rcsw VERSION\""
+                          " ../CMakeLists.txt | grep -Eo [0-9]+\\.[0-9]+\\.[0-9]+"),
+                         shell=True,
+                         check=True,
+                         stdout=subprocess.PIPE).stdout.decode().strip('\n')
+
 
 # The full version, including alpha/beta/rc tags.
 git_branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                             stdout=subprocess.PIPE,
                             check=True).stdout.decode().strip('\n')
-if git_branch == 'devel':
-    version = f'{version}.beta'
-
-release = version
 
 rcsw_root = pathlib.Path(os.path.abspath(".."))
-breathe_projects = {
-    "RCSW": str(rcsw_root / "build/docs/rcsw/xml")
-}
-breathe_default_project = "RCSW"
-paths = []
-for root, subs, files in os.walk(str(rcsw_root / "include/")):
-    for f in files:
-        paths.append(os.path.abspath(os.path.join(root, f)))
+breathe_projects = {"rcsw": str(rcsw_root / "build/docs/rcsw/xml")}
+breathe_default_project = "rcsw"
+c_id_attributes = ['BEGIN_C_DECLS', 'END_C_DECLS', '__restrict__']
 
-breathe_projects_source = {"RCSW": (str(rcsw_root / "include"), paths)}
+breathe_domain_by_extension = {"h": "c"}
 
 exhale_args = {
     # These arguments are required
-    "containmentFolder":     "./_api",
-    "rootFileName":          "api.rst",
-    "rootFileTitle":         "Detailed APIs",
-    "afterTitleDescription": textwrap.dedent('''
-       .. note::
-
-          Some functions declared+defined using variadic macros might not be
-          included, due to limits in the doxygen+breathe+exhale toolchain.
-
-    '''),
-
-    "doxygenStripFromPath": "../include",
+    "containmentFolder": "./_api",
+    "rootFileName": "api.rst",
+    "rootFileTitle": "RCSW API Reference",
+    "doxygenStripFromPath": str(rcsw_root / "include"),
     "verboseBuild": False,
     'exhaleExecutesDoxygen': False,
     "createTreeView": True
@@ -110,9 +83,10 @@ extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.coverage',
               'sphinx.ext.mathjax',
               'sphinx.ext.ifconfig',
-              'sphinx_tabs.tabs',
+              'sphinx_design',
               'breathe',
               'exhale',
+              "sphinxcontrib.moderncmakedomain",
               'sphinx_last_updated_by_git']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -154,5 +128,5 @@ html_sidebars = {
 }
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'libra': ('https://libra2.readthedocs.io/en/devel/',
+intersphinx_mapping = {'libra': ('https://jharwell.github.io/libra',
                                  None)}

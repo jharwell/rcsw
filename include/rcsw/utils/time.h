@@ -1,7 +1,10 @@
 /**
  * \file time.h
  * \ingroup utils
- * \brief Collection of timespec/time manipulation functions.
+ * \brief Collection of \c struct timespec manipulation functions.
+ *
+ * \note These functions are POSIX-only and are not available in baremetal
+ *       builds (\c RCSW_BUILD_FOR=BAREMETAL).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -26,59 +29,68 @@ BEGIN_C_DECLS
  * \param a Timespec #1
  * \param b Timespec #2
  *
- * \return <, =, or > 0, dedpending if a is found to be >, =, or > b
+ * \return <0 if a < b, 0 if a == b, >0 if a > b.
  */
 RCSW_API int time_ts_cmp(const struct timespec * a,
                          const struct timespec * b) RCSW_PURE;
 
 /**
- * \brief Add two timespecs in place
+ * \brief Add \p val to \p sum in place.
  *
- * \param sum Timespec #1 (also where the result is put)
- * \param val Timespec #2
- *
+ * \param sum Timespec accumulator (modified in place).
+ * \param val Value to add.
  */
 RCSW_API void time_ts_add(struct timespec * __restrict__ sum,
                           const struct timespec * __restrict__ val);
 
 /**
- * \brief Get the difference between two timespecs
+ * \brief Compute the difference between two timespecs: \p diff = \p end - \p start.
  *
- * diff = end - start
- *
- * \param start The subtractee
- * \param end The subtractor
- * \param diff The result
- *
+ * \param start The subtractee.
+ * \param end   The subtractor.
+ * \param diff  Output: result of end - start.
  */
 RCSW_API void time_ts_diff(const struct timespec * __restrict__ start,
                            const struct timespec * __restrict__ end,
                            struct timespec * __restrict__ diff);
 
 /**
- * \brief Convert a timespec to a scalar monotonic count in seconds.
+ * \brief Convert a timespec to a monotonic scalar in seconds.
+ *
+ * \param ts The timespec to convert.
+ *
+ * \return Monotonic time in seconds as a \c double.
  */
 RCSW_API double time_ts2mono(const struct timespec* const ts) RCSW_PURE;
 
 /**
- * \brief Convert a timespec to a scalar monotonic count in nanoseconds.
+ * \brief Convert a timespec to a monotonic scalar in nanoseconds.
+ *
+ * \param ts The timespec to convert.
+ *
+ * \return Monotonic time in nanoseconds as a \c size_t.
  */
 RCSW_API size_t time_ts2monons(const struct timespec* const ts) RCSW_PURE;
 
 /**
- * \brief Convert a scalar monotonic count in nanoseconds to a timespec.
+ * \brief Convert a monotonic nanosecond count to a timespec.
+ *
+ * \param val Nanosecond count.
+ *
+ * \return Equivalent \c struct timespec.
  */
 RCSW_API struct timespec time_monons2ts(size_t val) RCSW_CONST;
 
 /**
- * \brief Convert a relative timeout to an absolute one using \ref
- * clock_realtime() as a basis.
+ * \brief Convert a relative timeout to an absolute one.
  *
- * Required for many POSIX functions.
+ * Uses \ref clock_realtime() as the basis. Required by many POSIX blocking
+ * functions (e.g., \c pthread_cond_timedwait()).
  *
- * \param rel A relative timout.
+ * \param rel Relative timeout.
+ * \param out Output: absolute timeout equivalent to now + \p rel.
  *
- * \param out The converted absolute timeout.
+ * \return \ref status_t
  */
 RCSW_API status_t time_ts_make_abs(const struct timespec * __restrict__ rel,
                                    struct timespec * out);

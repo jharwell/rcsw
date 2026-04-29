@@ -160,7 +160,7 @@ FULL_PATH_NAMES        = YES
 # will be relative from the directory where doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        = ../include
+STRIP_FROM_PATH        = @CMAKE_CURRENT_SOURCE_DIR@/include
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -267,7 +267,7 @@ ALIASES                =
 # members will be omitted, etc.
 # The default value is: NO.
 
-OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
 
 # Set the OPTIMIZE_OUTPUT_JAVA tag to YES if your project consists of Java or
 # Python sources only. Doxygen will then generate output that is more tailored
@@ -2210,10 +2210,13 @@ PREDEFINED             = __cplusplus= \
                          RCSW_LIB_INIT= \
                          RCSW_PURE= \
                          RCSW_CONST= \
-                         RCSW_EXPORT= \
+                         RCSW_API= \
+                         RCSW_LOCAL= \
+                         RCSW_WUR= \
                          RCSW_CONFIG_ER_PLUGIN=RCSW_ER_PLUGIN_LOG4CL\
                          RCSW_CONFIG_STDIO_PUTCHAR=RCSW_STDIO_PUTCHAR \
                          RCSW_CONFIG_STDIO_GETCHAR=RCSW_STDIO_GETCHAR \
+                         RCSW_CONFIG_AL_TARGET=RCSW_AL_TARGET_POSIX \
                          RCSW_CONFIG_PTR_ALIGN=4\
                          RCSW_CONFIG_AL_TARGET=POSIX\
                          BEGIN_C_DECLS= \
