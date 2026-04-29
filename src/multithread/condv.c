@@ -1,5 +1,5 @@
 /**
- * \file condv.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,20 +11,19 @@
  ******************************************************************************/
 #include "rcsw/multithread/condv.h"
 
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 struct condv* condv_init(struct condv* const cv_in, uint32_t flags) {
-  struct condv* cv = rcsw_alloc(cv_in,
-                                sizeof(struct condv),
-                                flags & RCSW_NOALLOC_HANDLE);
+  struct condv* cv =
+    rcsw_alloc(cv_in, sizeof(struct condv), flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(cv);
   cv->flags = flags;
 
@@ -34,14 +33,14 @@ struct condv* condv_init(struct condv* const cv_in, uint32_t flags) {
 error:
   condv_destroy(cv);
   return NULL;
-} /* condv_init() */
+}
 
 void condv_destroy(struct condv* const cv) {
   RCSW_FPC_V(NULL != cv);
 
   pthread_cond_destroy(&cv->impl);
   rcsw_free(cv, cv->flags & RCSW_NOALLOC_HANDLE);
-} /* condv_destroy() */
+}
 
 status_t condv_signal(struct condv* const cv) {
   RCSW_FPC_NV(ERROR, NULL != cv);
@@ -50,7 +49,7 @@ status_t condv_signal(struct condv* const cv) {
 
 error:
   return ERROR;
-} /* condv_signal() */
+}
 
 status_t condv_wait(struct condv* const cv, struct mutex* const mtx) {
   RCSW_FPC_NV(ERROR, NULL != cv);
@@ -59,22 +58,22 @@ status_t condv_wait(struct condv* const cv, struct mutex* const mtx) {
 
 error:
   return ERROR;
-} /* condv_wait() */
+}
 
-status_t condv_timedwait(struct condv* const cv,
-                         struct mutex* const mtx,
+status_t condv_timedwait(struct condv* const          cv,
+                         struct mutex* const          mtx,
                          const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cv, NULL != mtx, NULL != to);
-  struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
+  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
 
   /* Get current time */
-  RCSW_CHECK(OK == time_ts_make_abs(to, &ts));
+  RCSW_CHECK(OK == utils_ts_make_abs(to, &ts));
   RCSW_CHECK(0 == pthread_cond_timedwait(&cv->impl, &mtx->impl, &ts));
   return OK;
 
 error:
   return ERROR;
-} /* struct condvimedwait() */
+}
 
 status_t condv_broadcast(struct condv* const cv) {
   RCSW_FPC_NV(ERROR, NULL != cv);
@@ -83,6 +82,6 @@ status_t condv_broadcast(struct condv* const cv) {
 
 error:
   return ERROR;
-} /* condv_broadcast() */
+}
 
 END_C_DECLS

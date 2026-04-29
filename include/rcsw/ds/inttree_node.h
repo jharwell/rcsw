@@ -1,12 +1,11 @@
 /**
- * \file inttree_node.h
- * \cond INTERNAL
- * \ingroup ds
- * \brief Functions related to interval tree nodes.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \cond INTERNAL
  */
 
 #pragma once
@@ -17,7 +16,7 @@
 #include "rcsw/ds/inttree.h"
 
 /*******************************************************************************
- * RCSW Private Functions
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
 

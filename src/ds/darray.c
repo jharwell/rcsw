@@ -1,5 +1,5 @@
 /**
- * \file darray.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -19,18 +19,16 @@
 #define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/er/client.h"
-
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
-BEGIN_C_DECLS
+#include "rcsw/er/macros.h"
 
 /*******************************************************************************
  * Private API
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief Increase the capacity of a darray by a set amount
  *
@@ -104,11 +102,50 @@ error:
   return ERROR;
 } /* darray_shrink() */
 
+static void* darray_iter_next_impl(struct ds_iterator* iter) {
+  struct darray* arr = iter->container;
+  size_t*        idx = (size_t*)&iter->cursor; /* cursor stores index */
+
+  if (*idx >= arr->current) {
+    return NULL;
+  }
+  return darray_data_get(arr, (*idx)++);
+} /* darray_iter_next_impl() */
+
+static void* darray_iter_prev_impl(struct ds_iterator* iter) {
+  struct darray* arr = iter->container;
+  /*
+   * cursor stores (index + 1) so that 0 means "before the first element"
+   * without needing a signed type. On init, darray_iter_init() sets it to
+   * arr->current so the first prev() call returns element [current-1].
+   */
+  size_t* idx = (size_t*)&iter->cursor;
+
+  if (*idx == 0) {
+    return NULL;
+  }
+  return darray_data_get(arr, --(*idx));
+} /* darray_iter_prev_impl() */
+
+static const struct ds_ops darray_iter_ops = {
+  .next = darray_iter_next_impl,
+  .prev = darray_iter_prev_impl,
+};
+
+/*
+ * darray_data_get() asserts index < current, but insert legitimately writes
+ * at positions up to current (including current itself for append). Use
+ * direct pointer arithmetic here; bounds are already enforced by the
+ * index <= current precondition.and the capacity/extend check.
+ */
+#define DARRAY_RAW(arr_, i_) \
+  ((uint8_t*)(arr_)->elements + (i_) * (arr_)->elt_size)
+
 /*******************************************************************************
  * Public API
  ******************************************************************************/
 struct darray* darray_init(struct darray*                    arr_in,
-                           const struct darray_params* const params) {
+                           const struct darray_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->elt_size > 0, params->max_elts != 0);
 
   struct darray* arr = rcsw_alloc(arr_in,
@@ -216,17 +253,13 @@ status_t darray_insert(struct darray* const arr,
   if (arr->flags & RCSW_DS_ORDERED) {
     /* shift all elements between index and end of list over by one */
     for (size_t i = arr->current; i > index; --i) {
-      ds_elt_copy(darray_data_get(arr, i),
-                  darray_data_get(arr, i - 1),
-                  arr->elt_size);
+      ds_elt_copy(DARRAY_RAW(arr, i), DARRAY_RAW(arr, i - 1), arr->elt_size);
     } /* for() */
   } else { /* if not, just move element at index to end of array */
-    memmove(darray_data_get(arr, arr->current),
-            darray_data_get(arr, index),
-            arr->elt_size);
+    memmove(DARRAY_RAW(arr, arr->current), DARRAY_RAW(arr, index), arr->elt_size);
   }
 
-  ds_elt_copy(darray_data_get(arr, index), e, arr->elt_size);
+  ds_elt_copy(DARRAY_RAW(arr, index), e, arr->elt_size);
 
   arr->current++;
 
@@ -242,7 +275,7 @@ error:
 } /* darray_insert() */
 
 status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, index <= darray_size(arr));
+  RCSW_FPC_NV(ERROR, arr != NULL, index < darray_size(arr));
 
   if (e != NULL) {
     darray_idx_serve(arr, e, index);
@@ -259,8 +292,13 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
    * overwrite removed idx with last item in array (MUCH faster)
    */
   if (arr->flags & RCSW_DS_SORTED) {
-    memmove(darray_data_get(arr, index),
-            darray_data_get(arr, index + 1),
+    /*
+     * When removing the last element, index+1 == current which is outside
+     * darray_data_get's current-based bounds. Use direct arithmetic; the
+     * copy length will be 0 in that case so no memory is read out-of-bounds.
+     */
+    memmove(DARRAY_RAW(arr, index),
+            DARRAY_RAW(arr, index + 1),
             (arr->current - 1 - index) * arr->elt_size);
   } else {
     memmove(darray_data_get(arr, index),
@@ -273,7 +311,7 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
    * If the array load factor is below 0.25, then shrink the array, in
    * accordance with O(1) amortized deletions from the array.
    */
-  if ((float)(arr->current) / (float)arr->capacity <= 0.25) {
+  if ((double)(arr->current) / (double)arr->capacity <= 0.25) {
     if (!(arr->flags & RCSW_NOALLOC_DATA)) {
       RCSW_CHECK(OK == darray_shrink(arr, arr->capacity / 2));
     }
@@ -287,7 +325,7 @@ error:
 status_t darray_idx_serve(const struct darray* const arr,
                           void* const                e,
                           size_t                     index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index <= arr->current);
+  RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index < arr->current);
   memmove(e, darray_data_get(arr, index), arr->elt_size);
   return OK;
 } /* darray_index_serve() */
@@ -298,7 +336,9 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
   int rval = -1;
 
   if (arr->sorted) {
-    ER_DEBUG("Currently sorted: performing binary search");
+    ER_DEBUG("Currently sorted: performing binary search (%zu elements)",
+             arr->current);
+
     rval = bsearch_rec(arr->elements,
                        e,
                        arr->cmpe,
@@ -318,6 +358,10 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
+  ER_ASSERT(index < arr->current,
+            "Index %zu out of bounds (current=%zu)",
+            index,
+            arr->current);
   return ((uint8_t*)arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 
@@ -370,16 +414,19 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
    * already sorted
    */
   if (arr->current <= 1 || arr->sorted) {
-    ER_DEBUG("Already sorted: nothing to do\n");
+    ER_DEBUG("Already sorted: nothing to do (%zu elements)", arr->current);
   } else {
     if (type == ekEXEC_REC) {
-      qsort_rec(arr->elements,
-                0,
-                (int)arr->current - 1,
-                arr->elt_size,
-                arr->cmpe);
+      RCSW_CHECK(OK == qsort_rec(arr->elements,
+                                 0,
+                                 (int)arr->current - 1,
+                                 arr->elt_size,
+                                 arr->cmpe));
     } else if (type == ekEXEC_ITER) {
-      qsort_iter(arr->elements, (int)arr->current - 1, arr->elt_size, arr->cmpe);
+      RCSW_CHECK(OK == qsort_iter(arr->elements,
+                                  (int)arr->current - 1,
+                                  arr->elt_size,
+                                  arr->cmpe));
     } else {
       return ERROR; /* bad sort type */
     }
@@ -387,7 +434,10 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
     arr->sorted = true;
   }
   return OK;
-} /* darray_sort() */
+
+error:
+  return OK;
+}
 
 struct darray* darray_filter(struct darray* const arr,
                              bool_t (*pred)(const void* const e),
@@ -395,7 +445,7 @@ struct darray* darray_filter(struct darray* const arr,
                              void*    elements) {
   RCSW_FPC_NV(NULL, NULL != arr, NULL != pred, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct darray_params params = {.init_size = 0,
+  struct darray_config params = {.init_size = 0,
                                  .cmpe      = arr->cmpe,
                                  .printe    = arr->printe,
                                  .elt_size  = arr->elt_size,
@@ -442,7 +492,7 @@ struct darray* darray_copy(const struct darray* const arr,
                            void*                      elements) {
   RCSW_FPC_NV(NULL, arr != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct darray_params params = {.init_size = arr->current,
+  struct darray_config params = {.init_size = arr->current,
                                  .cmpe      = arr->cmpe,
                                  .printe    = arr->printe,
                                  .elt_size  = arr->elt_size,
@@ -492,4 +542,16 @@ status_t darray_inject(const struct darray* const arr,
   return OK;
 } /* darray_inject() */
 
+struct ds_iterator* darray_iter_init(struct ds_iterator* iter,
+                                     struct darray*      arr,
+                                     enum ds_iter_type   type,
+                                     bool_t (*classify)(void* e)) {
+  RCSW_FPC_NV(NULL, iter != NULL, arr != NULL);
+
+  /* Seed cursor BEFORE calling ds_iter_init, which must not overwrite it. */
+  iter->cursor =
+    (type == ekITER_FORWARD) ? (void*)(size_t)0 : (void*)(size_t)arr->current;
+
+  return ds_iter_init(iter, arr, type, &darray_iter_ops, classify);
+}
 END_C_DECLS

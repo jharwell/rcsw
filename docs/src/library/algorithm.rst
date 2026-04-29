@@ -11,15 +11,14 @@ algorithms. For parallel variants of sorting, see
 Dynamic Programming
 ===================
 
-All DP modules follow the same lifecycle: initialize a handle, call the
-compute function(s), then destroy. Handles can be stack-allocated with
-``RCSW_NOALLOC_HANDLE``; internal scratch memory is always heap-allocated.
+All DP modules follow the same lifecycle: initialize a handle, call the compute
+function(s), then destroy. Handles can be stack-allocated with
+:c:macro`RCSW_NOALLOC_HANDLE`; internal scratch memory is always heap-allocated.
 
 **Edit Distance** (``rcsw/algorithm/edit_dist.h``) — Works on any element
 type, not just characters; the caller supplies comparator and length
 callbacks. Initialize with :c:func:`edit_dist_init()`, compute with
-:c:func:`edit_dist_find()` passing ``ekEXEC_REC`` or ``ekEXEC_ITER`` to
-select recursive or iterative evaluation, then destroy with
+:c:func:`edit_dist_find()`, then destroy with
 :c:func:`edit_dist_destroy()`.
 
 **Longest Common Subsequence** (``rcsw/algorithm/lcs.h``) — Character
@@ -100,9 +99,110 @@ All sort functions take a void-pointer array, element count, element size,
 and a comparator ``int cmpe(const void* e1, const void* e2)``. None are
 thread-safe.
 
-.. NOTE::
+Sorting Algorithms
+==================
 
-   :c:func:`radix_counting_sort()` and :c:func:`radix_sort_prefix_sum()`
-   are internal helpers exposed in the public API for use by
-   :ref:`library/multiprocess`. Most callers should use
-   :c:func:`radix_sort()` directly.
+In RCSW, sorting algorithms operate on access patterns, not container types. To
+choose the appropriate algorithm, match it to the data access model.
+
+The RCSW library provides sorting algorithms organized around the **data access
+model** they require. Rather than forcing all algorithms through a single
+abstraction, the library separates them into two categories:
+
+1. **Memory-based (contiguous) sorting algorithms**.
+2. **Structure-based (container-specific) sorting algorithms**.
+
+This split reflects fundamental differences in how data is accessed and
+manipulated, and results in cleaner APIs, better performance, and clearer
+ownership boundaries.
+
+By separating memory-based and structure-based algorithms, the library achieves:
+
+- High performance
+- Clean modularity
+- Minimal abstraction overhead
+- Clear and predictable APIs
+
+- Avoids Artificial Abstractions.A single “universal” sorting interface would
+  require:
+
+  - Function pointers for access (``get``, ``set``, ``swap``)
+  - Indirection on every operation
+  - Loss of compile-time guarantees
+
+  This adds complexity without meaningful benefit.
+
+- Preserves Performance. Memory-based algorithms remain fully optimized, and
+  structure-based algorithms exploit internal layout.
+
+- Maintains Clean Layering ``algorithm/`` depends only on core primitives for
+  generic algorithms, and ``ds/`` modules own their data structures and
+  associated algorithms
+
+Memory-Based Sorting Algorithms
+-------------------------------
+
+These algorithms operate on raw memory buffers and require:
+
+- A pointer to the data
+- The number of elements
+- The size of each element
+- A comparison function
+
+.. rubric:: Assumptions
+
+- **Contiguous storage**
+- **O(1) random access**
+- Ability to **swap elements by copying memory**
+
+
+.. rubric:: Characteristics
+
+- Fully generic (independent of any data structure)
+- Reusable across all contiguous containers (e.g., dynamic arrays)
+- No dependency on `ds/` modules
+- Minimal abstraction overhead
+
+.. rubric:: Usage
+
+These algorithms are appropriate for:
+
+- Arrays
+- Dynamic arrays (`darray`)
+- Any user-managed contiguous buffer
+
+
+Structure-Based Sorting Algorithms
+----------------------------------
+
+These algorithms operate on specific data structures and require:
+
+- Pointer traversal
+- Structural manipulation (e.g., relinking nodes)
+
+.. rubric:: Assumptions:
+
+- **Non-contiguous storage**
+- **No efficient random access**
+- Direct access to internal structure (e.g., node pointers)
+
+.. rubric:: Characteristics
+
+- Tightly coupled to the data structure
+- Optimized for that structure’s properties
+- Located within the corresponding `ds/` module
+- Do not attempt to be generic across unrelated structures
+
+### Example: Linked List Sorting
+
+Linked lists cannot efficiently support array-based algorithms like quicksort
+due to:
+
+- Lack of random access
+- High cost of element swapping
+
+Instead, algorithms like **mergesort** are used because they:
+
+- Operate via sequential traversal
+- Re-link nodes instead of copying memory
+- Maintain stable performance characteristics

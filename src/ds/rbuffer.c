@@ -1,5 +1,5 @@
 /**
- * \file rbuffer.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,11 +11,14 @@
  ******************************************************************************/
 #include "rcsw/ds/rbuffer.h"
 
+#include <string.h>
+
 #define RCSW_ER_MODID ekLOG4CL_DS_RBUFFER
 #define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
+#include "rcsw/core/alloc.h"
 #include "rcsw/ds/ds.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Macros
@@ -24,16 +27,38 @@
   (((rb)->flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
 
 /*******************************************************************************
- * API Functions
+ * Private API
+ ******************************************************************************/
+/*
+ * cursor stores the logical offset from rb->start (i.e. how many elements have
+ * been consumed), cast to void*. This avoids storing a signed index and keeps
+ * the wrap-around arithmetic in one place.
+ */
+static void* rbuffer_iter_next_impl(struct ds_iterator* iter) {
+  struct rbuffer* rb  = iter->container;
+  size_t          off = (size_t)iter->cursor;
+
+  if (off >= rb->current) {
+    return NULL;
+  }
+  size_t idx   = (rb->start + off) % rb->max_elts;
+  iter->cursor = (void*)(off + 1);
+  return rbuffer_data_get(rb, idx);
+} /* rbuffer_iter_next_impl() */
+
+const struct ds_ops rbuffer_iter_ops = {
+  .next = rbuffer_iter_next_impl,
+  .prev = NULL, /* ringbuffer iteration is forward-only */
+};
+
+/*******************************************************************************
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
-                             const struct rbuffer_params* const params) {
-  RCSW_FPC_NV(NULL,
-              params != NULL,
-              params->max_elts > 0,
-              params->elt_size > 0);
+struct rbuffer* rbuffer_init(struct rbuffer*                    rb_in,
+                             const struct rbuffer_config* const params) {
+  RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
   struct rbuffer* rb = rcsw_alloc(rb_in,
@@ -49,10 +74,10 @@ struct rbuffer* rbuffer_init(struct rbuffer* rb_in,
   RCSW_CHECK_PTR(rb->elements);
 
   rb->elt_size = params->elt_size;
-  rb->printe = params->printe;
-  rb->cmpe = params->cmpe;
-  rb->start = 0;
-  rb->current = 0;
+  rb->printe   = params->printe;
+  rb->cmpe     = params->cmpe;
+  rb->start    = 0;
+  rb->current  = 0;
   rb->max_elts = params->max_elts;
 
   ER_DEBUG("type=%s,max_elts=%zu,elt_size=%zu,flags=0x%08x",
@@ -134,8 +159,8 @@ int rbuffer_index_query(struct rbuffer* const rb, const void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, rb->cmpe != NULL, e != NULL);
 
   size_t wrap = 0;
-  size_t i = rb->start;
-  int rval = ERROR;
+  size_t i    = rb->start;
+  int    rval = ERROR;
 
   while (!wrap || (i != rb->start)) {
     if (rb->cmpe(e, rbuffer_data_get(rb, i)) == 0) {
@@ -145,7 +170,7 @@ int rbuffer_index_query(struct rbuffer* const rb, const void* const e) {
     /* wrapped around to index 0 */
     if (i + 1 == rb->max_elts) {
       wrap = 1;
-      i = 0;
+      i    = 0;
     } else {
       i++;
     }
@@ -159,7 +184,7 @@ status_t rbuffer_clear(struct rbuffer* const rb) {
 
   memset(rb->elements, 0, rb->current * rb->elt_size);
   rb->current = 0;
-  rb->start = 0;
+  rb->start   = 0;
 
   return OK;
 } /* rbuffer_clear() */
@@ -207,5 +232,14 @@ void rbuffer_print(struct rbuffer* const rb) {
   } /* for() */
   DPRINTF("\n");
 } /* rbuffer_print() */
+
+struct ds_iterator* rbuffer_iter_init(struct ds_iterator* iter,
+                                      struct rbuffer*     rb,
+                                      bool_t (*classify)(void* e)) {
+  RCSW_FPC_NV(NULL, iter != NULL, rb != NULL);
+
+  iter->cursor = (void*)(size_t)0; /* start at logical offset 0 */
+  return ds_iter_init(iter, rb, ekITER_FORWARD, &rbuffer_iter_ops, classify);
+} /* rbuffer_iter_init() */
 
 END_C_DECLS

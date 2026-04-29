@@ -1,5 +1,5 @@
 /**
- * \file license_info.h
+ * \file
  *
  * \copyright 2022 John Harwell, All rights reserved.
  *
@@ -7,11 +7,6 @@
  */
 
 #pragma once
-
-/*******************************************************************************
- * Includes
- ******************************************************************************/
-#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Struct Definitions
@@ -28,15 +23,15 @@ struct license_info {
   /**
    * Abbreviated license text.
    */
-  const char* abbrev;
+  const char* const abbrev;
 
   /**
    * Full license text.
    */
-  const char* full;
+  const char* const full;
 
   /**
    * Copyright text.
    */
-  const char* copyright;
+  const char* const copyright;
 };

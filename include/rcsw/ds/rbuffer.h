@@ -1,11 +1,11 @@
 /**
- * \file rbuffer.h
- * \ingroup ds
- * \brief Implementation of a ringbuffer.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -13,34 +13,34 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/iter.h"
-#include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Parameters for \ref rbuffer.
  */
-struct rbuffer_params {
+struct rbuffer_config {
   /**
    * For comparing elements. Can be NULL. If NULL, \ref rbuffer_index_query() is
    * disabled.
    */
-  int (*cmpe)(const void *const e1, const void *const e2);
+  int (*cmpe)(const void* const e1, const void* const e2);
 
   /**
    * For printing an element. Can be NULL. If NULL, \ref rbuffer_print() is
    * disabled.
    */
-  void (*printe)(const void *e);
+  void (*printe)(const void* e);
 
   /**
    * Pointer to application-allocated space for storing the elements managed by
    * the \ref rbuffer. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -66,20 +66,18 @@ struct rbuffer {
    * For printing an element. Can be NULL. If NULL, calling \ref rbuffer_print()
    * is undefined.
    */
-  void (*printe)(const void *const e);
+  void (*printe)(const void* const e);
 
   /**
    * For comparing elements. Can be NULL. If NULL, calling \ref
    * rbuffer_index_query() is undefined.
    */
-  int (*cmpe)(const void *const e1, const void *const e2);
-
-  struct ds_iterator iter;
+  int (*cmpe)(const void* const e1, const void* const e2);
 
   /**
    * The actual data.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Current # of elements in buffer.
@@ -117,7 +115,7 @@ struct rbuffer {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -192,14 +190,14 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
  *
  * \param rb_in An application allocated handle for the ringbuffer. Can be NULL,
  *        depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *        rbuffer_params.flags or not.
+ *        rbuffer_config.flags or not.
  *
  * \param params The initialization parameters.
  *
  * \return The initialized ringbuffer, or NULL if an error occurred.
  */
-RCSW_API struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
-                             const struct rbuffer_params * params) RCSW_WUR;
+RCSW_API struct rbuffer* rbuffer_init(
+  struct rbuffer* rb_in, const struct rbuffer_config* params) RCSW_WUR;
 
 /**
  * \brief Delete a ringbuffer.
@@ -209,7 +207,7 @@ RCSW_API struct rbuffer *rbuffer_init(struct rbuffer *rb_in,
  *
  * \param rb The ringbuffer handle.
  */
-RCSW_API void rbuffer_destroy(struct rbuffer *rb);
+RCSW_API void rbuffer_destroy(struct rbuffer* rb);
 
 /**
  * \brief Add an item into the ringbuffer.
@@ -227,7 +225,7 @@ RCSW_API void rbuffer_destroy(struct rbuffer *rb);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_add(struct rbuffer * rb, const void * e);
+RCSW_API status_t rbuffer_add(struct rbuffer* rb, const void* e);
 
 /**
  * \brief Remove the next item from the ringbuffer.
@@ -239,7 +237,7 @@ RCSW_API status_t rbuffer_add(struct rbuffer * rb, const void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_remove(struct rbuffer * rb, void * e);
+RCSW_API status_t rbuffer_remove(struct rbuffer* rb, void* e);
 
 /**
  * \brief Get the element in the ringbuffer at the specified index.
@@ -258,7 +256,7 @@ RCSW_API status_t rbuffer_remove(struct rbuffer * rb, void * e);
  *
  * \return The element, or NULL if an error occurred.
  */
-RCSW_API void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
+RCSW_API void* rbuffer_data_get(const struct rbuffer* rb, size_t idx);
 
 /**
  * \brief  Get the index of an element in the ringbuffer.
@@ -273,7 +271,7 @@ RCSW_API void* rbuffer_data_get(const struct rbuffer * rb, size_t idx);
  * \return The index of the first element in the rbuffer that matches according
  * to the compare function, or -1 on error.
  */
-RCSW_API int rbuffer_index_query(struct rbuffer * rb, const void * e);
+RCSW_API int rbuffer_index_query(struct rbuffer* rb, const void* e);
 
 /**
  * \brief Retrieve the first entry from the ringbuffer.
@@ -285,7 +283,7 @@ RCSW_API int rbuffer_index_query(struct rbuffer * rb, const void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_serve_front(const struct rbuffer * rb, void * e);
+RCSW_API status_t rbuffer_serve_front(const struct rbuffer* rb, void* e);
 
 /**
  * \brief Get a reference to the first entry in the ringbuffer.
@@ -297,7 +295,7 @@ RCSW_API status_t rbuffer_serve_front(const struct rbuffer * rb, void * e);
  * \return A reference to the first element, or NULL if no such element or an
  * error occurred.
  */
-RCSW_API void* rbuffer_front(const struct rbuffer * rb);
+RCSW_API void* rbuffer_front(const struct rbuffer* rb);
 
 /**
  * \brief Clear a rbuffer, but do not deallocate its memory.
@@ -308,7 +306,7 @@ RCSW_API void* rbuffer_front(const struct rbuffer * rb);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_clear(struct rbuffer * rb);
+RCSW_API status_t rbuffer_clear(struct rbuffer* rb);
 
 /**
  * \brief Apply a function to all elements in the ringbuffer.
@@ -318,7 +316,7 @@ RCSW_API status_t rbuffer_clear(struct rbuffer * rb);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_map(struct rbuffer * rb, void (*f)(void *e));
+RCSW_API status_t rbuffer_map(struct rbuffer* rb, void (*f)(void* e));
 
 /**
  * \brief Compute a cumulative SOMETHING using elements in the ringbuffer.
@@ -334,9 +332,9 @@ RCSW_API status_t rbuffer_map(struct rbuffer * rb, void (*f)(void *e));
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rbuffer_inject(struct rbuffer * rb,
-                        void (*f)(void *elt, void *res),
-                        void *result);
+RCSW_API status_t rbuffer_inject(struct rbuffer* rb,
+                                 void (*f)(void* elt, void* res),
+                                 void* result);
 
 /**
  * \brief Print the ringbuffer.
@@ -346,6 +344,34 @@ RCSW_API status_t rbuffer_inject(struct rbuffer * rb,
  *
  * \param rb The ringbuffer handle.
  */
-RCSW_API void rbuffer_print(struct rbuffer * rb);
+RCSW_API void rbuffer_print(struct rbuffer* rb);
+
+/*******************************************************************************
+ * Iterator API
+ ******************************************************************************/
+/**
+ * \brief Vtable of traversal operations for \ref rbuffer.
+ *
+ * Supports forward iteration only (ringbuffer index arithmetic is
+ * asymmetric; backward iteration is left to the caller via index math).
+ * \ref ds_ops.prev is NULL.
+ */
+extern const struct ds_ops rbuffer_iter_ops;
+
+/**
+ * \brief Initialise an iterator over a \ref rbuffer.
+ *
+ * Only \ref ekITER_FORWARD is supported. Passing \ref ekITER_BACKWARD will
+ * cause this function to return NULL.
+ *
+ * \param iter     Caller-allocated iterator storage.
+ * \param rb       The ringbuffer to iterate over.
+ * \param classify Optional filter predicate; pass NULL for no filtering.
+ *
+ * \return \p iter on success, or NULL on error.
+ */
+RCSW_API struct ds_iterator* rbuffer_iter_init(struct ds_iterator* iter,
+                                               struct rbuffer*     rb,
+                                               bool_t (*classify)(void* e));
 
 END_C_DECLS

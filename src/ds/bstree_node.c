@@ -1,5 +1,5 @@
 /**
- * \file bstree_node.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,23 +11,26 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "rcsw/core/alloc.h"
+#include "rcsw/ds/allocm.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/hash.h"
-#include "rcsw/ds/allocm.h"
-#include "rcsw/common/alloc.h"
 
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 struct bstree_node* bstree_node_create(const struct bstree* const tree,
-                                       struct bstree_node* const parent,
-                                       void* const key_in,
-                                       void* const data_in,
-                                       size_t node_size) {
+                                       struct bstree_node* const  parent,
+                                       void* const                key_in,
+                                       void* const                data_in,
+                                       size_t                     node_size) {
   /* get space for the node */
   struct bstree_node* node = bstree_node_alloc(tree, node_size);
   RCSW_CHECK_PTR(node);
@@ -53,8 +56,8 @@ struct bstree_node* bstree_node_create(const struct bstree* const tree,
 
   /* create linkage */
   node->parent = parent;
-  node->left = tree->nil;
-  node->right = tree->nil;
+  node->left   = tree->nil;
+  node->right  = tree->nil;
 
   return node;
 
@@ -64,7 +67,7 @@ error:
 } /* bstree_node_create() */
 
 int bstree_node_destroy(const struct bstree* const tree,
-                        struct bstree_node* node) {
+                        struct bstree_node*        node) {
   RCSW_FPC_NV(0, NULL != node);
 
   /* deallocate data block */
@@ -77,12 +80,14 @@ int bstree_node_destroy(const struct bstree* const tree,
 } /* bstree_node_destroy() */
 
 void bstree_node_datablock_dealloc(const struct bstree* const tree,
-                                   dptr_t* datablock) {
+                                   dptr_t*                    datablock) {
   if (datablock == NULL) {
     return;
   }
   if (tree->flags & RCSW_NOALLOC_DATA) {
-    size_t idx = (size_t)((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) / tree->elt_size;
+    size_t idx =
+      (size_t)((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) /
+      tree->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(tree->space.db_map + idx);
@@ -102,22 +107,25 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
      */
     /* make sure that we have 32 bits of randomness */
     uint32_t val =
-        (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
-        (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
+      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
+      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
 
-    size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
+    uint32_t hash;
+    RCSW_CHECK(OK == utils_hash_fnv1a(&val, 4, &hash));
+    size_t search_idx = hash % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
     int alloc_idx =
-        allocm_probe(tree->space.db_map, (size_t)tree->max_elts + 2, search_idx);
+      allocm_probe(tree->space.db_map, (size_t)tree->max_elts + 2, search_idx);
     RCSW_CHECK(-1 != alloc_idx);
 
     /* mark data block as in use */
     allocm_mark_inuse(tree->space.db_map + alloc_idx);
 
-    datablock = (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->elt_size);
+    datablock =
+      (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->elt_size);
   } else {
     datablock = rcsw_alloc(NULL, tree->elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
@@ -130,7 +138,7 @@ error:
 } /* bstree_node_datablock_alloc() */
 
 struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
-                                      size_t node_size) {
+                                      size_t                     node_size) {
   struct bstree_node* node = NULL;
 
   if (tree->flags & RCSW_NOALLOC_META) {
@@ -142,17 +150,18 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
 
     /* make sure that we have 32 bits of randomness */
     uint32_t val =
-        (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
-        (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
+      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
+      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
 
-    size_t search_idx = hash_fnv1a(&val, 4) % ((size_t)tree->max_elts + 2);
+    uint32_t hash;
+    RCSW_CHECK(OK == utils_hash_fnv1a(&val, 4, &hash));
+    size_t search_idx = hash % ((size_t)tree->max_elts + 2);
 
     /*
      * The bstree requires 2 internal nodes for root and nil, hence the +2.
      */
-    int alloc_idx = allocm_probe(tree->space.node_map,
-                                 (size_t)tree->max_elts + 2,
-                                 search_idx);
+    int alloc_idx =
+      allocm_probe(tree->space.node_map, (size_t)tree->max_elts + 2, search_idx);
     RCSW_CHECK(-1 != alloc_idx);
 
     /* mark node as in use */
@@ -170,7 +179,7 @@ error:
 } /* bstree_node_alloc() */
 
 void bstree_node_dealloc(const struct bstree* const tree,
-                         struct bstree_node* node) {
+                         struct bstree_node*        node) {
   if (tree->flags & RCSW_NOALLOC_META) {
     ptrdiff_t idx = node - tree->space.nodes;
 
@@ -181,10 +190,10 @@ void bstree_node_dealloc(const struct bstree* const tree,
   }
 } /* bstree_node_dealloc() */
 
-int bstree_traverse_nodes_preorder(struct bstree* const tree,
+int bstree_traverse_nodes_preorder(struct bstree* const      tree,
                                    struct bstree_node* const node,
                                    int (*cb)(const struct bstree* const tree,
-                                             struct bstree_node* const node)) {
+                                             struct bstree_node* const  node)) {
   int rc = cb(tree, node);
   RCSW_CHECK(rc == 0);
 
@@ -202,10 +211,10 @@ error:
   return rc;
 } /* bstree_traverse_nodes_preorder() */
 
-int bstree_traverse_nodes_inorder(struct bstree* const tree,
+int bstree_traverse_nodes_inorder(struct bstree* const      tree,
                                   struct bstree_node* const node,
                                   int (*cb)(const struct bstree* const tree,
-                                            struct bstree_node* const node)) {
+                                            struct bstree_node* const  node)) {
   int rc = 0;
   if (node->left != tree->nil) { /* recurse and operate on left subtree */
     rc = bstree_traverse_nodes_inorder(tree, node->left, cb);
@@ -223,10 +232,10 @@ error:
   return rc;
 } /* bstree_traverse_nodes_inorder() */
 
-int bstree_traverse_nodes_postorder(struct bstree* const tree,
+int bstree_traverse_nodes_postorder(struct bstree* const      tree,
                                     struct bstree_node* const node,
                                     int (*cb)(const struct bstree* const tree,
-                                              struct bstree_node* const node)) {
+                                              struct bstree_node* const  node)) {
   tree->depth++;
   int rc = 0;
   if (node->left != tree->nil) { /* recurse and operate on left subtree */
@@ -246,17 +255,17 @@ error:
   return rc;
 } /* bstree_traverse_nodes_postorder() */
 
-int bstree_node_print(const struct bstree* const tree, /* parent tree */
+int bstree_node_print(const struct bstree* const      tree, /* parent tree */
                       const struct bstree_node* const node) {
   tree->printe(node->data);
   return 0;
 } /* bstree_node_print() */
 
 void bstree_node_rotate_left(struct bstree* const tree,
-                             struct bstree_node* node) {
+                             struct bstree_node*  node) {
   struct bstree_node* child;
 
-  child = node->right; /* hold reference to node's right child */
+  child       = node->right; /* hold reference to node's right child */
   node->right = child->left; /* hold reference to node's left child */
 
   /* if left child exists, reset parent to node */
@@ -271,7 +280,7 @@ void bstree_node_rotate_left(struct bstree* const tree,
   } else { /* node was right child of parent; make new right child */
     node->parent->right = child;
   }
-  child->left = node;
+  child->left  = node;
   node->parent = child;
 
   /*
@@ -291,7 +300,7 @@ void bstree_node_rotate_left(struct bstree* const tree,
 } /* bstree_node_rotate_left() */
 
 void bstree_node_rotate_right(struct bstree* const tree,
-                              struct bstree_node* node) {
+                              struct bstree_node*  node) {
   struct bstree_node* child;
   child = node->left; /* hold reference to node's left child */
 
@@ -330,7 +339,7 @@ void bstree_node_rotate_right(struct bstree* const tree,
 } /* bstree_node_rotate_right() */
 
 struct bstree_node* bstree_node_successor(const struct bstree* const tree,
-                                          const struct bstree_node* node) {
+                                          const struct bstree_node*  node) {
   struct bstree_node* succ;
 
   if ((succ = node->right) != tree->nil) {
@@ -349,7 +358,7 @@ struct bstree_node* bstree_node_successor(const struct bstree* const tree,
   return succ;
 } /* bstree_node_successor() */
 
-size_t bstree_node_height(const struct bstree* const tree,
+size_t bstree_node_height(const struct bstree* const      tree,
                           const struct bstree_node* const node) {
   /*
    * Sentinel to detect when we have fallen off the tree

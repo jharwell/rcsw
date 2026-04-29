@@ -1,5 +1,5 @@
 /**
- * \file mem.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,19 +11,61 @@
  ******************************************************************************/
 #include "rcsw/utils/mem.h"
 
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/utils/align.h"
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
-void* mem_cpy32(void* const __restrict__ dest,
-                const void* const __restrict__ src,
-                size_t n_bytes) {
+status_t utils_mem_write32(size_t addr, uint32_t wval) {
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
+  *((volatile uint32_t*)addr) = wval;
+  return OK;
+}
+
+uint32_t utils_mem_read32(size_t addr) {
+  RCSW_FPC_NV(0, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t))));
+  return *((volatile uint32_t*)addr);
+}
+
+status_t utils_mem_rmwr32(uint32_t addr, uint32_t wval, uint32_t mask) {
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
+
+  volatile uint32_t curr_val = 0;
+
+  /*
+   * If some bits masked, read the memory address, mask off all bits
+   * NOT in mask in the result. OR this value with all bits in wval that
+   * ARE in the mask.
+   */
+  if (mask != 0) {
+    curr_val = utils_mem_read32(addr);
+    wval     = (curr_val & ~mask) | (wval & mask);
+  }
+
+  /*
+   * Write masked off bits back to memory/register, or just write wval to
+   * memory, if mask was 0.
+   */
+  utils_mem_write32(addr, wval);
+
+  /* read & compare */
+  curr_val = utils_mem_read32(addr);
+  RCSW_CHECK((curr_val & mask) == (wval & mask));
+
+  return OK;
+
+error:
+  return ERROR;
+}
+
+void* utils_mem_cpy32(void* const __restrict__ dest,
+                      const void* const __restrict__ src,
+                      size_t n_bytes) {
   RCSW_FPC_NV(dest,
               RCSW_IS_MEM_ALIGNED(dest, sizeof(uint32_t)),
               RCSW_IS_MEM_ALIGNED(src, sizeof(uint32_t)),
@@ -33,9 +75,9 @@ void* mem_cpy32(void* const __restrict__ dest,
     ((volatile uint32_t*)dest)[i] = ((const volatile uint32_t*)src)[i];
   } /* for() */
   return dest;
-} /* mem_cpy32() */
+}
 
-status_t mem_dump32(const void* const buf, size_t n_bytes) {
+status_t utils_mem_dump32(const void* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)));
 
   for (uint32_t i = 0; i < n_bytes / sizeof(uint32_t); i++) {
@@ -46,9 +88,9 @@ status_t mem_dump32(const void* const buf, size_t n_bytes) {
   }
   DPRINTF("\n");
   return OK;
-} /* mem_dump32() */
+}
 
-status_t mem_dump16(const void* const buf, size_t n_bytes) {
+status_t utils_mem_dump16(const void* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)));
 
   for (uint32_t i = 0; i < n_bytes / sizeof(uint16_t); i++) {
@@ -59,9 +101,9 @@ status_t mem_dump16(const void* const buf, size_t n_bytes) {
   }
   DPRINTF("\n");
   return OK;
-} /* mem_dump16() */
+}
 
-void mem_dump8(RCSW_UNUSED const void* const buf, size_t n_bytes) {
+void utils_mem_dump8(RCSW_UNUSED const void* const buf, size_t n_bytes) {
   for (uint32_t i = 0; i < n_bytes; i++) {
     DPRINTF("%02x ", ((const uint8_t*)buf)[i]);
     if ((i + 1) % 32 == 0) {
@@ -69,9 +111,9 @@ void mem_dump8(RCSW_UNUSED const void* const buf, size_t n_bytes) {
     }
   }
   DPRINTF("\n");
-} /* mem_dump8() */
+}
 
-status_t mem_dump32v(const void* const buf, size_t n_bytes) {
+status_t utils_mem_dump32v(const void* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)));
   DPRINTF("Offset:   ");
 
@@ -91,9 +133,9 @@ status_t mem_dump32v(const void* const buf, size_t n_bytes) {
   }
   DPRINTF("\n");
   return OK;
-} /* mem_dump32v() */
+}
 
-status_t mem_dump16v(const void* const buf, size_t n_bytes) {
+status_t utils_mem_dump16v(const void* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)));
 
   DPRINTF("Offset:   ");
@@ -113,9 +155,9 @@ status_t mem_dump16v(const void* const buf, size_t n_bytes) {
   }
   DPRINTF("\n");
   return OK;
-} /* mem_dump16v() */
+}
 
-void mem_dump8v(RCSW_UNUSED const void* const buf, size_t n_bytes) {
+void utils_mem_dump8v(RCSW_UNUSED const void* const buf, size_t n_bytes) {
   uint32_t i;
   DPRINTF("Offset:   ");
   for (i = 0; i < 32; i++) {
@@ -132,9 +174,9 @@ void mem_dump8v(RCSW_UNUSED const void* const buf, size_t n_bytes) {
     }
   }
   DPRINTF("\n");
-} /* mem_dump8v() */
+}
 
-status_t mem_bswap16(uint16_t* const buf, size_t n_bytes) {
+status_t utils_mem_bswap16(uint16_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
@@ -144,9 +186,9 @@ status_t mem_bswap16(uint16_t* const buf, size_t n_bytes) {
   } /* for() */
 
   return OK;
-} /* mem_bswap16() */
+}
 
-status_t mem_bswap32(uint32_t* const buf, size_t n_bytes) {
+status_t utils_mem_bswap32(uint32_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(ERROR,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
               RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
@@ -157,6 +199,6 @@ status_t mem_bswap32(uint32_t* const buf, size_t n_bytes) {
   }
 
   return OK;
-} /* mem_bswap32() */
+}
 
 END_C_DECLS

@@ -7,19 +7,29 @@ ARG DEBIAN_FRONTEND=noninteractive
 ################################################################################
 RUN set -ex
 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get update && apt-get install dialog apt-utils -y
-
-RUN apt-get update && apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update
-
-RUN apt-get update && apt-get install sudo
+RUN apt-get update && apt-get -y install \
+    dialog \
+    apt-utils \
+    software-properties-common \
+    curl \
+    ca-certificates \
+    build-essential
 
 RUN apt-get update && apt-get install -y wget gpg && \
     wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | \
     gpg --dearmor -o /etc/apt/trusted.gpg.d/kitware.gpg && \
     echo 'deb https://apt.kitware.com/ubuntu/ noble main' > /etc/apt/sources.list.d/kitware.list
+
+# Install rust
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal
+RUN rustc --version && cargo --version
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN uv --version
 
 ################################################################################
 # Install LIBRA packages
@@ -28,14 +38,17 @@ RUN apt-get update && apt-get install -y wget gpg && \
 RUN apt-get update && apt-get install -y \
     git \
     ssh \
-    curl \
     make \
     cmake \
     gcc \
     g++ \
     gcc-14 \
     g++-14 \
-    git-extras \
+    clang-20 \
+    clang-tidy-20 \
+    clang-format-20 \
+    cppcheck \
+    cmake-format \
     lintian \
     valgrind \
     gcovr \
@@ -50,7 +63,6 @@ RUN apt-get update && apt-get install -y \
     graphviz \
     doxygen \
     curl
-
 
 ################################################################################
 # Install RCSW packages

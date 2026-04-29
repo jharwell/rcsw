@@ -1,5 +1,5 @@
 /**
- * \file binheap.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,14 +13,41 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.binheap"
 #define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
+#include <string.h>
+
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Swap two elements in the heap using the temporary slot (index 0).
+ *
+ * \param heap The heap handle.
+ * \param i1 Index of element #1
+ * \param i2 Index of element #2
+ */
+static void binheap_swap(struct binheap* const heap, size_t i1, size_t i2) {
+  /*
+   * Don't swap if one of the indices is the tmp element. Only happens edge
+   * case when the heap is empty you are adding 1st element and sifting up.
+   */
+  if (i1 == 0 || i2 == 0) {
+    return;
+  }
+  ds_elt_copy(darray_data_get(&heap->arr, 0),
+              darray_data_get(&heap->arr, i1),
+              heap->arr.elt_size);
+  ds_elt_copy(darray_data_get(&heap->arr, i1),
+              darray_data_get(&heap->arr, i2),
+              heap->arr.elt_size);
+  ds_elt_copy(darray_data_get(&heap->arr, i2),
+              darray_data_get(&heap->arr, 0),
+              heap->arr.elt_size);
+}
 
 /**
  * \brief Sift mth element down to its correct place in heap after a deletion
@@ -29,7 +56,59 @@ BEGIN_C_DECLS
  * \param heap The heap handle.
  * \param m The index of the element to sift.
  */
-static void binheap_sift_down(struct binheap* heap, size_t m);
+static void binheap_sift_down(struct binheap* const heap, size_t m) {
+  RCSW_FPC_V(NULL != heap);
+  size_t l_child = RCSW_BINHEAP_LCHILD(m);
+  size_t r_child = RCSW_BINHEAP_RCHILD(m);
+  size_t n_elts  = binheap_size(heap);
+
+  if (heap->flags & RCSW_DS_BINHEAP_MIN) {
+    size_t smallest = m;
+    if (l_child <= n_elts &&
+        heap->arr.cmpe(darray_data_get(&heap->arr, l_child),
+                       darray_data_get(&heap->arr, smallest)) < 0) {
+      smallest = l_child;
+    }
+    if (r_child <= n_elts &&
+        heap->arr.cmpe(darray_data_get(&heap->arr, r_child),
+                       darray_data_get(&heap->arr, smallest)) < 0) {
+      smallest = r_child;
+    }
+    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
+             n_elts,
+             smallest,
+             m,
+             l_child,
+             r_child);
+    if (smallest != m) {
+      binheap_swap(heap, m, smallest);
+      binheap_sift_down(heap, smallest);
+    }
+  } else {
+    size_t largest = m;
+    if (l_child <= n_elts &&
+        heap->arr.cmpe(darray_data_get(&heap->arr, l_child),
+                       darray_data_get(&heap->arr, largest)) > 0) {
+      largest = l_child;
+    }
+    if (r_child <= n_elts &&
+        heap->arr.cmpe(darray_data_get(&heap->arr, r_child),
+                       darray_data_get(&heap->arr, largest)) > 0) {
+      largest = r_child;
+    }
+    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
+             n_elts,
+             largest,
+             m,
+             l_child,
+             r_child);
+
+    if (largest != m) {
+      binheap_swap(heap, m, largest);
+      binheap_sift_down(heap, largest);
+    }
+  }
+}
 
 /**
  * \brief Sift nth element up to correct place in heap after insertion.
@@ -37,50 +116,61 @@ static void binheap_sift_down(struct binheap* heap, size_t m);
  * \param heap The heap handle.
  * \param n The index of the element to sift.
  */
-static void binheap_sift_up(struct binheap* heap, size_t i);
-
-/**
- * \brief Swap two elements in the heap using the temporary slot (index 0).
- *
- * \param heap The heap handle.
- * \param i1 Index of element #1
- * \param i2 Index of element #2
- */
-static void binheap_swap(struct binheap* heap, size_t i1, size_t i2);
+static void binheap_sift_up(struct binheap* const heap, size_t i) {
+  /*
+   *  While child has higher priority than parent, replace child with parent.
+   *  Set child index to parent.  Get next parent, and repeat until top of
+   *  heap is reached.
+   */
+  if (heap->flags & RCSW_DS_BINHEAP_MIN) {
+    while (i != 0 &&
+           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
+                          darray_data_get(&heap->arr, i)) > 0) {
+      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
+      i = RCSW_BINHEAP_PARENT(i);
+    } /* while() */
+  } else {
+    while (i != 0 &&
+           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
+                          darray_data_get(&heap->arr, i)) < 0) {
+      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
+      i = RCSW_BINHEAP_PARENT(i);
+    } /* while() */
+  }
+}
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct binheap* binheap_init(struct binheap* heap_in,
-                             const struct binheap_params* const params) {
+struct binheap* binheap_init(struct binheap*                    heap_in,
+                             const struct binheap_config* const config) {
   RCSW_FPC_NV(NULL,
-              NULL != params,
-              params->max_elts > 0,
-              params->elt_size > 0,
-              NULL != params->cmpe);
+              NULL != config,
+              config->max_elts > 0,
+              config->elt_size > 0,
+              NULL != config->cmpe);
   RCSW_ER_MODULE_INIT();
 
   struct binheap* heap = rcsw_alloc(heap_in,
                                     sizeof(struct binheap),
-                                    params->flags & RCSW_NOALLOC_HANDLE);
+                                    config->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(heap);
 
-  heap->flags = params->flags;
+  heap->flags = config->flags;
 
-  struct darray_params dparams = {
+  struct darray_config dconfig = {
     /* +1 is for the tmp element at index 0 */
-    .init_size =
-    RCSW_MAX((size_t)1, params->init_size + 1),
-      .printe = params->printe,
-      .cmpe = params->cmpe,
-      .elt_size = params->elt_size,
-      .max_elts = (int)params->max_elts,
-      .elements = params->elements,
-      .flags = (params->flags & ~RCSW_NOALLOC_HANDLE)};
-  dparams.flags |= RCSW_NOALLOC_HANDLE;
-  dparams.max_elts += (dparams.max_elts == -1) ? 0 : 1;
+    .init_size = RCSW_MAX((size_t)1, config->init_size + 1),
+    .printe    = config->printe,
+    .cmpe      = config->cmpe,
+    .elt_size  = config->elt_size,
+    .max_elts  = (int)config->max_elts,
+    .elements  = config->elements,
+    .flags     = (config->flags & ~RCSW_NOALLOC_HANDLE)};
+  dconfig.flags |= RCSW_NOALLOC_HANDLE;
+  dconfig.max_elts += (dconfig.max_elts == -1) ? 0 : 1;
 
-  RCSW_CHECK(NULL != darray_init(&heap->arr, &dparams));
+  RCSW_CHECK(NULL != darray_init(&heap->arr, &dconfig));
   RCSW_CHECK(OK == darray_set_size(&heap->arr, 1));
 
   /*
@@ -91,10 +181,10 @@ struct binheap* binheap_init(struct binheap* heap_in,
   memset(heap->arr.elements, 0, heap->arr.elt_size);
 
   ER_DEBUG("init_size=%zu max_elts=%zu elt_size=%zu flags=0x%08x",
-             params->init_size,
-             params->max_elts,
-             params->elt_size,
-             params->flags);
+           config->init_size,
+           config->max_elts,
+           config->elt_size,
+           config->flags);
 
   return heap;
 
@@ -125,13 +215,11 @@ error:
 } /* binheap_insert() */
 
 status_t binheap_make(struct binheap* const heap,
-                       const void* const data,
-                       size_t n_elts) {
+                      const void* const     data,
+                      size_t                n_elts) {
   RCSW_FPC_NV(ERROR, NULL != heap, NULL != data, n_elts > 0);
 
-  ER_DEBUG("Making heap from %zu %zu-byte elements",
-             n_elts,
-             heap->arr.elt_size);
+  ER_DEBUG("Making heap from %zu %zu-byte elements", n_elts, heap->arr.elt_size);
   for (size_t i = 0; i < n_elts; ++i) {
     RCSW_CHECK(OK == darray_insert(&heap->arr,
                                    (const uint8_t*)data + heap->arr.elt_size * i,
@@ -172,8 +260,8 @@ error:
 } /* binheap_extract() */
 
 status_t binheap_update_key(struct binheap* const heap,
-                             size_t index,
-                             const void* const new_val) {
+                            size_t                index,
+                            const void* const     new_val) {
   RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != new_val);
   RCSW_CHECK(OK == darray_data_set(&heap->arr, index, new_val));
   binheap_sift_up(heap, index);
@@ -185,8 +273,8 @@ error:
 } /* binheap_update_key() */
 
 status_t binheap_delete_key(struct binheap* const heap,
-                             size_t index,
-                             const void* const minmax) {
+                            size_t                index,
+                            const void* const     minmax) {
   RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != minmax);
   RCSW_CHECK(OK == binheap_update_key(heap, index, minmax));
   RCSW_CHECK(OK == binheap_extract(heap, NULL));
@@ -203,104 +291,5 @@ void binheap_print(const struct binheap* const heap) {
   }
   return darray_print(&heap->arr);
 } /* binheap_print() */
-
-/*******************************************************************************
- * Static Functions
- ******************************************************************************/
-static void binheap_sift_down(struct binheap* const heap, size_t m) {
-  RCSW_FPC_V(NULL != heap);
-  size_t l_child = RCSW_BINHEAP_LCHILD(m);
-  size_t r_child = RCSW_BINHEAP_RCHILD(m);
-  size_t n_elts = binheap_size(heap);
-
-  if (heap->flags & RCSW_DS_BINHEAP_MIN) {
-    size_t smallest = m;
-    if (l_child <= n_elts &&
-        heap->arr.cmpe(darray_data_get(&heap->arr, l_child),
-                       darray_data_get(&heap->arr, smallest)) < 0) {
-      smallest = l_child;
-    }
-    if (r_child <= n_elts &&
-        heap->arr.cmpe(darray_data_get(&heap->arr, r_child),
-                       darray_data_get(&heap->arr, smallest)) < 0) {
-      smallest = r_child;
-    }
-    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
-               n_elts,
-               smallest,
-               m,
-               l_child,
-               r_child);
-    if (smallest != m) {
-      binheap_swap(heap, m, smallest);
-      binheap_sift_down(heap, smallest);
-    }
-  } else {
-    size_t largest = m;
-    if (l_child <= n_elts &&
-        heap->arr.cmpe(darray_data_get(&heap->arr, l_child),
-                       darray_data_get(&heap->arr, largest)) > 0) {
-      largest = l_child;
-    }
-    if (r_child <= n_elts &&
-        heap->arr.cmpe(darray_data_get(&heap->arr, r_child),
-                       darray_data_get(&heap->arr, largest)) > 0) {
-      largest = r_child;
-    }
-    ER_TRACE("sift_down: n_elts=%zu largest=%zu m=%zu left=%zu right=%zu",
-               n_elts,
-               largest,
-               m,
-               l_child,
-               r_child);
-
-    if (largest != m) {
-      binheap_swap(heap, m, largest);
-      binheap_sift_down(heap, largest);
-    }
-  }
-} /* binheap_sift_down() */
-
-static void binheap_sift_up(struct binheap* const heap, size_t i) {
-  /*
-   *  While child has higher priority than parent, replace child with parent.
-   *  Set child index to parent.  Get next parent, and repeat until top of
-   *  heap is reached.
-   */
-  if (heap->flags & RCSW_DS_BINHEAP_MIN) {
-    while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
-                          darray_data_get(&heap->arr, i)) > 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
-    } /* while() */
-  } else {
-    while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
-                          darray_data_get(&heap->arr, i)) < 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
-    } /* while() */
-  }
-} /* binheap_sift_up() */
-
-static void binheap_swap(struct binheap* const heap, size_t i1, size_t i2) {
-  /*
-   * Don't swap if one of the indices is the tmp element. Only happens edge
-   * case when the heap is empty you are adding 1st element and sifting up.
-   */
-  if (i1 == 0 || i2 == 0) {
-    return;
-  }
-  ds_elt_copy(darray_data_get(&heap->arr, 0),
-              darray_data_get(&heap->arr, i1),
-              heap->arr.elt_size);
-  ds_elt_copy(darray_data_get(&heap->arr, i1),
-              darray_data_get(&heap->arr, i2),
-              heap->arr.elt_size);
-  ds_elt_copy(darray_data_get(&heap->arr, i2),
-              darray_data_get(&heap->arr, 0),
-              heap->arr.elt_size);
-} /* binheap_swap() */
 
 END_C_DECLS

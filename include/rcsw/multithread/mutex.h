@@ -1,10 +1,11 @@
 /**
- * \file mutex.h
- * \ingroup multithread
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -13,7 +14,9 @@
  * Includes
  ******************************************************************************/
 #include <pthread.h>
-#include "rcsw/rcsw.h"
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Type Definitions
@@ -40,7 +43,7 @@ struct mutex {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -54,14 +57,14 @@ BEGIN_C_DECLS
  *
  * \return The initialized mutex, or NULL if an ERROR occurred.
  */
-RCSW_API struct mutex* mutex_init(struct mutex *mutex_in, uint32_t flags);
+RCSW_API struct mutex* mutex_init(struct mutex* mutex_in, uint32_t flags);
 
 /**
  * \brief Destroy a mutex.
  *
  * \param mutex The mutex handle.
  */
-RCSW_API void mutex_destroy(struct mutex *mutex);
+RCSW_API void mutex_destroy(struct mutex* mutex);
 
 /**
  * \brief Acquire the lock.
@@ -70,7 +73,7 @@ RCSW_API void mutex_destroy(struct mutex *mutex);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t mutex_lock(struct mutex *mutex);
+RCSW_API status_t mutex_lock(struct mutex* mutex);
 
 /**
  * \brief Release the lock.
@@ -79,6 +82,6 @@ RCSW_API status_t mutex_lock(struct mutex *mutex);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t mutex_unlock(struct mutex *mutex);
+RCSW_API status_t mutex_unlock(struct mutex* mutex);
 
 END_C_DECLS

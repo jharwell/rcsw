@@ -1,7 +1,5 @@
 /**
- * \file fifo.h
- * \ingroup ds
- * \brief Implementation of simple FIFO.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,27 +11,27 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/rbuffer.h"
-#include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Parameters for \ref fifo.
  */
-struct fifo_params {
+struct fifo_config {
   /**
    * For printing an element. Can be NULL. If NULL, you can't use \ref
    * fifo_print().
    */
-  void (*printe)(const void *e);
+  void (*printe)(const void* e);
 
   /**
    * Pointer to application-allocated space for storing data managed by the \ref
    * fifo. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -62,29 +60,12 @@ struct fifo {
    * Underlying ringbuffer the FIFO is built on top of.
    */
   struct rbuffer rb;
-
-  /**
-   * Size of elements in bytes.
-   */
-  size_t elt_size;
-
-  /**
-   * Run-time configuration parameters. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
 };
 
-BEGIN_C_DECLS
-
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief Determine if the FIFO is currently full
  *
@@ -93,8 +74,8 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t fifo_isfull(const struct fifo* const fifo) {
-    RCSW_FPC_NV(false, NULL != fifo);
-    return rbuffer_isfull(&fifo->rb);
+  RCSW_FPC_NV(false, NULL != fifo);
+  return rbuffer_isfull(&fifo->rb);
 }
 
 /**
@@ -105,8 +86,8 @@ static inline bool_t fifo_isfull(const struct fifo* const fifo) {
  * \return \ref bool_t
  */
 static inline bool_t fifo_isempty(const struct fifo* const fifo) {
-    RCSW_FPC_NV(false, NULL != fifo);
-    return rbuffer_isempty(&fifo->rb);
+  RCSW_FPC_NV(false, NULL != fifo);
+  return rbuffer_isempty(&fifo->rb);
 }
 
 /**
@@ -118,8 +99,8 @@ static inline bool_t fifo_isempty(const struct fifo* const fifo) {
  */
 
 static inline size_t fifo_size(const struct fifo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return rbuffer_size(&fifo->rb);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return rbuffer_size(&fifo->rb);
 }
 
 /**
@@ -130,8 +111,8 @@ static inline size_t fifo_size(const struct fifo* const fifo) {
  * \return Capacity of the FIFO, or 0 on ERROR.
  */
 static inline size_t fifo_capacity(const struct fifo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return rbuffer_capacity(&fifo->rb);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return rbuffer_capacity(&fifo->rb);
 }
 
 /**
@@ -143,8 +124,8 @@ static inline size_t fifo_capacity(const struct fifo* const fifo) {
  * occurred.
  */
 static inline void* fifo_front(const struct fifo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return rbuffer_front(&fifo->rb);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return rbuffer_front(&fifo->rb);
 }
 
 /**
@@ -158,7 +139,7 @@ static inline void* fifo_front(const struct fifo* const fifo) {
  * \return The total # of bytes the application would need to allocate
  */
 static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
-    return rbuffer_element_space(max_elts, elt_size);
+  return rbuffer_element_space(max_elts, elt_size);
 }
 
 /**
@@ -166,14 +147,14 @@ static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
  *
  * \param fifo_in An application allocated handle for the FIFO. Cannot be NULL,
  *                if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *                fifo_params.flags.
+ *                fifo_config.flags.
  *
  * \param params The initialization parameters.
  *
  * \return The initialized FIFO, or NULL if an error occurred.
  */
-RCSW_API struct fifo *fifo_init(struct fifo *fifo_in,
-                                const struct fifo_params * params) RCSW_WUR;
+RCSW_API struct fifo* fifo_init(struct fifo*              fifo_in,
+                                const struct fifo_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a FIFO.
@@ -182,7 +163,7 @@ RCSW_API struct fifo *fifo_init(struct fifo *fifo_in,
  *
  * \param fifo The FIFO to destroy.
  */
-RCSW_API void fifo_destroy(struct fifo *fifo);
+RCSW_API void fifo_destroy(struct fifo* fifo);
 
 /**
  * \brief Enqueue an element into the FIFO.
@@ -192,7 +173,7 @@ RCSW_API void fifo_destroy(struct fifo *fifo);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_add(struct fifo * fifo, const void * e);
+RCSW_API status_t fifo_add(struct fifo* fifo, const void* e);
 
 /**
  * \brief Dequeue an element from the FIFO.
@@ -202,7 +183,7 @@ RCSW_API status_t fifo_add(struct fifo * fifo, const void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_remove(struct fifo * fifo, void * e);
+RCSW_API status_t fifo_remove(struct fifo* fifo, void* e);
 
 /**
  * \brief Clear a FIFO.
@@ -211,7 +192,7 @@ RCSW_API status_t fifo_remove(struct fifo * fifo, void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_clear(struct fifo * fifo);
+RCSW_API status_t fifo_clear(struct fifo* fifo);
 
 /**
  * \brief Apply an operation to all elements of the FIFO.
@@ -223,7 +204,7 @@ RCSW_API status_t fifo_clear(struct fifo * fifo);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_map(struct fifo * fifo, void (*f)(void *e));
+RCSW_API status_t fifo_map(struct fifo* fifo, void (*f)(void* e));
 
 /**
  * \brief Compute a cumulative SOMETHING over all elements of a FIFO.
@@ -238,14 +219,15 @@ RCSW_API status_t fifo_map(struct fifo * fifo, void (*f)(void *e));
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_inject(struct fifo * fifo,
-                     void (*f)(void *e, void *res), void *result);
+RCSW_API status_t fifo_inject(struct fifo* fifo,
+                              void (*f)(void* e, void* res),
+                              void* result);
 
 /**
  * \brief Print a FIFO.
  *
  * \param fifo The FIFO handle.
  **/
-RCSW_API void fifo_print(struct fifo * fifo);
+RCSW_API void fifo_print(struct fifo* fifo);
 
 END_C_DECLS

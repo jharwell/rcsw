@@ -1,9 +1,9 @@
 /**
- * \file minimon.c
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -11,8 +11,9 @@
  ******************************************************************************/
 #include "rcsw/tool/minimon.h"
 
+#include "rcsw/core/core.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/er/er.h"
 #include "rcsw/stdio/printf.h"
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
@@ -20,7 +21,7 @@
 #include "rcsw/version/version.h"
 
 /*******************************************************************************
- * Constant Definitions
+ * Constants
  ******************************************************************************/
 /**
  * \brief The interval for pushing updates on send/receiver progress out over
@@ -36,7 +37,7 @@
 #define MINIMON_NMEA_CHUNK_SIZE 64
 
 /*******************************************************************************
- * Type Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Convenience buffer for sending out bytes from a \p uint32_t pointer.
@@ -47,7 +48,7 @@ union word_buf {
 };
 
 /*******************************************************************************
- * Private Command Functions
+ * Private API
  ******************************************************************************/
 /**
  * \brief Displays the help message for minimon showing valid commands and what
@@ -121,7 +122,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
     .alias  = "h",
     .help   = "Print help for all cmds or a specific cmd",
     .hook   = mini_cmd_help_all,
-    .params = {{.name       = "CMD",
+    .config = {{.name       = "CMD",
                 .type       = ekMINIMON_PARAM_STR,
                 .short_help = NULL,
                 .long_help  = "The specific cmd to see detailed help for",
@@ -132,7 +133,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .alias  = "r",
    .help   = "Read from memory",
    .hook   = mini_cmd_read,
-   .params = {{
+   .config = {{
                 .name       = "ADDR",
                 .type       = ekMINIMON_PARAM_UINT32,
                 .short_help = NULL,
@@ -150,7 +151,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .alias  = "l",
    .help   = "Load bytes via stdio_getchar() from the remote target into memory",
    .hook   = mini_cmd_load,
-   .params = {{
+   .config = {{
                 .name       = "ADDR",
                 .type       = ekMINIMON_PARAM_UINT32,
                 .short_help = NULL,
@@ -169,7 +170,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .alias = "s",
    .help  = "Send from memory via stdio_getchar() to the remote target",
    .hook  = mini_cmd_send,
-   .params =
+   .config =
      {{
         .name       = "ADDR",
         .type       = ekMINIMON_PARAM_UINT32,
@@ -188,22 +189,10 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
       {
         .name       = "PROTOCOL",
         .type       = ekMINIMON_PARAM_STR,
-        .short_help = "The protocol to use [raw, ascii, NMEA]",
+        .short_help = "The protocol to use [raw, NMEA]",
         .long_help =
           "The protocol to use. Options are:\r\n\r\n"
           "\t\traw - What is sent is exactly what is in the source buffer.\r\n"
-
-          "\t\tascii - What is sent is first converted to ASCII before "
-          "sending;\r\n"
-          "\t\t        requires de-modulating via a script of some sort on the "
-          "other\r\n"
-          "\t\t        before the actual data can be used. Useful when you "
-          "are\r\n"
-          "\t\t        delivering code to someone who is using a strange "
-          "serial\r\n"
-          "\t\t        terminal, so that the terminal doesn't receive the raw\r\n"
-          "\t\t        for an escape sequence and do something strange.\r\n"
-          "\t\t        See docs for more details.\r\n"
 
           "\t\tNMEA - What is sent is first converted to ASCII, then placed\r\n"
           "\t\t       in simple text packets. Each packet contains " RCSW_XSTR(
@@ -228,7 +217,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .alias  = "w",
    .help   = "Write to memory",
    .hook   = mini_cmd_write,
-   .params = {{
+   .config = {{
                 .name       = "ADDR",
                 .type       = ekMINIMON_PARAM_UINT32,
                 .short_help = NULL,
@@ -254,7 +243,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .help =
      "Jump to a new execution address, masking/clearing all IRQs beforehand",
    .hook = mini_cmd_jump,
-   .params =
+   .config =
      {
        {
          .name       = "ADDR",
@@ -327,36 +316,36 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
  * \param argv Array with string representations of all args to the command.
  *
  * \param definition Parameter definition containing how many, what type,
- *                   etc. of params are required.
+ *                   etc. of config are required.
  *
- * \param params Parameter array with \a effective parameters; defaults already
+ * \param config Parameter array with \a effective parameters; defaults already
  *               copied in.
  */
 static status_t mini_validate_args(uint32_t                  argc,
                                    char**                    argv,
-                                   struct minimon_cmd_param* params,
+                                   struct minimon_cmd_param* config,
                                    union minimon_cmd_arg*    args) {
   status_t rstat = OK;
 
-  size_t min_params = 0;
-  size_t max_params = 0;
+  size_t min_config = 0;
+  size_t max_config = 0;
 
   for (uint32_t i = 0; i < MINIMON_CMD_MAX_ARGS; ++i) {
-    if (stdio_strlen(params[i].name) > 0) {
-      ++max_params;
+    if (stdio_strlen(config[i].name) > 0) {
+      ++max_config;
 
-      if (params[i].required) {
-        ++min_params;
+      if (config[i].required) {
+        ++min_config;
       }
     }
   } /* for(i..) */
 
   /* validate parameter count */
-  if ((argc - 1) < min_params) {
+  if ((argc - 1) < min_config) {
     ER_ERR("Too few arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
-  if ((argc - 1) > max_params) {
+  if ((argc - 1) > max_config) {
     ER_ERR("Too many arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
@@ -364,7 +353,7 @@ static status_t mini_validate_args(uint32_t                  argc,
   /* validate arguments */
   for (uint32_t i = 0; i < argc - 1; i++) {
     /* validate numerics */
-    switch (params[i].type) {
+    switch (config[i].type) {
       case ekMINIMON_PARAM_UINT32:
         rstat |= mini_validate_int(argv[i + 1], &args[i].num);
         break;
@@ -468,18 +457,19 @@ static void mini_dispatch(int argc, char** argv) {
       break;
     }
 
-    if (!stdio_strncmp(cmd->name, argv[0], stdio_strlen(argv[0]))) {
+    if (!stdio_strncmp(cmd->name, argv[0], stdio_strlen(argv[0])) ||
+        !stdio_strncmp(cmd->alias, argv[0], stdio_strlen(argv[0]))) {
       ER_DEBUG("Found matching cmd '%s'", cmd->name);
       /* setup default arguments */
       for (size_t j = 0; j < MINIMON_CMD_MAX_ARGS; ++j) {
-        if (!cmd->params[j].required) {
-          args[j] = cmd->params[j].dflt;
+        if (!cmd->config[j].required) {
+          args[j] = cmd->config[j].dflt;
         }
       } /* for(j..) */
 
       /* validate arguments */
       status_t status =
-        mini_validate_args((uint32_t)argc, argv, cmd->params, args);
+        mini_validate_args((uint32_t)argc, argv, cmd->config, args);
 
       /* call command handler */
       if (OK == status) {
@@ -508,7 +498,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
 
   stdio_printf("\tSyntax: %s", cmd->name);
   for (size_t j = 0; j < MINIMON_CMD_MAX_ARGS; ++j) {
-    const struct minimon_cmd_param* param = &cmd->params[j];
+    const struct minimon_cmd_param* param = &cmd->config[j];
     if (0 == stdio_strlen(param->name)) {
       continue;
     }
@@ -521,7 +511,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
 
   stdio_printf("\t        %s", cmd->alias);
   for (size_t j = 0; j < MINIMON_CMD_MAX_ARGS; ++j) {
-    const struct minimon_cmd_param* param = &cmd->params[j];
+    const struct minimon_cmd_param* param = &cmd->config[j];
     if (0 == stdio_strlen(param->name)) {
       continue;
     }
@@ -537,7 +527,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
 
   /* print each parameter's help for the cmd */
   for (size_t j = 0; j < MINIMON_CMD_MAX_ARGS; ++j) {
-    const struct minimon_cmd_param* param = &cmd->params[j];
+    const struct minimon_cmd_param* param = &cmd->config[j];
     if (0 == stdio_strlen(param->name)) {
       continue;
     }
@@ -680,7 +670,7 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
 
   const char* header = "$SEND";
   int     n = stdio_snprintf(tmp, sizeof(tmp), "%s,%d", header, current_chunk);
-  uint8_t checksum = xchks8((uint8_t*)tmp + 1, (size_t)(n - 1), 0);
+  uint8_t checksum = utils_xchks8((uint8_t*)tmp + 1, (size_t)(n - 1), 0);
   stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
 
   while (n_bytes_tx < size) {
@@ -693,7 +683,7 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
 
     /* get next word */
     n        = stdio_snprintf(tmp, sizeof(tmp), ",%d", addrp[n_bytes_tx]);
-    checksum = xchks8((uint8_t*)tmp, (size_t)n, checksum);
+    checksum = utils_xchks8((uint8_t*)tmp, (size_t)n, checksum);
     stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
 
     /*
@@ -722,12 +712,13 @@ static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
        * header+current chunk again.
        */
       if (n_bytes_tx < size) {
-        int n1   = stdio_snprintf(tmp, sizeof(tmp), "%s", header);
-        int n2   = stdio_snprintf(tmp + n1,
+        int n1 = stdio_snprintf(tmp, sizeof(tmp), "%s", header);
+        int n2 = stdio_snprintf(tmp + n1,
                                 sizeof(tmp) - (size_t)n1,
                                 ",%d",
                                 current_chunk);
-        checksum = xchks8((uint8_t*)tmp + 1, (size_t)(n1 + n2 - 1), checksum);
+        checksum =
+          utils_xchks8((uint8_t*)tmp + 1, (size_t)(n1 + n2 - 1), checksum);
         stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
       }
     }
@@ -760,31 +751,6 @@ static void mini_cmd_send_raw(uint32_t* addrp, uint32_t size) {
   } /* while(...) */
 }
 
-static void mini_cmd_send_text(uint32_t* addrp, uint32_t size) {
-  uint32_t       n_bytes_tx = 0;
-  union word_buf hold_buf;
-
-  while (n_bytes_tx < size) {
-    if (0 == n_bytes_tx % MINIMON_DIAG_INTERVAL) {
-      stdio_printf("\rSending %d bytes from %p using protocol 'text'...%d%%",
-                   size,
-                   addrp,
-                   n_bytes_tx * 100 / size);
-    }
-
-    /* get next word */
-    hold_buf.word = addrp[n_bytes_tx / sizeof(uint32_t)];
-    for (size_t i = 0; i < sizeof(uint32_t); ++i) {
-      mini_data_byte_put(hold_buf.byte[i], &g_minimon);
-
-      /*
-       * Each actual byte maps 1->1 to the bytes actually send, so this is
-       * in the transmission loop.
-       */
-      ++n_bytes_tx;
-    } /* for(i...) */
-  } /* while(...) */
-}
 static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
@@ -796,21 +762,20 @@ static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
 
   if (stdio_strncmp(protocolp, "raw", 3) == 0) {
     mini_cmd_send_raw(addrp, size);
-  } else if (stdio_strncmp(protocolp, "text", 4) == 0) {
-    mini_cmd_send_text(addrp, size);
   } else if (stdio_strncmp(protocolp, "nmea", 4) == 0) {
     mini_cmd_send_nmea(addrp, size);
   } else {
-    ER_ERR("Bad protocol '%s': must be [raw,text,nmea]", protocolp);
+    ER_ERR("Bad protocol '%s': must be [raw,nmea]", protocolp);
   }
 } /* mini_cmd_send() */
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-void minimon_init(const struct minimon_params* params) {
+void minimon_init(const struct minimon_config* config) {
+  RCSW_FPC_V(NULL != config);
   size_t user_start;
-  if (!params->include_builtin) {
+  if (!config->include_builtin) {
     /* HELP cmd is always available */
     stdio_memcpy(g_minimon.cmds,
                  g_minimon_builtin_cmds,
@@ -822,26 +787,25 @@ void minimon_init(const struct minimon_params* params) {
                  sizeof(g_minimon_builtin_cmds));
     user_start = RCSW_ARRAY_ELTS(g_minimon_builtin_cmds);
   }
-  /* Add user cmds */
-  stdio_memcpy(g_minimon.cmds + user_start,
-               params->cmds,
-               params->n_cmds * sizeof(struct minimon_cmd));
+  g_minimon.irqcb           = config->irqcb;
+  g_minimon.stream1.putchar = config->stream1.putchar;
+  g_minimon.stream1.getchar = config->stream1.getchar;
 
-  if (NULL != params) {
-    g_minimon.irqcb           = params->irqcb;
-    g_minimon.stream1.putchar = params->stream1.putchar;
-    g_minimon.stream1.getchar = params->stream1.getchar;
-  }
+  /* Add user cmds */
+  stdio_memcpy(
+    g_minimon.cmds + user_start,
+    config->cmds,
+    config->n_cmds * RCSW_MIN(sizeof(struct minimon_cmd), MINIMON_MAX_CMDS));
 
   g_minimon.stream0.putchar = stdio_putchar;
   g_minimon.stream0.getchar = stdio_getchar;
-  g_minimon.help_on_start   = params->help_on_start;
+  g_minimon.help_on_start   = config->help_on_start;
 }
 
 void minimon_start(void) {
-  char  argc = 0;                       /* number of tokens in command */
+  int   argc = 0;                       /* number of tokens in command */
   char* argv[MINIMON_CMD_MAX_ARGS + 1]; /* list of tokens */
-  char  cmdline[32];
+  char  cmdline[64];
 
   stdio_memset(cmdline, 0, sizeof(cmdline));
 
@@ -861,14 +825,14 @@ void minimon_start(void) {
                  "BUILD TIME=%s\r\n"
                  "---------------------------------------------------------------"
                  "-----------------\r\n",
-                 kMetadata.version.version,
-                 kMetadata.build.git_rev,
-                 kMetadata.build.git_diff,
-                 kMetadata.build.git_tag,
-                 kMetadata.build.git_branch,
-                 kMetadata.build.compile_flags,
-                 kMetadata.build.date,
-                 kMetadata.build.time);
+                 rcsw_metadata.version.version,
+                 rcsw_metadata.build.git_rev,
+                 rcsw_metadata.build.git_diff,
+                 rcsw_metadata.build.git_tag,
+                 rcsw_metadata.build.git_branch,
+                 rcsw_metadata.build.compile_flags,
+                 rcsw_metadata.build.date,
+                 rcsw_metadata.build.time);
   stdio_puts(buf);
 
   /* display the monitor tag line */

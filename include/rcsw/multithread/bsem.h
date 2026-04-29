@@ -1,11 +1,11 @@
 /**
- * \file bsem.h
- * \ingroup multithread
- * \brief Binary semaphore implemented using mutex and cv.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -14,7 +14,9 @@
  * Includes
  ******************************************************************************/
 #include <time.h>
-#include "rcsw/rcsw.h"
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 #include "rcsw/multithread/condv.h"
 #include "rcsw/multithread/mutex.h"
 
@@ -31,7 +33,7 @@
 struct bsem {
   struct mutex mtx;
   struct condv cv;
-  bool_t val;
+  bool_t       val;
 
   /**
    * \brief Configuration flags.
@@ -59,7 +61,7 @@ BEGIN_C_DECLS
  *
  * \return The initialized binary semaphore, or NULL if an ERROR occurred.
  */
-RCSW_API struct bsem* bsem_init(struct bsem * sem_in, uint32_t flags);
+RCSW_API struct bsem* bsem_init(struct bsem* sem_in, uint32_t flags);
 
 /**
  * \brief Destroy a binary semaphore.
@@ -68,7 +70,7 @@ RCSW_API struct bsem* bsem_init(struct bsem * sem_in, uint32_t flags);
  *
  * \param sem The semaphore to destroy.
  */
-RCSW_API void bsem_destroy(struct bsem * sem);
+RCSW_API void bsem_destroy(struct bsem* sem);
 
 /**
  * \brief Unlock a binary semaphore.
@@ -77,7 +79,7 @@ RCSW_API void bsem_destroy(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t bsem_post(struct bsem * sem);
+RCSW_API status_t bsem_post(struct bsem* sem);
 
 /**
  * \brief - Notify all waiting threads and make it available again.
@@ -86,7 +88,7 @@ RCSW_API status_t bsem_post(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t bsem_flush(struct bsem * sem);
+RCSW_API status_t bsem_flush(struct bsem* sem);
 
 /**
  * \brief Wait on binary semaphore with a timeout.
@@ -99,8 +101,7 @@ RCSW_API status_t bsem_flush(struct bsem * sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t  bsem_timedwait(struct bsem * sem,
-                                  const struct timespec * to);
+RCSW_API status_t bsem_timedwait(struct bsem* sem, const struct timespec* to);
 
 /**
  * \brief Block on binary semaphore until it becomes available.
@@ -109,6 +110,6 @@ RCSW_API status_t  bsem_timedwait(struct bsem * sem,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t bsem_wait(struct bsem * sem);
+RCSW_API status_t bsem_wait(struct bsem* sem);
 
 END_C_DECLS

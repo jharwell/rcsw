@@ -1,11 +1,11 @@
 /**
- * \brief mpool.h
- * \ingroup multithread
- * \brief Implementation of memory/buffer pool of memory chunks.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -13,30 +13,30 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/multithread/csem.h"
-#include "rcsw/multithread/mutex.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
+#include "rcsw/multithread/csem.h"
+#include "rcsw/multithread/mutex.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Memory pool initialization parameters.
  */
-struct mpool_params {
+struct mpool_config {
   /**
    * Pointer to application-allocated space for storing the \ref llist_node
-   * objects used to carve up \ref mpool_params.elements. Ignored unless \ref
-   * RCSW_NOALLOC_META is passed.
+   * objects used to carve up \ref mpool_config.elements and reference
+   * counts. Ignored unless \ref RCSW_NOALLOC_META is passed.
    */
-  dptr_t *meta;
+  dptr_t* meta;
 
   /**
    * Pointer to application-allocated space for the pool.Ignored unless \ref
    * RCSW_NOALLOC_META is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -61,33 +61,36 @@ struct mpool_params {
  */
 struct mpool {
   /** The chunks of managed memory. */
-  dptr_t           *elements;
+  dptr_t* elements;
 
-  /** Space for the llist nodes for both the free and allocated lists. */
-  struct llist_node *nodes;
+  /**
+   * Space for the llist nodes for both the free and allocated lists and
+   * reference counts.
+   */
+  dptr_t* meta;
 
   /** List of free chunks of memory. */
-  struct llist      free;
+  struct llist free;
 
-  /** List of free chunks of memory. */
-  struct llist      alloc;
+  /** List of allocated chunks of memory. */
+  struct llist alloc;
 
   /** Reference counting. Same length as max # elements. */
-  int               *refs;
+  int* refs;
 
   /** Size of elements in the pool in bytes. */
-  size_t            elt_size;
+  size_t elt_size;
 
   /** Max # of elements in the pool. Must be > 0. */
-  size_t            max_elts;
+  size_t max_elts;
 
   /**
    * Used to wait for a chunk to become free in \ref mpool_req().
    */
-  struct csem       slots_avail;
+  struct csem slots_avail;
 
   /** Lock around most operations for concurrency safety. */
-  struct mutex      mutex;
+  struct mutex mutex;
 
   /**
    * Run time configuration flags. Valid flags are:
@@ -99,11 +102,11 @@ struct mpool {
    *
    * All other flags are ignored.
    */
-  uint32_t          flags;
+  uint32_t flags;
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -114,9 +117,9 @@ BEGIN_C_DECLS
  *
  * \return The # of bytes the application would need to allocate.
  */
-static inline size_t  mpool_meta_space(size_t max_elts) {
-    /* x2 for free and alloc lists */
-    return 2 * llist_meta_space(max_elts);
+static inline size_t mpool_meta_space(size_t max_elts) {
+  /* x2 for free and alloc lists, plus space for the reference counts */
+  return 2 * llist_meta_space(max_elts) + max_elts * sizeof(int);
 }
 
 /**
@@ -127,10 +130,9 @@ static inline size_t  mpool_meta_space(size_t max_elts) {
  *
  * \return The # of bytes the application would need to allocate.
  */
-static inline size_t  mpool_element_space(size_t max_elts, size_t elt_size) {
-    return ds_elt_space_with_meta(max_elts, elt_size);
+static inline size_t mpool_element_space(size_t max_elts, size_t elt_size) {
+  return ds_elt_space_with_meta(max_elts, elt_size);
 }
-
 
 /**
  * \brief Determine if the memory pool is currently full.
@@ -143,8 +145,8 @@ static inline size_t  mpool_element_space(size_t max_elts, size_t elt_size) {
  * \return \ref bool_t
  */
 static inline bool_t mpool_isfull(const struct mpool* const pool) {
-    RCSW_FPC_NV(false, NULL != pool);
-    return llist_isfull(&pool->alloc);
+  RCSW_FPC_NV(false, NULL != pool);
+  return llist_isfull(&pool->alloc);
 }
 
 /**
@@ -158,8 +160,8 @@ static inline bool_t mpool_isfull(const struct mpool* const pool) {
  * \return \ref bool_t
  */
 static inline bool_t mpool_isempty(const struct mpool* const pool) {
-    RCSW_FPC_NV(false, NULL != pool);
-    return llist_isempty(&pool->alloc);
+  RCSW_FPC_NV(false, NULL != pool);
+  return llist_isempty(&pool->alloc);
 }
 
 /**
@@ -173,8 +175,8 @@ static inline bool_t mpool_isempty(const struct mpool* const pool) {
  * \return # elements in memory pool, or 0 on ERROR.
  */
 static inline size_t mpool_size(const struct mpool* const pool) {
-    RCSW_FPC_NV(0, NULL != pool);
-    return llist_size(&pool->alloc);
+  RCSW_FPC_NV(0, NULL != pool);
+  return llist_size(&pool->alloc);
 }
 
 /**
@@ -185,10 +187,9 @@ static inline size_t mpool_size(const struct mpool* const pool) {
  * \return Max # elements in memory pool, or 0 on ERROR.
  */
 static inline size_t mpool_capacity(const struct mpool* const pool) {
-    RCSW_FPC_NV(0, NULL != pool);
-    return pool->max_elts;
+  RCSW_FPC_NV(0, NULL != pool);
+  return pool->max_elts;
 }
-
 
 /**
  * \brief Initialize a \ref mpool.
@@ -201,8 +202,8 @@ static inline size_t mpool_capacity(const struct mpool* const pool) {
  *
  * \return The initialized pool, or NULL if an error occurred.
  */
-RCSW_API struct mpool*mpool_init(struct mpool * pool_in,
-                                 const struct mpool_params * params) RCSW_WUR;
+RCSW_API struct mpool* mpool_init(struct mpool*              pool_in,
+                                  const struct mpool_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a \ref mpool.
@@ -211,7 +212,7 @@ RCSW_API struct mpool*mpool_init(struct mpool * pool_in,
  *
  * \param the_pool The mpool handle.
  */
-RCSW_API void mpool_destroy(struct mpool * the_pool);
+RCSW_API void mpool_destroy(struct mpool* the_pool);
 
 /**
  * \brief Request a memory chunk from a \ref mpool.
@@ -222,7 +223,7 @@ RCSW_API void mpool_destroy(struct mpool * the_pool);
  *
  * \return The allocated chunk, or NULL if an error occurred.
  */
-RCSW_API void *mpool_req(struct mpool * the_pool);
+RCSW_API void* mpool_req(struct mpool* the_pool);
 
 /**
  * \brief Request a memory chunk from a \ref mpool with a timeout.
@@ -235,9 +236,9 @@ RCSW_API void *mpool_req(struct mpool * the_pool);
  *
  * \return The allocated chunk, or NULL if an error occurred.
  */
-RCSW_API status_t mpool_timedreq(struct mpool * the_pool,
-                        const struct timespec* to,
-                        void** chunk);
+RCSW_API status_t mpool_timedreq(struct mpool*          the_pool,
+                                 const struct timespec* to,
+                                 void**                 chunk);
 
 /**
  * \brief Release a chunk of memory from a \ref mpool.
@@ -251,7 +252,7 @@ RCSW_API status_t mpool_timedreq(struct mpool * the_pool,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t mpool_release(struct mpool * the_pool, void * ptr);
+RCSW_API status_t mpool_release(struct mpool* the_pool, void* ptr);
 
 /**
  * \brief Increment ref count for a previously allocated chunk in a \ref mpool.
@@ -265,7 +266,7 @@ RCSW_API status_t mpool_release(struct mpool * the_pool, void * ptr);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
+RCSW_API status_t mpool_ref_add(struct mpool* the_pool, const void* ptr);
 
 /**
  * \brief Decrement ref count for a currently allocated chunk in a \ref mpool.
@@ -279,8 +280,7 @@ RCSW_API status_t mpool_ref_add(struct mpool * the_pool, const void * ptr);
  *
  * \return \ref status_t
  */
-RCSW_API status_t mpool_ref_remove(struct mpool * the_pool,
-                          const void * ptr);
+RCSW_API status_t mpool_ref_remove(struct mpool* the_pool, const void* ptr);
 
 /**
  * \brief Get the index of the reference count (not the reference count)
@@ -294,7 +294,7 @@ RCSW_API status_t mpool_ref_remove(struct mpool * the_pool,
  *
  * \return The reference index, or -1 if does not exist.
  */
-RCSW_API int mpool_ref_query(struct mpool * the_pool, const void* ptr);
+RCSW_API int mpool_ref_query(struct mpool* the_pool, const void* ptr);
 
 /**
  * \brief Get the reference count of an allocated chunk in a \ref mpool.
@@ -306,8 +306,8 @@ RCSW_API int mpool_ref_query(struct mpool * the_pool, const void* ptr);
  *
  * \param ptr The chunk to query.
  *
- * \return The reference count, or 0 on error.
+ * \return The reference count, or \c SIZE_MAX on error.
  */
-RCSW_API size_t mpool_ref_count(struct mpool * the_pool, const void* ptr);
+RCSW_API size_t mpool_ref_count(struct mpool* the_pool, const void* ptr);
 
 END_C_DECLS

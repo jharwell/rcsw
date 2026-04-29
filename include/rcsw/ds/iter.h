@@ -1,9 +1,9 @@
 /**
- * \file iter.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -11,103 +11,148 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/ds.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
 /**
- * \brief The type of iteration to perform.
+ * \brief The direction of iteration.
  */
 enum ds_iter_type {
   ekITER_FORWARD,
   ekITER_BACKWARD,
 };
 
-/*******************************************************************************
- * Structure Definitions
- ******************************************************************************/
-/**
- * \brief Data structure iterator.
- *
- * Used to provide a uniform interface for iterating through data
- * structures. Not implemented on all data structures in library.
+/*
+ * Forward declaration -- ds_iterator references ds_ops, ds_ops references
+ * ds_iterator, so we need the forward decl to break the cycle.
  */
-struct ds_iterator {
-  union {
-    struct darray *arr;
-    struct rbuffer *rb;
-    struct llist *list;
-    struct llist_node *curr;
-  };
-  enum ds_tag       tag;
-  enum ds_iter_type type;
-  int               index;
+struct ds_iterator;
+
+/**
+ * \brief Vtable of traversal operations for a data structure.
+ *
+ * Each iterable data structure defines a static instance of this struct and
+ * points \ref ds_iterator.ops at it during \ref ds_iter_init(). Adding a new
+ * iterable data structure requires no changes to iter.c -- only a new static
+ * \ref ds_ops instance in the new DS's own source file.
+ *
+ * \note \p prev may be NULL for data structures that only support forward
+ *       iteration (e.g. a singly-linked list or a FIFO).
+ */
+struct ds_ops {
+  /**
+   * \brief Advance the iterator forward and return the current element's data.
+   *
+   * \return Pointer to element data, or NULL when the sequence is exhausted.
+   */
+  void* (*next)(struct ds_iterator* iter);
 
   /**
-   * Classification function. Used to determine which elements are returned
-   * during iteration if non-NULL.
+   * \brief Advance the iterator backward and return the current element's data.
+   *
+   * May be NULL if the data structure does not support backward iteration. If
+   * NULL and \ref ekITER_BACKWARD is requested, \ref ds_iter_init() will return
+   * NULL.
    */
-  bool_t (*classify)(void *e);
+  void* (*prev)(struct ds_iterator* iter);
+};
+
+/**
+ * \brief A position-independent iterator over a data structure.
+ *
+ * The iterator is a value type: the caller allocates it (on the stack or heap)
+ * and initialises it with \ref ds_iter_init(). Multiple independent iterators
+ * over the same container can exist simultaneously because no state is stored
+ * inside the container itself.
+ *
+ * Typical usage:
+ *
+ * \code
+ * struct ds_iterator it;
+ * ds_iter_init(&it, my_darray, ekITER_FORWARD,
+ *              &darray_iter_ops,   // defined in darray.c
+ *              NULL);              // no filter
+ * void* e;
+ * while ((e = ds_iter_next(&it)) != NULL) {
+ *     process(e);
+ * }
+ * \endcode
+ *
+ * For a filtered iteration pass a classify callback:
+ *
+ * \code
+ * ds_iter_init(&it, my_llist, ekITER_FORWARD, &llist_iter_ops, my_pred);
+ * \endcode
+ */
+struct ds_iterator {
+  /** Vtable set by ds_iter_init(); do not modify directly. */
+  const struct ds_ops* ops;
+
+  /** Opaque pointer to the container being iterated. */
+  void* container;
+
+  /**
+   * DS-specific cursor. For indexed structures this is the current index cast
+   * to a pointer; for pointer-chased structures (llist) it is the current node
+   * pointer. Managed entirely by the ops callbacks.
+   */
+  void* cursor;
+
+  /** Direction of iteration; read by the ops callbacks. */
+  enum ds_iter_type type;
+
+  /**
+   * Optional filter. If non-NULL, \ref ds_iter_next() only returns elements
+   * for which this function returns true. Elements that do not pass are skipped
+   * transparently.
+   */
+  bool_t (*classify)(void* e);
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 /**
- * \brief - Get the next element that matches the iteration conditions
+ * \brief Initialise an iterator.
  *
- * \param iter The iterator
+ * The caller is responsible for the storage of \p iter (stack or heap). No
+ * allocation is performed by this function.
  *
- * \return The next element, or NULL if no more
+ * \param iter   The iterator to initialise. Must be non-NULL.
+ * \param ds     The data structure to iterate over. Must be non-NULL.
+ * \param type   Direction of iteration.
+ * \param ops    Vtable of traversal operations for this data structure type.
+ *               Must be non-NULL. Each DS exposes its own \c ds_ops instance;
+ *               see the individual DS headers (e.g. \ref darray_iter_ops,
+ *               \ref llist_iter_ops, \ref rbuffer_iter_ops).
+ * \param classify Optional filter predicate. Pass NULL for unfiltered
+ *               iteration.
+ *
+ * \return \p iter on success, or NULL if \p ops->prev is NULL but
+ *         \ref ekITER_BACKWARD was requested.
  */
-RCSW_API void *ds_iter_next(struct ds_iterator *iter);
-
-
-/**
- * \brief Initialize an iterator
- *
- * Initialize an iterator to iterate over all of the elements of a
- * data structure. Implemented for:
- *
- * - \ref darray
- * - \ref rbuffer
- * - \ref llist
- *
- * \param ds The data structure to iterate over.
- *
- * \param tag What type of data structure to initialize for.
- *
- * \param type What type of iteration to perform.
- *
- * \return The initialized iterator, or NULL if an ERROR occurred
- */
-RCSW_API struct ds_iterator * ds_iter_init(void *ds,
-                                  enum ds_tag tag,
-                                  enum ds_iter_type type);
+RCSW_API struct ds_iterator* ds_iter_init(struct ds_iterator*  iter,
+                                          void*                ds,
+                                          enum ds_iter_type    type,
+                                          const struct ds_ops* ops,
+                                          bool_t (*classify)(void* e));
 
 /**
- * \brief Initialize an iterator for filtering
+ * \brief Return the next element satisfying the iteration conditions.
  *
- * Initialize an iterator to iterate over SOME of the elements of a data
- * structure. Implemented for:
+ * Calls \ref ds_ops.next or \ref ds_ops.prev depending on the direction stored
+ * in \p iter. If a \p classify predicate was set, elements that do not pass are
+ * skipped and the next qualifying element is returned instead.
  *
- * - \ref darray
- * - \ref rbuffer
- * - \ref llist
+ * \param iter The iterator.
  *
- * \param ds The data structure to iterate over.
- *
- * \param tag What type of data structure to initialize for.
- *
- * \param f The function to determine if an element will be returned by the
- *          iterator or not. Elements are checked in forward iteration order.
- *
- * \return The initialized iterator, or NULL if an ERROR occurred
+ * \return Pointer to the element data, or NULL when the sequence is exhausted.
  */
-RCSW_API struct ds_iterator * ds_filter_init(void *ds,
-                                    enum ds_tag tag,
-                                    bool_t (*f)(void *e));
+RCSW_API void* ds_iter_next(struct ds_iterator* iter);
+
 END_C_DECLS

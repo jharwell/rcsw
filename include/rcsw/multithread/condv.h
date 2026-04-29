@@ -1,10 +1,11 @@
 /**
- * \file condv.h
- * \ingroup multithread
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -14,8 +15,8 @@
  ******************************************************************************/
 #include <pthread.h>
 
-#include "rcsw/rcsw.h"
-#include "rcsw/common/flags.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/flags.h"
 #include "rcsw/multithread/mutex.h"
 
 /*******************************************************************************
@@ -59,14 +60,14 @@ BEGIN_C_DECLS
  *
  * \return The initialized signal condition, or NULL if an ERROR occurred.
  */
-RCSW_API struct condv* condv_init(struct condv * cv_in, uint32_t flags);
+RCSW_API struct condv* condv_init(struct condv* cv_in, uint32_t flags);
 
 /**
  * \brief Destroy the signal condition.
  *
  * \param cv The cv handle.
  */
-RCSW_API void condv_destroy(struct condv *cv);
+RCSW_API void condv_destroy(struct condv* cv);
 
 /**
  * \brief Signal on a condition variable.
@@ -75,7 +76,7 @@ RCSW_API void condv_destroy(struct condv *cv);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t condv_signal(struct condv * cv);
+RCSW_API status_t condv_signal(struct condv* cv);
 
 /**
  * \brief Broadcast to everyone waiting on a condition variable.
@@ -88,7 +89,7 @@ RCSW_API status_t condv_signal(struct condv * cv);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t condv_broadcast(struct condv * cv);
+RCSW_API status_t condv_broadcast(struct condv* cv);
 
 /**
  * \brief Unconditional wait on a condition variable.
@@ -98,7 +99,7 @@ RCSW_API status_t condv_broadcast(struct condv * cv);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t condv_wait(struct condv * cv, struct mutex * mtx);
+RCSW_API status_t condv_wait(struct condv* cv, struct mutex* mtx);
 
 /**
  * \brief Timed wait on a condition variable.
@@ -112,8 +113,8 @@ RCSW_API status_t condv_wait(struct condv * cv, struct mutex * mtx);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t condv_timedwait(struct condv* cv,
-                        struct mutex* mtx,
-                        const struct timespec * to);
+RCSW_API status_t condv_timedwait(struct condv*          cv,
+                                  struct mutex*          mtx,
+                                  const struct timespec* to);
 
 END_C_DECLS

@@ -1,20 +1,22 @@
 /**
- * \file string.h
- * \ingroup sstdio
- * \brief Implementation of stdio string routines.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup stdio
+ *
+ * \brief Implementation of stdio string routines.
  */
-
 
 #pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Macros
@@ -25,14 +27,16 @@
 #define RCSW_STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
 #define RCSW_STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
 #define RCSW_STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
-#define RCSW_STDIO_ISHEX(c) (RCSW_STDIO_ISDIGIT(c) ||           \
-                             ((c) >= 'a' && (c) <= 'f') ||              \
-                             ((c) >= 'A' && (c) <= 'F') ? 1 : 0)
-#define RCSW_STDIO_ISALPHA(c)                                           \
+#define RCSW_STDIO_ISHEX(c)                               \
+  (RCSW_STDIO_ISDIGIT(c) || ((c) >= 'a' && (c) <= 'f') || \
+       ((c) >= 'A' && (c) <= 'F')                         \
+     ? 1                                                  \
+     : 0)
+#define RCSW_STDIO_ISALPHA(c) \
   ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
 
 /*******************************************************************************
- * API Functions
+ * PUBLIC API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -64,9 +68,7 @@ RCSW_API void* stdio_memcpy(void* __restrict__ dest,
  *
  * \return Memory pointed to by dest.
  */
-RCSW_API void* stdio_memset(void* __restrict__ dest,
-                            int c,
-                            size_t n);
+RCSW_API void* stdio_memset(void* __restrict__ dest, int c, size_t n);
 
 /**
  * \brief Convert a char to upper case.
@@ -93,7 +95,7 @@ RCSW_API int stdio_tolower(int c) RCSW_CONST;
  *
  * \return The length of the string.
  */
-RCSW_API size_t stdio_strlen(const char * s) RCSW_PURE;
+RCSW_API size_t stdio_strlen(const char* s) RCSW_PURE;
 
 /**
  * \brief Get the length of a string, limited by \p maxsize
@@ -117,7 +119,7 @@ RCSW_API size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
  * \param s The string to reverse.
  * \param len Length of the string to reverse.
  */
-RCSW_API void stdio_strrev(char *s, size_t len);
+RCSW_API void stdio_strrev(char* s, size_t len);
 
 /**
  * \brief Search a string for another string.
@@ -135,8 +137,8 @@ RCSW_API void stdio_strrev(char *s, size_t len);
  * \return: The first occurence of the needle, or NULL if the substring was not
  *          found.
  */
-RCSW_API const char *stdio_strstr(const char * haystack,
-                                  const char * needle) RCSW_PURE;
+RCSW_API const char* stdio_strstr(const char* haystack,
+                                  const char* needle) RCSW_PURE;
 
 /**
  * \brief Search a string for a character.
@@ -153,7 +155,7 @@ RCSW_API const char *stdio_strstr(const char * haystack,
  * \return Pointer to the first occurence of the needle, or NULL if the
  *         char was not found.
  */
-RCSW_API const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
+RCSW_API const char* stdio_strchr(const char* haystack, char needle) RCSW_PURE;
 
 /**
  * \brief Copy one string over another.
@@ -169,8 +171,8 @@ RCSW_API const char *stdio_strchr(const char * haystack, char needle) RCSW_PURE;
  *
  * \return Pointer to dest.
  */
-RCSW_API char *stdio_strncpy(char * __restrict__ dest,
-                             const char * __restrict__ src,
+RCSW_API char* stdio_strncpy(char* __restrict__ dest,
+                             const char* __restrict__ src,
                              size_t n);
 
 /**
@@ -187,8 +189,8 @@ RCSW_API char *stdio_strncpy(char * __restrict__ dest,
  *
  * \return Pointer to dest, unless \p dest is NULL, then NULL.
  */
-RCSW_API char *stdio_strcpy(char * __restrict__ dest,
-                            const char * __restrict__ src);
+RCSW_API char* stdio_strcpy(char* __restrict__ dest,
+                            const char* __restrict__ src);
 
 /**
  * \brief Compare two strings for equality.
@@ -202,9 +204,7 @@ RCSW_API char *stdio_strcpy(char * __restrict__ dest,
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-RCSW_API int stdio_strncmp(const char * s1,
-                           const char * s2,
-                           size_t len) RCSW_PURE;
+RCSW_API int stdio_strncmp(const char* s1, const char* s2, size_t len) RCSW_PURE;
 
 /**
  * \brief Compare two strings for equality.
@@ -217,7 +217,7 @@ RCSW_API int stdio_strncmp(const char * s1,
  *
  * \return <,=,> 0 depending if s1 is found to be <,=,> s2
  */
-RCSW_API int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
+RCSW_API int stdio_strcmp(const char* s1, const char* s2) RCSW_PURE;
 
 /**
  * \brief Replace a occurrences of one substring within another string with
@@ -233,8 +233,8 @@ RCSW_API int stdio_strcmp(const char * s1, const char * s2) RCSW_PURE;
  *
  * \return The updated string.
  */
-RCSW_API char *stdio_strrep(const char * __restrict__ original,
-                            const char * __restrict__ pattern,
-                            const char * __restrict__ replacement,
-                            char * __restrict__ new_str);
+RCSW_API char* stdio_strrep(const char* __restrict__ original,
+                            const char* __restrict__ pattern,
+                            const char* __restrict__ replacement,
+                            char* __restrict__ new_str);
 END_C_DECLS

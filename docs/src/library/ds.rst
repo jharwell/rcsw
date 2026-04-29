@@ -322,7 +322,7 @@ memory (no heap allocation).
        .elt_size  = sizeof(int),
        .elements  = elts,
        .meta      = meta,
-       .flags     = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA | RCSW_NOALLOC_META,
+       .flags     = RCSW_NOALLOC_ALL,
    };
 
    if (NULL == llist_init(&list, &p)) {

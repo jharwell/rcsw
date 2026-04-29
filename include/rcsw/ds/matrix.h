@@ -1,10 +1,11 @@
 /**
- * \file matrix.h
- * \ingroup ds
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -13,28 +14,28 @@
  * Includes
  ******************************************************************************/
 #include <math.h>
+
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
-#include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Static matrix initialization parameters.
  */
-struct matrix_params {
+struct matrix_config {
   /**
    * For printing an element. Can be NULL. If NULL, \ref matrix_print() is
    * disabled.
    */
-  void (*printe)(const void *e);
-
+  void (*printe)(const void* e);
 
   /**
    * Pointer to application-allocated space for storing the data managed by the
    * \ref matrix. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -94,11 +95,11 @@ struct matrix {
   size_t elt_size;
 
   /** For printing an element. Can be NULL. */
-  void (*printe)(const void *const e);
+  void (*printe)(const void* const e);
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -112,14 +113,11 @@ BEGIN_C_DECLS
  * \return Reference to element, or NULL if an error occurred.
  */
 static inline void* matrix_access(const struct matrix* const matrix,
-                                  size_t u,
-                                  size_t v) {
-  RCSW_FPC_NV(NULL,
-              NULL != matrix,
-              u < matrix->n_rows,
-              v < matrix->n_cols);
+                                  size_t                     u,
+                                  size_t                     v) {
+  RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
   return (uint8_t*)matrix->elements + (matrix->n_cols * matrix->elt_size * u) +
-      (matrix->elt_size * v);
+         (matrix->elt_size * v);
 }
 
 /**
@@ -132,8 +130,8 @@ static inline void* matrix_access(const struct matrix* const matrix,
  * \return The # of bytes required.
  */
 static inline size_t matrix_element_space(size_t n_rows,
-                                                 size_t n_cols,
-                                                 size_t elt_size) {
+                                          size_t n_cols,
+                                          size_t elt_size) {
   return ds_elt_space_simple(n_rows * n_cols, elt_size);
 }
 
@@ -147,8 +145,8 @@ static inline size_t matrix_element_space(size_t n_rows,
  * \return \ref status_t
  */
 static inline status_t matrix_elt_clear(struct matrix* const matrix,
-                                               size_t u,
-                                               size_t v) {
+                                        size_t               u,
+                                        size_t               v) {
   RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
   ds_elt_clear(matrix_access(matrix, u, v), matrix->elt_size);
   return OK;
@@ -165,11 +163,14 @@ static inline status_t matrix_elt_clear(struct matrix* const matrix,
  * \return \ref status_t
  */
 static inline status_t matrix_set(struct matrix* const matrix,
-                                         size_t u,
-                                         size_t v,
-                                         const void *const w) {
-  RCSW_FPC_NV(ERROR, NULL != matrix, NULL != w, u < matrix->n_rows,
-            v < matrix->n_cols);
+                                  size_t               u,
+                                  size_t               v,
+                                  const void* const    w) {
+  RCSW_FPC_NV(ERROR,
+              NULL != matrix,
+              NULL != w,
+              u < matrix->n_rows,
+              v < matrix->n_cols);
 
   ds_elt_copy(matrix_access(matrix, u, v), w, matrix->elt_size);
   return OK;
@@ -193,8 +194,8 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-RCSW_API struct matrix* matrix_init(struct matrix* matrix_in,
-                                    const struct matrix_params* params);
+RCSW_API struct matrix* matrix_init(struct matrix*              matrix_in,
+                                    const struct matrix_config* params);
 
 /**
  * \brief Destroy a static matrix.

@@ -1,14 +1,16 @@
 /**
- * \file stdio.h
- * \ingroup stdio
- * \brief Implementation of stdio libary.
- *
- * Contains mostly routines involved in supporting printf(). Should mainly be
- * used in bare-metal environments (i.e. no OS/stdlib, e.g.  bootstraps).
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup stdio
+ *
+ * \brief Implementation of stdio libary.
+ *
+ * Contains mostly routines involved in supporting printf(). Should mainly be
+ * used in bare-metal environments (i.e. no OS/stdlib, e.g.  bootstraps).
  */
 
 #pragma once
@@ -16,7 +18,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Configuration

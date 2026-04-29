@@ -1,11 +1,11 @@
 /**
- * \file rawfifo.h
- * \ingroup ds
- * \brief "Raw" FIFO implementation.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -13,8 +13,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/fpc.h"
 
 /*******************************************************************************
  * Type Definitions
@@ -33,7 +34,7 @@ struct rawfifo {
   /**
    * The actual elements.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Element where we write next.
@@ -56,7 +57,7 @@ struct rawfifo {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 /**
@@ -66,10 +67,10 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t.
  */
-static inline status_t rawfifo_clear(struct rawfifo *const fifo) {
-    RCSW_FPC_NV(ERROR, NULL != fifo);
-    fifo->to_i = fifo->from_i;
-    return OK;
+static inline status_t rawfifo_clear(struct rawfifo* const fifo) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  fifo->to_i = fifo->from_i;
+  return OK;
 }
 
 /**
@@ -79,12 +80,12 @@ static inline status_t rawfifo_clear(struct rawfifo *const fifo) {
  *
  * \return # element on the FIFO; 0 on ERROR.
  */
-static inline size_t rawfifo_size(const struct rawfifo *const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    if (fifo->to_i >= fifo->from_i) {
-        return fifo->to_i - fifo->from_i;
-    }
-    return (fifo->to_i) + (fifo->max_elts - fifo->from_i);
+static inline size_t rawfifo_size(const struct rawfifo* const fifo) {
+  RCSW_FPC_NV(0, NULL != fifo);
+  if (fifo->to_i >= fifo->from_i) {
+    return fifo->to_i - fifo->from_i;
+  }
+  return (fifo->to_i) + (fifo->max_elts - fifo->from_i);
 } /* rawfifo_size() */
 
 /**
@@ -94,10 +95,10 @@ static inline size_t rawfifo_size(const struct rawfifo *const fifo) {
  *
  * \return # free elements; 0 on ERROR.
  */
-static inline size_t rawfifo_n_free(const struct rawfifo *const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    /* One elt must be wasted to make n_elts determination unambiguous */
-    return fifo->max_elts - rawfifo_size(fifo) - 1;
+static inline size_t rawfifo_n_free(const struct rawfifo* const fifo) {
+  RCSW_FPC_NV(0, NULL != fifo);
+  /* One elt must be wasted to make n_elts determination unambiguous */
+  return fifo->max_elts - rawfifo_size(fifo) - 1;
 }
 
 /**
@@ -112,10 +113,10 @@ static inline size_t rawfifo_n_free(const struct rawfifo *const fifo) {
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rawfifo_init(struct rawfifo * fifo,
-                      void* buf,
-                      size_t max_elts,
-                      size_t elt_size);
+RCSW_API status_t rawfifo_init(struct rawfifo* fifo,
+                               void*           buf,
+                               size_t          max_elts,
+                               size_t          elt_size);
 
 /**
  * \brief Removes top N elements from the FIFO.
@@ -126,18 +127,18 @@ RCSW_API status_t rawfifo_init(struct rawfifo * fifo,
  *
  * \return # of elements removed from the FIFO.
  */
-RCSW_API size_t rawfifo_deq(struct rawfifo * fifo, void * e, size_t n_elts);
+RCSW_API size_t rawfifo_deq(struct rawfifo* fifo, void* e, size_t n_elts);
 
 /**
  * \brief Adds N elements to the FIFO.
  *
  * \param fifo The FIFO handle.
  * \param elts The elements to add.
- * \param n_elts # elements to remove.
+ * \param n_elts # elements to add.
  * \return # of elements added to the FIFO.
  */
-RCSW_API size_t rawfifo_enq(struct rawfifo * fifo,
-                            const void * elts,
-                            size_t n_elts);
+RCSW_API size_t rawfifo_enq(struct rawfifo* fifo,
+                            const void*     elts,
+                            size_t          n_elts);
 
 END_C_DECLS

@@ -1,11 +1,13 @@
 /**
- * \file threadm.h
- * \ingroup multithread
- * \brief Various thread management tools
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
+ *
+ * \brief Various thread management tools
  */
 
 #pragma once
@@ -13,10 +15,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <pthread.h>
+#include <stddef.h>
+
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -29,6 +35,6 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t.
  */
-status_t threadm_core_lock(pthread_t thread, size_t core);
+RCSW_API status_t threadm_core_lock(pthread_t thread, size_t core);
 
 END_C_DECLS

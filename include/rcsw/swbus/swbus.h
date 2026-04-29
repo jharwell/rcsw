@@ -1,10 +1,11 @@
 /**
- * \file swbus.h
- * \ingroup swb
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup swbus
  */
 
 #pragma once
@@ -12,12 +13,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/compilers.h"
+#include "rcsw/ds/rbuffer.h"
 #include "rcsw/multithread/cvm.h"
+#include "rcsw/multithread/mpool.h"
 #include "rcsw/multithread/mutex.h"
 #include "rcsw/multithread/pcqueue.h"
-#include "rcsw/rcsw.h"
-#include "rcsw/multithread/mpool.h"
-#include "rcsw/ds/rbuffer.h"
 #include "rcsw/multithread/rdwrlock.h"
 
 /*******************************************************************************
@@ -41,21 +42,24 @@
  * service received packets in their respective queues before all packets have
  * been pushed to all subscribers during a given \ref swbus_publish_release().
  */
-#define RCSW_SWBUS_ASYNC (1 << RCSW_MODFLAGS_START )
+#define RCSW_SWBUS_ASYNC (1 << RCSW_MODFLAGS_SHIFT)
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief SWBUS initialization parameters.
  */
-struct swbus_params {
+struct swbus_config {
   /**
    * Each SWB can have any # of buffer pools (each pool can have any number
    * of entries). If you need more than 8 or so, you are probably doing
    * something weird (read: wrong)...
+   *
+   * Pools should be ordered from smallest to largest chunk size to get best-fit
+   * behavior during \ref swbus_publish_release().
    */
-  struct mpool_params* pools;
+  struct mpool_config* pools;
 
   /** Max # of buffer pools to create for the bus. */
   size_t max_pools;
@@ -97,14 +101,14 @@ struct swbus_rxq_ent {
   /** Pointer to the buffer with the actual data. */
   dptr_t* data;
 
-  /** Received packet size in bytes. */
+  /** Packet size in bytes. */
   size_t pkt_size;
 
   /** ID of received packet. */
   uint32_t pid;
 
   /** The buffer pool entry that the data resides in. */
-  struct mpool *bp;
+  struct mpool* bp;
 };
 
 /**
@@ -134,7 +138,7 @@ struct swbus_rsrvn {
   size_t pkt_size;
 
   /** The \ref mpool that the actual data resides in. */
-  struct mpool *bp;
+  struct mpool* bp;
 };
 
 /**
@@ -153,7 +157,7 @@ struct swbus_sub {
   /**
    * The \ref pcqueue (RXQ) subscriber.
    */
-  struct pcqueue *subscriber;
+  struct pcqueue* subscriber;
 };
 
 /**
@@ -195,17 +199,17 @@ struct swbus {
    * Array of buffer pool entries. Published data stored here. This is
    * always allocated by SWB during initialization.
    */
-  struct mpool *pools;
+  struct mpool* pools;
 
   /**
    * Array of receive queues. Used by the application to subscribe to packets
    * and to receive published packets. This is always allocated during
    * initialization.
    */
-  struct pcqueue *rxqs;
+  struct pcqueue* rxqs;
 
   /** List of \ref swbus_sub. Always sorted. */
-  struct llist *subscribers;
+  struct llist* subscribers;
 
   /**
    * Prevents applications from servicing their receive queues for the packet
@@ -222,7 +226,7 @@ struct swbus {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -238,7 +242,7 @@ BEGIN_C_DECLS
  *
  * \return The top of the queue, or NULL if no such packet or an error occurred.
  */
-RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue *const queue);
+RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue* const queue);
 
 /**
  * \brief Initialize a \ref swbus instance.
@@ -250,8 +254,8 @@ RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue *const queue);
  *
  * \return Initialized swb instance, or NULL if an error occurred.
  */
-RCSW_API struct swbus *swbus_init(struct swbus *swb_in,
-                                  const struct swbus_params * params) RCSW_WUR;
+RCSW_API struct swbus* swbus_init(struct swbus*              swb_in,
+                                  const struct swbus_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a \ref swbus instance
@@ -260,7 +264,7 @@ RCSW_API struct swbus *swbus_init(struct swbus *swb_in,
  *
  * \param swb The swb handle.
  */
-RCSW_API void swbus_destroy(struct swbus *swb);
+RCSW_API void swbus_destroy(struct swbus* swb);
 
 /**
  * \brief Allocate and initialize a receive queue.
@@ -274,9 +278,9 @@ RCSW_API void swbus_destroy(struct swbus *swb);
  *
  * \return Pointer to new receive queue, or NULL if an error occurred.
  */
-RCSW_API struct pcqueue *swbus_rxq_init(struct swbus * swb,
-                                        void * buf_p,
-                                        uint32_t n_entries) RCSW_WUR;
+RCSW_API struct pcqueue* swbus_rxq_init(struct swbus* swb,
+                                        void*         buf_p,
+                                        size_t        n_entries) RCSW_WUR;
 
 /**
  * \brief Subscribe the specified RXQ to the specified packet ID.
@@ -287,9 +291,9 @@ RCSW_API struct pcqueue *swbus_rxq_init(struct swbus * swb,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t swbus_subscribe(struct swbus * swb,
-                                  struct pcqueue * queue,
-                                  uint32_t pid);
+RCSW_API status_t swbus_subscribe(struct swbus*   swb,
+                                  struct pcqueue* queue,
+                                  uint32_t        pid);
 
 /**
  * \brief Unsubscribe the specified RXQ from the specified packet ID
@@ -300,9 +304,9 @@ RCSW_API status_t swbus_subscribe(struct swbus * swb,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t swbus_unsubscribe(struct swbus * swb,
-                                    struct pcqueue * queue,
-                                    uint32_t pid);
+RCSW_API status_t swbus_unsubscribe(struct swbus*   swb,
+                                    struct pcqueue* queue,
+                                    uint32_t        pid);
 
 /**
  * \brief Publish a packet to the bus.
@@ -317,10 +321,10 @@ RCSW_API status_t swbus_unsubscribe(struct swbus * swb,
  *
  * \return \ref status_t
  */
-RCSW_API status_t swbus_publish(struct swbus * swb,
-                                uint32_t pid,
-                                size_t pkt_size,
-                                const void* pkt);
+RCSW_API status_t swbus_publish(struct swbus* swb,
+                                uint32_t      pid,
+                                size_t        pkt_size,
+                                const void*   pkt);
 
 /**
  * \brief Reserve a buffer on a \ref swbus instance.
@@ -336,9 +340,9 @@ RCSW_API status_t swbus_publish(struct swbus * swb,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t swbus_publish_reserve(struct swbus* swb,
+RCSW_API status_t swbus_publish_reserve(struct swbus*       swb,
                                         struct swbus_rsrvn* res,
-                                        size_t pkt_size);
+                                        size_t              pkt_size);
 /**
  * \brief Release a published entry (i.e. send it to all subscribed receive
  * queues).
@@ -349,22 +353,28 @@ RCSW_API status_t swbus_publish_reserve(struct swbus* swb,
  * this function can be called directly, avoiding a potentially expensive memory
  * copy.
  *
+ * \note The bus mutex is held for the entire release operation by design, not
+ * oversight. Dynamic subscription/de-subscription and RXQ initialization are
+ * not common in target application environments, so this is unlikely to be a
+ * bottleneck. Doing it this way also eliminates the need to snapshot the
+ * subscribers to notify, which requires a \ref llist copy, VLA, or hard-coded
+ * max to the # subscribers.
+ *
  * \param swb The swb handle.
  *
  * \param pid The packet ID.
  *
  * \param res The space reserved for the packet in a particular buffer
- *            pool. The pointed-to value must have been the result of a
- *            successful \ref swbus_publish_reserve().
+ *            pool.
  *
  * \param pkt_size Size of the packet in bytes.
  *
  * \return \ref status_t.
  */
-RCSW_API status_t swbus_publish_release(struct swbus* swb,
-                                        uint32_t pid,
+RCSW_API status_t swbus_publish_release(struct swbus*       swb,
+                                        uint32_t            pid,
                                         struct swbus_rsrvn* res,
-                                        size_t pkt_size);
+                                        size_t              pkt_size);
 
 /**
  * \brief Wait (indefinitely) until the given receive queue is not empty,
@@ -380,8 +390,8 @@ RCSW_API status_t swbus_publish_release(struct swbus* swb,
  * \return A reference to the first item in the queue, or NULL if an ERROR
  * occurred.
  */
-RCSW_API struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb,
-                                              struct pcqueue * queue) RCSW_WUR;
+RCSW_API struct swbus_rxq_ent* swbus_rxq_wait(struct swbus*   swb,
+                                              struct pcqueue* queue) RCSW_WUR;
 
 /**
  * \brief Wait (until a timeout) until the given receive queue is not empty.
@@ -398,9 +408,9 @@ RCSW_API struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb,
  * \return A reference to the first item in the queue, or NULL if an ERROR or a
  * timeout occurred.
  */
-RCSW_API struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus* swb,
-                                                   struct pcqueue * queue,
-                                                   struct timespec * to) RCSW_WUR;
+RCSW_API struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus*    swb,
+                                                   struct pcqueue*  queue,
+                                                   struct timespec* to) RCSW_WUR;
 
 /**
  * \brief Remove and release the front element from the selected receive queue.
@@ -412,7 +422,7 @@ RCSW_API struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus* swb,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t swbus_rxq_pop_front(struct pcqueue* queue,
-                                      struct swbus_rxq_ent * ent);
+RCSW_API status_t swbus_rxq_pop_front(struct pcqueue*       queue,
+                                      struct swbus_rxq_ent* ent);
 
 END_C_DECLS

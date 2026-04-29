@@ -1,15 +1,13 @@
 /**
- * \file hash.h
- * \ingroup utils
- * \brief A collection of hashing algorithms.
- *
- * All functions take a data pointer and byte length and return a
- * \c uint32_t hash. Return 0 if an error occurs (NULL data or zero
- * length).
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup utils
+ *
+ * \brief A collection of hashing algorithms.
  */
 
 #pragma once
@@ -17,10 +15,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -29,10 +31,13 @@ BEGIN_C_DECLS
  *
  * \param data Pointer to the data to hash.
  * \param len  Number of bytes to hash.
+ * \param hash The computed hash.
  *
- * \return The hash value, or 0 on error.
+ * \return \ref status_t
  */
-RCSW_API uint32_t hash_default(const void * data, size_t len) RCSW_PURE;
+RCSW_API status_t utils_hash_default(const void* data,
+                                     size_t      len,
+                                     uint32_t*   hash) RCSW_PURE;
 
 /**
  * \brief Compute a hash over \p data using FNV-1a (Fowler–Noll–Vo).
@@ -42,10 +47,13 @@ RCSW_API uint32_t hash_default(const void * data, size_t len) RCSW_PURE;
  *
  * \param data Pointer to the data to hash.
  * \param len  Number of bytes to hash.
+ * \param hash The computed hash.
  *
- * \return The hash value, or 0 on error.
+ * \return \ref status_t.
  */
-RCSW_API uint32_t hash_fnv1a(const void * data, size_t len) RCSW_PURE;
+RCSW_API status_t utils_hash_fnv1a(const void* data,
+                                   size_t      len,
+                                   uint32_t*   hash) RCSW_PURE;
 
 /**
  * \brief Compute a hash over \p data using DJB2 (Dan J. Bernstein).
@@ -54,9 +62,12 @@ RCSW_API uint32_t hash_fnv1a(const void * data, size_t len) RCSW_PURE;
  *
  * \param data Pointer to the data to hash.
  * \param len  Number of bytes to hash.
+ * \param hash The computed hash.
  *
- * \return The hash value, or 0 on error.
+ * \return \ref status_t
  */
-RCSW_API uint32_t hash_djb(const void * data, size_t len) RCSW_PURE;
+RCSW_API status_t utils_hash_djb(const void* data,
+                                 size_t      len,
+                                 uint32_t*   hash) RCSW_PURE;
 
 END_C_DECLS

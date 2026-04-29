@@ -53,7 +53,7 @@ Array and Memory Utilities
 
 :c:func:`arr8_reverse()`, :c:func:`arr32_permute()`,
 :c:func:`arr32_elt_swap()`, :c:func:`util_reflect32()`,
-:c:func:`util_zchk()`, :c:func:`util_string_gen()`, and
+:c:func:`utils_zchk()`, :c:func:`utils_string_gen()`, and
 :c:func:`utils_clamp_f255()`. See header for full signatures and
 parameter details.
 

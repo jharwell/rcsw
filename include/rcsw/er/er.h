@@ -1,5 +1,5 @@
 /**
- * \file er.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
@@ -11,29 +11,29 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
- #include "rcsw/common/common.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
 /* \cond INTERNAL */
-#define LIBRA_ERL_NONE  0 /* No event reporting */
+#define LIBRA_ERL_NONE 0  /* No event reporting */
 #define LIBRA_ERL_FATAL 1 /* Fatal events only */
 #define LIBRA_ERL_ERROR 2 /* Fatal, error events only */
-#define LIBRA_ERL_WARN  3 /* Fatal, error, warn events only */
-#define LIBRA_ERL_INFO  4 /* Fatal, error, warn, info events only */
+#define LIBRA_ERL_WARN 3  /* Fatal, error, warn events only */
+#define LIBRA_ERL_INFO 4  /* Fatal, error, warn, info events only */
 #define LIBRA_ERL_DEBUG 5 /* Fatal, error, warn, info, debug events only */
 #define LIBRA_ERL_TRACE 6 /* All events */
-#define LIBRA_ERL_ALL   LIBRA_ERL_TRACE
+#define LIBRA_ERL_ALL LIBRA_ERL_TRACE
 
-#define RCSW_ERL_NONE  LIBRA_ERL_NONE
+#define RCSW_ERL_NONE LIBRA_ERL_NONE
 #define RCSW_ERL_FATAL LIBRA_ERL_FATAL
 #define RCSW_ERL_ERROR LIBRA_ERL_ERROR
-#define RCSW_ERL_WARN  LIBRA_ERL_WARN
-#define RCSW_ERL_INFO  LIBRA_ERL_INFO
+#define RCSW_ERL_WARN LIBRA_ERL_WARN
+#define RCSW_ERL_INFO LIBRA_ERL_INFO
 #define RCSW_ERL_DEBUG LIBRA_ERL_DEBUG
 #define RCSW_ERL_TRACE LIBRA_ERL_TRACE
-#define RCSW_ERL_ALL   LIBRA_ERL_ALL
+#define RCSW_ERL_ALL LIBRA_ERL_ALL
 
 #if defined(LIBRA_ERL_INHERIT) && !defined(LIBRA_ERL)
 #error LIBRA_ERL_INHERIT defined but LIBRA_ERL not defined!
@@ -87,7 +87,8 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#define RCSW_ER_MODNAME_BUILDER_IMPL(X) X RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR
+#define RCSW_ER_MODNAME_BUILDER_IMPL(X) \
+  X RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR
 
 /**
  * \def RCSW_ER_MODNAME_BUILDER(...) Define the name of a logging module
@@ -106,5 +107,5 @@
  *
  * This macro ensures that you can use the same code with multple ER plugins.
  */
-#define RCSW_ER_MODNAME_BUILDER(...)                                    \
+#define RCSW_ER_MODNAME_BUILDER(...) \
   RCSW_XFOR_EACH1_NOTAIL(RCSW_ER_MODNAME_BUILDER_IMPL, __VA_ARGS__)

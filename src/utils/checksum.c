@@ -1,5 +1,5 @@
 /**
- * \file checksum.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,9 +11,10 @@
  ******************************************************************************/
 #include "rcsw/utils/checksum.h"
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/utils/utils.h"
+#include "rcsw/utils/align.h"
+#include "rcsw/utils/bit.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -71,13 +72,12 @@ static uint32_t crc32_brown_table[] = {
   0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
   0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693,
   0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
-  0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
-};
+  0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d};
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-uint8_t xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
+uint8_t utils_xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
   RCSW_FPC_NV((uint8_t)0xFF, buf != NULL);
 
   uint8_t chks8 = seed;
@@ -90,9 +90,9 @@ uint8_t xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
     chks8 ^= buf[i];
   }
   return chks8;
-} /* xchks8() */
+}
 
-uint16_t xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
+uint16_t utils_xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   RCSW_FPC_NV((uint16_t)0xFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
@@ -108,9 +108,9 @@ uint16_t xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
     chks16 ^= buf[i];
   }
   return chks16;
-} /* xchks16() */
+}
 
-uint32_t xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
+uint32_t utils_xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
@@ -126,9 +126,9 @@ uint32_t xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
     chks32 ^= buf[i];
   }
   return chks32;
-} /* xchks32() */
+}
 
-uint8_t achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
+uint8_t utils_achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
   RCSW_FPC_NV(0xFF, buf != NULL);
 
   uint8_t chks8 = seed;
@@ -138,9 +138,9 @@ uint8_t achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
   }
 
   return chks8;
-} /* achks8() */
+}
 
-uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
+uint16_t utils_achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   RCSW_FPC_NV(0xFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
@@ -153,7 +153,7 @@ uint16_t achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   return chks16;
 } /* achks16() */
 
-uint32_t achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
+uint32_t utils_achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
               RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
@@ -168,21 +168,21 @@ uint32_t achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   return chks32;
 } /* achks32() */
 
-uint32_t crc32_brown(const uint8_t* buf, uint32_t crc, size_t size) {
+uint32_t utils_crc32_brown(const uint8_t* buf, size_t size, uint32_t crc) {
   RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, size > 0);
   const uint8_t* p;
 
-  p = buf;
+  p   = buf;
   crc = crc ^ ~0U;
   while (size--) {
     crc = crc32_brown_table[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
   }
   return crc;
-} /* crc32_brown() */
+}
 
-void crc32_ethl_init(void) {
-  uint32_t POLYNOMIAL = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
-  uint32_t remainder;
+void utils_crc32_ethl_init(void) {
+  uint32_t      POLYNOMIAL = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
+  uint32_t      remainder;
   unsigned char b = 0;
   do {
     remainder = b;
@@ -195,15 +195,15 @@ void crc32_ethl_init(void) {
     } /* for(...) */
     crc32_eth_table[(size_t)b] = remainder;
   } while (0 != ++b);
-} /* crc32_ethl_init() */
+}
 
-uint32_t crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
+uint32_t utils_crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
   uint32_t crc;
 
   /* if lookup table not already initialized, initialize it */
   if (crc32_eth_table[1] == 0) {
-    crc32_ethl_init();
+    utils_crc32_ethl_init();
   }
 
   crc = CRC32_ETH_INITIAL_REMAINDER;
@@ -211,15 +211,15 @@ uint32_t crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
     crc = (crc >> 8) ^ crc32_eth_table[(crc & 0xFF) ^ buf[i]];
   } /* for(i..) */
   return ~crc; /* implied XOR with CRC32_ETH_FINAL_XOR */
-} /* crc32_ethl() */
+}
 
-uint32_t crc32_eth(const uint8_t* const buf, size_t n_bytes) {
+uint32_t utils_crc32_eth(const uint8_t* const buf, size_t n_bytes) {
   RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
-  int i, j;
+  int      i, j;
   uint32_t crc, mask;
   uint32_t poly = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
 
-  i = 0;
+  i   = 0;
   crc = CRC32_ETH_INITIAL_REMAINDER;
 
   /*
@@ -230,14 +230,14 @@ uint32_t crc32_eth(const uint8_t* const buf, size_t n_bytes) {
    */
   while (i < (int)n_bytes) {
     uint32_t byte = buf[i];
-    crc = crc ^ byte;
+    crc           = crc ^ byte;
     for (j = 7; j >= 0; j--) {
       mask = -(crc & 1);
-      crc = (crc >> 1) ^ (poly & mask);
+      crc  = (crc >> 1) ^ (poly & mask);
     }
     ++i;
   }
   return ~crc; /* implicit XOR with 0xFFFFFFFF */
-} /* crc32_eth() */
+}
 
 END_C_DECLS

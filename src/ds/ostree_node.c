@@ -1,5 +1,5 @@
 /**
- * \file ostree_node.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,7 +12,7 @@
 #include "rcsw/ds/ostree_node.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -27,8 +27,8 @@ void ostree_node_update_count(struct ostree_node* const node) {
 } /* ostree_node_update_count() */
 
 void ostree_count_fixup(const struct bstree* const tree,
-                        struct ostree_node* node,
-                        enum ostree_fixup_type type) {
+                        struct ostree_node*        node,
+                        enum ostree_fixup_type     type) {
   /*
    * Deletion: decrement the counter of the parent node by 1.
    * Insertion: No action; seamlessly handled by update_count().

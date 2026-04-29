@@ -1,9 +1,9 @@
 /**
- * \file clock.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -13,10 +13,10 @@
  ******************************************************************************/
 #include "rcsw/al/al.h"
 
-#if RCSW_CONFIG_AL_TARGET == RCSW_AL_TARGET_POSIX
+#if RCSW_CONFIG_PLATFORM == RCSW_CONFIG_PLATFORM_POSIX
 #include "rcsw/al/posix/clock.h"
-#elif RCSW_CONFIG_AL_TARGET == RCSW_AL_TARGET_BAREMETAL
+#elif RCSW_CONFIG_PLATFORM == RCSW_CONFIG_PLATFORM_BAREMETAL
 #include "rcsw/al/baremetal/clock.h"
 #else
-#error "No supported clock for AL target"
+#error "Bad target platform: must be {POSIX, BAREMETAL}."
 #endif
