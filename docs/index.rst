@@ -8,6 +8,6 @@ Welcome to RCSW's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   src/setup/index.rst
-   src/modules/index.rst
+   src/startup.rst
+   src/library/index.rst
    _api/api.rst

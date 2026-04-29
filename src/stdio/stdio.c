@@ -9,19 +9,24 @@
  ******************************************************************************/
 #include "rcsw/stdio/stdio.h"
 
-#include "rcsw/stdio/math.h"
 #include "rcsw/stdio/string.h"
 
 /*******************************************************************************
- * API Functions
+ * Callback Functions
  ******************************************************************************/
-int stdio_putchar(int c) {
-  return RCSW_CONFIG_STDIO_PUTCHAR(c);
-}
+/*
+ * This is the name of the putchar function that the printf() library expects,
+ * so we shim it to stdio_putchar().
+ */
+void putchar_(char c);
+void putchar_(char c) { stdio_putchar(c); }
 
-int stdio_getchar(void) {
-  return RCSW_CONFIG_STDIO_GETCHAR();
-}
+/*******************************************************************************
+ * Public API
+ ******************************************************************************/
+int stdio_putchar(int c) { return RCSW_CONFIG_STDIO_PUTCHAR(c); }
+
+int stdio_getchar(void) { return RCSW_CONFIG_STDIO_GETCHAR(); }
 
 size_t stdio_puts(const char* const s) {
   size_t i;
@@ -33,7 +38,7 @@ size_t stdio_puts(const char* const s) {
 
 int stdio_atoi(const char* s, int base) {
   char c;
-  int result = 0;
+  int  result = 0;
 
   while (*s == ' ') {
     ++s; /* advance past any spaces */
@@ -72,7 +77,7 @@ char* stdio_itoad(int32_t n, char* s) {
     s[i++] = '0';
   } else if (n < 0) {
     s[i++] = '-';
-    n = -n;
+    n      = -n;
   } else {
     s[i++] = '+';
   }

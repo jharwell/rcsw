@@ -1,10 +1,21 @@
 name: Build and test
 
+# Run:
+#
+# - Every month. Scheduling helps keep drift/issues with updates
+#   to runners at bay.
+# - On pushes to relevant paths.
+#
 on:
   push:
-    branches:
-      - master
-      - devel
+    paths:
+      - "src/**"
+      - "include/**"
+      - ".github/**"
+      - "docs/**"
+
+  schedule:
+    - cron: '0 0 1 * *'
 
 concurrency:
   group: ${{ github.ref }}
@@ -221,7 +232,7 @@ jobs:
     needs:
       - posix-build-and-test
     container:
-      image: jharwell/ubuntu22.04-rcsw:2023-04-12
+      image: jharwell/ubuntu24.04-rcsw:20260428
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:

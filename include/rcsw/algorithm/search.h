@@ -1,9 +1,9 @@
 /**
  * \file search.h
  * \ingroup algorithm
- * \brief Collection of various search algorithms.
+ * \brief Collection of search algorithms.
  *
- * Binary search (iterative and recursive).
+ * Binary search in iterative and recursive variants.
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -23,22 +23,23 @@
 BEGIN_C_DECLS
 
 /**
- * \brief Search a sorted array of data using binary search, iterative version
+ * \brief Search a sorted array using binary search (iterative).
  *
- * The array is assumed to already be sorted.
+ * O(log n). Preferred over \ref bsearch_rec() for large arrays as it
+ * does not grow the stack.
  *
- * \param a The array to search
- * \param e The element to search for
- * \param cmpe Callback to compare two elements
- * \param el_size Size of elements in bytes
+ * \warning The array must be sorted in the order defined by \p cmpe.
+ *          Passing an unsorted array produces undefined results.
  *
- * \param low Lowest index in the array to consider when searching. This should
- *            usually be 0.
+ * \param a      The array to search.
+ * \param e      The element to search for.
+ * \param cmpe   Comparison callback. Must return <0, 0, or >0 per the
+ *               standard comparator convention.
+ * \param el_size Size of each element in bytes.
+ * \param low    Lowest index to consider (typically 0).
+ * \param high   Highest index to consider (typically max index of array).
  *
- * \param high Highest index in the array to consider when searching. This
- *             should usually be max index of the array.
- *
- * \return The index, or -1 if not found or an ERROR occurred
+ * \return Index of the matching element, or -1 if not found or on error.
  */
 RCSW_API int bsearch_iter(const void * a,
                  const void * e,
@@ -48,24 +49,23 @@ RCSW_API int bsearch_iter(const void * a,
                  int high);
 
 /**
- * \brief Search a sorted array of data using binary search, recursive version
+ * \brief Search a sorted array using binary search (recursive).
  *
- * \param arr The array to search.
+ * O(log n). Stack depth is O(log n); prefer \ref bsearch_iter() for
+ * large arrays or constrained stacks.
  *
- * \param e The element to search for.
+ * \warning The array must be sorted in the order defined by \p cmpe.
+ *          Passing an unsorted array produces undefined results.
  *
- * \param cmpe Callback to compare two elements.
+ * \param arr     The array to search.
+ * \param e       The element to search for.
+ * \param cmpe    Comparison callback. Must return <0, 0, or >0 per the
+ *                standard comparator convention.
+ * \param elt_size Size of each element in bytes.
+ * \param low     Lowest index to consider (typically 0).
+ * \param high    Highest index to consider (typically max index of array).
  *
- * \param elt_size Size of elements in bytes.
- *
- * \param low Lowest index in the array to consider when searching. This should
- *            usually be 0.
- *
- * \param high Highest index in the array to consider when searching. This
- *             should usually be max index of the array.
- *
- * \return The index, or -1 if not found/an error occurred.
- *
+ * \return Index of the matching element, or -1 if not found or on error.
  */
 RCSW_API int bsearch_rec(const void * arr,
                 const void * e,

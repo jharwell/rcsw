@@ -17,7 +17,7 @@
  * API Functions
  ******************************************************************************/
 BEGIN_C_DECLS
-
+#ifndef DOXYGEN_DOCUMENTATION_BUILD
 /**
  * \brief Get the monotonic system time.
  *
@@ -32,4 +32,5 @@ RCSW_API struct timespec clock_monotime(void);
  */
 RCSW_API struct timespec clock_realtime(void);
 
+#endif
 END_C_DECLS
