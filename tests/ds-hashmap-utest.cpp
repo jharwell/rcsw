@@ -14,9 +14,10 @@
 
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/utils/hash.h"
-#include "rcsw/utils/utils.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
+#include "rcsw/utils/byteops.h"
+#include "rcsw/utils/hash.h"
 
 /*******************************************************************************
  * Test Helpers
@@ -27,13 +28,13 @@ static void run_test(hashmap_test_t test) {
   /* dbg_insmod(M_TESTING,"Testing"); */
   /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
 
-  struct hashmap_params params;
-  memset(&params, 0, sizeof(hashmap_params));
-  params.flags       = 0;
-  params.hash        = hash_default;
-  params.sort_thresh = -1;
-  params.elt_size    = sizeof(T);
-  CATCH_REQUIRE(th::ds_init(&params) == OK);
+  struct hashmap_config config;
+  memset(&config, 0, sizeof(hashmap_config));
+  config.flags       = 0;
+  config.hash        = utils_hash_default;
+  config.sort_thresh = -1;
+  config.elt_size    = sizeof(T);
+  CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {RCSW_NONE,
                       RCSW_ZALLOC,
@@ -51,10 +52,10 @@ static void run_test(hashmap_test_t test) {
 
       for (size_t m = 1; m < TH_NUM_ITEMS; ++m) {
         for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
-          params.flags     = applied;
-          params.bsize     = m;
-          params.n_buckets = k;
-          test(&params);
+          config.flags     = applied;
+          config.bsize     = m;
+          config.n_buckets = k;
+          test(&config);
         } /* for(k..) */
       } /* for(m..) */
 
@@ -62,34 +63,34 @@ static void run_test(hashmap_test_t test) {
     } /* for(j..) */
   } /* for(i..) */
 
-  th::ds_shutdown(&params);
+  th::ds_shutdown(&config);
 } /* run_test() */
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void build_test(struct hashmap_params *params) {
+static void build_test(struct hashmap_config *config) {
   struct hashmap *map;
   struct hashmap  mymap;
   size_t          i, j;
   int             failed_count = 0;
-  size_t          attempts     = params->n_buckets * params->bsize;
+  size_t          attempts     = config->n_buckets * config->bsize;
 
   struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
   T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_DS_SORTED) {
-    params->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
+  if (config->flags & RCSW_DS_SORTED) {
+    config->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
   }
 
-  map = hashmap_init(&mymap, params);
+  map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(nullptr != map);
 
   /* attempt to fill hashmap */
   for (i = 0; i < attempts; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = i;
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
@@ -129,22 +130,22 @@ static void build_test(struct hashmap_params *params) {
 } /* build_test() */
 
 template <typename T>
-static void stats_test(struct hashmap_params *params) {
+static void stats_test(struct hashmap_config *config) {
   struct hashmap *map;
   struct hashmap  mymap;
   size_t          i, j;
   int             failed_count = 0;
 
-  params->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
+  config->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
 
-  map = hashmap_init(&mymap, params);
+  map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(nullptr != map);
 
   /* fill hashmap */
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS * 10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T               e = g.next();
     struct hashnode n;
     memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
@@ -157,21 +158,21 @@ static void stats_test(struct hashmap_params *params) {
 } /* stats_test() */
 
 template <typename T>
-static void linear_probing_test(struct hashmap_params *params) {
+static void linear_probing_test(struct hashmap_config *config) {
   struct hashmap *map;
   struct hashmap  mymap;
-  int             len = params->n_buckets * params->bsize;
+  int             len = config->n_buckets * config->bsize;
   struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
   T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
-  params->flags |= RCSW_DS_HASHMAP_LINPROB;
-  map = hashmap_init(&mymap, params);
+  config->flags |= RCSW_DS_HASHMAP_LINPROB;
+  map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(map);
 
   /* fill hashmap */
   for (int i = 0; i < len; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i + 1);
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
 
@@ -195,22 +196,22 @@ static void linear_probing_test(struct hashmap_params *params) {
 } /* linear_probing_test() */
 
 template <typename T>
-static void remove_test(struct hashmap_params *params) {
+static void remove_test(struct hashmap_config *config) {
   struct hashmap *map;
   struct hashmap  mymap;
   int             i, j;
   int             failed_count = 0;
-  int             len          = params->n_buckets * params->bsize;
+  int             len          = config->n_buckets * config->bsize;
   struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
   T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
 
-  map = hashmap_init(&mymap, params);
+  map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(map);
 
   /* attempt to fill hashmap */
   for (i = 0; i < len; i++) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = rand() % (i + 1);
 
     memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
@@ -245,20 +246,20 @@ static void remove_test(struct hashmap_params *params) {
   } /* for() */
 
   hashmap_destroy(map);
-  CATCH_REQUIRE(th::leak_check_data(params) == OK);
+  CATCH_REQUIRE(th::leak_check_data(config) == OK);
 } /* remove_test() */
 
 template <typename T>
-static void print_test(struct hashmap_params *params) {
+static void print_test(struct hashmap_config *config) {
   struct hashmap *map;
   struct hashmap  mymap;
   size_t          i, j;
   int             failed_count = 0;
 
-  params->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
+  config->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
 
   hashmap_print(nullptr);
-  map = hashmap_init(&mymap, params);
+  map = hashmap_init(&mymap, config);
 
   CATCH_REQUIRE(nullptr != map);
   hashmap_print(map);
@@ -268,7 +269,7 @@ static void print_test(struct hashmap_params *params) {
   th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS * 10);
   for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
     char rand_key[RCSW_HASHMAP_KEYSIZE];
-    util_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
+    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
     T               e = g.next();
     struct hashnode n;
     memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);

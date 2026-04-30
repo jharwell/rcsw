@@ -1,10 +1,11 @@
 /**
- * \file ds.h
- * \brief Common definitions for all data structures.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \brief Common definitions for all data structures.
  */
 
 #pragma once
@@ -12,21 +13,25 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
-#include "rcsw/common/flags.h"
-
+#include "rcsw/core/core.h"
+#include "rcsw/core/flags.h"
 #include "rcsw/ds/allocm.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
 /**
- * Tags for data structures for use in initializing iterators.
+ * \brief A runtime exec method switch for searching/sorting strategies.
  */
-enum ds_tag {
-  ekRCSW_DS_DARRAY,
-  ekRCSW_DS_LLIST,
-  ekRCSW_DS_RBUFFER,
+enum exec_type {
+  /**
+   * Use a recursive runtime implementation.
+   */
+  ekEXEC_REC,
+  /**
+   * Use an iterative runtime implementation.
+   */
+  ekEXEC_ITER,
 };
 
 /**
@@ -39,7 +44,7 @@ enum ds_tag {
  * - \ref llist
  * - \ref hashmap
  */
-#define RCSW_DS_SORTED (1 << (RCSW_MODFLAGS_START + 0))
+#define RCSW_DS_SORTED (1 << (RCSW_MODFLAGS_SHIFT + 0))
 
 /**
  * \brief Maintain the relative ordering between elements as they are inserted,
@@ -49,7 +54,7 @@ enum ds_tag {
  *
  * - \ref darray
  */
-#define RCSW_DS_ORDERED (1 << (RCSW_MODFLAGS_START + 1))
+#define RCSW_DS_ORDERED (1 << (RCSW_MODFLAGS_SHIFT + 1))
 
 /**
  * \brief Indicate that the \ref hashmap should perform linear probing if the
@@ -58,14 +63,14 @@ enum ds_tag {
  * Results in greater hashmap utilization, but possibly longer
  * insert/remove/lookup times.
  */
-#define RCSW_DS_HASHMAP_LINPROB (1 << (RCSW_MODFLAGS_START + 2))
+#define RCSW_DS_HASHMAP_LINPROB (1 << (RCSW_MODFLAGS_SHIFT + 2))
 
 /**
  * \brief Indicate that a \ref rbuffer should act as a FIFO (i.e., items are
  * never overrwritten/only added to ringbuffer when the ringbuffer is not
  * currently full.
  */
-#define RCSW_DS_RBUFFER_AS_FIFO  (1 << (RCSW_MODFLAGS_START + 3))
+#define RCSW_DS_RBUFFER_AS_FIFO (1 << (RCSW_MODFLAGS_SHIFT + 3))
 
 /**
  * \brief Indicate that a \ref llist should NOT to allocate/deallocate a
@@ -84,7 +89,7 @@ enum ds_tag {
  *    copy)
  *
  */
-#define RCSW_DS_LLIST_DB_DISOWN  (1 << (RCSW_MODFLAGS_START + 4))
+#define RCSW_DS_LLIST_DB_DISOWN (1 << (RCSW_MODFLAGS_SHIFT + 4))
 
 /**
  * \brief Indicate that a \ref llist should NOT use compare function when
@@ -95,13 +100,13 @@ enum ds_tag {
  *
  * This flag implies \ref RCSW_DS_LLIST_DB_DISOWN.
  */
-#define RCSW_DS_LLIST_DB_PTR  (1 << (RCSW_MODFLAGS_START + 5))
+#define RCSW_DS_LLIST_DB_PTR (1 << (RCSW_MODFLAGS_SHIFT + 5))
 
 /**
  * \brief Indicate that a \ref bstree should function as a red-black tree and
  * rebalance itself after insertions and deletions.
  */
-#define RCSW_DS_BSTREE_RB  (1 << (RCSW_MODFLAGS_START + 6))
+#define RCSW_DS_BSTREE_RB (1 << (RCSW_MODFLAGS_SHIFT + 6))
 
 /**
  * \brief Indicate that a \ref bstree should function as an interval tree.
@@ -111,7 +116,7 @@ enum ds_tag {
  * must also specify the correct element size for an interval during
  * initialization (this is not done automatically).
  */
-#define RCSW_DS_BSTREE_INT  (1 << (RCSW_MODFLAGS_START + 7))
+#define RCSW_DS_BSTREE_INT (1 << (RCSW_MODFLAGS_SHIFT + 7))
 
 /**
  * \brief Indicate that a \ref bstree should function as an Order
@@ -119,19 +124,19 @@ enum ds_tag {
  *
  * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed.
  */
-#define RCSW_DS_BSTREE_OS  (1 << (RCSW_MODFLAGS_START + 8))
+#define RCSW_DS_BSTREE_OS (1 << (RCSW_MODFLAGS_SHIFT + 8))
 
 /**
  * \brief Indicate that a \ref binheap should function as a min heap. If you do
  * not pass this flag, \ref binheap will function as a max heap.
  */
-#define RCSW_DS_BINHEAP_MIN  (1 << (RCSW_MODFLAGS_START + 9))
+#define RCSW_DS_BINHEAP_MIN (1 << (RCSW_MODFLAGS_SHIFT + 9))
 
 /**
  * \brief If you want to define additional flags for derived data structures,
  * start with this one to ensure no conflicts.
  */
-#define RCSW_DS_EXTFLAGS_START 10
+#define RCSW_DS_EXTFLAGS_SHIFT 10
 
 /*******************************************************************************
  * RCSW Private Functions
@@ -150,7 +155,7 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t
  */
-RCSW_LOCAL status_t ds_elt_swap(void *elt1, void *elt2, size_t elt_size);
+RCSW_LOCAL status_t ds_elt_swap(void* elt1, void* elt2, size_t elt_size);
 
 /**
  * \brief Calculate how large the chunk of memory for the metadata for a data
@@ -211,7 +216,7 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
 }
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Utility function to clear an element.
@@ -224,7 +229,7 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
  *
  * \return \ref status_t
  */
-RCSW_API status_t ds_elt_clear(void *elt, size_t elt_size);
+RCSW_API status_t ds_elt_clear(void* elt, size_t elt_size);
 
 /**
  * \brief Utility function to copy elt2 into elt1, overwriting.
@@ -238,6 +243,6 @@ RCSW_API status_t ds_elt_clear(void *elt, size_t elt_size);
  *
  * \return \ref status_t
  */
-RCSW_API status_t ds_elt_copy(void *elt1, const void *elt2, size_t elt_size);
+RCSW_API status_t ds_elt_copy(void* elt1, const void* elt2, size_t elt_size);
 
 END_C_DECLS

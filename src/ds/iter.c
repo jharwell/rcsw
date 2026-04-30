@@ -1,5 +1,5 @@
 /**
- * \file iter.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,174 +11,49 @@
  ******************************************************************************/
 #include "rcsw/ds/iter.h"
 
-#include "rcsw/common/fpc.h"
-#include "rcsw/ds/darray.h"
-#include "rcsw/ds/llist.h"
-#include "rcsw/ds/rbuffer.h"
+#include "rcsw/core/fpc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/*******************************************************************************
- * API Functions
- ******************************************************************************/
-struct ds_iterator*
-ds_iter_init(void* const ds, enum ds_tag tag, enum ds_iter_type type) {
-  RCSW_FPC_NV(NULL, ds != NULL);
+struct ds_iterator* ds_iter_init(struct ds_iterator*  iter,
+                                 void*                ds,
+                                 enum ds_iter_type    type,
+                                 const struct ds_ops* ops,
+                                 bool_t (*classify)(void* e)) {
+  RCSW_FPC_NV(NULL, iter != NULL, ds != NULL, ops != NULL, ops->next != NULL);
 
-  struct ds_iterator* iter = NULL;
-  switch (tag) {
-    case ekRCSW_DS_DARRAY: {
-      struct darray* da = ds;
-      iter = &da->iter;
-      iter->arr = ds;
-      if (ekITER_FORWARD == type) {
-        iter->index = 0;
-      } else if (ekITER_BACKWARD == type) {
-        iter->index = (int)darray_size(da) - 1;
-      }
-    } break;
-    case ekRCSW_DS_LLIST: {
-      struct llist* list = ds;
-      iter = &list->iter;
-      if (ekITER_FORWARD == type) {
-        iter->curr = list->first;
-      } else if (ekITER_BACKWARD == type) {
-        iter->curr = list->last;
-      }
-      iter->index = 0;
-    } break;
-    case ekRCSW_DS_RBUFFER: {
-      struct rbuffer* rb = ds;
-      iter = &rb->iter;
-      iter->rb = ds;
-      if (ekITER_FORWARD == type) {
-        iter->index = (int)rb->start;
-      } else if (ekITER_BACKWARD == type) {
-        iter->index = -1;
-      }
-    } break;
-    default:
-      return NULL;
-      break;
-  } /* switch() */
+  /* Backward iteration requires a prev callback. */
+  if (type == ekITER_BACKWARD) {
+    RCSW_FPC_NV(NULL, ops->prev != NULL);
+  }
 
-  iter->tag = tag;
-  iter->type = type;
-  iter->classify = NULL;
-
+  iter->ops       = ops;
+  iter->container = ds;
+  iter->type      = type;
+  iter->classify  = classify;
+  /*
+   * We do NOT set the cursor--that is the responsibility of the individual
+   * DS-specific wrappers
+   */
   return iter;
-} /* ds_iter_init() */
-
-struct ds_iterator*
-ds_filter_init(void* const ds, enum ds_tag tag, bool_t (*f)(void* e)) {
-  RCSW_FPC_NV(NULL, ds != NULL);
-
-  struct ds_iterator* iter = NULL;
-  switch (tag) {
-    case ekRCSW_DS_DARRAY: {
-      struct darray* da = ds;
-      iter = &da->iter;
-      iter->arr = ds;
-      iter->index = 0;
-    } break;
-    case ekRCSW_DS_LLIST: {
-      struct llist* list = ds;
-      iter = &list->iter;
-      iter->curr = list->first;
-      iter->index = 0;
-    } break;
-    case ekRCSW_DS_RBUFFER: {
-      struct rbuffer* rb = ds;
-      iter = &rb->iter;
-      iter->rb = ds;
-      iter->index = (int)rb->start;
-    } break;
-    default:
-      return NULL;
-      break;
-  } /* switch() */
-
-  iter->classify = f;
-  iter->tag = tag;
-  iter->type = ekITER_FORWARD;
-
-  return iter;
-} /* ds_filter_init() */
+}
 
 void* ds_iter_next(struct ds_iterator* const iter) {
   RCSW_FPC_NV(NULL, iter != NULL);
-  switch (iter->tag) {
-    case ekRCSW_DS_LLIST: {
-      LLIST_ITER(iter->list, iter->curr, next, curr) {
-        /* check for filtering */
-        if (iter->classify && !iter->classify(curr->data)) {
-          continue;
-        }
 
-        if (ekITER_FORWARD == iter->type) {
-          iter->curr = curr->next;
-        } else {
-          iter->curr = curr->prev;
-        }
-        return curr->data;
-      } /* LLIST_ITER() */
-    } break;
-    case ekRCSW_DS_DARRAY:
-      if (ekITER_FORWARD == iter->type) {
-        while ((size_t)iter->index < iter->arr->current) {
-          if (iter->classify &&
-              !iter->classify(darray_data_get(iter->arr, (size_t)iter->index))) {
-            iter->index++;
-            continue;
-          }
-          return darray_data_get(iter->arr, (size_t)iter->index++);
-        } /* while() */
-      } else {
-        while (iter->index >= 0) {
-          if (iter->classify &&
-              !iter->classify(darray_data_get(iter->arr, (size_t)iter->index))) {
-            iter->index--;
-            continue;
-          }
-          return darray_data_get(iter->arr, (size_t)iter->index--);
-        } /* while() */
-      }
-      break;
-    case ekRCSW_DS_RBUFFER:
-      if (ekITER_FORWARD == iter->type) {
-        size_t idx = (iter->rb->start + (size_t)iter->index) % iter->rb->max_elts;
+  void* (*advance)(struct ds_iterator*) =
+    (iter->type == ekITER_FORWARD) ? iter->ops->next : iter->ops->prev;
 
-        while ((size_t)iter->index < iter->rb->current) {
-          if (iter->classify &&
-              !iter->classify(rbuffer_data_get(iter->rb, idx))) {
-            iter->index++;
-            continue;
-          }
-          iter->index++;
-          return rbuffer_data_get(iter->rb, idx);
-        } /* while() */
-      } else {
-        while (iter->index != (int)iter->rb->start) {
-          if (-1 == iter->index) {
-            iter->index = (int)iter->rb->start;
-          }
-          iter->index = (int)(((size_t)iter->index + rbuffer_size(iter->rb) - 1) %
-                              rbuffer_size(iter->rb));
-          if (iter->classify &&
-              !iter->classify(rbuffer_data_get(iter->rb, (size_t)iter->index))) {
-            continue;
-          }
-          return rbuffer_data_get(iter->rb, (size_t)iter->index);
-        } /* while() */
-      }
-      break;
-    default:
-      break;
-  } /* switch() */
-
+  void* e;
+  while ((e = advance(iter)) != NULL) {
+    if (iter->classify == NULL || iter->classify(e)) {
+      return e;
+    }
+    /* element did not pass the filter — keep advancing */
+  }
   return NULL;
 } /* ds_iter_next() */
 

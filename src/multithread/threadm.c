@@ -1,5 +1,5 @@
 /**
- * \file threadm.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -17,16 +17,14 @@
 #include <pthread.h>
 #include <sched.h>
 
-#include "rcsw/rcsw.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/*******************************************************************************
- * Functions
- ******************************************************************************/
 status_t threadm_core_lock(pthread_t thread, size_t core) {
   cpu_set_t cpuset;
 

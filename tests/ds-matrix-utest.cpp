@@ -23,14 +23,14 @@
  * Test Helper Functions
  ******************************************************************************/
 template <typename T>
-static void test_runner(void (*test)(struct matrix_params* params)) {
-  struct matrix_params params;
-  memset(&params, 0, sizeof(matrix_params));
-  params.elt_size = sizeof(T);
-  params.n_cols   = TH_NUM_ITEMS;
-  params.n_rows   = TH_NUM_ITEMS;
-  params.printe   = th::printe<T>;
-  CATCH_REQUIRE(th::ds_init(&params) == OK);
+static void test_runner(void (*test)(struct matrix_config* config)) {
+  struct matrix_config config;
+  memset(&config, 0, sizeof(matrix_config));
+  config.elt_size = sizeof(T);
+  config.n_cols   = TH_NUM_ITEMS;
+  config.n_rows   = TH_NUM_ITEMS;
+  config.printe   = th::printe<T>;
+  CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -47,10 +47,10 @@ static void test_runner(void (*test)(struct matrix_params* params)) {
 
       for (size_t k = 1; k <= TH_NUM_ITEMS; ++k) {
         for (size_t m = 1; m <= TH_NUM_ITEMS; ++m) {
-          params.n_cols = k;
-          params.n_rows = m;
-          params.flags  = applied;
-          test(&params);
+          config.n_cols = k;
+          config.n_rows = m;
+          config.flags  = applied;
+          test(&config);
         } /* for(m..) */
       } /* for(k..) */
 
@@ -58,33 +58,33 @@ static void test_runner(void (*test)(struct matrix_params* params)) {
     } /* for(j..) */
   } /* for(i..) */
 
-  th::ds_shutdown(&params);
+  th::ds_shutdown(&config);
 } /* test_runner() */
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void addremove_test(struct matrix_params* params) {
+static void addremove_test(struct matrix_config* config) {
   struct matrix* matrix;
   struct matrix  mymatrix;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    CATCH_REQUIRE(nullptr == matrix_init(NULL, params));
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    CATCH_REQUIRE(nullptr == matrix_init(NULL, config));
   }
-  matrix = matrix_init(&mymatrix, params);
+  matrix = matrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
   CATCH_REQUIRE(nullptr != matrix);
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             params->n_rows * params->n_cols);
-  for (size_t i = 0; i < params->n_rows; ++i) {
-    for (size_t j = 0; j < params->n_cols; ++j) {
+                             config->n_rows * config->n_cols);
+  for (size_t i = 0; i < config->n_rows; ++i) {
+    for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j), sizeof(T)));
+      CATCH_REQUIRE(utils_zchk(matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -92,23 +92,23 @@ static void addremove_test(struct matrix_params* params) {
 }
 
 template <typename T>
-static void transpose_test(struct matrix_params* params) {
+static void transpose_test(struct matrix_config* config) {
   struct matrix* matrix;
   struct matrix  mymatrix;
 
-  matrix = matrix_init(&mymatrix, params);
+  matrix = matrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             params->n_rows * params->n_cols);
+                             config->n_rows * config->n_cols);
 
-  for (size_t i = 0; i < params->n_rows; ++i) {
-    for (size_t j = 0; j < params->n_cols; ++j) {
+  for (size_t i = 0; i < config->n_rows; ++i) {
+    for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == matrix_set(matrix, i, j, &val));
       CATCH_REQUIRE(0 == memcmp(&val, matrix_access(matrix, i, j), sizeof(T)));
       CATCH_REQUIRE(OK == matrix_elt_clear(matrix, i, j));
-      CATCH_REQUIRE(util_zchk(matrix_access(matrix, i, j), sizeof(T)));
+      CATCH_REQUIRE(utils_zchk(matrix_access(matrix, i, j), sizeof(T)));
     } /* for(j..) */
   } /* for(..) */
 
@@ -117,8 +117,8 @@ static void transpose_test(struct matrix_params* params) {
   } else {
     CATCH_REQUIRE(OK == matrix_transpose(matrix));
 
-    for (size_t i = 0; i < params->n_rows; ++i) {
-      for (size_t j = 0; j < params->n_cols; ++j) {
+    for (size_t i = 0; i < config->n_rows; ++i) {
+      for (size_t j = 0; j < config->n_cols; ++j) {
         T* e1 = (T*)matrix_access(matrix, i, j);
         T* e2 = (T*)matrix_access(matrix, j, i);
 
@@ -133,18 +133,18 @@ static void transpose_test(struct matrix_params* params) {
 }
 
 template <typename T>
-static void print_test(struct matrix_params* params) {
+static void print_test(struct matrix_config* config) {
   struct matrix* matrix;
   struct matrix  mymatrix;
 
-  matrix = matrix_init(&mymatrix, params);
+  matrix = matrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             params->n_rows * params->n_cols);
+                             config->n_rows * config->n_cols);
 
-  for (size_t i = 0; i < params->n_rows; ++i) {
-    for (size_t j = 0; j < params->n_cols; ++j) {
+  for (size_t i = 0; i < config->n_rows; ++i) {
+    for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(OK == matrix_set(matrix, i, j, &val));
     } /* for(j..) */

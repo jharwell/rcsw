@@ -1,5 +1,5 @@
 /**
- * \file adj_matrix.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -9,37 +9,36 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/adj_matrix.h"
+#include "rcsw/ds/adjmatrix.h"
 
-#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "adj_matrix")
-#define RCSW_ER_MODID ekLOG4CL_DS_ADJ_MATRIX
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "adjmatrix")
+#define RCSW_ER_MODID ekLOG4CL_DS_ADJMATRIX
+#include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Static Functions
  ******************************************************************************/
 BEGIN_C_DECLS
-static void adj_matrix_printeu(const void* const e) {
+static void adjmatrix_printeu(const void* const e) {
   DPRINTF("%d", *(const int*)e);
-} /* adj_matrix_printeu() */
+} /* adjmatrix_printeu() */
 
-static void adj_matrix_printew(const void* const e) {
+static void adjmatrix_printew(const void* const e) {
   DPRINTF("%f", *(const double*)e);
-} /* adj_matrix_printew() */
+} /* adjmatrix_printew() */
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct adj_matrix*
-adj_matrix_init(struct adj_matrix* const matrix_in,
-                const struct adj_matrix_params* const params) {
+struct adjmatrix* adjmatrix_init(struct adjmatrix* const              matrix_in,
+                                 const struct adjmatrix_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
   RCSW_ER_MODULE_INIT();
 
-  struct adj_matrix* matrix = rcsw_alloc(matrix_in,
-                                         sizeof(struct adj_matrix),
-                                         params->flags & RCSW_NOALLOC_HANDLE);
+  struct adjmatrix* matrix = rcsw_alloc(matrix_in,
+                                        sizeof(struct adjmatrix),
+                                        params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
@@ -50,12 +49,12 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
   }
   matrix->is_weighted = params->is_weighted;
   matrix->is_directed = params->is_directed;
-  matrix->n_vertices = params->n_vertices;
-  matrix->n_edges = 0;
+  matrix->n_vertices  = params->n_vertices;
+  matrix->n_edges     = 0;
 
-  struct matrix_params mat_params = {
-    .n_rows = params->n_vertices,
-    .n_cols = params->n_vertices,
+  struct matrix_config mat_params = {
+    .n_rows   = params->n_vertices,
+    .n_cols   = params->n_vertices,
     .elements = params->elements,
     .elt_size = matrix->elt_size,
     /*
@@ -65,9 +64,9 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
     .flags = params->flags | RCSW_NOALLOC_HANDLE,
   };
   if (matrix->is_weighted) {
-    mat_params.printe = adj_matrix_printew;
+    mat_params.printe = adjmatrix_printew;
   } else {
-    mat_params.printe = adj_matrix_printeu;
+    mat_params.printe = adjmatrix_printeu;
   }
   RCSW_CHECK(NULL != matrix_init(&matrix->matrix, &mat_params));
 
@@ -89,20 +88,18 @@ adj_matrix_init(struct adj_matrix* const matrix_in,
   return matrix;
 
 error:
-  adj_matrix_destroy(matrix);
+  adjmatrix_destroy(matrix);
   return NULL;
-} /* adj_matrix_init() */
+} /* adjmatrix_init() */
 
-void adj_matrix_destroy(struct adj_matrix* const matrix) {
+void adjmatrix_destroy(struct adjmatrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
   matrix_destroy(&matrix->matrix);
 
   rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
-} /* adj_matrix_destroy() */
+} /* adjmatrix_destroy() */
 
-status_t adj_matrix_edge_addu(struct adj_matrix* const matrix,
-                                     size_t u,
-                                     size_t v) {
+status_t adjmatrix_edge_addu(struct adjmatrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               !matrix->is_directed,
@@ -121,12 +118,12 @@ status_t adj_matrix_edge_addu(struct adj_matrix* const matrix,
 
 error:
   return ERROR;
-} /* adj_matrix_edge_addu() */
+} /* adjmatrix_edge_addu() */
 
-status_t adj_matrix_edge_addd(struct adj_matrix* const matrix,
-                              size_t u,
-                              size_t v,
-                              const double* const w) {
+status_t adjmatrix_edge_addd(struct adjmatrix* const matrix,
+                             size_t                  u,
+                             size_t                  v,
+                             const double* const     w) {
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               matrix->is_directed,
@@ -145,11 +142,11 @@ status_t adj_matrix_edge_addd(struct adj_matrix* const matrix,
 
 error:
   return ERROR;
-} /* adj_matrix_edge_addd() */
+} /* adjmatrix_edge_addd() */
 
-status_t adj_matrix_edge_remove(struct adj_matrix* const matrix,
-                                       size_t u,
-                                       size_t v) {
+status_t adjmatrix_edge_remove(struct adjmatrix* const matrix,
+                               size_t                  u,
+                               size_t                  v) {
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               u < matrix->n_vertices,
@@ -178,6 +175,6 @@ status_t adj_matrix_edge_remove(struct adj_matrix* const matrix,
 
 error:
   return ERROR;
-} /* adj_matrix_edge_remove() */
+} /* adjmatrix_edge_remove() */
 
 END_C_DECLS

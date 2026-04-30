@@ -1,11 +1,12 @@
-/**
- * \file checksum.h
- * \ingroup utils
- * \brief Checksumming functions for embedded applications.
+/** * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup utils
+ *
+ * \brief Checksumming functions for embedded applications.
  */
 
 #pragma once
@@ -13,10 +14,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -29,9 +31,9 @@ BEGIN_C_DECLS
  *
  * \return Computed 8-bit checksum
  */
-RCSW_API uint8_t xchks8(const uint8_t * buf,
-                        size_t n_bytes,
-                        uint8_t seed) RCSW_PURE;
+RCSW_API uint8_t utils_xchks8(const uint8_t* buf,
+                              size_t         n_bytes,
+                              uint8_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute an 16-bit checksum (XOR, rotate)
@@ -44,9 +46,9 @@ RCSW_API uint8_t xchks8(const uint8_t * buf,
  *
  * \return computed 16-bit checksum
  */
-RCSW_API uint16_t xchks16(const uint16_t * buf,
-                          size_t n_bytes,
-                          uint16_t seed) RCSW_PURE;
+RCSW_API uint16_t utils_xchks16(const uint16_t* buf,
+                                size_t          n_bytes,
+                                uint16_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute an 32-bit checksum (XOR, rotate)
@@ -59,9 +61,9 @@ RCSW_API uint16_t xchks16(const uint16_t * buf,
  *
  * \return Computed 32-bit checksum
  */
-RCSW_API uint32_t xchks32(const uint32_t * buf,
-                          size_t n_bytes,
-                          uint32_t seed) RCSW_PURE;
+RCSW_API uint32_t utils_xchks32(const uint32_t* buf,
+                                size_t          n_bytes,
+                                uint32_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute an 8-bit checksum (add-ignore-carry)
@@ -72,14 +74,14 @@ RCSW_API uint32_t xchks32(const uint32_t * buf,
  *
  * \return computed 8-bit checksum
  */
-RCSW_API uint8_t achks8(const uint8_t * buf,
-                        size_t n_bytes,
-                        uint8_t seed) RCSW_PURE;
+RCSW_API uint8_t utils_achks8(const uint8_t* buf,
+                              size_t         n_bytes,
+                              uint8_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute an 16-bit checksum (add-ignore-carry)
  *
- * Both buf and n_bytes must be 16-bit aligned, or no action is performed
+ * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
@@ -87,14 +89,14 @@ RCSW_API uint8_t achks8(const uint8_t * buf,
  *
  * \return computed 16-bit checksum
  */
-RCSW_API uint16_t achks16(const uint16_t * buf,
-                          size_t n_bytes,
-                          uint16_t seed) RCSW_PURE;
+RCSW_API uint16_t utils_achks16(const uint16_t* buf,
+                                size_t          n_bytes,
+                                uint16_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute an 32-bit checksum (add-ignore-carry)
  *
- * Both buf and n_bytes must be 16-bit aligned, or no action is performed
+ * Both buf and n_bytes must be 32-bit aligned, or no action is performed.
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
@@ -102,9 +104,9 @@ RCSW_API uint16_t achks16(const uint16_t * buf,
  *
  * \return computed 32-bit checksum
  */
-RCSW_API uint32_t achks32(const uint32_t * buf,
-                          size_t n_bytes,
-                          uint32_t seed) RCSW_PURE;
+RCSW_API uint32_t utils_achks32(const uint32_t* buf,
+                                size_t          n_bytes,
+                                uint32_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute a 16-bit checksum (add-ignore-carry) over 8-bit values
@@ -115,9 +117,9 @@ RCSW_API uint32_t achks32(const uint32_t * buf,
  *
  * \return computed 16-bit checksum
  */
-RCSW_API uint16_t achks8_16(const uint8_t * buf,
-                            size_t n_bytes,
-                            uint8_t seed) RCSW_PURE;
+RCSW_API uint16_t utils_achks8_16(const uint8_t* buf,
+                                  size_t         n_bytes,
+                                  uint8_t        seed) RCSW_PURE;
 
 /**
  * \brief Compute a 32-bit CRC using the work of Gary S. Brown
@@ -165,12 +167,14 @@ RCSW_API uint16_t achks8_16(const uint8_t * buf,
  *
  * \return The CRC
  */
-RCSW_API uint32_t crc32_brown(const uint8_t * buf, uint32_t crc, size_t size);
+RCSW_API uint32_t utils_crc32_brown(const uint8_t* buf,
+                                    size_t         size,
+                                    uint32_t       crc);
 
 /**
  * \brief Initialize Ethernet 32 bit CRC lookup table
  */
-RCSW_API void crc32_ethl_init(void);
+RCSW_API void utils_crc32_ethl_init(void);
 
 /**
  *
@@ -181,12 +185,12 @@ RCSW_API void crc32_ethl_init(void);
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
  *
- * You have to call crc32_eth1_init() first, CRC will be wrong
+ * You have to call \ref utils_crc32_ethl_init() first, CRC will be wrong
  *
  * \return CRC of data
  *
  */
-RCSW_API uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
+RCSW_API uint32_t utils_crc32_ethl(const uint8_t* buf, size_t n_bytes);
 
 /**
  *
@@ -194,7 +198,7 @@ RCSW_API uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
  *
  * According to the standard, the CRC is:
  * - 32 bits
- * - The polynomial used to build lookup table is 0x04G11DB7,
+ * - The polynomial used to build lookup table is 0x04C11DB7,
  * - Initial remainder 0xFFFFFFFF
  * - 8 bit reflected input at EACH stage of the CRC calculation,
  * - Final 32 bit remainder reflected and THEN XORed with 0xFFFFFFFF
@@ -204,6 +208,6 @@ RCSW_API uint32_t crc32_ethl(const uint8_t * buf, size_t n_bytes);
  *
  * \return CRC of data
  */
-RCSW_API uint32_t crc32_eth(const uint8_t * buf, size_t n_bytes) RCSW_PURE;
+RCSW_API uint32_t utils_crc32_eth(const uint8_t* buf, size_t n_bytes) RCSW_PURE;
 
 END_C_DECLS

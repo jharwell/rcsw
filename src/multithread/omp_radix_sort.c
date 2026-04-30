@@ -1,5 +1,5 @@
 /**
- * \file omp_radix_sort.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,18 +12,22 @@
 #include "rcsw/multithread/omp_radix_sort.h"
 
 #include <omp.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt")
 #define RCSW_ER_MODID ekLOG4CL_MT_RADIX
-#include "rcsw/er/client.h"
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/common/alloc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private API
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Perform a single step of the radix sort algorithm; that is, sort the
  * next digit.
@@ -35,49 +39,45 @@
  * \return \ref status_t.
  */
 static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
-                                      int digit);
-static void
-omp_radix_sorter_first_touch_alloc(struct omp_radix_sorter* const sorter);
-
-BEGIN_C_DECLS
+                                      int                            digit);
+static void     omp_radix_sorter_first_touch_alloc(
+      struct omp_radix_sorter* const sorter);
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct omp_radix_sorter*
-omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
+struct omp_radix_sorter* omp_radix_sorter_init(
+  const struct omp_radix_sorter_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params, NULL != params->data, params->base > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct omp_radix_sorter* sorter = rcsw_alloc(NULL,
-                                               sizeof(struct omp_radix_sorter),
-                                               RCSW_NONE);
+  struct omp_radix_sorter* sorter =
+    rcsw_alloc(NULL, sizeof(struct omp_radix_sorter), RCSW_NONE);
   RCSW_CHECK_PTR(sorter);
 
-  sorter->n_elts = params->n_elts;
-  sorter->base = params->base;
-  sorter->n_threads = params->n_threads;
-  sorter->chunk_size = sorter->n_elts / sorter->n_threads;
+  sorter->n_elts          = params->n_elts;
+  sorter->base            = params->base;
+  sorter->n_threads       = params->n_threads;
+  sorter->chunk_size      = sorter->n_elts / sorter->n_threads;
   sorter->cum_prefix_sums = NULL;
-  sorter->data = NULL;
+  sorter->data            = NULL;
 
   /*
    * Allocate memory. Make the FIFOs use a contiguous chunk of memory, rather
    * than each malloc()ing their own, to improve cache efficiency.
    */
-  sorter->bins = rcsw_alloc(NULL,
-                            sizeof(struct fifo) * sorter->n_threads * sorter->base,
-                            RCSW_NONE);
+  sorter->bins =
+    rcsw_alloc(NULL,
+               sizeof(struct fifo) * sorter->n_threads * sorter->base,
+               RCSW_NONE);
   RCSW_CHECK_PTR(sorter->bins);
-  sorter->data = rcsw_alloc(NULL,
-                            sizeof(size_t) * sorter->n_elts,
-                            RCSW_NONE);
+  sorter->data = rcsw_alloc(NULL, sizeof(size_t) * sorter->n_elts, RCSW_NONE);
   RCSW_CHECK_PTR(sorter->data);
 
-  struct fifo_params impl_params = { .elt_size = sizeof(size_t),
-                                   .max_elts = sorter->chunk_size,
-                                   .elements = NULL,
-                                   .flags = RCSW_NOALLOC_HANDLE };
+  struct fifo_config impl_params = {.elt_size = sizeof(size_t),
+                                    .max_elts = sorter->chunk_size,
+                                    .elements = NULL,
+                                    .flags    = RCSW_NOALLOC_HANDLE};
   for (size_t i = 0; i < sorter->n_threads; ++i) {
     for (size_t j = 0; j < sorter->base; ++j) {
       RCSW_CHECK(NULL !=
@@ -85,9 +85,10 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
     } /* for(j..) */
   } /* for(i..) */
 
-  sorter->cum_prefix_sums = rcsw_alloc(NULL,
-                                       sizeof(size_t) * sorter->base * sorter->n_threads,
-                                       RCSW_NONE);
+  sorter->cum_prefix_sums =
+    rcsw_alloc(NULL,
+               sizeof(size_t) * sorter->base * sorter->n_threads,
+               RCSW_NONE);
   RCSW_CHECK_PTR(sorter->cum_prefix_sums);
 
   /* perform first touch allocation */
@@ -99,16 +100,16 @@ omp_radix_sorter_init(const struct omp_radix_sorter_params* const params) {
   } /* for(i..) */
 
   ER_DEBUG("n_threads=%zu n_elts=%zu chunk_size=%zu base=%zu",
-       sorter->n_threads,
-       sorter->n_elts,
-       sorter->chunk_size,
-       sorter->base);
+           sorter->n_threads,
+           sorter->n_elts,
+           sorter->chunk_size,
+           sorter->base);
   return sorter;
 
 error:
   omp_radix_sorter_destroy(sorter);
   return NULL;
-} /* omp_radix_sorter_init() */
+}
 
 void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter) {
   RCSW_FPC_V(NULL != sorter);
@@ -117,15 +118,15 @@ void omp_radix_sorter_destroy(struct omp_radix_sorter* const sorter) {
     for (size_t i = 0; i < sorter->base * sorter->n_threads; ++i) {
       fifo_destroy(&sorter->bins[i]);
     } /* for(i..) */
-    free(sorter->bins);
+    rcsw_free(sorter->bins, RCSW_NONE);
   }
   if (sorter->cum_prefix_sums) {
-    free(sorter->cum_prefix_sums);
+    rcsw_free(sorter->cum_prefix_sums, RCSW_NONE);
   }
   if (sorter->data) {
-    free(sorter->data);
+    rcsw_free(sorter->data, RCSW_NONE);
   }
-  free(sorter);
+  rcsw_free(sorter, RCSW_NONE);
 } /* omp_radix_sorter_destroy() */
 
 status_t omp_radix_sorter_exec(struct omp_radix_sorter* const sorter) {
@@ -152,7 +153,7 @@ error:
  * Static Functions
  ******************************************************************************/
 static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
-                                      int digit) {
+                                      int                            digit) {
   RCSW_FPC_NV(ERROR, NULL != sorter, sorter->base > 0);
 
   ER_INFO("Radix sort digit %d", digit);
@@ -169,7 +170,7 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
 #pragma omp parallel for num_threads(sorter->n_threads) schedule(static)
   for (size_t i = 0; i < sorter->n_elts; ++i) {
     fifo_add(sorter->bins + (i / sorter->chunk_size) * sorter->base +
-             ((sorter->data[i] / (size_t)digit) % sorter->base),
+               ((sorter->data[i] / (size_t)digit) % sorter->base),
              sorter->data + i);
   } /* for(i..) */
   ER_DEBUG("Finished sorting digit %d", digit);
@@ -180,20 +181,19 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
    */
   for (size_t i = 1; i < sorter->n_threads; ++i) {
     sorter->cum_prefix_sums[i * sorter->base] =
-        sorter->cum_prefix_sums[(i - 1) * sorter->base] +
-        fifo_size(&sorter->bins[(i - 1) * sorter->base]);
+      sorter->cum_prefix_sums[(i - 1) * sorter->base] +
+      fifo_size(&sorter->bins[(i - 1) * sorter->base]);
   } /* for(i..) */
 
   /* Calculate all prefix sums for remaining symbols */
   for (size_t j = 1; j < sorter->base; ++j) {
     sorter->cum_prefix_sums[j] =
-        sorter->cum_prefix_sums[(sorter->n_threads - 1) * sorter->base + j - 1] +
-        fifo_size(
-            &sorter->bins[(sorter->n_threads - 1) * sorter->base + j - 1]);
+      sorter->cum_prefix_sums[(sorter->n_threads - 1) * sorter->base + j - 1] +
+      fifo_size(&sorter->bins[(sorter->n_threads - 1) * sorter->base + j - 1]);
     for (size_t i = 1; i < sorter->n_threads; ++i) {
       sorter->cum_prefix_sums[j + i * sorter->base] =
-          sorter->cum_prefix_sums[j + (i - 1) * sorter->base] +
-          fifo_size(&sorter->bins[j + (i - 1) * sorter->base]);
+        sorter->cum_prefix_sums[j + (i - 1) * sorter->base] +
+        fifo_size(&sorter->bins[j + (i - 1) * sorter->base]);
     } /* for(i..) */
   } /* for(j..) */
 
@@ -203,20 +203,21 @@ static status_t omp_radix_sorter_step(struct omp_radix_sorter* const sorter,
 #pragma omp parallel for num_threads(sorter->n_threads) schedule(static)
   for (size_t j = 0; j < sorter->n_threads; ++j) {
     for (size_t i = 0; i < sorter->base; ++i) {
-      struct fifo* f = &sorter->bins[j * sorter->base + i];
-      size_t n_elts = 0;
+      struct fifo* f      = &sorter->bins[j * sorter->base + i];
+      size_t       n_elts = 0;
       while (!fifo_isempty(f)) {
-        fifo_remove(f,
-                    &sorter->data[sorter->cum_prefix_sums[j * sorter->base + i] +
-                                  n_elts++]);
+        fifo_remove(
+          f,
+          &sorter
+             ->data[sorter->cum_prefix_sums[j * sorter->base + i] + n_elts++]);
       } /* while() */
     } /* for(i..) */
   } /* for(j..) */
   return OK;
 } /* omp_radix_sorter_step() */
 
-static void
-omp_radix_sorter_first_touch_alloc(struct omp_radix_sorter* const sorter) {
+static void omp_radix_sorter_first_touch_alloc(
+  struct omp_radix_sorter* const sorter) {
 #pragma omp parallel for num_threads(sorter->n_threads)
   for (size_t i = 0; i < sorter->n_elts; ++i) {
     sorter->data[i] = 0;

@@ -1,5 +1,5 @@
 /**
- * \file hash.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/utils/hash.h"
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
@@ -22,53 +22,52 @@
 #define FNV_OFFSET_BASIS 2166136261U
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-uint32_t hash_default(const void* const data, size_t len) {
-  RCSW_FPC_NV(0, NULL != data, len > 0);
+status_t utils_hash_default(const void* const data, size_t len, uint32_t* hash) {
+  RCSW_FPC_NV(ERROR, NULL != data, len > 0, NULL != hash);
 
   const unsigned char* const key = data;
-  uint32_t hash = 0;
+  *hash                          = 0;
 
   for (size_t i = 0; i < len; ++i) {
-    hash += key[i];
-    hash += (hash << 10);
-    hash ^= (hash >> 6);
+    *hash += key[i];
+    *hash += (*hash << 10);
+    *hash ^= (*hash >> 6);
   } /* for(i...) */
 
-  hash += (hash << 3);
-  hash ^= (hash >> 11);
-  hash += (hash << 15);
+  *hash += (*hash << 3);
+  *hash ^= (*hash >> 11);
+  *hash += (*hash << 15);
 
-  return hash;
-} /* hash_default()  */
+  return OK;
+}
 
-uint32_t hash_fnv1a(const void* const data, size_t len) {
-  RCSW_FPC_NV(0, NULL != data, len > 0);
+status_t utils_hash_fnv1a(const void* const data, size_t len, uint32_t* hash) {
+  RCSW_FPC_NV(ERROR, NULL != data, len > 0, NULL != hash);
   const unsigned char* const key = data;
-  uint32_t hash = FNV_OFFSET_BASIS;
+  *hash                          = FNV_OFFSET_BASIS;
 
   for (size_t i = 0; i < len; i++) {
-    hash ^= key[i];
-    hash *= FNV_PRIME;
+    *hash ^= key[i];
+    *hash *= FNV_PRIME;
   }
-  return hash;
-} /* hash_fnv1a() */
+  return OK;
+}
 
-uint32_t hash_djb(const void* const data, size_t len) {
-  RCSW_FPC_NV(0, NULL != data, len > 0);
+status_t utils_hash_djb(const void* const data, size_t len, uint32_t* hash) {
+  RCSW_FPC_NV(ERROR, NULL != data, len > 0);
 
   const unsigned char* const key = data;
-  uint32_t hash = 5381;
-  size_t i;
+  *hash                          = 5381;
 
-  for (i = 0; i < len; i++) {
-    hash = ((hash << 5) + hash) + key[i]; /* hash * 33 + c */
+  for (size_t i = 0; i < len; i++) {
+    *hash = ((*hash << 5) + *hash) + key[i]; /* hash * 33 + c */
   }
 
-  return hash;
-} /* hash_djb() */
+  return OK;
+}
 
 END_C_DECLS

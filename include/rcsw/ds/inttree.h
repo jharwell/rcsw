@@ -1,13 +1,11 @@
 /**
- * \file inttree.h
- * \ingroup ds
- * \brief Implementation of interval tree data structure.
- *
- * Built on top of the \ref bstree module.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -16,7 +14,6 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/bstree.h"
-
 
 /*******************************************************************************
  * Macros
@@ -27,7 +24,7 @@
 #define RCSW_INTTREE_ROOT(tree) ((struct inttree_node*)RCSW_BSTREE_ROOT(tree))
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \struct inttree
@@ -43,9 +40,9 @@
  * Must be packed and aligned to the same size as \ref dptr_t so that casts from
  * \ref inttree_node.data are safe on all targets.
  */
-struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) interval_data  {
-    int32_t high;
-    int32_t low;
+struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) interval_data {
+  int32_t high;
+  int32_t low;
 };
 
 /**
@@ -57,18 +54,18 @@ struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) interval_data  {
   Must be packed and aligned to the same size as \ref dptr_t so that casts from
  * \ref inttree_node.data are safe on all targets.
  */
-struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) inttree_node {
-    uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-    dptr_t *data;
-    struct inttree_node *left;
-    struct inttree_node *right;
-    struct inttree_node *parent;
-    bool_t red;
+struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) inttree_node {
+  uint8_t              key[RCSW_BSTREE_NODE_KEYSIZE];
+  dptr_t*              data;
+  struct inttree_node* left;
+  struct inttree_node* right;
+  struct inttree_node* parent;
+  bool_t               red;
 
-    /**
-     * This field is the largest HIGH value of the subtree rooted at this node.
-     */
-    int32_t max_high;
+  /**
+   * This field is the largest HIGH value of the subtree rooted at this node.
+   */
+  int32_t max_high;
 };
 
 /*******************************************************************************
@@ -93,13 +90,13 @@ RCSW_LOCAL void inttree_high_fixup(const struct bstree* tree,
                                    struct inttree_node* node);
 
 /*******************************************************************************
- * API Functions
-*
-* There are other bstree functions that you can use besides these; however,
-* given that you are using an Interval tree, these are really the only
-* operations you should be doing (besides insert/delete). I don't wrap the
-* whole bstree API here for that reason.
-*
+ * Public API
+ *
+ * There are other bstree functions that you can use besides these; however,
+ * given that you are using an Interval tree, these are really the only
+ * operations you should be doing (besides insert/delete). I don't wrap the
+ * whole bstree API here for that reason.
+ *
  ******************************************************************************/
 
 BEGIN_C_DECLS
@@ -111,7 +108,7 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t inttree_isfull(const struct bstree* const tree) {
-    return bstree_isfull(tree);
+  return bstree_isfull(tree);
 }
 
 /**
@@ -122,7 +119,7 @@ static inline bool_t inttree_isfull(const struct bstree* const tree) {
  * \return \ref bool_t
  */
 static inline bool_t inttree_isempty(const struct bstree* const tree) {
-    return bstree_isempty(tree);
+  return bstree_isempty(tree);
 }
 
 /**
@@ -133,7 +130,7 @@ static inline bool_t inttree_isempty(const struct bstree* const tree) {
  * \return The # of elements, or 0 on error.
  */
 static inline size_t inttree_size(const struct bstree* const tree) {
-    return bstree_size(tree);
+  return bstree_size(tree);
 }
 
 /**
@@ -146,7 +143,7 @@ static inline size_t inttree_size(const struct bstree* const tree) {
  * \return The total # of bytes the application would need to allocate
  */
 static inline size_t inttree_element_space(size_t max_elts) {
-    return bstree_element_space(max_elts, sizeof(struct interval_data));
+  return bstree_element_space(max_elts, sizeof(struct interval_data));
 }
 
 /**
@@ -160,15 +157,15 @@ static inline size_t inttree_element_space(size_t max_elts) {
  * \return The # of bytes required
  */
 static inline size_t inttree_meta_space(size_t max_elts) {
-    return bstree_meta_space(max_elts);
+  return bstree_meta_space(max_elts);
 }
 
 /**
  * \brief \see bstree_delete()
  */
-static inline status_t inttree_delete(struct bstree* tree,
-                                     struct inttree_node* victim,
-                                     void* elt) {
+static inline status_t inttree_delete(struct bstree*       tree,
+                                      struct inttree_node* victim,
+                                      void*                elt) {
   return bstree_delete(tree, (struct bstree_node*)victim, elt);
 }
 
@@ -182,15 +179,14 @@ static inline status_t inttree_remove(struct bstree* tree, const void* key) {
 /**
  * \brief \see bstree_insert_internal()
  */
-RCSW_API status_t inttree_insert(struct bstree* tree,
+RCSW_API status_t inttree_insert(struct bstree*        tree,
                                  struct interval_data* interval);
 
 /**
  * \brief \see bstree_init_internal()
  */
-RCSW_API struct bstree* inttree_init(struct bstree* const tree_in,
-                                     struct bstree_params* const params);
-
+RCSW_API struct bstree* inttree_init(struct bstree* const        tree_in,
+                                     struct bstree_config* const params);
 
 /**
  * \brief Determine if the given interval overlaps any in the \ref inttree.
@@ -206,9 +202,8 @@ RCSW_API struct bstree* inttree_init(struct bstree* const tree_in,
  * or an error occurred.
  */
 RCSW_API struct inttree_node* inttree_overlap_search(
-    const struct bstree * tree,
-    struct inttree_node * root,
-    const struct interval_data * interval);
-
+  const struct bstree*        tree,
+  struct inttree_node*        root,
+  const struct interval_data* interval);
 
 END_C_DECLS

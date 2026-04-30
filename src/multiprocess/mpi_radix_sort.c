@@ -1,5 +1,5 @@
 /**
- * \file mpi_radix_sort.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,17 +12,19 @@
 #include "rcsw/multiprocess/mpi_radix_sort.h"
 
 #include <mpi.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mp")
 #define RCSW_ER_MODID ekLOG4CL_MULTIPROCESS
 #include "rcsw/algorithm/algorithm.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -37,54 +39,48 @@ BEGIN_C_DECLS
  * \return \ref status_t.
  */
 static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
-                                      int digit);
+                                      int                            digit);
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct mpi_radix_sorter*
-mpi_radix_sorter_init(const struct mpi_radix_sorter_params* const params) {
-  RCSW_FPC_NV(NULL, NULL != params, NULL != params->data);
+struct mpi_radix_sorter* mpi_radix_sorter_init(
+  const struct mpi_radix_sorter_config* const config) {
+  RCSW_FPC_NV(NULL, NULL != config, NULL != config->data);
   RCSW_ER_MODULE_INIT();
 
   /* All MPI processes perform the same basic initialization */
-  struct mpi_radix_sorter* sorter = rcsw_alloc(NULL,
-                                               sizeof(struct mpi_radix_sorter),
-                                               RCSW_NONE);
+  struct mpi_radix_sorter* sorter =
+    rcsw_alloc(NULL, sizeof(struct mpi_radix_sorter), RCSW_NONE);
 
   RCSW_CHECK_PTR(sorter);
-  sorter->n_elts = params->n_elts;
-  sorter->base = params->base;
-  sorter->mpi_rank = params->mpi_rank;
-  sorter->mpi_world_size = params->mpi_world_size;
-  sorter->chunk_size = sorter->n_elts / sorter->mpi_world_size;
-  sorter->tmp_arr = NULL;
+  sorter->n_elts          = config->n_elts;
+  sorter->base            = config->base;
+  sorter->mpi_rank        = config->mpi_rank;
+  sorter->mpi_world_size  = config->mpi_world_size;
+  sorter->chunk_size      = sorter->n_elts / sorter->mpi_world_size;
+  sorter->tmp_arr         = NULL;
   sorter->cum_prefix_sums = NULL;
-  sorter->data = NULL;
+  sorter->data            = NULL;
 
   /*
    * Allocate memory. The master needs more space for the prefix sums,
    * because it has to receive ALL prefix sums from workers
    */
-  sorter->prefix_sums = rcsw_alloc(NULL,
-                                   sizeof(size_t) * (sorter->base + 1),
-                                   RCSW_NONE);
+  sorter->prefix_sums =
+    rcsw_alloc(NULL, sizeof(size_t) * (sorter->base + 1), RCSW_NONE);
   RCSW_CHECK_PTR(sorter->prefix_sums);
 
-  sorter->tmp_arr = rcsw_alloc(NULL,
-                               sizeof(size_t) * (sorter->n_elts),
-                               RCSW_NONE);
+  sorter->tmp_arr =
+    rcsw_alloc(NULL, sizeof(size_t) * (sorter->n_elts), RCSW_NONE);
   RCSW_CHECK_PTR(sorter->tmp_arr);
 
-  sorter->cum_prefix_sums = rcsw_alloc(NULL,
-                                       sizeof(size_t) * sorter->mpi_world_size * 2,
-                                       RCSW_NONE);
+  sorter->cum_prefix_sums =
+    rcsw_alloc(NULL, sizeof(size_t) * sorter->mpi_world_size * 2, RCSW_NONE);
   RCSW_CHECK_PTR(sorter->cum_prefix_sums);
 
-  sorter->cum_data = params->data;
-  sorter->data = rcsw_alloc(NULL,
-                            sizeof(size_t) * sorter->chunk_size,
-                            RCSW_NONE);
+  sorter->cum_data = config->data;
+  sorter->data = rcsw_alloc(NULL, sizeof(size_t) * sorter->chunk_size, RCSW_NONE);
   RCSW_CHECK_PTR(sorter->data);
 
   ER_DEBUG("Rank %d: n_elts=%zu chunk_size=%zu base=%zu world_size=%d",
@@ -104,29 +100,29 @@ void mpi_radix_sorter_destroy(struct mpi_radix_sorter* const sorter) {
   RCSW_FPC_V(NULL != sorter);
 
   if (sorter->prefix_sums) {
-    free(sorter->prefix_sums);
+    rcsw_free(sorter->prefix_sums, RCSW_NONE);
   }
   if (sorter->tmp_arr) {
-    free(sorter->tmp_arr);
+    rcsw_free(sorter->tmp_arr, RCSW_NONE);
   }
   if (sorter->cum_prefix_sums) {
-    free(sorter->cum_prefix_sums);
+    rcsw_free(sorter->cum_prefix_sums, RCSW_NONE);
   }
   if (sorter->data) {
-    free(sorter->data);
+    rcsw_free(sorter->data, RCSW_NONE);
   }
-  free(sorter);
-} /* mpi_radix_sorter_destroy() */
+  rcsw_free(sorter, RCSW_NONE);
+}
 
 status_t mpi_radix_sorter_exec(struct mpi_radix_sorter* const sorter) {
-  DBGN("Rank %d: Starting radix sort", sorter->mpi_rank);
+  ER_DEBUG("Rank %d: Starting radix sort", sorter->mpi_rank);
   memset(sorter->prefix_sums, 0, sizeof(size_t) * (sorter->base + 1));
 
   /*
    * Get largest # in array to get total # of digits. Only the master has the
    * input data, so you must broadcast to other workers.
    */
-  int m;
+  int m = 0;
   if (0 == sorter->mpi_rank) {
     m = alg_arr_largest_num(sorter->cum_data, sorter->n_elts);
   }
@@ -146,7 +142,7 @@ error:
  * Static Functions
  ******************************************************************************/
 static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
-                                      int digit) {
+                                      int                            digit) {
   ER_DEBUG("Rank %d: Radix sort digit %d", sorter->mpi_rank, digit);
   int prefix_recv_counts[sorter->mpi_world_size];
   int prefix_disp_counts[sorter->mpi_world_size];
@@ -162,10 +158,14 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                                         MPI_INT,
                                         0,
                                         MPI_COMM_WORLD));
-  ER_TRACE(
-      "Rank %d: All data received (%zu bytes)", sorter->mpi_rank, sorter->n_elts);
-  radix_counting_sort(
-      sorter->data, sorter->tmp_arr, sorter->chunk_size, digit, sorter->base);
+  ER_TRACE("Rank %d: All data received (%zu bytes)",
+           sorter->mpi_rank,
+           sorter->n_elts);
+  radix_counting_sort(sorter->data,
+                      sorter->tmp_arr,
+                      sorter->chunk_size,
+                      digit,
+                      sorter->base);
 
   /* compute prefix sums for current digit (all ranks) */
   radix_sort_prefix_sum(sorter->data,
@@ -191,7 +191,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
    * the current and previous iterations, so that things end up in the right
    * place in the output buffer.
    */
-  size_t total = 0;
+  size_t total      = 0;
   size_t prev_total = 0;
   for (size_t i = 0; i < sorter->base; ++i) {
     RCSW_CHECK(MPI_SUCCESS == MPI_Gatherv(sorter->prefix_sums + i,
@@ -210,7 +210,7 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
     if (0 == sorter->mpi_rank) {
       for (size_t j = 0; j < (size_t)sorter->mpi_world_size; ++j) {
         data_recv_counts[j] =
-            sorter->cum_prefix_sums[2 * j + 1] - sorter->cum_prefix_sums[2 * j];
+          sorter->cum_prefix_sums[2 * j + 1] - sorter->cum_prefix_sums[2 * j];
         total += data_recv_counts[j];
       } /* for(j..) */
 
@@ -238,8 +238,9 @@ static status_t mpi_radix_sorter_step(struct mpi_radix_sorter* const sorter,
                            MPI_INT,
                            0,
                            MPI_COMM_WORLD));
-    ER_TRACE(
-        "Rank %d: Received data for value %zu to master", sorter->mpi_rank, i);
+    ER_TRACE("Rank %d: Received data for value %zu to master",
+             sorter->mpi_rank,
+             i);
     prev_total = total;
   } /* for(i..) */
   return OK;

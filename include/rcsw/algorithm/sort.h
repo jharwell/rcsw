@@ -1,11 +1,13 @@
 /**
- * \file sort.h
- * \ingroup algorithm
- * \brief Collection of sorting algorithms.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup algorithm
+ *
+ * \brief Collection of sorting algorithms.
  */
 
 #pragma once
@@ -13,10 +15,13 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -39,10 +44,11 @@ BEGIN_C_DECLS
  * \param el_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
-RCSW_API void qsort_rec(void *a, int min_index, int max_index,
+RCSW_API void qsort_rec(void*  a,
+                        int    min_index,
+                        int    max_index,
                         size_t el_size,
-                        int (*cmpe)(const void *const e1,
-                                    const void *const e2));
+                        int (*cmpe)(const void* const e1, const void* const e2));
 
 /**
  * \brief Sort an array using iterative quicksort.
@@ -63,8 +69,10 @@ RCSW_API void qsort_rec(void *a, int min_index, int max_index,
  * \param el_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
-RCSW_API void qsort_iter(void *a, int max_index, size_t el_size,
-                         int (*cmpe)(const void *const e1, const void *const e2));
+RCSW_API void qsort_iter(void*  a,
+                         int    max_index,
+                         size_t el_size,
+                         int (*cmpe)(const void* const e1, const void* const e2));
 
 /**
  * \brief Sort an array of non-negative integers using radix sort
@@ -78,10 +86,7 @@ RCSW_API void qsort_iter(void *a, int max_index, size_t el_size,
  * \param n_elts Number of elements in \p arr and \p tmp.
  * \param base   Numeric base for digit decomposition (e.g., 10, 8, 16).
  */
-RCSW_API void radix_sort(size_t *arr,
-                           size_t *tmp,
-                           size_t n_elts,
-                           size_t base);
+RCSW_API void radix_sort(size_t* arr, size_t* tmp, size_t n_elts, size_t base);
 
 /**
  * \brief Sort an array using insertion sort.
@@ -96,48 +101,15 @@ RCSW_API void radix_sort(size_t *arr,
  * \param elt_size Size of each element in bytes.
  * \param cmpe     Comparison function for elements.
  */
-RCSW_API void insertion_sort(void *arr, size_t n_elts, size_t elt_size,
-                               int (*cmpe)(const void *const e1,
-                                           const void *const e2));
+RCSW_API void insertion_sort(void*  arr,
+                             size_t n_elts,
+                             size_t elt_size,
+                             int (*cmpe)(const void* const e1,
+                                         const void* const e2));
 
-
-/*******************************************************************************
- * RCSW Private Functions
+/******************************************************************************
+ * Private API
  ******************************************************************************/
-/**
- * \brief Sort a linked list using iterative mergesort.
- *
- * O(n log n). Minimal stack/memory requirements beyond a few local
- * variables. Can sort any singly or doubly linked list. The list must
- * have at least 2 items.
- *
- * \param list     The list to sort.
- * \param cmpe     Comparison function for node data.
- * \param isdouble TRUE if the list is doubly linked.
- *
- * \return Pointer to the sorted list head.
- */
-RCSW_LOCAL struct llist_node *mergesort_iter(struct llist_node *list,
-                                             int (*cmpe)(const void *const e1,
-                                                         const void *const e2),
-                                             bool_t isdouble);
-
-/**
- * \brief Sort a linked list using recursive mergesort.
- *
- * O(n log n). Can sort any singly or doubly linked list.
- *
- * \param list     The list to sort.
- * \param cmpe     Comparison function for node data.
- * \param isdouble TRUE if the list is doubly linked.
- *
- * \return Pointer to the sorted list head.
- */
-RCSW_LOCAL struct llist_node *mergesort_rec(struct llist_node *list,
-                                            int (*cmpe)(const void *const e1,
-                                                        const void *const e2),
-                                            bool_t isdouble);
-
 /**
  * \brief Sort an array of non-negative integers via counting sort.
  *
@@ -152,11 +124,8 @@ RCSW_LOCAL struct llist_node *mergesort_rec(struct llist_node *list,
  *
  * \return \ref status_t
  */
-RCSW_LOCAL status_t radix_counting_sort(size_t *arr,
-                                        size_t* tmp,
-                                        size_t n_elts,
-                                        size_t digit,
-                                        size_t base);
+RCSW_LOCAL status_t radix_counting_sort(
+  size_t* arr, size_t* tmp, size_t n_elts, size_t digit, size_t base);
 
 /**
  * \brief Compute prefix sums for one digit pass of radix sort.
@@ -174,8 +143,9 @@ RCSW_LOCAL status_t radix_counting_sort(size_t *arr,
  * \return \ref status_t
  */
 RCSW_LOCAL status_t radix_sort_prefix_sum(const size_t* arr,
-                                          size_t n_elts,
-                                          size_t digit,
-                                          size_t base,
-                                          size_t* prefix_sums);
+                                          size_t        n_elts,
+                                          size_t        digit,
+                                          size_t        base,
+                                          size_t*       prefix_sums);
+
 END_C_DECLS

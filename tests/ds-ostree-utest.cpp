@@ -14,7 +14,6 @@
 
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/ostree.h"
-#include "rcsw/utils/utils.h"
 #include "tests/ds_bstree_test.hpp"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
@@ -22,7 +21,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using ostree_test_t = void (*)(int len, struct bstree_params *params);
+using ostree_test_t = void (*)(int len, struct bstree_config *config);
 
 /*******************************************************************************
  * Global Variables
@@ -33,13 +32,13 @@ int n_elements; /* global var for # elements in RBTREE */
  * Test Helper Functions
  ******************************************************************************/
 static void run_test(ostree_test_t test) {
-  struct bstree_params params;
-  memset(&params, 0, sizeof(bstree_params));
-  params.flags    = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
-  params.elt_size = sizeof(struct element8);
-  params.max_elts = TH_NUM_ITEMS;
-  params.cmpkey   = th::cmpe<element8>;
-  th::ds_init(&params);
+  struct bstree_config config;
+  memset(&config, 0, sizeof(bstree_config));
+  config.flags    = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_OS;
+  config.elt_size = sizeof(struct element8);
+  config.max_elts = TH_NUM_ITEMS;
+  config.cmpkey   = th::cmpe<element8>;
+  th::ds_init(&config);
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -55,15 +54,15 @@ static void run_test(ostree_test_t test) {
       applied |= flags[j];
 
       for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
-        params.flags |= applied;
-        test(m, &params);
+        config.flags |= applied;
+        test(m, &config);
       } /* for(m..) */
 
       applied &= ~flags[j];
     } /* for(j..) */
   } /* for(i..) */
 
-  th::ds_shutdown(&params);
+  th::ds_shutdown(&config);
 } /* run_test() */
 
 /*******************************************************************************
@@ -72,15 +71,15 @@ static void run_test(ostree_test_t test) {
 /**
  * \brief Test rank for OStrees.
  */
-static void ostree_select_test(int len, struct bstree_params *params) {
+static void ostree_select_test(int len, struct bstree_config *config) {
   struct bstree  *tree;
   struct bstree   mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    tree = ostree_init(&mytree, params);
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    tree = ostree_init(&mytree, config);
   } else {
-    tree = ostree_init(NULL, params);
+    tree = ostree_init(NULL, config);
   }
   CATCH_REQUIRE(NULL != tree);
 
@@ -127,12 +126,12 @@ static void ostree_select_test(int len, struct bstree_params *params) {
 /**
  * \brief Test select for OStrees.
  */
-static void ostree_rank_test(int len, struct bstree_params *params) {
+static void ostree_rank_test(int len, struct bstree_config *config) {
   struct bstree  *tree;
   struct bstree   mytree;
   struct element8 insert_arr[TH_NUM_ITEMS];
 
-  tree = ostree_init(&mytree, params);
+  tree = ostree_init(&mytree, config);
   CATCH_REQUIRE(NULL != tree);
 
   /*

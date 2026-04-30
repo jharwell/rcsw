@@ -1,6 +1,12 @@
 /**
- * \file fpc.h
+ * \file
+ *
+ * \copyright 2017 John Harwell, All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
+
  * \ingroup common
+ *
  * \brief Function precondition/post-condition definitions (very useful!).
  *
  * Allows you to define a set of conditions that must be met for a function to
@@ -10,10 +16,6 @@
  * - Return a specified return value if \ref RCSW_FPC=\ref RCSW_FPC_RETURN
  * - Abort if \ref RCSW_FPC=\ref RCSW_FPC_ABORT
  * - Ignore if \ref RCSW_FPC=\ref RCSW_FPC_NONE
- *
- * \copyright 2017 John Harwell, All rights reserved.
- *
- * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -22,7 +24,9 @@
  * Includes
  ******************************************************************************/
 #include <assert.h>
-#include "rcsw/rcsw.h"
+#include <errno.h>
+
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -81,12 +85,12 @@
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
  * value of \ref RCSW_FPC.
  */
-#define RCSW_FPC_RET_NV(X, v)                                        \
-  {                                                                  \
-    if (!RCSW_UNLIKELY(X)) {                                         \
-      errno = EINVAL;                                                \
-      return v;                                                      \
-    }                                                                \
+#define RCSW_FPC_RET_NV(X, v)  \
+  {                            \
+    if (RCSW_UNLIKELY(!(X))) { \
+      errno = EINVAL;          \
+      return v;                \
+    }                          \
   }
 
 /**
@@ -99,12 +103,12 @@
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
  * value of \ref RCSW_FPC.
  */
-#define RCSW_FPC_RET_V(X)                       \
-  {                                             \
-    if (!RCSW_UNLIKELY(X)) {                    \
-      errno = EINVAL;                           \
-      return;                                   \
-    }                                           \
+#define RCSW_FPC_RET_V(X)      \
+  {                            \
+    if (RCSW_UNLIKELY(!(X))) { \
+      errno = EINVAL;          \
+      return;                  \
+    }                          \
   }
 
 /**
@@ -113,7 +117,10 @@
  * Check a single function pre/post condition, halting the program if the
  * condition \a X fails.
  */
-#define RCSW_FPC_ASSERT(X) { assert(X); }
+#define RCSW_FPC_ASSERT(X) \
+  {                        \
+    assert(X);             \
+  }
 
 /**
  * \def RCSW_FPC_ABORT_NV(X)
@@ -125,7 +132,7 @@
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
  * value of \ref RCSW_FPC.
  */
-#define RCSW_FPC_ABORT_NV(X, v) RCSW_FPC_ASSERT(X)
+#define RCSW_FPC_ABORT_NV(X) RCSW_FPC_ASSERT(X)
 
 /**
  * \def RCSW_FPC_ABORT_V(X)
@@ -139,7 +146,7 @@
  */
 #define RCSW_FPC_ABORT_V(X) RCSW_FPC_ASSERT(X)
 
-#if(RCSW_FPC == RCSW_FPC_RETURN)
+#if (RCSW_FPC == RCSW_FPC_RETURN)
 
 /**
  * \def RCSW_FPC_NV(v, ...)
@@ -156,11 +163,10 @@
  * \a ... is a list of conditions that need to be met before the function can
  * execute/must be true when the function returns.
  */
-#define RCSW_FPC_NV(v, ...)                             \
-  { RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__); }
+#define RCSW_FPC_NV(v, ...) RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__)
 
 /**
- * \def RCSW_FPC_V(v, ...)
+ * \def RCSW_FPC_V(...)
  *
  * Function pre/post condition macro for functions that return void.
  *
@@ -171,16 +177,13 @@
  * \a ... is a list of conditions that need to be met before the function can
  * execute/must be true when the function returns.
  */
-#define RCSW_FPC_V(...)                                 \
-  { RCSW_XFOR_EACH1(RCSW_FPC_RET_V, __VA_ARGS__); }
+#define RCSW_FPC_V(...) RCSW_XFOR_EACH1(RCSW_FPC_RET_V, __VA_ARGS__)
 
-#elif(RCSW_FPC == RCSW_FPC_ABORT)
+#elif (RCSW_FPC == RCSW_FPC_ABORT)
 
-#define RCSW_FPC_NV(v, ...)                                     \
-  { RCSW_XFOR_EACH2(RCSW_FPC_ABORT_NV, v, __VA_ARGS__); }
+#define RCSW_FPC_NV(...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_NV, __VA_ARGS__)
 
-#define RCSW_FPC_V(...)                                 \
-    { RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__); }
+#define RCSW_FPC_V(...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__)
 
 #else
 

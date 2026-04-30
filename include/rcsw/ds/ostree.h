@@ -1,13 +1,11 @@
 /**
- * \file ostree.h
- * \ingroup ds
- * \brief Order Statistics Tree implementation.
- *
- * Built on top of \ref bstree.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -26,7 +24,7 @@
 #define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \struct ostree
@@ -47,21 +45,19 @@
  * Must be packed and aligned to the same size as \ref dptr_t so that casts from
  * \ref ostree_node.data are safe on all targets.
  */
-struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) ostree_node {
-    uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-    dptr_t *data;
-    struct ostree_node *left;
-    struct ostree_node *right;
-    struct ostree_node *parent;
-    bool_t red;
+struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) ostree_node {
+  uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
+  dptr_t*             data;
+  struct ostree_node* left;
+  struct ostree_node* right;
+  struct ostree_node* parent;
+  bool_t              red;
 
   /**
    * Size of subtree anchored at node (including node)
    */
-    int32_t count;
+  int32_t count;
 };
-
-
 
 /*******************************************************************************
  * RCSW Private Functions
@@ -75,7 +71,7 @@ BEGIN_C_DECLS
 RCSW_LOCAL void ostree_init_helper(struct bstree* tree);
 
 /*******************************************************************************
- * API Functions
+ * Public API
  *
  * There are other bstree functions that you can use besides these; however,
  * given that you are using an Order Statistics tree, these are really the only
@@ -103,15 +99,15 @@ static inline size_t ostree_element_space(size_t max_elts, size_t elt_size) {
  */
 static inline size_t ostree_meta_space(size_t max_elts) {
   return ds_meta_space(max_elts + 2) +
-      ds_elt_space_simple(max_elts+2, sizeof(struct ostree_node));
+         ds_elt_space_simple(max_elts + 2, sizeof(struct ostree_node));
 }
 
 /**
  * \brief \see bstree_delete()
  */
-static inline status_t ostree_delete(struct bstree* tree,
+static inline status_t ostree_delete(struct bstree*      tree,
                                      struct ostree_node* victim,
-                                     void* elt) {
+                                     void*               elt) {
   return bstree_delete(tree, (struct bstree_node*)victim, elt);
 }
 
@@ -132,9 +128,10 @@ static inline void ostree_destroy(struct bstree* tree) {
 /**
  * \brief \see bstree_node_query()
  */
-static inline struct ostree_node* ostree_node_query(const struct bstree* const tree,
-                                                    struct ostree_node* search_root,
-                                                    const void* const key) {
+static inline struct ostree_node* ostree_node_query(
+  const struct bstree* const tree,
+  struct ostree_node*        search_root,
+  const void* const          key) {
   return (struct ostree_node*)bstree_node_query(tree,
                                                 (struct bstree_node*)search_root,
                                                 key);
@@ -153,8 +150,8 @@ static inline struct ostree_node* ostree_node_query(const struct bstree* const t
  * occurred.
  */
 RCSW_API struct ostree_node* ostree_select(const struct bstree* tree,
-                                           struct ostree_node * node_in,
-                                           int i);
+                                           struct ostree_node*  node_in,
+                                           int                  i);
 
 /**
  * \brief Get the rank of an element within an \ref ostree.
@@ -164,23 +161,20 @@ RCSW_API struct ostree_node* ostree_select(const struct bstree* tree,
  *
  * \return The rank, or -1 on ERROR.
  */
-RCSW_API int ostree_rank(const struct bstree * tree,
+RCSW_API int ostree_rank(const struct bstree*      tree,
                          const struct ostree_node* node);
-
 
 /**
  * \brief \see bstree_init_internal()
  */
-RCSW_API struct bstree* ostree_init(struct bstree* tree_in,
-                           const struct bstree_params* params);
-
+RCSW_API struct bstree* ostree_init(struct bstree*              tree_in,
+                                    const struct bstree_config* params);
 
 /**
  * \brief \see bstree_insert_internal()
  */
 RCSW_API status_t ostree_insert(struct bstree* tree,
-                       void* const key,
-                       void* const data);
-
+                                void* const    key,
+                                void* const    data);
 
 END_C_DECLS

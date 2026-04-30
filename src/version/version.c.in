@@ -1,38 +1,49 @@
 /**
- * \file build.c
+ * \file
  *
  * \copyright 2022 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \note This file is a CMake \c configure_file() template. It is not a valid
+ * C source file on its own. CMake processes it to substitute \c \@VAR\@
+ * placeholders with their values at configure time, producing \c version.c.
+ *
+ * If you are building RCSW outside of CMake, copy this file to \c version.c
+ * and replace every \c \@VAR\@ placeholder with a suitable string (or \c ""
+ * for fields that are not available in your build environment).
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/version/version.h"
-
 #include "rcsw/version/licenses.h"
+#include "rcsw/version/version.h"
 
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
-struct meta_info kMetadata = {
-  .version = {
-    .version = "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@",
-    .license = {
-      .abbrev = RCSW_LICENSE_SHORT(MIT, RCSW),
-      .full = RCSW_LICENSE_FULL(MIT, RCSW),
-      .copyright = RCSW_COPYRIGHT(2023, John Harwell)
+struct meta_info rcsw_metadata = {
+  .version =
+    {
+      .version = "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@"
+                 ".@PROJECT_VERSION_PATCH@",
+      .license =
+        {
+          .abbrev    = RCSW_LICENSE_SHORT(MIT),
+          .full      = RCSW_LICENSE_FULL(MIT),
+          .copyright = RCSW_COPYRIGHT(2023, "John Harwell"),
+        },
     },
-  },
-  .build = {
-    .git_rev = "@LIBRA_GIT_REV@",
-    .git_diff = "@LIBRA_GIT_DIFF@",
-    .git_tag = "@LIBRA_GIT_TAG@",
-    .git_branch = "@LIBRA_GIT_BRANCH@",
-    .compile_flags = "@LIBRA_TARGET_FLAGS_COMPILE@",
-    .link_flags = "@LIBRA_TARGET_FLAGS_LINK@",
-    .date = __DATE__,
-    .time = __TIME__
-  }
+  .build =
+    {
+      .git_rev       = "@LIBRA_GIT_REV@",
+      .git_diff      = "@LIBRA_GIT_DIFF@",
+      .git_tag       = "@LIBRA_GIT_TAG@",
+      .git_branch    = "@LIBRA_GIT_BRANCH@",
+      .compile_flags = "@LIBRA_TARGET_FLAGS_COMPILE@",
+      .link_flags    = "@LIBRA_TARGET_FLAGS_LINK@",
+      .date          = __DATE__,
+      .time          = __TIME__,
+    },
 };

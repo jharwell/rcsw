@@ -1,10 +1,11 @@
 /**
- * \file dyn_matrix.h
- * \ingroup ds
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -16,16 +17,16 @@
 #include "rcsw/ds/llist.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Dynamic matrix initialization parameters.
  */
-struct dyn_matrix_params {
+struct dynmatrix_config {
   /**
    * For printing an element. Can be NULL.
    */
-  void (*printe)(const void *e);
+  void (*printe)(const void* e);
 
   /**
    * Size of elements in bytes.
@@ -33,15 +34,14 @@ struct dyn_matrix_params {
   size_t elt_size;
 
   /**
-   * Configuration flags. See \ref dyn_matrix.flags for valid flags.
+   * Configuration flags. See \ref dynmatrix.flags for valid flags.
    */
   uint32_t flags;
 
-  size_t n_rows;  /// # rows in matrix.
-  size_t n_cols;  /// # columns in matrix.
-  dptr_t* rows;  /// Ptr to space for vector-of-row-vectors.
+  size_t  n_rows;  /// # rows in matrix.
+  size_t  n_cols;  /// # columns in matrix.
+  dptr_t* rows;    /// Ptr to space for vector-of-row-vectors.
 };
-
 
 /**
  * \brief Representation of a dynamically-sized matrix using a dynamic array row
@@ -62,7 +62,7 @@ struct dyn_matrix_params {
  *
  * The matrix is never resized autonomously.
  */
-struct dyn_matrix {
+struct dynmatrix {
   /**
    * Vector of row vectors.
    */
@@ -95,13 +95,13 @@ struct dyn_matrix {
 
   /**
    * For printing an element. Can be NULL. If NULL, then \ref
-   * dyn_matrix_print() is disabled.
+   * dynmatrix_print() is disabled.
    */
-  void (*printe)(const void *const e);
+  void (*printe)(const void* const e);
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -117,13 +117,11 @@ BEGIN_C_DECLS
  *
  * \return Reference to element, or NULL if an error occurred.
  */
-static inline void* dyn_matrix_access(const struct dyn_matrix* const matrix,
-                                          size_t u, size_t v) {
-    RCSW_FPC_NV(NULL,
-                NULL != matrix,
-                u < matrix->n_rows,
-              v < matrix->n_cols);
-    return darray_data_get((struct darray*)darray_data_get(matrix->rows, u), v);
+static inline void* dynmatrix_access(const struct dynmatrix* const matrix,
+                                     size_t                        u,
+                                     size_t                        v) {
+  RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
+  return darray_data_get((struct darray*)darray_data_get(matrix->rows, u), v);
 }
 
 /**
@@ -136,11 +134,11 @@ static inline void* dyn_matrix_access(const struct dyn_matrix* const matrix,
  *
  * \return The # of bytes required.
  */
-static inline size_t dyn_matrix_space(size_t n_rows,
-                                      size_t n_cols,
-                                      size_t elt_size) {
+static inline size_t dynmatrix_space(size_t n_rows,
+                                     size_t n_cols,
+                                     size_t elt_size) {
   return darray_element_space(n_cols, elt_size) * n_rows +
-      darray_element_space(n_rows, sizeof(struct darray));
+         darray_element_space(n_rows, sizeof(struct darray));
 }
 
 /**
@@ -152,20 +150,18 @@ static inline size_t dyn_matrix_space(size_t n_rows,
  *
  * \return \ref status_t
  */
-static inline status_t dyn_matrix_clear(struct dyn_matrix* const matrix,
-                                           size_t u, size_t v) {
-    RCSW_FPC_NV(ERROR,
-                NULL != matrix,
-                u < matrix->n_rows,
-                v < matrix->n_cols);
-    ds_elt_clear(dyn_matrix_access(matrix, u, v), matrix->elt_size);
-    return OK;
+static inline status_t dynmatrix_clear(struct dynmatrix* const matrix,
+                                       size_t                  u,
+                                       size_t                  v) {
+  RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
+  ds_elt_clear(dynmatrix_access(matrix, u, v), matrix->elt_size);
+  return OK;
 }
 
 /**
- * \brief Return if the \ref dyn_matrix is square or not.
+ * \brief Return if the \ref dynmatrix is square or not.
  */
-static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) {
+static inline bool_t dynmatrix_issquare(const struct dynmatrix* const matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
 
   return matrix->n_cols == matrix->n_rows;
@@ -181,8 +177,8 @@ static inline bool_t dyn_matrix_issquare(const struct dyn_matrix* const matrix) 
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-RCSW_API struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
-                                            const struct dyn_matrix_params* params) RCSW_WUR;
+RCSW_API struct dynmatrix* dynmatrix_init(
+  struct dynmatrix* matrix_in, const struct dynmatrix_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a dynamic matrix.
@@ -191,7 +187,7 @@ RCSW_API struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* matrix_in,
  *
  * \param matrix The matrix handle.
  */
-RCSW_API void dyn_matrix_destroy(struct dyn_matrix* matrix);
+RCSW_API void dynmatrix_destroy(struct dynmatrix* matrix);
 
 /**
  * \brief Transpose a dynamic matrix.
@@ -202,7 +198,7 @@ RCSW_API void dyn_matrix_destroy(struct dyn_matrix* matrix);
  *
  * \return \ref status_t
  */
-RCSW_API status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
+RCSW_API status_t dynmatrix_transpose(struct dynmatrix* matrix);
 
 /**
  * \brief Print a dynamic matrix.
@@ -211,7 +207,7 @@ RCSW_API status_t dyn_matrix_transpose(struct dyn_matrix* matrix);
  *
  * \param matrix The matrix handle.
  */
-RCSW_API void dyn_matrix_print(const struct dyn_matrix* matrix);
+RCSW_API void dynmatrix_print(const struct dynmatrix* matrix);
 
 /**
  * \brief Resize a dynamic matrix manually.
@@ -225,9 +221,7 @@ RCSW_API void dyn_matrix_print(const struct dyn_matrix* matrix);
  *
  * \return \ref status_t
  */
-RCSW_API status_t dyn_matrix_resize(struct dyn_matrix* matrix,
-                                    size_t u,
-                                    size_t v);
+RCSW_API status_t dynmatrix_resize(struct dynmatrix* matrix, size_t u, size_t v);
 
 /**
  * \brief Set an element in the dynamic matrix to a specific value.
@@ -242,9 +236,9 @@ RCSW_API status_t dyn_matrix_resize(struct dyn_matrix* matrix,
  *
  * \return \ref status_t
  */
-RCSW_API status_t dyn_matrix_set(struct dyn_matrix* matrix,
-                        size_t u,
-                        size_t v,
-                        const void *w);
+RCSW_API status_t dynmatrix_set(struct dynmatrix* matrix,
+                                size_t            u,
+                                size_t            v,
+                                const void*       w);
 
 END_C_DECLS

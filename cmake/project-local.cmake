@@ -39,6 +39,10 @@ file(WRITE "${CMAKE_BINARY_DIR}/include/eyalroz/printf.h"
 
 set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain)
 
+function(rcsw_message type msg)
+  message(${type} "[RCSW] ${msg}")
+endfunction()
+
 # ##############################################################################
 # User-facing options and cache variables
 # ##############################################################################
@@ -62,13 +66,6 @@ set(RCSW_CONFIG_PTR_ALIGN
     CACHE STRING
           "Data pointer alignment in bytes (1, 2, 4). Auto-detected if empty.")
 
-option(RCSW_CONFIG_NO_STDIO "Exclude the STDIO module from the build" OFF)
-option(RCSW_CONFIG_NOALLOC "Disable dynamic memory allocation" OFF)
-option(RCSW_CONFIG_ZALLOC "Zero all allocated memory before use" OFF)
-option(RCSW_CONFIG_TOOL_NO_GRIND "Compile out RCSW_GRIND_XX() macros" OFF)
-option(RCSW_CONFIG_MP "Build multiprocess support (requires MPI)" OFF)
-
-# STDIO tunables — only relevant when RCSW_CONFIG_NO_STDIO=OFF
 set(RCSW_CONFIG_STDIO_PUTCHAR
     putchar
     CACHE STRING "stdio putchar() replacement function")
@@ -76,12 +73,133 @@ set(RCSW_CONFIG_STDIO_GETCHAR
     getchar
     CACHE STRING "stdio getchar() replacement function")
 
+option(RCSW_CONFIG_NOALLOC "Disable dynamic memory allocation" OFF)
+option(RCSW_CONFIG_ZALLOC "Zero all allocated memory before use" OFF)
+option(RCSW_CONFIG_TOOL_NO_GRIND "Compile out RCSW_GRIND_XX() macros" OFF)
+
+option(RCSW_CONFIG_BUILD_MONOLITHIC
+       "Build the monolithic rcsw library in addition to component libraries"
+       OFF)
+
+# These aren't really optional disabling them will cause bad things to happen in
+# the build, but it is far more convenient when emitting the summary if they are
+# here.
+option(RCSW_CONFIG_CORE "Build RCSW core component" YES)
+option(RCSW_CONFIG_AL "Build abstraction layer component" YES)
+
+option(RCSW_CONFIG_ALGORITHM "Build the algorithm component" ON)
+option(RCSW_CONFIG_DS "Build the data structures component" ON)
+option(RCSW_CONFIG_ER "Build the event reporting component" ON)
+option(RCSW_CONFIG_MULTIPROCESS
+       "Build the multiprocess component (requires MPI)" OFF)
+option(RCSW_CONFIG_MULTITHREAD "Build the multithread component" ON)
+option(RCSW_CONFIG_STDIO "Build the STDIO component" ON)
+option(RCSW_CONFIG_SWBUS "Build the swbus component" ON)
+option(RCSW_CONFIG_TOOL "Build the tool component" ON)
+option(RCSW_CONFIG_UTILS "Build the utils component" ON)
+
+# ##############################################################################
+# Components
+# ##############################################################################
+set(_OPTIONAL_COMPONENTS
+    algorithm
+    ds
+    er
+    multiprocess
+    multithread
+    stdio
+    swbus
+    tool
+    utils)
+if("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
+  list(
+    FILTER
+    _OPTIONAL_COMPONENTS
+    EXCLUDE
+    REGEX
+    "multithread|multiprocess|swbus")
+  list(
+    FILTER
+    ${PROJECT_NAME}_C_SRC
+    EXCLUDE
+    REGEX
+    "src/multithread|src/multiprocess")
+  if(LIBRA_STDLIB MATCHES "NONE")
+    # Without a stdlib, er and ds cannot be built
+    list(
+      FILTER
+      _OPTIONAL_COMPONENTS
+      EXCLUDE
+      REGEX
+      "^er$|^ds$")
+    list(
+      FILTER
+      ${PROJECT_NAME}_C_SRC
+      EXCLUDE
+      REGEX
+      "src/er|src/ds")
+  endif()
+elseif("${RCSW_BUILD_FOR}" MATCHES "POSIX")
+  list(
+    FILTER
+    _OPTIONAL_COMPONENTS
+    EXCLUDE
+    REGEX
+    "baremetal")
+  list(
+    FILTER
+    ${PROJECT_NAME}_C_SRC
+    EXCLUDE
+    REGEX
+    "baremetal")
+  if(NOT RCSW_CONFIG_MULTIPROCESS)
+    list(
+      FILTER
+      ${PROJECT_NAME}_C_SRC
+      EXCLUDE
+      REGEX
+      "multiprocess")
+  endif()
+else()
+  message(FATAL_ERROR "RCSW_BUILD_FOR must be one of: POSIX, BAREMETAL")
+endif()
+
+# Build whatever survived the platform filter and has its option ON.
+set(_CONFIGURED_COMPONENTS al core)
+foreach(_component IN LISTS _OPTIONAL_COMPONENTS)
+  string(TOUPPER "${_component}" _opt)
+  if(RCSW_CONFIG_${_opt})
+    list(APPEND _CONFIGURED_COMPONENTS ${_component})
+  endif()
+endforeach()
+
+# Guard: warn loudly if there is genuinely nothing useful to build.
+if(NOT RCSW_CONFIG_BUILD_MONOLITHIC)
+  set(_optional_configured FALSE)
+  foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
+    if(NOT (_component STREQUAL "al" OR _component STREQUAL "core"))
+      set(_optional_configured TRUE)
+      break()
+    endif()
+  endforeach()
+  if(NOT _optional_configured)
+    message(
+      WARNING
+        "RCSW_CONFIG_BUILD_MONOLITHIC is OFF and no optional components are \
+enabled -- only the al and core stubs will be built. Enable at least one \
+RCSW_CONFIG_<COMPONENT> option or set RCSW_CONFIG_BUILD_MONOLITHIC=ON.")
+  endif()
+  unset(_optional_configured)
+endif()
+
 # ##############################################################################
 # Platform-specific overrides
 # ##############################################################################
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  rcsw_message(STATUS "Building for POSIX")
 elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
+  rcsw_message(STATUS "Building for baremetal")
+
   # Shared libraries don't make sense on bare-metal/freestanding targets
   set(RCSW_CONFIG_LIBTYPE
       STATIC
@@ -90,21 +208,32 @@ elseif("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
 
   if(${LIBRA_STDLIB} MATCHES "NONE")
     set(RCSW_CONFIG_NOALLOC YES)
+
+    # FIX: emit a visible message before silently overriding a user-set value
+    if(NOT "${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "SIMPLE")
+      rcsw_message(STATUS "Overriding RCSW_CONFIG_ER_PLUGIN to SIMPLE \
+(baremetal + no stdlib does not support ${RCSW_CONFIG_ER_PLUGIN})")
+    endif()
     set(RCSW_CONFIG_ER_PLUGIN
         SIMPLE
         CACHE STRING "" FORCE)
-    if(${RCSW_CONFIG_NO_STDIO})
+
+    # FIX: use lowercase "stdio" to match the list contents
+    if(NOT "stdio" IN_LIST _CONFIGURED_COMPONENTS)
       message(
         FATAL_ERROR
-          "RCSW requires RCSW_CONFIG_NO_STDIO=NO when building for baremetal without the standard library."
-      )
+          "RCSW requires the stdio component when building for baremetal \
+without the standard library. Enable RCSW_CONFIG_STDIO.")
     endif()
   endif()
-else()
-  message(FATAL_ERROR "RCSW_BUILD_FOR must be one of: POSIX, BAREMETAL")
 endif()
 
-# Pointer alignment auto-detection
+# Pointer alignment auto-detection. NOTE: This must run before the library
+# targets section so that RCSW_CONFIG_PTR_ALIGN is non-empty when compile
+# definitions are applied. version.c is appended to ${PROJECT_NAME}_C_SRC by
+# libra_configure_source_file below; it is intentionally added after the
+# platform source filters above since it is platform-independent and should
+# never be excluded.
 if(NOT RCSW_CONFIG_PTR_ALIGN)
   if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64")
     set(RCSW_CONFIG_PTR_ALIGN 4)
@@ -119,79 +248,198 @@ if(NOT RCSW_CONFIG_PTR_ALIGN)
   endif()
 endif()
 
-# ##############################################################################
-# Sources
-# ##############################################################################
-libra_configure_source_file(
-  ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
-  ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c rcsw_components_SRC)
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/collect.cmake)
-if("${RCSW_BUILD_FOR}" MATCHES "BAREMETAL")
-  rcsw_baremetal_collect_sources(rcsw_components_SRC)
-elseif("${RCSW_BUILD_FOR}" MATCHES "POSIX")
-  rcsw_posix_collect_sources(rcsw_components_SRC)
+# Sanity check: auto-detection or an explicit value must have produced something
+# non-empty before we proceed to bake it into compile definitions.
+if(NOT RCSW_CONFIG_PTR_ALIGN)
+  message(FATAL_ERROR "RCSW_CONFIG_PTR_ALIGN is empty after auto-detection. \
+Set it explicitly via -DRCSW_CONFIG_PTR_ALIGN=<1|2|4>.")
 endif()
 
 # ##############################################################################
-# Library target
+# Library targets
 # ##############################################################################
-libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE} ${rcsw_components_SRC})
 
-# Available whether installed or used as a subdirectory via CPM
-add_library(rcsw::rcsw ALIAS rcsw)
+# Generate version.c and append it to the source list unconditionally. This must
+# run before any target is created (monolithic or stub) so that: (a) the
+# generated file exists when the build system is invoked, and (b) the stub rcsw
+# target (when RCSW_CONFIG_BUILD_MONOLITHIC is OFF) does not silently inherit
+# version.c via a later side-effecting call inside the component loop, only to
+# then compile it without any definitions.
+libra_configure_source_file(
+  ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/version/version.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c ${PROJECT_NAME}_C_SRC)
 
-# Embeds version in the filename; creates an unversioned symlink for shared libs
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
-                                                 SOVERSION ${PROJECT_VERSION})
+# minimon is baremetal-only; exclude it before any targets are created so the
+# filtered source list is consistent for both monolithic and component paths.
+if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
+  list(
+    FILTER
+    ${PROJECT_NAME}_C_SRC
+    EXCLUDE
+    REGEX
+    "src/tool/minimon")
+endif()
+
+# Monolithic library (optional)
+if(RCSW_CONFIG_BUILD_MONOLITHIC)
+  libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE}
+                    ${${PROJECT_NAME}_C_SRC})
+  if(NOT TARGET rcsw::rcsw)
+    add_library(rcsw::rcsw ALIAS rcsw)
+  endif()
+  set_target_properties(
+    ${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
+                               SOVERSION ${PROJECT_VERSION_MAJOR})
+else()
+  # A valid parent target is always required by LIBRA's component machinery even
+  # when the monolithic library is not being installed/exported.
+  libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE})
+endif()
+
+# Component libraries (always built regardless of monolithic setting)
+set(_COMPONENT_LIBS)
+foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
+  if(_component STREQUAL "al")
+    string(TOLOWER "${RCSW_BUILD_FOR}" _platform)
+    libra_add_component_library(
+      TARGET
+      ${PROJECT_NAME}
+      COMPONENT
+      ${_component}
+      SOURCES
+      ${${PROJECT_NAME}_C_SRC}
+      REGEX
+      "src/al/${_platform}")
+  elseif(_component STREQUAL "core")
+    libra_add_component_library(
+      TARGET
+      ${PROJECT_NAME}
+      COMPONENT
+      ${_component}
+      SOURCES
+      ${${PROJECT_NAME}_C_SRC}
+      REGEX
+      "src/core")
+  elseif(_component STREQUAL tool AND "${RCSW_BUILD_FOR}" MATCHES "POSIX")
+
+    # minimon is baremetal-only, so exclude it
+    libra_add_component_library(
+      TARGET
+      ${PROJECT_NAME}
+      COMPONENT
+      ${_component}
+      SOURCES
+      ${${PROJECT_NAME}_C_SRC}
+      REGEX
+      "src/tool/grind")
+  else()
+    libra_add_component_library(
+      TARGET
+      ${PROJECT_NAME}
+      COMPONENT
+      ${_component}
+      SOURCES
+      ${${PROJECT_NAME}_C_SRC}
+      REGEX
+      "src/${_component}")
+  endif()
+  list(APPEND _COMPONENT_LIBS ${PROJECT_NAME}_${_component})
+endforeach()
+
+# --- Namespace aliases for all component targets ------------------------------
+foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
+  add_library(rcsw::${_component} ALIAS ${PROJECT_NAME}_${_component})
+endforeach()
 
 # ##############################################################################
 # Compile definitions
 # ##############################################################################
-target_compile_definitions(
-  ${PROJECT_NAME}
-  PRIVATE RCSW_CONFIG_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_CONFIG_ER_PLUGIN}
-  PUBLIC RCSW_CONFIG_AL_TARGET=RCSW_AL_TARGET_${RCSW_BUILD_FOR})
+function(_rcsw_apply_compile_defs target)
+  target_compile_definitions(
+    ${target}
+    PRIVATE RCSW_CONFIG_ER_PLUGIN=RCSW_ER_PLUGIN_${RCSW_CONFIG_ER_PLUGIN}
+    PUBLIC RCSW_CONFIG_PLATFORM=RCSW_CONFIG_PLATFORM_${RCSW_BUILD_FOR})
 
-# Boolean options: define the symbol only when ON
-foreach(config IN ITEMS RCSW_CONFIG_TOOL_NO_GRIND RCSW_CONFIG_NOALLOC
-                        RCSW_CONFIG_ZALLOC)
-  if(${config})
-    target_compile_definitions(${PROJECT_NAME} PRIVATE ${config})
+  foreach(_config IN ITEMS RCSW_CONFIG_TOOL_NO_GRIND RCSW_CONFIG_NOALLOC
+                           RCSW_CONFIG_ZALLOC)
+    if(${_config})
+      target_compile_definitions(${target} PRIVATE ${_config})
+    endif()
+  endforeach()
+
+  foreach(_config IN ITEMS RCSW_CONFIG_STDIO_PUTCHAR RCSW_CONFIG_STDIO_GETCHAR
+                           RCSW_CONFIG_PTR_ALIGN)
+    target_compile_definitions(${target} PUBLIC ${_config}=${${_config}})
+  endforeach()
+
+  get_target_property(_ttype ${target} TYPE)
+  if(_ttype STREQUAL SHARED_LIBRARY)
+    set_target_properties(${target} PROPERTIES C_VISIBILITY_PRESET hidden)
   endif()
-endforeach()
+endfunction()
 
-# Value options: define as NAME=VALUE
-foreach(config IN ITEMS RCSW_CONFIG_STDIO_PUTCHAR RCSW_CONFIG_STDIO_GETCHAR
-                        RCSW_CONFIG_PTR_ALIGN)
-  target_compile_definitions(${PROJECT_NAME} PUBLIC ${config}=${${config}})
+foreach(_lib IN LISTS _COMPONENT_LIBS)
+  _rcsw_apply_compile_defs(${_lib})
 endforeach()
-
-get_target_property(target_type ${PROJECT_NAME} TYPE)
-if(target_type STREQUAL SHARED_LIBRARY)
-  set_target_properties(${PROJECT_NAME} PROPERTIES C_VISIBILITY_PRESET hidden)
-endif()
+# The parent target always exists (monolithic or stub) and always compiles
+# version.c, so it always needs definitions regardless of
+# RCSW_CONFIG_BUILD_MONOLITHIC.
+_rcsw_apply_compile_defs(${PROJECT_NAME})
 
 # ##############################################################################
 # Include directories
 # ##############################################################################
-target_include_directories(
-  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${rcsw_DIR}/include>
-                         $<INSTALL_INTERFACE:include>)
-if(NOT RCSW_CONFIG_NO_STDIO)
-  target_include_directories(${PROJECT_NAME}
+function(_rcsw_apply_includes target)
+  target_include_directories(
+    ${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                     $<INSTALL_INTERFACE:include>)
+endfunction()
+
+foreach(_lib IN LISTS _COMPONENT_LIBS)
+  _rcsw_apply_includes(${_lib})
+endforeach()
+# Same reasoning as compile defs: the parent target always needs includes.
+_rcsw_apply_includes(${PROJECT_NAME})
+
+# Some components need the generated eyalroz/printf.h wrapper
+if(RCSW_CONFIG_STDIO)
+  target_include_directories(${PROJECT_NAME}_stdio
                              PRIVATE ${CMAKE_BINARY_DIR}/include)
+  if(RCSW_CONFIG_TOOL)
+    target_include_directories(${PROJECT_NAME}_tool
+                               PRIVATE ${CMAKE_BINARY_DIR}/include)
+  endif()
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    target_include_directories(${PROJECT_NAME}
+                               PRIVATE ${CMAKE_BINARY_DIR}/include)
+  endif()
 endif()
+
 # ##############################################################################
 # Link libraries
 # ##############################################################################
-target_link_libraries(${PROJECT_NAME} PUBLIC pthread dl m)
+if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
+  foreach(_lib IN LISTS _COMPONENT_LIBS)
+    target_link_libraries(${_lib} PUBLIC pthread dl m)
+  endforeach()
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    target_link_libraries(${PROJECT_NAME} PUBLIC pthread dl m)
+  endif()
+endif()
 
 if("${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "ZLOG")
-  target_link_libraries(${PROJECT_NAME} PUBLIC zlog)
+  if("er" IN_LIST _CONFIGURED_COMPONENTS)
+    target_link_libraries(${PROJECT_NAME}_er PUBLIC zlog)
+  endif()
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    target_link_libraries(${PROJECT_NAME} PUBLIC zlog)
+  endif()
 endif()
-if(NOT RCSW_CONFIG_NO_STDIO)
-  target_link_libraries(${PROJECT_NAME} PRIVATE printf)
+if(RCSW_CONFIG_STDIO)
+  target_link_libraries(${PROJECT_NAME}_stdio PRIVATE printf)
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    target_link_libraries(${PROJECT_NAME} PRIVATE printf)
+  endif()
 endif()
 
 # ##############################################################################
@@ -200,8 +448,24 @@ endif()
 # Only applies to POSIX/Linux; embedding targets don't install.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
   libra_configure_exports(${PROJECT_NAME})
-  libra_install_target(${PROJECT_NAME} INCLUDE_DIR include/${PROJECT_NAME})
-  libra_install_copyright(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+
+  # Install every component library
+  foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
+    libra_install_target(${PROJECT_NAME}_${_component} INCLUDE_DIR
+                         include/${PROJECT_NAME}/${_component})
+  endforeach()
+
+  # Install monolithic library only if built
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    libra_install_target(${PROJECT_NAME} INCLUDE_DIR include/${PROJECT_NAME})
+  endif()
+
+  if(RCSW_CONFIG_BUILD_MONOLITHIC)
+    libra_install_copyright(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+  else()
+    libra_install_copyright(${PROJECT_NAME}_core
+                            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+  endif()
 
   if(NOT CPACK_PACKAGE_NAME)
     set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
@@ -221,14 +485,24 @@ styled after the C++ STL. Features:\n\
 * Simple stdlib replacement for bare-metal applications\n\
 \n\
 This is a ${RCSW_CONFIG_LIBTYPE} library, built for ${RCSW_BUILD_FOR}:\n\
+  * RCSW_CONFIG_BUILD_MONOLITHIC=${RCSW_CONFIG_BUILD_MONOLITHIC}\n\
   * RCSW_CONFIG_ER_PLUGIN=${RCSW_CONFIG_ER_PLUGIN}\n\
   * RCSW_CONFIG_PTR_ALIGN=${RCSW_CONFIG_PTR_ALIGN}\n\
   * RCSW_CONFIG_NOALLOC=${RCSW_CONFIG_NOALLOC}\n\
   * RCSW_CONFIG_ZALLOC=${RCSW_CONFIG_ZALLOC}\n\
   * RCSW_CONFIG_TOOL_NO_GRIND=${RCSW_CONFIG_TOOL_NO_GRIND}\n\
-  * RCSW_CONFIG_NO_STDIO=${RCSW_CONFIG_NO_STDIO}\n\
+  * RCSW_CONFIG_AL=${RCSW_CONFIG_AL}\n\
+  * RCSW_CONFIG_ALGORITHM=${RCSW_CONFIG_ALGORITHM}\n\
+  * RCSW_CONFIG_CORE=${RCSW_CONFIG_CORE}\n\
+  * RCSW_CONFIG_DS=${RCSW_CONFIG_DS}\n\
+  * RCSW_CONFIG_ER=${RCSW_CONFIG_ER}\n\
+  * RCSW_CONFIG_MULTIPROCESS=${RCSW_CONFIG_MULTIPROCESS}\n\
+  * RCSW_CONFIG_MULTITHREAD=${RCSW_CONFIG_MULTITHREAD}\n\
+  * RCSW_CONFIG_STDIO=${RCSW_CONFIG_STDIO}\n\
   * RCSW_CONFIG_STDIO_GETCHAR=${RCSW_CONFIG_STDIO_GETCHAR}\n\
-  * RCSW_CONFIG_STDIO_PUTCHAR=${RCSW_CONFIG_STDIO_PUTCHAR}")
+  * RCSW_CONFIG_STDIO_PUTCHAR=${RCSW_CONFIG_STDIO_PUTCHAR}\n\
+  * RCSW_CONFIG_TOOL=${RCSW_CONFIG_TOOL}\n\
+  * RCSW_CONFIG_UTILS=${RCSW_CONFIG_UTILS}")
 
   libra_configure_cpack(
     "DEB;RPM"
@@ -242,79 +516,97 @@ endif()
 # ##############################################################################
 # Status
 # ##############################################################################
-set(fields
+set(_summary_fields
     CMAKE_PROJECT_VERSION
     RCSW_BUILD_FOR
     RCSW_CONFIG_LIBTYPE
+    RCSW_CONFIG_BUILD_MONOLITHIC
     RCSW_CONFIG_ER_PLUGIN
     RCSW_CONFIG_PTR_ALIGN
     RCSW_CONFIG_NOALLOC
     RCSW_CONFIG_ZALLOC
     RCSW_CONFIG_TOOL_NO_GRIND
-    RCSW_CONFIG_NO_STDIO
-    RCSW_CONFIG_STDIO_GETCHAR
-    RCSW_CONFIG_STDIO_PUTCHAR)
+    RCSW_CONFIG_STDIO_PUTCHAR
+    RCSW_CONFIG_STDIO_GETCHAR)
 
-libra_config_summary_prepare_fields("${fields}")
+libra_config_summary_prepare_fields("${_summary_fields}")
 
-function(rcsw_message type msg)
-  message(${type} "[RCSW] ${msg}")
+# Column width for the label field (left of the colon)
+set(_W 46)
+
+message(
+  "--------------------------------------------------------------------------------"
+)
+message("                           RCSW Configuration Summary")
+message(
+  "--------------------------------------------------------------------------------"
+)
+
+# Helper to emit a padded summary line: _rcsw_summary_line(label value hint)
+function(_rcsw_summary_line label value hint)
+  string(LENGTH "${label}" _len)
+  math(EXPR _pad "${_W} - ${_len}")
+  string(REPEAT " " ${_pad} _spaces)
+  rcsw_message(STATUS "${label}${_spaces}: ${value} [${hint}]")
 endfunction()
 
-message(
-  "${BoldBlue}--------------------------------------------------------------------------------"
-)
-message("${BoldBlue}                           RCSW Configuration Summary")
-message(
-  "${BoldBlue}--------------------------------------------------------------------------------"
-)
-
-rcsw_message(
-  STATUS
-  "Version                                       : ${ColorBold}${EMIT_CMAKE_PROJECT_VERSION}${ColorReset} [CMAKE_PROJECT_VERSION]"
-)
-rcsw_message(
-  STATUS
-  "Building for                                  : ${ColorBold}${EMIT_RCSW_BUILD_FOR}${ColorReset} [RCSW_BUILD_FOR={POSIX,BAREMETAL}]"
-)
-rcsw_message(
-  STATUS
-  "Library type                                  : ${ColorBold}${EMIT_RCSW_CONFIG_LIBTYPE}${ColorReset} [RCSW_CONFIG_LIBTYPE={STATIC,SHARED}]"
-)
-rcsw_message(
-  STATUS
-  "Event reporting plugin                        : ${ColorBold}${EMIT_RCSW_CONFIG_ER_PLUGIN}${ColorReset} [RCSW_CONFIG_ER_PLUGIN={ZLOG,LOG4CL,SIMPLE}]"
-)
-rcsw_message(
-  STATUS
-  "Disable dynamic memory allocation             : ${ColorBold}${EMIT_RCSW_CONFIG_NOALLOC}${ColorReset} [RCSW_CONFIG_NOALLOC]"
-)
-rcsw_message(
-  STATUS
-  "Always zero alloc'd memory before use         : ${ColorBold}${EMIT_RCSW_CONFIG_ZALLOC}${ColorReset} [RCSW_CONFIG_ZALLOC]"
-)
-rcsw_message(
-  STATUS
-  "Data pointer alignment                        : ${ColorBold}${EMIT_RCSW_CONFIG_PTR_ALIGN}${ColorReset} [RCSW_CONFIG_PTR_ALIGN={1,2,4}]"
-)
-rcsw_message(
-  STATUS
-  "Compile out RCSW_GRIND_XX() macros            : ${ColorBold}${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}${ColorReset} [RCSW_CONFIG_TOOL_NO_GRIND]"
-)
-
-rcsw_message(
-  STATUS
-  "Build STDIO module                            : ${ColorBold}${EMIT_RCSW_CONFIG_NO_STDIO}${ColorReset} [RCSW_CONFIG_NO_STDIO]"
-)
-rcsw_message(
-  STATUS
-  "stdio getchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_GETCHAR}${ColorReset} [RCSW_CONFIG_STDIO_GETCHAR]"
-)
-rcsw_message(
-  STATUS
-  "stdio putchar() function                      : ${ColorBold}${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}${ColorReset} [RCSW_CONFIG_STDIO_PUTCHAR]"
-)
+_rcsw_summary_line("Version" "${EMIT_CMAKE_PROJECT_VERSION}"
+                   "CMAKE_PROJECT_VERSION")
+_rcsw_summary_line("Building for" "${EMIT_RCSW_BUILD_FOR}"
+                   "RCSW_BUILD_FOR={POSIX,BAREMETAL}")
+_rcsw_summary_line("Library type" "${EMIT_RCSW_CONFIG_LIBTYPE}"
+                   "RCSW_CONFIG_LIBTYPE={STATIC,SHARED}")
+_rcsw_summary_line(
+  "Build monolithic lib" "${EMIT_RCSW_CONFIG_BUILD_MONOLITHIC}"
+  "RCSW_CONFIG_BUILD_MONOLITHIC")
+_rcsw_summary_line("Event reporting plugin" "${EMIT_RCSW_CONFIG_ER_PLUGIN}"
+                   "RCSW_CONFIG_ER_PLUGIN={ZLOG,LOG4CL,SIMPLE}")
+_rcsw_summary_line("No dynamic memory allocation" "${EMIT_RCSW_CONFIG_NOALLOC}"
+                   "RCSW_CONFIG_NOALLOC")
+_rcsw_summary_line("Zero alloc'd memory" "${EMIT_RCSW_CONFIG_ZALLOC}"
+                   "RCSW_CONFIG_ZALLOC")
+_rcsw_summary_line("Pointer alignment" "${EMIT_RCSW_CONFIG_PTR_ALIGN}"
+                   "RCSW_CONFIG_PTR_ALIGN={1,2,4}")
+_rcsw_summary_line("No GRIND macros" "${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}"
+                   "RCSW_CONFIG_TOOL_NO_GRIND")
+_rcsw_summary_line("stdio putchar()" "${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}"
+                   "RCSW_CONFIG_STDIO_PUTCHAR")
+_rcsw_summary_line("stdio getchar()" "${EMIT_RCSW_CONFIG_STDIO_GETCHAR}"
+                   "RCSW_CONFIG_STDIO_GETCHAR")
 
 message(
-  "${BoldBlue}--------------------------------------------------------------------------------"
+  "--------------------------------------------------------------------------------"
+)
+message("                           Components")
+message(
+  "--------------------------------------------------------------------------------"
+)
+
+# Drive YES/NO from _CONFIGURED_COMPONENTS (post-platform-filter) rather than
+# the raw option value, so platform-excluded components show NO even when their
+# option is ON.
+foreach(
+  _component IN
+  ITEMS core
+        al
+        algorithm
+        ds
+        er
+        multiprocess
+        multithread
+        stdio
+        tool
+        utils)
+  string(TOUPPER "${_component}" _opt)
+  if("${_component}" IN_LIST _CONFIGURED_COMPONENTS)
+    set(_built "YES")
+  else()
+    set(_built "NO ")
+  endif()
+  _rcsw_summary_line("Build component ${_component}" "${_built}"
+                     "RCSW_CONFIG_${_opt}")
+endforeach()
+
+message(
+  "--------------------------------------------------------------------------------"
 )

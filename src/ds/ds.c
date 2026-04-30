@@ -1,5 +1,5 @@
 /**
- * \file ds.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,12 +12,18 @@
 #include "rcsw/ds/ds.h"
 
 #include <math.h>
+#include <string.h>
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
 
+/******************************************************************************
+ * Private API
+ ******************************************************************************/
+#define RCSW_DS_ELT_SWAP_MAXSIZE 64
+
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -27,6 +33,10 @@ BEGIN_C_DECLS
 
 status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, elt_size > 0);
+
+  if (elt1 == elt2) {
+    return OK;
+  }
 
   switch (elt_size) {
     case sizeof(uint8_t):
@@ -55,11 +65,11 @@ status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) 
 } /* ds_elt_copy() */
 
 status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
-  RCSW_FPC_NV(ERROR,
-              NULL != elt1,
-              NULL != elt2,
-              elt_size > 0,
-              elt_size <= sizeof(double));
+  RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, elt_size > 0);
+
+  if (elt1 == elt2) {
+    return OK;
+  }
   double tmp;
   switch (elt_size) {
     case sizeof(uint8_t):
@@ -79,21 +89,37 @@ status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
       break;
 #if __SIZEOF_FLOAT__ != 4
     case sizeof(float):
-      tmp = *((float*)(elt1));
+      tmp               = *((float*)(elt1));
       *((float*)(elt1)) = *((const float*)(elt2));
       *((float*)(elt2)) = tmp;
       break;
 #endif
     case sizeof(double):
-      tmp = *((const double*)(elt1));
+      tmp                = *((const double*)(elt1));
       *((double*)(elt1)) = *((const double*)(elt2));
       *((double*)(elt2)) = tmp;
       break;
     default:
+      /*
+       * Fixed-size temporary buffer. 64 bytes covers the largest element type
+       * used anywhere in RCSW (struct bstree_node is the largest at ~48 bytes).
+       * If a new DS requires larger elements, increase this constant and update
+       * the static assert below.
+       */
+      RCSW_CHECK(elt_size <= RCSW_DS_ELT_SWAP_MAXSIZE);
+
+      uint8_t tmp2[RCSW_DS_ELT_SWAP_MAXSIZE];
+      memcpy(tmp2, elt1, elt_size);
+      memcpy(elt1, elt2, elt_size);
+      memcpy(elt2, tmp2, elt_size);
+
       break;
   } /* switch() */
 
   return OK;
+
+error:
+  return ERROR;
 } /* ds_elt_swap() */
 
 status_t ds_elt_clear(void* const elt, size_t elt_size) {

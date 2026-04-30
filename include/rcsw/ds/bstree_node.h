@@ -1,12 +1,11 @@
 /**
- * \file bstree_node.h
- * \cond INTERNAL
- * \ingroup ds
- * \brief Functions for BST nodes.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \cond INTERNAL
  */
 
 #pragma once
@@ -34,10 +33,11 @@ BEGIN_C_DECLS
  *
  * \return The created node, or NULL if an error occurred
  */
-RCSW_LOCAL struct bstree_node *bstree_node_create(const struct bstree * tree,
-                                       struct bstree_node * parent,
-                                       void * key_in, void * data_in,
-                                       size_t node_size);
+RCSW_LOCAL struct bstree_node* bstree_node_create(const struct bstree* tree,
+                                                  struct bstree_node*  parent,
+                                                  void*                key_in,
+                                                  void*                data_in,
+                                                  size_t               node_size);
 
 /**
  * \brief Delete part or all of a BST node
@@ -51,8 +51,8 @@ RCSW_LOCAL struct bstree_node *bstree_node_create(const struct bstree * tree,
  * \return Always returns 0. This is necessary so that this function can be used
  * as a callback during node traversal
  */
-RCSW_LOCAL int bstree_node_destroy(const struct bstree * tree,
-                         struct bstree_node *node);
+RCSW_LOCAL int bstree_node_destroy(const struct bstree* tree,
+                                   struct bstree_node*  node);
 
 /**
  * \brief Allocate a node in a bstree
@@ -66,8 +66,8 @@ RCSW_LOCAL int bstree_node_destroy(const struct bstree * tree,
  *
  * \return The allocated bstree_node, or NULL if no suitable node was found
  */
-RCSW_LOCAL struct bstree_node *bstree_node_alloc(const struct bstree * tree,
-                                      size_t node_size);
+RCSW_LOCAL struct bstree_node* bstree_node_alloc(const struct bstree* tree,
+                                                 size_t               node_size);
 
 /**
  * \brief Deallocate a node in a BST
@@ -75,8 +75,8 @@ RCSW_LOCAL struct bstree_node *bstree_node_alloc(const struct bstree * tree,
  * \param tree The BST handle
  * \param node The node to deallocate
  */
-RCSW_LOCAL void bstree_node_dealloc(const struct bstree * tree,
-                         struct bstree_node *node);
+RCSW_LOCAL void bstree_node_dealloc(const struct bstree* tree,
+                                    struct bstree_node*  node);
 
 /**
  * \brief Allocate a datablock for a BST node
@@ -85,29 +85,30 @@ RCSW_LOCAL void bstree_node_dealloc(const struct bstree * tree,
  *
  * \return The allocated datablock, or NULL if no valid block could be found
  */
-RCSW_LOCAL void *bstree_node_datablock_alloc(const struct bstree * tree);
+RCSW_LOCAL void* bstree_node_datablock_alloc(const struct bstree* tree);
 
 /**
  * \brief Deallocate a datablock
  **/
 RCSW_LOCAL void bstree_node_datablock_dealloc(const struct bstree* tree,
-                                   dptr_t* datablock);
+                                              dptr_t*              datablock);
 
 /**
  * \brief Internal function to do pre-order traversal
  *
  * \param tree The BST handle
- * \param node The start of the traversal (does not have to be the root of the tree)
+ * \param node The start of the traversal (does not have to be the root of the
+ * tree)
  * \param cb Callback called on each node in the tree, and passed the BST
  * handle. Cannot be used to modify the BST handle, but CAN modify the node.
  *
  * \return Return code of last callback that was non-zero, or 0 if callback
  * succeeded on all nodes
  */
-RCSW_LOCAL int bstree_traverse_nodes_preorder(struct bstree * tree,
-                                   struct bstree_node * node,
-                                   int (*cb)(const struct bstree * tree,
-                                             struct bstree_node * node));
+RCSW_LOCAL int bstree_traverse_nodes_preorder(
+  struct bstree*      tree,
+  struct bstree_node* node,
+  int (*cb)(const struct bstree* tree, struct bstree_node* node));
 
 /**
  * \brief Internal function to do in-order traversal
@@ -121,10 +122,10 @@ RCSW_LOCAL int bstree_traverse_nodes_preorder(struct bstree * tree,
  * \return Return code of last callback that was non-zero, or 0 if callback
  * succeeded on all nodes
  */
-RCSW_LOCAL int bstree_traverse_nodes_inorder(struct bstree * tree,
-                                  struct bstree_node * node,
-                                  int (*cb)(const struct bstree * tree,
-                                            struct bstree_node * node));
+RCSW_LOCAL int bstree_traverse_nodes_inorder(struct bstree*      tree,
+                                             struct bstree_node* node,
+                                             int (*cb)(const struct bstree* tree,
+                                                       struct bstree_node* node));
 
 /**
  * \brief Internal function used to perform a post-order traversal (this is
@@ -140,10 +141,10 @@ RCSW_LOCAL int bstree_traverse_nodes_inorder(struct bstree * tree,
  * \return Return code of last callback that was non-zero, or 0 if callback
  * succeeded on all nodes
  */
-RCSW_LOCAL int bstree_traverse_nodes_postorder(struct bstree * tree,
-                                    struct bstree_node * node,
-                                    int (*cb)(const struct bstree * tree,
-                                              struct bstree_node * node));
+RCSW_LOCAL int bstree_traverse_nodes_postorder(
+  struct bstree*      tree,
+  struct bstree_node* node,
+  int (*cb)(const struct bstree* tree, struct bstree_node* node));
 
 /**
  * \brief - Rotate the subtree anchored at a BST node to the left
@@ -156,8 +157,8 @@ RCSW_LOCAL int bstree_traverse_nodes_postorder(struct bstree * tree,
  * \param node The node in the tree to rotate about
  *
  */
-RCSW_LOCAL void bstree_node_rotate_left(struct bstree * tree,
-                             struct bstree_node *node);
+RCSW_LOCAL void bstree_node_rotate_left(struct bstree*      tree,
+                                        struct bstree_node* node);
 
 /**
  * \brief Rotate the subtree anchored at a bstree node to the left
@@ -168,8 +169,8 @@ RCSW_LOCAL void bstree_node_rotate_left(struct bstree * tree,
  * \param tree The BST handle
  * \param node The node in the tree to rotate about
  */
-RCSW_LOCAL void bstree_node_rotate_right(struct bstree * tree,
-                              struct bstree_node *node);
+RCSW_LOCAL void bstree_node_rotate_right(struct bstree*      tree,
+                                         struct bstree_node* node);
 
 /**
  * \brief Print a BSTREE node
@@ -181,9 +182,8 @@ RCSW_LOCAL void bstree_node_rotate_right(struct bstree * tree,
  * callback to print a bstree
  *
  */
-RCSW_LOCAL int bstree_node_print(const struct bstree * tree,
-                      const struct bstree_node * node);
-
+RCSW_LOCAL int bstree_node_print(const struct bstree*      tree,
+                                 const struct bstree_node* node);
 
 /**
  * \brief Get the successor of x (smallest node larger than x)
@@ -196,11 +196,11 @@ RCSW_LOCAL int bstree_node_print(const struct bstree * tree,
  * \return The successor, or NULL if none was found (i.e. x is d the largest
  * node in the tree)
  */
-RCSW_LOCAL struct bstree_node* bstree_node_successor(const struct bstree* tree,
-                                                     const struct bstree_node* node) RCSW_PURE;
+RCSW_LOCAL struct bstree_node* bstree_node_successor(
+  const struct bstree* tree, const struct bstree_node* node) RCSW_PURE;
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Get the height of a binary search tree anchored at a node
@@ -210,8 +210,8 @@ RCSW_LOCAL struct bstree_node* bstree_node_successor(const struct bstree* tree,
  *
  * \return The height or 0 if the node is NULL
  */
-RCSW_API size_t bstree_node_height(const struct bstree* tree,
-                                   const struct bstree_node * node) RCSW_PURE;
+RCSW_API size_t bstree_node_height(const struct bstree*      tree,
+                                   const struct bstree_node* node) RCSW_PURE;
 
 END_C_DECLS
 

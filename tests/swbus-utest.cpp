@@ -25,7 +25,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using swbus_test = void (*)(const struct swbus_params* const params,
+using swbus_test = void (*)(const struct swbus_config* const config,
                             size_t                           n_threads);
 #define TH_MAX_POOLS 16
 #define TH_MAX_RXQS 16
@@ -40,37 +40,37 @@ using swbus_test = void (*)(const struct swbus_params* const params,
 static void run_test(swbus_test test, size_t n_threads = 1) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
 
-  struct swbus_params bus_params;
-  bus_params.max_pools = TH_MAX_POOLS;
-  bus_params.max_rxqs  = TH_MAX_RXQS;
-  bus_params.max_subs  = TH_MAX_SUBS;
-  bus_params.pools =
-    (struct mpool_params*)malloc(sizeof(struct mpool_params) * TH_MAX_POOLS);
-  strncpy(bus_params.name, "TESTBUS", sizeof(bus_params.name));
+  struct swbus_config bus_config;
+  bus_config.max_pools = TH_MAX_POOLS;
+  bus_config.max_rxqs  = TH_MAX_RXQS;
+  bus_config.max_subs  = TH_MAX_SUBS;
+  bus_config.pools =
+    (struct mpool_config*)malloc(sizeof(struct mpool_config) * TH_MAX_POOLS);
+  strncpy(bus_config.name, "TESTBUS", sizeof(bus_config.name));
 
   for (size_t i = 0; i < TH_MAX_POOLS; ++i) {
-    bus_params.pools[i].elements =
+    bus_config.pools[i].elements =
       (dptr_t*)malloc(mpool_element_space(TH_MAX_BUFSIZE, TH_RXQ_SIZE));
-    bus_params.pools[i].meta = (dptr_t*)malloc(mpool_meta_space(TH_RXQ_SIZE));
-    CATCH_REQUIRE(nullptr != bus_params.pools[i].elements);
-    CATCH_REQUIRE(nullptr != bus_params.pools[i].meta);
-    bus_params.pools[i].max_elts = TH_RXQ_SIZE;
-    bus_params.pools[i].elt_size = TH_MAX_BUFSIZE / (TH_MAX_POOLS - i);
-    bus_params.pools[i].flags    = RCSW_NONE;
+    bus_config.pools[i].meta = (dptr_t*)malloc(mpool_meta_space(TH_RXQ_SIZE));
+    CATCH_REQUIRE(nullptr != bus_config.pools[i].elements);
+    CATCH_REQUIRE(nullptr != bus_config.pools[i].meta);
+    bus_config.pools[i].max_elts = TH_RXQ_SIZE;
+    bus_config.pools[i].elt_size = TH_MAX_BUFSIZE / (TH_MAX_POOLS - i);
+    bus_config.pools[i].flags    = RCSW_NONE;
   } /* for() */
 
   uint32_t flags[] = {RCSW_NONE, RCSW_NOALLOC_HANDLE, RCSW_SWBUS_ASYNC};
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    bus_params.flags = flags[i];
-    test(&bus_params, n_threads);
+    bus_config.flags = flags[i];
+    test(&bus_config, n_threads);
   } /* for(i..) */
 
   for (size_t i = 0; i < TH_MAX_POOLS; ++i) {
-    free(bus_params.pools[i].elements);
-    free(bus_params.pools[i].meta);
+    free(bus_config.pools[i].elements);
+    free(bus_config.pools[i].meta);
   } /* for() */
-  free(bus_params.pools);
+  free(bus_config.pools);
 
   RCSW_ER_DEINIT();
 } /* test_runner() */
@@ -81,11 +81,11 @@ static void run_test(swbus_test test, size_t n_threads = 1) {
 /**
  * \brief Test SWBUS initialization (verrrryyy simplistic sanity test).
  */
-static void init_test(const struct swbus_params* params, size_t) {
+static void init_test(const struct swbus_config* config, size_t) {
   struct swbus  myswbus;
   struct swbus* swbus;
 
-  swbus = swbus_init(&myswbus, params);
+  swbus = swbus_init(&myswbus, config);
   CATCH_REQUIRE(nullptr != swbus);
 
   swbus_destroy(swbus);
@@ -94,12 +94,12 @@ static void init_test(const struct swbus_params* params, size_t) {
 /**
  * \brief Test subscribing an RXQ to multiple packets. Doesn't test publishing.
  */
-static void subscribe_test(const struct swbus_params* params, size_t) {
+static void subscribe_test(const struct swbus_config* config, size_t) {
   struct swbus_rxq_ent rxq_buf[RXQ_SIZE];
   struct swbus         myswbus;
   struct swbus*        swbus;
 
-  swbus = swbus_init(&myswbus, params);
+  swbus = swbus_init(&myswbus, config);
   CATCH_REQUIRE(nullptr != swbus);
 
   struct pcqueue* rxq = swbus_rxq_init(swbus, rxq_buf, RXQ_SIZE);
@@ -129,11 +129,11 @@ static void subscribe_test(const struct swbus_params* params, size_t) {
  * - Pushing packets to multiple to multiple RXQs
  */
 
-static void serial_stress_test(const struct swbus_params* params, size_t) {
+static void serial_stress_test(const struct swbus_config* config, size_t) {
   struct swbus  myswbus;
   struct swbus* swbus;
 
-  swbus = swbus_init(&myswbus, params);
+  swbus = swbus_init(&myswbus, config);
   CATCH_REQUIRE(nullptr != swbus);
   uint8_t*        buf  = (uint8_t*)malloc(TH_RXQ_SIZE);
   struct pcqueue* rxq  = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
@@ -150,16 +150,16 @@ static void serial_stress_test(const struct swbus_params* params, size_t) {
   CATCH_REQUIRE(swbus_subscribe(swbus, rxq, 1) == OK);
   CATCH_REQUIRE(swbus_subscribe(swbus, rxq2, 1) == OK);
 
-  for (size_t i = 0; i < params->max_pools; ++i) {
+  for (size_t i = 0; i < config->max_pools; ++i) {
     struct mpool* bp = &swbus->pools[i];
     for (size_t j = 0; j < mpool_capacity(bp) / 2; ++j) {
       CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j);
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j);
-      CATCH_REQUIRE(swbus_publish(swbus, 0, params->pools[i].elt_size, buf) ==
+      CATCH_REQUIRE(swbus_publish(swbus, 0, config->pools[i].elt_size, buf) ==
                     OK);
       CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j + 1);
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j + 1);
-      CATCH_REQUIRE(swbus_publish(swbus, 1, params->pools[i].elt_size, buf) ==
+      CATCH_REQUIRE(swbus_publish(swbus, 1, config->pools[i].elt_size, buf) ==
                     OK);
       CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j + 2);
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j + 2);
@@ -205,12 +205,12 @@ static void serial_stress_test(const struct swbus_params* params, size_t) {
  * - Pushing packets to multiple to multiple RXQs
  */
 
-static void concurrent_stress_test(const struct swbus_params* params,
+static void concurrent_stress_test(const struct swbus_config* config,
                                    size_t                     n_threads) {
   struct swbus  myswbus;
   struct swbus* swbus;
 
-  swbus = swbus_init(&myswbus, params);
+  swbus = swbus_init(&myswbus, config);
   CATCH_REQUIRE(nullptr != swbus);
   uint8_t*        buf          = (uint8_t*)malloc(TH_RXQ_SIZE);
   size_t          n_publishers = n_threads;
@@ -252,7 +252,7 @@ static void concurrent_stress_test(const struct swbus_params* params,
       status_t rval =
         swbus_publish(swbus,
                       i % TH_MAX_PID,
-                      params->pools[rand() % params->max_pools].elt_size,
+                      config->pools[rand() % config->max_pools].elt_size,
                       buf);
       mtx.lock();
       checks.push_back(rval == OK);
@@ -315,7 +315,7 @@ static void concurrent_stress_test(const struct swbus_params* params,
     }
   } /* for(i..) */
 
-  for (size_t i = 0; i < params->max_pools; ++i) {
+  for (size_t i = 0; i < config->max_pools; ++i) {
     struct mpool* bp = &swbus->pools[i];
     CATCH_REQUIRE(llist_isfull(&bp->free));
     CATCH_REQUIRE(llist_isempty(&bp->alloc));

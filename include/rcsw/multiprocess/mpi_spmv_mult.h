@@ -1,11 +1,13 @@
 /**
- * \file mpi_spmv_mult.h
- * \ingroup multiprocess
- * \brief Implementation of MPI-based sparse matrix-vector multiplication.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multiprocess
+ *
+ * \brief Implementation of MPI-based sparse matrix-vector multiplication.
  */
 
 #pragma once
@@ -14,6 +16,7 @@
  * Includes
  ******************************************************************************/
 #include <mpi.h>
+
 #include "rcsw/ds/csmatrix.h"
 
 /*******************************************************************************
@@ -21,120 +24,125 @@
  ******************************************************************************/
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * Parameters for sparse matrix/vector multiplication via MPI
  */
-struct mpi_spmv_mult_params {
-    int mpi_rank;
-    int mpi_world_size;
+struct mpi_spmv_mult_config {
+  int mpi_rank;
+  int mpi_world_size;
 
-    /** The sparse matrix to multiply with (only significant at master) */
-    struct csmatrix *matrix;
+  /** The sparse matrix to multiply with (only significant at master) */
+  struct csmatrix* matrix;
 };
 
 /**
  * Sparse matrix -> vector multiplier.
  */
 struct mpi_spmv_mult {
-    struct csmatrix *matrix;    /// The sparse matrix
-    struct darray *vector_in;   /// The vector to multiply with
-    struct darray *vector_out;  /// The resulting vector
+  /** The sparse matrix */
+  struct csmatrix* matrix;
 
-    /**
-     * An array containing the # of elements allocated to each rank (at the
-     * root) in terms of matrix entries, and NULL at all other ranks.
-     */
-    int* rank_alloc_elts;
+  /** The vector to multiply with */
+  struct darray* vector_in;
 
-    /**
-     * An array containing the # rows assigned to each rank (at the root), and
-     * NULL at all other ranks.
-     */
-    int* rank_alloc_rows;
+  /** The resulting vector */
+  struct darray* vector_out;
 
-    /**
-     * Array of what mpi ranks are responsible for the entries in a particular
-     * row of the matrix. All ranks have a copy.
-     */
-    int* row_owners;
+  /**
+   * An array containing the # of elements allocated to each rank (at the
+   * root) in terms of matrix entries, and NULL at all other ranks.
+   */
+  int* rank_alloc_elts;
 
-    /**
-     * Prefix sums for # of elements allocated to each rank over the rows, used
-     * for collecting the results of the multiplication at the root.
-     */
-    int* rank_alloc_row_prefix_sums;
+  /**
+   * An array containing the # rows assigned to each rank (at the root), and
+   * NULL at all other ranks.
+   */
+  int* rank_alloc_rows;
 
-    /**
-     * Prefix sums for # of elements allocated to each rank over the columns,
-     * used for correct sending/receiving of matrix data during execution.
-     */
-    int* rank_alloc_col_prefix_sums;
+  /**
+   * Array of what mpi ranks are responsible for the entries in a particular
+   * row of the matrix. All ranks have a copy.
+   */
+  int* row_owners;
 
-    /**
-     * Sizes of each row in the matrix, used for collecting the results of the
-     * multiplication at the root.
-     */
-    int* row_sizes;
+  /**
+   * Prefix sums for # of elements allocated to each rank over the rows, used
+   * for collecting the results of the multiplication at the root.
+   */
+  int* rank_alloc_row_prefix_sums;
 
-    int mpi_rank;
-    int mpi_world_size;
+  /**
+   * Prefix sums for # of elements allocated to each rank over the columns,
+   * used for correct sending/receiving of matrix data during execution.
+   */
+  int* rank_alloc_col_prefix_sums;
 
-    /**
-     * The total # of rows in the matrix broadcast during
-     * initialization. Needed so that the row membership array can be
-     * initialized to the proper size.
-     */
-    int n_rows_init;
+  /**
+   * Sizes of each row in the matrix, used for collecting the results of the
+   * multiplication at the root.
+   */
+  int* row_sizes;
 
-    /**
-     * The total # of rows in the matrix broadcast during
-     * initialization.
-     */
-    int n_cols_init;
+  int mpi_rank;
+  int mpi_world_size;
 
-    /**
-     * The # of rows allocated to a particular MPI rank
-     */
-    int n_rows_alloc;
+  /**
+   * The total # of rows in the matrix broadcast during
+   * initialization. Needed so that the row membership array can be
+   * initialized to the proper size.
+   */
+  int n_rows_init;
 
-    /**
-     * The # of elements allocated to a particular MPI rank
-     */
-    int n_elts_alloc;
-    int row_alloc_start;  /// Starting row allocated to a rank.
+  /**
+   * The total # of rows in the matrix broadcast during
+   * initialization.
+   */
+  int n_cols_init;
 
-    /**
-     * The # of elements allocated to a particular MPI rank, but taken over the
-     * columns of the ORIGINAL matrix, rather than the submatrix currently
-     * assigned to the rank.
-     *
-     */
-    int n_elts_alloc_init_transpose;
+  /**
+   * The # of rows allocated to a particular MPI rank
+   */
+  int n_rows_alloc;
 
-    /**
-     * A custom datatype for sending/receiving non-zero parts of the vector to
-     * multiply with. It was much easier to creating a mapping datatype than to
-     * try to finagle it with arrays.
-     */
-    MPI_Datatype spmv_comm_type;
+  /**
+   * The # of elements allocated to a particular MPI rank
+   */
+  int n_elts_alloc;
+  int row_alloc_start;  /// Starting row allocated to a rank.
+
+  /**
+   * The # of elements allocated to a particular MPI rank, but taken over the
+   * columns of the ORIGINAL matrix, rather than the submatrix currently
+   * assigned to the rank.
+   *
+   */
+  int n_elts_alloc_init_transpose;
+
+  /**
+   * A custom datatype for sending/receiving non-zero parts of the vector to
+   * multiply with. It was much easier to creating a mapping datatype than to
+   * try to finagle it with arrays.
+   */
+  MPI_Datatype spmv_comm_type;
 };
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 /**
  * \brief Initialize the MPI multiplier. All ranks call this function.
  *
- * \param params The initialization parameters.
+ * \param config The initialization parameters.
  *
  * \return The initialized multiplier, or NULL if an ERROR occurred.
  */
-struct mpi_spmv_mult* mpi_spmv_mult_init(
-    const struct mpi_spmv_mult_params* const params);
+RCSW_API struct mpi_spmv_mult* mpi_spmv_mult_init(
+  const struct mpi_spmv_mult_config* const config);
 
 /**
  * \brief Destroy an MPI multiplier.
@@ -143,7 +151,7 @@ struct mpi_spmv_mult* mpi_spmv_mult_init(
  *
  * \param mult The multiplier handle.
  */
-void mpi_spmv_mult_destroy(struct mpi_spmv_mult* const mult);
+RCSW_API void mpi_spmv_mult_destroy(struct mpi_spmv_mult* const mult);
 
 /**
  * \brief Initialize multiplier data structures on all non-zero ranks by
@@ -155,7 +163,7 @@ void mpi_spmv_mult_destroy(struct mpi_spmv_mult* const mult);
  *
  * \param mult The multiplier handle.
  */
-status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult);
+RCSW_API status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult);
 
 /**
  * \brief Distribute the data in the matrix/vector at the root to all ranks
@@ -166,17 +174,16 @@ status_t mpi_spmv_mult_ds_init(struct mpi_spmv_mult* const mult);
  * \param mult The multiplier handle.
  * \param vector The vector to multiply with
  */
-status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
-                                  struct darray* vector);
+RCSW_API status_t mpi_spmv_mult_distribute(struct mpi_spmv_mult* const mult,
+                                           struct darray*              vector);
 
 /**
- * \brief Execute the multiply in parallel via MIA.
+ * \brief Execute the multiply in parallel via MPI.
  *
  * This must be called after \ref mpi_spmv_mult_distribute(),
  *
  * \param mult The multiplier handle.
  */
-struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult);
+RCSW_API struct darray* mpi_spmv_mult_exec(struct mpi_spmv_mult* const mult);
 
 END_C_DECLS
-

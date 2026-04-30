@@ -21,7 +21,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using mpool_test = void (*)(const struct mpool_params* const params,
+using mpool_test = void (*)(const struct mpool_config* const config,
                             size_t                           n_threads);
 #define TH_NUM_MT_ITEMS 1000
 
@@ -36,13 +36,13 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   /* log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_ALL); */
   /* log4cl_mod_lvl_set(ekLOG4CL_DS_LLIST, RCSW_ERL_ALL); */
 
-  struct mpool_params params;
-  params.flags    = 0;
-  params.elt_size = sizeof(T);
-  params.max_elts = TH_NUM_MT_ITEMS;
-  params.meta     = (dptr_t*)malloc(mpool_meta_space(params.max_elts));
-  params.elements =
-    (dptr_t*)malloc(mpool_element_space(params.max_elts, params.elt_size));
+  struct mpool_config config;
+  config.flags    = 0;
+  config.elt_size = sizeof(T);
+  config.max_elts = TH_NUM_MT_ITEMS;
+  config.meta     = (dptr_t*)malloc(mpool_meta_space(config.max_elts));
+  config.elements =
+    (dptr_t*)malloc(mpool_element_space(config.max_elts, config.elt_size));
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -52,12 +52,12 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   };
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    params.flags = flags[i];
-    test(&params, n_threads);
+    config.flags = flags[i];
+    test(&config, n_threads);
   }
 
-  free(params.meta);
-  free(params.elements);
+  free(config.meta);
+  free(config.elements);
   RCSW_ER_DEINIT();
 } /* test_runner() */
 
@@ -65,16 +65,16 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void simple_test(const struct mpool_params* const params, size_t) {
+static void simple_test(const struct mpool_config* const config, size_t) {
   struct mpool  pool_in;
   struct mpool* pool;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    pool = mpool_init(NULL, params);
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    pool = mpool_init(NULL, config);
     CATCH_REQUIRE(nullptr == pool);
-    pool = mpool_init(&pool_in, params);
+    pool = mpool_init(&pool_in, config);
   } else {
-    pool = mpool_init(&pool_in, params);
+    pool = mpool_init(&pool_in, config);
   }
   CATCH_REQUIRE(nullptr != pool);
   CATCH_REQUIRE(mpool_isempty(pool));
@@ -96,17 +96,17 @@ static void simple_test(const struct mpool_params* const params, size_t) {
   mpool_destroy(pool);
 }
 template <typename T>
-static void concurrency_test(const struct mpool_params* const params,
+static void concurrency_test(const struct mpool_config* const config,
                              size_t                           n_threads) {
   struct mpool  pool_in;
   struct mpool* pool;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    pool = mpool_init(NULL, params);
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    pool = mpool_init(NULL, config);
     CATCH_REQUIRE(nullptr == pool);
-    pool = mpool_init(&pool_in, params);
+    pool = mpool_init(&pool_in, config);
   } else {
-    pool = mpool_init(&pool_in, params);
+    pool = mpool_init(&pool_in, config);
   }
   CATCH_REQUIRE(nullptr != pool);
 
@@ -116,7 +116,7 @@ static void concurrency_test(const struct mpool_params* const params,
   std::mutex        mtx;
   auto              cb = [&](auto* const p, size_t id) {
     std::vector<T*>          vals;
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
     struct timespec          to = {.tv_sec = 0, .tv_nsec = 1000};
 
     while (vals.size() < TH_NUM_MT_ITEMS) {

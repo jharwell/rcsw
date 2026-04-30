@@ -1,5 +1,5 @@
 /**
- * \file rdwrlock.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,13 +11,18 @@
  ******************************************************************************/
 #include "rcsw/multithread/rdwrlock.h"
 
+#include "rcsw/al/baremetal/clock.h"
+#include "rcsw/multithread/csem.h"
+
 #define RCSW_ER_MODID ekLOG4CL_MT_RDWRLOCK
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "rdwrl")
+#include "rcsw/al/clock.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/flags.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/rcsw.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
+#include "rcsw/utils/time.h"
 
 /*******************************************************************************
  * Private Functions
@@ -39,22 +44,30 @@ static void rdwrl_wr_enter(struct rdwrlock* const rdwr) {
   csem_post(&rdwr->order);
 } /* rdwrl_wr_enter() */
 
-static status_t rdwrl_wr_timed_enter(struct rdwrlock* const rdwr,
+static status_t rdwrl_wr_timed_enter(struct rdwrlock* const       rdwr,
                                      const struct timespec* const to) {
   status_t rval = ERROR;
 
+  /*
+   * Convert once to an absolute deadline; all subsequent waits draw from
+   * the same budget by recomputing the remaining relative timeout.
+   */
+  struct timespec deadline;
+  RCSW_CHECK(OK == utils_ts_make_abs(to, &deadline));
+
   /* get a place in line (ensure fairness) */
-  csem_timedwait(&rdwr->order, to);
+  RCSW_CHECK(OK == csem_timedwait_abs(&rdwr->order, &deadline));
 
   /* request exclusive access to resource */
-  RCSW_CHECK(OK == csem_timedwait(&rdwr->access, to));
+  RCSW_CHECK(OK == csem_timedwait_abs(&rdwr->access, &deadline));
+
   rval = OK;
 
 error:
   /* we have gotten served, so release our place in line */
   csem_post(&rdwr->order);
   return rval;
-} /* struct rdwrl_timed_wr_enter() */
+}
 
 static void rdwrl_rd_exit(struct rdwrlock* const rdwr) {
   /* we are going to modify the readers counter  */
@@ -93,22 +106,29 @@ static void rdwrl_rd_enter(struct rdwrlock* rdwr) {
   csem_post(&rdwr->read);
 } /* rdwrl_rd_enter() */
 
-static status_t rdwrl_rd_timed_enter(struct rdwrlock* const rdwr,
+static status_t rdwrl_rd_timed_enter(struct rdwrlock* const       rdwr,
                                      const struct timespec* const to) {
   status_t rval = ERROR;
 
+  /* Total time budget starts now */
+  struct timespec deadline;
+  RCSW_CHECK(OK == utils_ts_make_abs(to, &deadline));
+
   /* get a place in line (ensure fairness) */
-  csem_wait(&rdwr->order);
+  struct timespec remaining;
+  RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
+  RCSW_CHECK(OK == csem_timedwait(&rdwr->order, &remaining));
 
   /* we are going to modify the readers counter */
-  csem_wait(&rdwr->read);
+  RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
+  RCSW_CHECK(OK == csem_timedwait(&rdwr->read, &remaining));
 
   /* if we are the first reader */
   if (0 == rdwr->n_readers) {
-    /* request exclusive access for readers */
-    RCSW_CHECK(OK == csem_timedwait(&rdwr->access, to));
+    RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
+    RCSW_CHECK(OK == csem_timedwait(&rdwr->access, &remaining));
   }
-  ++rdwr->n_readers; /* 1 more reader */
+  ++rdwr->n_readers;
   rval = OK;
 
 error:
@@ -121,12 +141,11 @@ error:
 } /* struct rdwrl_rd_timed_enter() */
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
-  struct rdwrlock* rdwr = rcsw_alloc(rdwr_in,
-                                     sizeof(struct rdwrlock),
-                                     flags & RCSW_NOALLOC_HANDLE);
+  struct rdwrlock* rdwr =
+    rcsw_alloc(rdwr_in, sizeof(struct rdwrlock), flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(rdwr);
   rdwr->flags = flags;
@@ -153,7 +172,7 @@ void rdwrl_destroy(struct rdwrlock* const rdwr) {
   rcsw_free(rdwr, rdwr->flags & RCSW_NOALLOC_HANDLE);
 } /* rdwrl_destroy() */
 
-void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
+void rdwrl_req(struct rdwrlock* const rdwr, enum rdwrlock_scope scope) {
   RCSW_FPC_V(NULL != rdwr);
 
   switch (scope) {
@@ -170,7 +189,7 @@ error:
   return;
 } /* rdwrl_req() */
 
-void rdwrl_exit(struct rdwrlock *const rdwr, enum rdwrlock_scope scope) {
+void rdwrl_exit(struct rdwrlock* const rdwr, enum rdwrlock_scope scope) {
   RCSW_FPC_V(NULL != rdwr);
 
   switch (scope) {
@@ -187,8 +206,8 @@ error:
   return;
 } /* rdwrl_exit() */
 
-status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
-                        enum rdwrlock_scope scope,
+status_t rdwrl_timedreq(struct rdwrlock* const       rdwr,
+                        enum rdwrlock_scope          scope,
                         const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != rdwr, NULL != to);
 

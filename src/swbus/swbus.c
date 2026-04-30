@@ -1,5 +1,5 @@
 /**
- * \file swbus.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,19 +11,21 @@
  ******************************************************************************/
 #include "rcsw/swbus/swbus.h"
 
+#include <string.h>
+
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "swb")
 #define RCSW_ER_MODID ekLOG4CL_SWBUS
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
 
-static status_t swbus_subscriber_notify(struct swbus* swb,
-                                        struct mpool* bp,
-                                        struct swbus_sub* sub,
+static status_t swbus_subscriber_notify(struct swbus*         swb,
+                                        struct mpool*         bp,
+                                        struct swbus_sub*     sub,
                                         struct swbus_rxq_ent* rxq_ent) {
   RCSW_FPC_NV(ERROR,
               NULL != swb,
@@ -62,50 +64,52 @@ static int swbus_sub_cmp(const void* a, const void* b) {
   } else if (s1->pid > s2->pid) {
     return 1;
   } else {
-    return (int)(s1->subscriber - s2->subscriber);
+    if (s1->subscriber < s2->subscriber) {
+      return -1;
+    }
+    if (s1->subscriber > s2->subscriber) {
+      return 1;
+    }
+    return 0;
   }
-} /* swbus_sub_ent_cmp() */
+}
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct swbus* swbus_init(struct swbus* swb_in,
-                         const struct swbus_params* params) {
+struct swbus* swbus_init(struct swbus*              swb_in,
+                         const struct swbus_config* params) {
   RCSW_FPC_NV(NULL, params != NULL);
   RCSW_ER_MODULE_INIT();
 
-  struct swbus* swb = rcsw_alloc(swb_in,
-                                 sizeof(struct swbus),
-                                 params->flags & RCSW_NOALLOC_HANDLE);
+  struct swbus* swb =
+    rcsw_alloc(swb_in, sizeof(struct swbus), params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(swb);
   RCSW_CHECK_PTR(mutex_init(&swb->mutex, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(rdwrl_init(&swb->syncl, RCSW_NOALLOC_HANDLE));
 
-  strncpy(swb->name, params->name, RCSW_SWBUS_MAX_NAMELEN);
+  snprintf(swb->name, RCSW_SWBUS_MAX_NAMELEN, "%s", params->name);
   ER_DEBUG("Initializing SWB instance '%s'", swb->name);
 
-  swb->flags = params->flags;
-  swb->n_rxqs = 0;
-  swb->n_pools = params->max_pools;
+  swb->flags    = params->flags;
+  swb->n_rxqs   = 0;
+  swb->n_pools  = params->max_pools;
   swb->max_rxqs = params->max_rxqs;
   swb->max_subs = params->max_subs;
 
   ER_DEBUG("Initializing %zu buffer pools", swb->n_pools);
 
   /* initialize buffer pools */
-  swb->pools = rcsw_alloc(NULL,
-                          swb->n_pools * sizeof(struct mpool),
-                          RCSW_NONE);
+  swb->pools = rcsw_alloc(NULL, swb->n_pools * sizeof(struct mpool), RCSW_NONE);
 
   RCSW_CHECK_PTR(swb->pools);
 
   for (size_t i = 0; i < swb->n_pools; i++) {
     params->pools[i].flags |= RCSW_NOALLOC_HANDLE;
-    RCSW_CHECK_PTR(mpool_init(&swb->pools[i],
-                              &params->pools[i]));
+    RCSW_CHECK_PTR(mpool_init(&swb->pools[i], &params->pools[i]));
   } /* for() */
 
   ER_DEBUG("Allocating %zu receive queues, %zu max subscribers/queue",
@@ -113,18 +117,16 @@ struct swbus* swbus_init(struct swbus* swb_in,
            swb->max_subs);
 
   /* Allocate receive queues */
-  swb->rxqs = rcsw_alloc(NULL,
-                         swb->max_rxqs * sizeof(struct pcqueue),
-                         RCSW_NONE);
+  swb->rxqs = rcsw_alloc(NULL, swb->max_rxqs * sizeof(struct pcqueue), RCSW_NONE);
 
   RCSW_CHECK_PTR(swb->rxqs);
 
   /* Initialize subscriber list */
-  struct llist_params llparams = { .max_elts = (int)swb->max_subs,
-    .elt_size = sizeof(struct swbus_sub),
-    .cmpe = swbus_sub_cmp,
-    .flags = RCSW_DS_SORTED };
-  swb->subscribers = llist_init(NULL, &llparams);
+  struct llist_config llparams = {.max_elts = (int)swb->max_subs,
+                                  .elt_size = sizeof(struct swbus_sub),
+                                  .cmpe     = swbus_sub_cmp,
+                                  .flags    = RCSW_DS_SORTED};
+  swb->subscribers             = llist_init(NULL, &llparams);
   RCSW_CHECK_PTR(swb->subscribers);
 
   ER_DEBUG("Initialization complete for SWB instance '%s'", swb->name);
@@ -157,9 +159,9 @@ void swbus_destroy(struct swbus* swb) {
 } /* swbus_destroy() */
 
 status_t swbus_publish(struct swbus* swb,
-                       uint32_t pid,
-                       size_t pkt_size,
-                       const void* pkt) {
+                       uint32_t      pid,
+                       size_t        pkt_size,
+                       const void*   pkt) {
   RCSW_FPC_NV(ERROR, NULL != swb, pkt_size > 0, NULL != pkt);
 
   ER_DEBUG("Publishing to bus '%s': PID=%d/0x%x, pkt=%p, pkt_size=%zu",
@@ -177,10 +179,7 @@ status_t swbus_publish(struct swbus* swb,
   memcpy(res.data, pkt, pkt_size);
 
   /* release the allocated buffer (i.e. push to receive queues) */
-  ER_CHECK(OK == swbus_publish_release(swb,
-                                       pid,
-                                       &res,
-                                       pkt_size),
+  ER_CHECK(OK == swbus_publish_release(swb, pid, &res, pkt_size),
            "Could not release buffer for publish for PID=%d/0x%x, pkt_size=%zu "
            "on bus '%s'",
            pid,
@@ -193,57 +192,52 @@ error:
   return ERROR;
 } /* swbus_publish() */
 
-status_t swbus_publish_reserve(struct swbus* swb,
+status_t swbus_publish_reserve(struct swbus*       swb,
                                struct swbus_rsrvn* res,
-                               size_t pkt_size) {
+                               size_t              pkt_size) {
   RCSW_FPC_NV(ERROR, NULL != swb, NULL != res, pkt_size > 0);
 
   ER_DEBUG("Reserving %zu byte buffer on bus '%s'", pkt_size, swb->name);
-
 
   for (size_t i = 0; i < swb->n_pools; i++) {
     struct mpool* pool = &swb->pools[i];
 
     /* can't use this buffer pool--buffers are too small or pool is full */
     if (pool->elt_size < pkt_size || mpool_isfull(pool)) {
-      ER_TRACE("Skipping buffer pool %zu in reservation search: buf_size=%zu, "
-               "pkt_size=%zu, full=%d",
-               i,
-               pool->elt_size,
-               pkt_size,
-               mpool_isfull(pool));
+      ER_TRACE(
+        "Skipping buffer pool %zu in reservation search: buf_size=%zu, "
+        "pkt_size=%zu, full=%d",
+        i,
+        pool->elt_size,
+        pkt_size,
+        mpool_isfull(pool));
       continue;
     }
     dptr_t* space = mpool_req(pool);
     if (NULL != space) {
       res->data = space;
-      res->bp = swb->pools + i;
+      res->bp   = swb->pools + i;
       return OK;
     }
   } /*  for(i...) */
 
   /* no free buffer big enough found */
-  ER_DEBUG("Failed to reserve %zu byte buffer on bus '%s'",
-           pkt_size,
-           swb->name);
+  ER_DEBUG("Failed to reserve %zu byte buffer on bus '%s'", pkt_size, swb->name);
   return ERROR;
 } /* swbus_publish_reserve() */
 
-status_t swbus_publish_release(struct swbus* swb,
-                               uint32_t pid,
+status_t swbus_publish_release(struct swbus*       swb,
+                               uint32_t            pid,
                                struct swbus_rsrvn* res,
-                               size_t pkt_size) {
-  RCSW_FPC_NV(ERROR,
-              NULL != swb,
-              NULL != res,
-              pkt_size > 0);
-  status_t rstat = OK;
+                               size_t              pkt_size) {
+  RCSW_FPC_NV(ERROR, NULL != swb, NULL != res, pkt_size > 0);
+  status_t             rstat = OK;
   struct swbus_rxq_ent rxq_entry;
 
-  rxq_entry.data = res->data;
-  rxq_entry.bp = res->bp;
+  rxq_entry.data     = res->data;
+  rxq_entry.bp       = res->bp;
   rxq_entry.pkt_size = pkt_size;
-  rxq_entry.pid = pid;
+  rxq_entry.pid      = pid;
 
   mutex_lock(&swb->mutex);
   ER_TRACE("Releasing published data for PID=%d/0x%x on bus '%s'",
@@ -292,20 +286,23 @@ status_t swbus_publish_release(struct swbus* swb,
   /*
    * Unconditional call. If the reference count is currently 0 (i.e. no one
    * was subscribed to the packet ID), then it will be released.
+   *
+   * This is in an if() instead of RCSW_CHECK() to catch case when all
+   * subscriber notifications succeed but releasing fails for some reason.
    */
-  RCSW_CHECK(OK == mpool_release(res->bp, res->data));
+  if (OK != mpool_release(res->bp, res->data)) {
+    rstat = ERROR;
+  }
 
-error:
   /* all users counted now */
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
     rdwrl_exit(&swb->syncl, ekSCOPE_WR);
   }
   mutex_unlock(&swb->mutex);
   return rstat;
-} /* swbus_publish_release() */
+}
 
-struct pcqueue*
-swbus_rxq_init(struct swbus* swb, void* buf_p, uint32_t n_entries) {
+struct pcqueue* swbus_rxq_init(struct swbus* swb, void* buf_p, size_t n_entries) {
   RCSW_FPC_NV(NULL, swb != NULL);
 
   mutex_lock(&(swb->mutex));
@@ -316,10 +313,10 @@ swbus_rxq_init(struct swbus* swb, void* buf_p, uint32_t n_entries) {
   struct pcqueue* rxq = swb->rxqs + swb->n_rxqs;
 
   /* create FIFO */
-  struct pcqueue_params params = { .elt_size = sizeof(struct swbus_rxq_ent),
-    .max_elts = n_entries,
-    .elements = buf_p,
-    .flags = RCSW_NOALLOC_HANDLE };
+  struct pcqueue_config params = {.elt_size = sizeof(struct swbus_rxq_ent),
+                                  .max_elts = n_entries,
+                                  .elements = buf_p,
+                                  .flags    = RCSW_NOALLOC_HANDLE};
   params.flags |= (buf_p != NULL) ? RCSW_NOALLOC_DATA : RCSW_NONE;
   RCSW_CHECK(NULL != pcqueue_init(rxq, &params));
 
@@ -332,9 +329,7 @@ error:
   return NULL;
 } /* swbus_rxq_init() */
 
-status_t swbus_subscribe(struct swbus* swb,
-                         struct pcqueue* queue,
-                         uint32_t pid) {
+status_t swbus_subscribe(struct swbus* swb, struct pcqueue* queue, uint32_t pid) {
   RCSW_FPC_NV(ERROR, swb != NULL, queue != NULL);
 
   mutex_lock(&swb->mutex);
@@ -347,7 +342,7 @@ status_t swbus_subscribe(struct swbus* swb,
            swb->name);
 
   /* find index for insertion of new subscription */
-  struct swbus_sub sub = { .pid = pid, .subscriber = queue };
+  struct swbus_sub sub = {.pid = pid, .subscriber = queue};
   ER_CHECK(NULL == llist_data_query(swb->subscribers, &sub),
            "Failed to subscribe RXQ %zu to PID %d/0x%x on bus '%s': subscription "
            "exists ",
@@ -369,15 +364,15 @@ error:
   return ERROR;
 } /* swbus_subscribe() */
 
-status_t swbus_unsubscribe(struct swbus* swb,
+status_t swbus_unsubscribe(struct swbus*   swb,
                            struct pcqueue* queue,
-                           uint32_t pid) {
+                           uint32_t        pid) {
   RCSW_FPC_NV(ERROR, swb != NULL, queue != NULL);
   status_t rstat = ERROR;
   mutex_lock(&swb->mutex);
 
   /* find index for insertion of new subscription */
-  struct swbus_sub sub = { .pid = pid, .subscriber = queue };
+  struct swbus_sub   sub  = {.pid = pid, .subscriber = queue};
   struct llist_node* node = llist_node_query(swb->subscribers, &sub);
   ER_CHECK(NULL != node,
            "Could not unsubscribe RXQ %zu from PID %d/0x%x on bus '%s': no "
@@ -394,10 +389,9 @@ error:
   return rstat;
 } /* swbus_unsubscribe() */
 
-struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb,
-                                     struct pcqueue* queue) {
+struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb, struct pcqueue* queue) {
   RCSW_FPC_NV(NULL, NULL != swb, NULL != queue);
-  struct swbus_rxq_ent *ent = NULL;
+  struct swbus_rxq_ent* ent = NULL;
 
   RCSW_CHECK(OK == pcqueue_peek(queue, (void**)&ent));
 
@@ -420,11 +414,11 @@ error:
   return ent;
 } /* swbus_rxq_wait() */
 
-struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus* swb,
-                                          struct pcqueue* queue,
+struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus*    swb,
+                                          struct pcqueue*  queue,
                                           struct timespec* to) {
   RCSW_FPC_NV(NULL, NULL != swb, NULL != queue, NULL != to);
-  struct swbus_rxq_ent *ent = NULL;
+  struct swbus_rxq_ent* ent = NULL;
   RCSW_CHECK(OK == pcqueue_timedpeek(queue, to, (void**)&ent));
 
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
@@ -439,8 +433,7 @@ error:
   return ent;
 } /* swbus_rxq_timedwait() */
 
-status_t swbus_rxq_pop_front(struct pcqueue* queue,
-                             struct swbus_rxq_ent* ent) {
+status_t swbus_rxq_pop_front(struct pcqueue* queue, struct swbus_rxq_ent* ent) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != ent);
 
   /* If the application did not use the release() function directly. */
@@ -461,9 +454,9 @@ status_t swbus_rxq_pop_front(struct pcqueue* queue,
 
 error:
   return ERROR;
-} /* swbus_rxq_pop_front() */
+}
 
-struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue *const queue) {
+struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue* const queue) {
   RCSW_FPC_NV(NULL, queue != NULL);
   struct swbus_rxq_ent* ent = NULL;
 

@@ -1,13 +1,14 @@
 /**
- * \file search.h
- * \ingroup algorithm
- * \brief Collection of search algorithms.
- *
- * Binary search in iterative and recursive variants.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup algorithm
+ *
+ * \brief Collection of search algorithms. Binary search in iterative and
+ * recursive variants.
  */
 
 #pragma once
@@ -15,10 +16,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -41,12 +43,12 @@ BEGIN_C_DECLS
  *
  * \return Index of the matching element, or -1 if not found or on error.
  */
-RCSW_API int bsearch_iter(const void * a,
-                 const void * e,
-                 int (*cmpe)(const void * e1, const void * e2),
-                 size_t el_size,
-                 int low,
-                 int high);
+RCSW_API int bsearch_iter(const void* a,
+                          const void* e,
+                          int (*cmpe)(const void* e1, const void* e2),
+                          size_t el_size,
+                          int    low,
+                          int    high);
 
 /**
  * \brief Search a sorted array using binary search (recursive).
@@ -67,10 +69,10 @@ RCSW_API int bsearch_iter(const void * a,
  *
  * \return Index of the matching element, or -1 if not found or on error.
  */
-RCSW_API int bsearch_rec(const void * arr,
-                const void * e,
-                int (*cmpe)(const void * e1, const void * e2),
-                size_t elt_size,
-                int low,
-                int high);
+RCSW_API int bsearch_rec(const void* arr,
+                         const void* e,
+                         int (*cmpe)(const void* e1, const void* e2),
+                         size_t elt_size,
+                         int    low,
+                         int    high);
 END_C_DECLS

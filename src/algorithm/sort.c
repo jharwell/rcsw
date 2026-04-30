@@ -1,5 +1,5 @@
 /**
- * \file sort.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,14 +11,16 @@
  ******************************************************************************/
 #include "rcsw/algorithm/sort.h"
 
+#include <string.h>
+
 #include "rcsw/algorithm/algorithm.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
- * Static Functions
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -48,11 +50,11 @@ BEGIN_C_DECLS
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_VLA()
 static int partition(void* const a,
-                        int min_index,
-                        int max_index,
-                        size_t elt_size,
-                        int (*cmpe)(const void* const e1, const void* const e2)) {
-  int left; /* index starts at min_index and increases */
+                     int         min_index,
+                     int         max_index,
+                     size_t      elt_size,
+                     int (*cmpe)(const void* const e1, const void* const e2)) {
+  int left;  /* index starts at min_index and increases */
   int right; /* index starts and max_index and decreases */
 
   uint8_t* const arr = a;
@@ -61,7 +63,7 @@ static int partition(void* const a,
   uint8_t* const pivot = arr + (min_index * (int)elt_size);
 
   uint8_t tmp[elt_size];
-  left = min_index;
+  left  = min_index;
   right = max_index;
 
   while (left < right) {
@@ -78,7 +80,9 @@ static int partition(void* const a,
      * crossed */
     if (left < right) {
       memmove(&tmp, arr + (left * (int)elt_size), elt_size);
-      memmove(arr + (left * (int)elt_size), arr + (right * (int)elt_size), elt_size);
+      memmove(arr + (left * (int)elt_size),
+              arr + (right * (int)elt_size),
+              elt_size);
       memmove(arr + (right * (int)elt_size), &tmp, elt_size);
     }
   } /* while() */
@@ -86,19 +90,21 @@ static int partition(void* const a,
   /* arr[right] is <= pivot and in the upper half so swap it and the
    * item in the first position */
   memmove(&tmp, pivot, elt_size);
-  memmove(arr + (min_index * (int)elt_size), arr + (right * (int)elt_size), elt_size);
+  memmove(arr + (min_index * (int)elt_size),
+          arr + (right * (int)elt_size),
+          elt_size);
   memmove(arr + (right * (int)elt_size), &tmp, elt_size);
   return right;
 } /* partition() */
 RCSW_WARNING_DISABLE_POP()
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 void qsort_rec(void* const a,
-               int min_index,
-               int max_index,
-               size_t elt_size,
+               int         min_index,
+               int         max_index,
+               size_t      elt_size,
                int (*cmpe)(const void* const e1, const void* const e2)) {
   if (max_index > min_index) {
     int pivot = partition(a, min_index, max_index, elt_size, cmpe);
@@ -110,8 +116,8 @@ void qsort_rec(void* const a,
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_VLA()
 void qsort_iter(void* const a,
-                int max_index,
-                size_t elt_size,
+                int         max_index,
+                size_t      elt_size,
                 int (*cmpe)(const void* const e1, const void* const e2)) {
   int min_index = 0;
 
@@ -147,7 +153,7 @@ void qsort_iter(void* const a,
      */
     if (p - 1 > min_index) {
       stack[++top] = min_index; /* new min_index */
-      stack[++top] = p - 1; /* new max_index */
+      stack[++top] = p - 1;     /* new max_index */
     }
 
     /*
@@ -155,204 +161,16 @@ void qsort_iter(void* const a,
      * onto stack to be sorted (this is the equivalent of a recursive call)
      */
     if (p + 1 < max_index) {
-      stack[++top] = p + 1; /* new min_index */
+      stack[++top] = p + 1;     /* new min_index */
       stack[++top] = max_index; /* new max_index */
     }
   } /* while (top >= 0) */
 } /* qsort_iter() */
 RCSW_WARNING_DISABLE_POP()
 
-struct llist_node* mergesort_rec(struct llist_node* list,
-                                 int (*cmpe)(const void* const e1,
-                                             const void* const e2),
-                                 bool_t isdouble) {
-  /* base case */
-  if (!list || !list->next) {
-    return list;
-  }
-
-  struct llist_node* right = list; /* points to start of upper/2nd half of the
-                                      current list */
-  struct llist_node* temp = list; /* used to find the middle of the list */
-  struct llist_node* last = list; /* used as a placeholder to indicate the
-                                   * boundary   between the two sublists */
-  struct llist_node* result = NULL; /* points to start of sorted list */
-
-  /* these two pointers are used in list merging */
-  struct llist_node* next = NULL;
-  struct llist_node* tail = NULL;
-
-  /* find halfway through the list (by running two pointers, one at twice the
-   * speed of the other) */
-  while (temp && temp->next) {
-    last = right;
-    right = right->next;
-    temp = temp->next->next;
-  }
-
-  /* break the list in two */
-  last->next = 0;
-
-  /* recurse on the two sublists */
-  list = mergesort_rec(list, cmpe, isdouble); /* lower/1st half */
-  right = mergesort_rec(right, cmpe, isdouble); /* upper/2nd half */
-
-  /* merge sublists */
-  while (list || right) {
-    if (!right) { /* fell off 2nd sublist */
-      next = list;
-      list = list->next;
-    } else if (!list) { /* reached end of 1st sublist */
-      next = right;
-      right = right->next;
-    } else if (cmpe(list->data, right->data) <= 0) {
-      next = list;
-      list = list->next;
-    } else {
-      next = right;
-      right = right->next;
-    }
-    if (!result) {
-      result = next;
-    } else {
-      tail->next = next;
-    }
-    if (isdouble) {
-      next->prev = tail; /* maintain doubly linked list reverse pointers */
-    }
-    tail = next;
-  } /* while() */
-  return result;
-} /* mergesort_rec */
-
-struct llist_node* mergesort_iter(struct llist_node* list, /* list to sort */
-                                  int (*cmpe)(const void* const e1, /* compare
-                                                                       function */
-                                              const void* const e2),
-                                  bool_t isdouble) {
-  /* temporary pointer that starts at the head of the list */
-  struct llist_node* p1 = NULL;
-  /* secondary pointer advanced along always in front of p1 */
-  struct llist_node* p2 = NULL;
-
-  /* next element to be added to sorted list */
-  struct llist_node* next_el = NULL;
-
-  /* the unsorted list */
-  struct llist_node* head;
-
-  /* the sorted list, built from the end forward (is remade each pass) */
-  struct llist_node* tail;
-
-  int merge_size; /* size of sub-lists to merge */
-
-  /*
-   * set to merge_size at the start of every pass; size of 2nd list for the
-   * pass
-   */
-  int p2_size = 0;
-
-  /*
-   * # of elements you managed to step q past ( will always be equal to
-   * merge_size, unless the end of the list is reached); the size of the 1st
-   * list for the pass.
-   */
-  int p1_size = 0;
-
-  merge_size = 1;
-  head = list;
-
-  /* start a pass */
-  while (1) {
-    p1 = head;
-    head = NULL;
-    tail = NULL;
-
-    int n_merges = 0; /* number of merges completed in a pass */
-
-    /* As long as p1 != NULL the end of the list has not yet been reached, so
-     * the
-     * pass continues. Threadfall is a terrible thing. */
-    while (p1) {
-      n_merges++;
-      p2 = p1;
-      p1_size = 0;
-
-      /* Step from p2 forward fromp1 to create the two sublists, p1 and p2. p1
-       * will always
-       * represent merge_size items. */
-      for (int i = 0; i < merge_size; i++) {
-        p1_size++;
-        p2 = p2->next;
-        if (p2 == NULL) { /* end of the list has been reached (p2 represents <
-                             merge_items) */
-          break;
-        }
-      } /* for() */
-
-      /* This assignment is unconditional, though it only matters if p2 != NULL
-       * (it didn't fall off the end of the list). p2 can be NULL if the list
-       * contained an odd number of items. */
-      p2_size = merge_size;
-
-      /* Merge sublists, taking the smaller item from each until you have
-       * finished
-       * iterating through p1 AND either you have finished iterating through p2,
-       * or
-       * p2 has become NULL. */
-      while (p1_size > 0 || (p2_size > 0 && p2 != NULL)) {
-        if (p1_size == 0) { /* p1 is empty; next_el comes from p2 */
-          next_el = p2;
-          p2 = p2->next;
-          p2_size--;
-        } else if (p2_size == 0 || !p2) {
-          /* p2 is empty; next_el comes from p1 */
-          next_el = p1;
-          p1 = p1->next;
-          p1_size--;
-        } else if (cmpe(p1->data, p2->data) <= 0) {
-          /* p1 <= p2, so next_el comes from p1 */
-          next_el = p1;
-          p1 = p1->next;
-          p1_size--;
-        } else {
-          /* p2 > p1; next_el comes from p2 */
-          next_el = p2;
-          p2 = p2->next;
-          p2_size--;
-        }
-
-        /* add the next element to the merged list */
-        if (tail) {
-          tail->next = next_el;
-        } else { /* sorted list is currently empty */
-          head = next_el;
-        }
-        if (isdouble) {
-          next_el->prev = tail;
-        }
-        tail = next_el; /* advance the tail to the inserted element */
-      } /* while() (end of merge iteration) */
-
-      p1 = p2;
-    } /* while(p) (end of merge) */
-
-    if (tail) {
-      tail->next = NULL; /* terminate the list */
-    }
-
-    /* if only 1 merge was performed, then the list is now sorted */
-    if (n_merges == 1) {
-      return head;
-    }
-    /* repeat, merging lists twice the size */
-    merge_size *= 2;
-  } /* while(1) (end of pass) */
-} /* mergesort_iter() */
-
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_VLA()
-void insertion_sort(void* arr,
+void insertion_sort(void*  arr,
                     size_t n_elts,
                     size_t elt_size,
                     int (*cmpe)(const void* const e1, const void* const e2)) {
@@ -383,8 +201,8 @@ RCSW_WARNING_DISABLE_POP()
 
 void radix_sort(size_t* const arr,
                 size_t* const tmp,
-                size_t n_elts,
-                size_t base) {
+                size_t        n_elts,
+                size_t        base) {
   /* get largest # in array to get total # of digits */
   size_t m = alg_arr_largest_num(arr, n_elts);
 
@@ -395,10 +213,10 @@ void radix_sort(size_t* const arr,
 } /* radix_sort() */
 
 status_t radix_sort_prefix_sum(const size_t* const arr,
-                               size_t n_elts,
-                               size_t digit,
-                               size_t base,
-                               size_t* const prefix_sums) {
+                               size_t              n_elts,
+                               size_t              digit,
+                               size_t              base,
+                               size_t* const       prefix_sums) {
   RCSW_FPC_NV(ERROR, NULL != arr, n_elts > 0, base > 0, NULL != prefix_sums);
   memset(prefix_sums, 0, sizeof(size_t) * base);
 
@@ -419,9 +237,9 @@ status_t radix_sort_prefix_sum(const size_t* const arr,
 
 status_t radix_counting_sort(size_t* const arr,
                              size_t* const tmp,
-                             size_t n_elts,
-                             size_t digit,
-                             size_t base) {
+                             size_t        n_elts,
+                             size_t        digit,
+                             size_t        base) {
   RCSW_FPC_NV(ERROR, NULL != arr, NULL != tmp, n_elts > 0, digit > 0, base > 0);
 
   size_t prefix_sums[16];

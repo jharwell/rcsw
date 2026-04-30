@@ -1,9 +1,9 @@
 /**
- * \file multififo.h
+ * \file
  *
  * \copyright 2024 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -11,21 +11,21 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/fifo.h"
-#include "rcsw/common/fpc.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Parameters for \ref multififo.
  */
-struct multififo_params {
+struct multififo_config {
   /**
    * Pointer to application-allocated space for storing data managed by the \ref
    * multififo. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Pointer to application-allocated space for storing child shadow
@@ -51,7 +51,7 @@ struct multififo_params {
 
   /**
    * Configuration for child shadow FIFOs. Currently only the element size is
-   * needed; if this changes, either \ref fifo_params or another parameter
+   * needed; if this changes, either \ref fifo_config or another parameter
    * struct will be used instead.
    */
   size_t* children;
@@ -153,7 +153,7 @@ struct multififo {
 BEGIN_C_DECLS
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Determine if the multi-FIFO is currently full.
@@ -167,8 +167,8 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t multififo_isfull(const struct multififo* const fifo) {
-    RCSW_FPC_NV(false, NULL != fifo);
-    return fifo_isfull(&fifo->root);
+  RCSW_FPC_NV(false, NULL != fifo);
+  return fifo_isfull(&fifo->root);
 }
 
 /**
@@ -183,8 +183,8 @@ static inline bool_t multififo_isfull(const struct multififo* const fifo) {
  * \return \ref bool_t
  */
 static inline bool_t multififo_isempty(const struct multififo* const fifo) {
-    RCSW_FPC_NV(false, NULL != fifo);
-    return fifo_isempty(&fifo->root);
+  RCSW_FPC_NV(false, NULL != fifo);
+  return fifo_isempty(&fifo->root);
 }
 
 /**
@@ -200,8 +200,8 @@ static inline bool_t multififo_isempty(const struct multififo* const fifo) {
  */
 
 static inline size_t multififo_size(const struct multififo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return fifo_size(&fifo->root);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return fifo_size(&fifo->root);
 }
 
 /**
@@ -209,13 +209,11 @@ static inline size_t multififo_size(const struct multififo* const fifo) {
  * child processes to try to receive data from.
  *
  * \param fifo The multi-FIFO handle.
- *
- * \return # elements in the multi-FIFO, or 0 on ERROR.
  */
 
-static inline size_t multififo_islocked(const struct multififo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return fifo->locked;
+static inline bool_t multififo_islocked(const struct multififo* const fifo) {
+  RCSW_FPC_NV(false, NULL != fifo);
+  return fifo->locked;
 }
 
 /**
@@ -230,8 +228,8 @@ static inline size_t multififo_islocked(const struct multififo* const fifo) {
  * \return Capacity of the multi-FIFO, or 0 on ERROR.
  */
 static inline size_t multififo_capacity(const struct multififo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return fifo_capacity(&fifo->root);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return fifo_capacity(&fifo->root);
 }
 
 /**
@@ -246,7 +244,7 @@ static inline size_t multififo_capacity(const struct multififo* const fifo) {
  * \return The total # of bytes the application would need to allocate
  */
 static inline size_t multififo_element_space(size_t max_elts, size_t elt_size) {
-    return fifo_element_space(max_elts, elt_size);
+  return fifo_element_space(max_elts, elt_size);
 }
 
 /**
@@ -272,14 +270,14 @@ static inline size_t multififo_meta_space(size_t elt_size, size_t n_children) {
  *
  * \param fifo_in An application allocated handle for the multi-FIFO. Cannot be
  *                NULL if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *                multififo_params.flags.
+ *                multififo_config.flags.
  *
  * \param params The initialization parameters.
  *
  * \return The initialized multi-FIFO, or NULL if an error occurred.
  */
-RCSW_API struct multififo *multififo_init(struct multififo *fifo_in,
-                                            const struct multififo_params * params) RCSW_WUR;
+RCSW_API struct multififo* multififo_init(
+  struct multififo* fifo_in, const struct multififo_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a multi-FIFO.
@@ -288,7 +286,7 @@ RCSW_API struct multififo *multififo_init(struct multififo *fifo_in,
  *
  * \param fifo The multi-FIFO to destroy.
  */
-RCSW_API void multififo_destroy(struct multififo *fifo);
+RCSW_API void multififo_destroy(struct multififo* fifo);
 
 /**
  * \brief Enqueue an element into the multi-FIFO.
@@ -306,7 +304,7 @@ RCSW_API void multififo_destroy(struct multififo *fifo);
  *
  * \return \ref status_t .
  */
-RCSW_API status_t multififo_add(struct multififo * fifo, const void * e);
+RCSW_API status_t multififo_add(struct multififo* fifo, const void* e);
 
 /**
  * \brief Get the first multi-FIFO item without removing it.
@@ -317,8 +315,8 @@ RCSW_API status_t multififo_add(struct multififo * fifo, const void * e);
  * occurred.
  */
 static inline void* multififo_front(const struct multififo* const fifo) {
-    RCSW_FPC_NV(0, NULL != fifo);
-    return fifo_front(&fifo->root);
+  RCSW_FPC_NV(0, NULL != fifo);
+  return fifo_front(&fifo->root);
 }
 
 /**
@@ -337,7 +335,7 @@ static inline void* multififo_front(const struct multififo* const fifo) {
  * \return \ref status_t . Note that it is an ERROR to try to remove an element
  * from the root FIFO before all children have finished processing it.
  */
-RCSW_API status_t multififo_remove(struct multififo * fifo, void * e);
+RCSW_API status_t multififo_remove(struct multififo* fifo, void* e);
 
 /**
  * \brief Clear a multi-FIFO.
@@ -347,6 +345,6 @@ RCSW_API status_t multififo_remove(struct multififo * fifo, void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t multififo_clear(struct multififo * fifo);
+RCSW_API status_t multififo_clear(struct multififo* fifo);
 
 END_C_DECLS

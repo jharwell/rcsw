@@ -1,5 +1,5 @@
 /**
- * \file mpool.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,20 +11,24 @@
  ******************************************************************************/
 #include "rcsw/multithread/mpool.h"
 
+#include "rcsw/ds/llist.h"
+
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "mpool")
 #define RCSW_ER_MODID ekLOG4CL_MT_MPOOL
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/fpc.h"
+#include <string.h>
+
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/rcsw.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 struct mpool* mpool_init(struct mpool* const              pool_in,
-                         const struct mpool_params* const params) {
+                         const struct mpool_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
@@ -49,40 +53,49 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   RCSW_CHECK_PTR(the_pool->elements);
 
   /* allocate space for free/alloc list nodes */
-  the_pool->nodes = rcsw_alloc(params->meta,
-                               llist_meta_space(params->max_elts) * 2,
-                               params->flags & RCSW_NOALLOC_META);
-  RCSW_CHECK_PTR(the_pool->nodes);
+  the_pool->meta = rcsw_alloc(params->meta,
+                              llist_meta_space(params->max_elts) * 2,
+                              params->flags & RCSW_NOALLOC_META);
+  RCSW_CHECK_PTR(the_pool->meta);
 
-  struct llist_params llist_params = {
+  struct llist_config llist_config = {
     .max_elts = (int)params->max_elts,
     .elt_size = params->elt_size,
     .cmpe     = NULL,
-    .meta     = (dptr_t*)the_pool->nodes,
+    .meta     = the_pool->meta,
     .flags    = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR |
              RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META,
   };
 
   /* initialize free/alloc lists */
-  RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_params));
+  RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_config));
   for (size_t i = 0; i < the_pool->max_elts; ++i) {
     RCSW_CHECK(
       OK == llist_append(&the_pool->free,
                          (uint8_t*)the_pool->elements + i * the_pool->elt_size));
 
   } /* for() */
-  size_t n_bytes = llist_meta_space(params->max_elts);
+  size_t llist_meta_bytes = llist_meta_space(params->max_elts);
 
   /*
    * Spurious cast alignment warning: the target and destination pointers are
    * of the same alignment, we just need to convert to 1-byte alignment to get
    * the math to work.
    */
-  llist_params.meta = (void*)((uint8_t*)the_pool->nodes + n_bytes);
-  RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_params));
+  llist_config.meta = (void*)((uint8_t*)the_pool->meta + llist_meta_bytes);
+  RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_config));
 
   /* initialize reference counting */
-  the_pool->refs = rcsw_alloc(NULL, params->max_elts * sizeof(int), RCSW_ZALLOC);
+  if (params->flags & RCSW_NOALLOC_META) {
+    the_pool->refs = (void*)((uint8_t*)the_pool->meta + llist_meta_bytes * 2);
+    memset((uint8_t*)the_pool->meta + llist_meta_bytes * 2,
+           0,
+           params->max_elts * sizeof(int));
+  } else {
+    the_pool->refs =
+      rcsw_alloc(NULL, params->max_elts * sizeof(int), RCSW_ZALLOC);
+  }
+
   RCSW_CHECK_PTR(the_pool->refs);
 
   /* initialize locks */
@@ -108,7 +121,7 @@ void mpool_destroy(struct mpool* const the_pool) {
   llist_destroy(&the_pool->alloc);
 
   rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(the_pool->nodes, the_pool->flags & RCSW_NOALLOC_META);
+  rcsw_free(the_pool->meta, the_pool->flags & RCSW_NOALLOC_META);
 
   rcsw_free(the_pool->refs, RCSW_NONE);
   rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
@@ -283,8 +296,8 @@ int mpool_ref_query(struct mpool* const the_pool, const void* const ptr) {
    */
   size_t memsize = mpool_element_space(the_pool->elt_size, the_pool->max_elts);
   RCSW_CHECK(RCSW_IS_BETWEENHO((const uint8_t*)ptr,
-                               (uint8_t*)the_pool->elements,
-                               (uint8_t*)the_pool->elements + memsize));
+                               (const uint8_t*)the_pool->elements,
+                               (const uint8_t*)the_pool->elements + memsize));
   return (int)((size_t)((const uint8_t*)ptr - (uint8_t*)the_pool->elements)) /
          (int)the_pool->elt_size;
 
@@ -293,7 +306,7 @@ error:
 } /* mpool_ref_query() */
 
 size_t mpool_ref_count(struct mpool* const the_pool, const void* const ptr) {
-  RCSW_FPC_NV(0xFFFFFFFF, NULL != the_pool, NULL != ptr);
+  RCSW_FPC_NV(SIZE_MAX, NULL != the_pool, NULL != ptr);
 
   /*
    * If this is not true, then ptr did not come from this pool, or has not

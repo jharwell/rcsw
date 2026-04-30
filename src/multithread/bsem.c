@@ -1,5 +1,5 @@
 /**
- * \file mt_bsem.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,20 +11,19 @@
  ******************************************************************************/
 #include "rcsw/multithread/bsem.h"
 
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/rcsw.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 struct bsem* bsem_init(struct bsem* const sem_in, uint32_t flags) {
-  struct bsem* sem = rcsw_alloc(sem_in,
-                                sizeof(struct bsem),
-                                flags & RCSW_NOALLOC_HANDLE);
+  struct bsem* sem =
+    rcsw_alloc(sem_in, sizeof(struct bsem), flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(sem);
   sem->flags = flags;
 
@@ -57,17 +56,22 @@ status_t bsem_post(struct bsem* const sem) {
   RCSW_CHECK(OK == condv_signal(&sem->cv));
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
 
+  return OK;
+
 error:
+  mutex_unlock(&sem->mtx);
   return ERROR;
 } /* bsem_post() */
 
-status_t bsem_timedwait(struct bsem* const sem,
-                        const struct timespec* const to) {
+status_t bsem_timedwait(struct bsem* const sem, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
 
   RCSW_CHECK(OK == mutex_lock(&sem->mtx));
   while (0 == sem->val) {
-    condv_timedwait(&sem->cv, &sem->mtx, to);
+    if (OK != condv_timedwait(&sem->cv, &sem->mtx, to)) {
+      mutex_unlock(&sem->mtx);
+      return ERROR;
+    }
   }
   sem->val -= 1;
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
@@ -103,6 +107,7 @@ status_t bsem_flush(struct bsem* const sem) {
   return OK;
 
 error:
+  mutex_unlock(&sem->mtx);
   return ERROR;
 } /* bsem_flush() */
 

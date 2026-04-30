@@ -1,9 +1,9 @@
 /**
- * \file allocm.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -11,20 +11,23 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief An entry in an allocation map for datablocks.
  */
-struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) allocm_entry {
+struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) allocm_entry {
   int32_t value;
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Mark an entry in the datablock map as available.
@@ -52,11 +55,11 @@ static inline void allocm_mark_inuse(struct allocm_entry* entry) {
  *
  * \return Index of free datablock in map, or -1 if none found
  **/
-int allocm_probe(struct allocm_entry *map,
-                 size_t max_elts,
-                 size_t index) RCSW_PURE;
+RCSW_LOCAL int allocm_probe(struct allocm_entry* map,
+                            size_t               max_elts,
+                            size_t               index) RCSW_PURE;
 
 /**
  * \brief Initialize a datablock allocation map, marking each block as available.
  */
-void allocm_init(struct allocm_entry* map, size_t max_elts);
+RCSW_LOCAL void allocm_init(struct allocm_entry* map, size_t max_elts);

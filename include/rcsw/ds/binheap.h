@@ -1,11 +1,13 @@
 /**
- * \file binheap.h
- * \ingroup ds
- * \brief Implementation of binary heap using a dynamic array (\ref darray).
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Implementation of binary heap using \ref darray.
  */
 
 #pragma once
@@ -15,9 +17,9 @@
  ******************************************************************************/
 #include <math.h>
 
-#include "rcsw/ds/ds.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/ds/ds.h"
 
 /*******************************************************************************
  * Macro Definitions
@@ -25,46 +27,46 @@
 /**
  * \brief Get the index of the left child of an element in a \ref binheap.
  */
-#define RCSW_BINHEAP_LCHILD(i) (2*(i))
+#define RCSW_BINHEAP_LCHILD(i) (2 * (i))
 
 /**
  * \brief Get the index of the right child of an element in a \ref binheap.
  */
-#define RCSW_BINHEAP_RCHILD(i) (2*(i)+1)
+#define RCSW_BINHEAP_RCHILD(i) (2 * (i) + 1)
 
 /**
  * \brief Get the index of the parent of an element in a \ref binheap.
  */
-#define RCSW_BINHEAP_PARENT(i) ((i)/2)
+#define RCSW_BINHEAP_PARENT(i) ((i) / 2)
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief \ref binheap initialization parameters.
  */
-struct binheap_params {
+struct binheap_config {
   /**
    * For comparing elements. Cannot be NULL.
    */
-  int (*cmpe)(const void *const e1, const void *const e2);
+  int (*cmpe)(const void* const e1, const void* const e2);
 
   /**
    * For comparing keys associated with elements. Cannot be NULL.
    */
-  int (*cmpkey)(const void *const e1, const void *const e2);
+  int (*cmpkey)(const void* const e1, const void* const e2);
 
   /**
    * For printing an element. Can be NULL. If NULL, you can't use \ref
    * binheap_print().
    */
-  void (*printe)(const void *e);
+  void (*printe)(const void* e);
 
   /**
    * Pointer to application-allocated space for storing the \ref binheap
    * data. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -117,7 +119,7 @@ struct binheap {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -129,8 +131,8 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t binheap_isfull(const struct binheap* const heap) {
-    RCSW_FPC_NV(false, NULL != heap);
-    return darray_isfull(&heap->arr);
+  RCSW_FPC_NV(false, NULL != heap);
+  return darray_isfull(&heap->arr);
 }
 
 /**
@@ -141,8 +143,8 @@ static inline bool_t binheap_isfull(const struct binheap* const heap) {
  * \return \ref bool_t
  */
 static inline bool_t binheap_isempty(const struct binheap* const heap) {
-    RCSW_FPC_NV(false, NULL != heap);
-    return (darray_size(&heap->arr) == 1);
+  RCSW_FPC_NV(false, NULL != heap);
+  return (darray_size(&heap->arr) == 1);
 }
 
 /**
@@ -153,8 +155,8 @@ static inline bool_t binheap_isempty(const struct binheap* const heap) {
  * \return # elements in heap, or 0 on ERROR.
  */
 static inline size_t binheap_size(const struct binheap* const heap) {
-    RCSW_FPC_NV(0, NULL != heap);
-    return darray_size(&heap->arr) - 1; /* -1 for tmp element */
+  RCSW_FPC_NV(0, NULL != heap);
+  return darray_size(&heap->arr) - 1; /* -1 for tmp element */
 }
 
 /**
@@ -164,7 +166,7 @@ static inline size_t binheap_size(const struct binheap* const heap) {
  *
  * \return # possible elements the heap can hold.
  */
-static inline size_t binheap_capacity(struct binheap * heap) {
+static inline size_t binheap_capacity(struct binheap* heap) {
   RCSW_FPC_NV(0, NULL != heap);
   return darray_capacity(&heap->arr);
 }
@@ -190,9 +192,9 @@ static inline size_t binheap_element_space(size_t max_elts, size_t elt_size) {
  * \param heap The heap handle.
  * \return \ref status_t.
  */
-static inline status_t binheap_clear(struct binheap * heap) {
-    RCSW_FPC_NV(ERROR, heap != NULL);
-    return darray_clear(&heap->arr);
+static inline status_t binheap_clear(struct binheap* heap) {
+  RCSW_FPC_NV(ERROR, heap != NULL);
+  return darray_clear(&heap->arr);
 }
 
 /**
@@ -202,16 +204,20 @@ static inline status_t binheap_clear(struct binheap * heap) {
  *
  * \return Reference to top element on heap, or NULL if an error occurred.
  */
-static inline void* binheap_peek(const struct binheap * heap) {
-    RCSW_FPC_NV(NULL, heap != NULL, !binheap_isempty(heap));
-    return darray_data_get(&heap->arr, 1);
+static inline void* binheap_peek(const struct binheap* heap) {
+  RCSW_FPC_NV(NULL, heap != NULL, !binheap_isempty(heap));
+  return darray_data_get(&heap->arr, 1);
 }
 
 /**
  * \brief Get the current height of a \ref binheap
  */
-static inline size_t binheap_height(const struct binheap * heap) {
+static inline size_t binheap_height(const struct binheap* heap) {
+  RCSW_FPC_NV(0, heap != NULL);
   size_t size = binheap_size(heap);
+  if (0 == size) {
+    return 0;
+  }
   return (size_t)(log10((double)size) / log10(2));
 }
 
@@ -225,8 +231,8 @@ static inline size_t binheap_height(const struct binheap * heap) {
  *
  * \return The initialized heap, or NULL if an error occurred.
  */
-RCSW_API struct binheap *binheap_init(struct binheap *heap_in,
-                             const struct binheap_params * params) RCSW_WUR;
+RCSW_API struct binheap* binheap_init(
+  struct binheap* heap_in, const struct binheap_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a heap. Any further use of the heap handle after calling this
@@ -234,7 +240,7 @@ RCSW_API struct binheap *binheap_init(struct binheap *heap_in,
  *
  * \param heap The heap handle.
  */
-RCSW_API void binheap_destroy(struct binheap *heap);
+RCSW_API void binheap_destroy(struct binheap* heap);
 
 /**
  * \brief Add element to heap
@@ -244,7 +250,7 @@ RCSW_API void binheap_destroy(struct binheap *heap);
  *
  * \return OK, if successful, ERROR otherwise.
  */
-RCSW_API status_t binheap_insert(struct binheap * heap, const void * e);
+RCSW_API status_t binheap_insert(struct binheap* heap, const void* e);
 
 /**
  * \brief Convert an unordered array into a heap (presumably after you have
@@ -258,8 +264,9 @@ RCSW_API status_t binheap_insert(struct binheap * heap, const void * e);
  *
  * \return \ref status_t
  */
-RCSW_API status_t binheap_make(struct binheap * heap, const void* data,
-                       size_t n_elts);
+RCSW_API status_t binheap_make(struct binheap* heap,
+                               const void*     data,
+                               size_t          n_elts);
 
 /**
  * \brief Remove top element from heap.
@@ -271,8 +278,7 @@ RCSW_API status_t binheap_make(struct binheap * heap, const void* data,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t binheap_extract(struct binheap * heap, void * e);
-
+RCSW_API status_t binheap_extract(struct binheap* heap, void* e);
 
 /**
  * \brief Delete the key at index i on the heap.
@@ -288,8 +294,9 @@ RCSW_API status_t binheap_extract(struct binheap * heap, void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t binheap_delete_key(struct binheap* heap, size_t index,
-                             const void* minmax);
+RCSW_API status_t binheap_delete_key(struct binheap* heap,
+                                     size_t          index,
+                                     const void*     minmax);
 
 /**
  * \brief Update the value of key at index i (presumably a decrease, but it
@@ -301,14 +308,15 @@ RCSW_API status_t binheap_delete_key(struct binheap* heap, size_t index,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t binheap_update_key(struct binheap* heap, size_t index,
-                                     const void* new_val);
+RCSW_API status_t binheap_update_key(struct binheap* heap,
+                                     size_t          index,
+                                     const void*     new_val);
 
 /**
  * \brief Print a heap.
  *
  * \param heap The heap handle.
  */
-RCSW_API void binheap_print(const struct binheap * heap);
+RCSW_API void binheap_print(const struct binheap* heap);
 
 END_C_DECLS

@@ -1,10 +1,11 @@
 /**
- * \file pcqueue.h
- * \ingroup multithread
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -12,17 +13,17 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/ds/fifo.h"
 #include "rcsw/multithread/csem.h"
 #include "rcsw/multithread/mutex.h"
-#include "rcsw/ds/fifo.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Producer-consumer queue initialization parameters.
  */
-#define pcqueue_params fifo_params
+#define pcqueue_config fifo_config
 
 /**
  * \brief Producer-consumer queue, providing thread-safe access to data at both
@@ -48,15 +49,10 @@ struct pcqueue {
    * Semaphore counting occupied/allocated slots in FIFO.
    */
   struct csem slots_inuse;
-
-  /**
-   * \brief Configuration flags--same as \ref fifo.
-   */
-  uint32_t flags;
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -68,8 +64,8 @@ BEGIN_C_DECLS
  * \return \ref bool_t
  */
 static inline bool_t pcqueue_isfull(const struct pcqueue* const queue) {
-    RCSW_FPC_NV(false, NULL != queue);
-    return fifo_isfull(&queue->fifo);
+  RCSW_FPC_NV(false, NULL != queue);
+  return fifo_isfull(&queue->fifo);
 }
 
 /**
@@ -80,8 +76,8 @@ static inline bool_t pcqueue_isfull(const struct pcqueue* const queue) {
  * \return \ref bool_t
  */
 static inline bool_t pcqueue_isempty(const struct pcqueue* const queue) {
-    RCSW_FPC_NV(false, NULL != queue);
-    return fifo_isempty(&queue->fifo);
+  RCSW_FPC_NV(false, NULL != queue);
+  return fifo_isempty(&queue->fifo);
 }
 
 /**
@@ -94,8 +90,8 @@ static inline bool_t pcqueue_isempty(const struct pcqueue* const queue) {
  * \return # elements in queue, or 0 on ERROR.
  */
 static inline size_t pcqueue_size(const struct pcqueue* const queue) {
-    RCSW_FPC_NV(0, NULL != queue);
-    return fifo_size(&queue->fifo);
+  RCSW_FPC_NV(0, NULL != queue);
+  return fifo_size(&queue->fifo);
 }
 
 /**
@@ -108,8 +104,8 @@ static inline size_t pcqueue_size(const struct pcqueue* const queue) {
  * \return Queue capacity, or 0 on ERROR.
  */
 static inline size_t pcqueue_capacity(const struct pcqueue* const queue) {
-    RCSW_FPC_NV(0, NULL != queue);
-    return fifo_capacity(&queue->fifo);
+  RCSW_FPC_NV(0, NULL != queue);
+  return fifo_capacity(&queue->fifo);
 }
 
 /**
@@ -121,8 +117,8 @@ static inline size_t pcqueue_capacity(const struct pcqueue* const queue) {
  * \return # free slots, or 0 on ERROR.
  */
 static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
-    RCSW_FPC_NV(0, NULL != queue);
-    return pcqueue_capacity(queue) - pcqueue_size(queue);
+  RCSW_FPC_NV(0, NULL != queue);
+  return pcqueue_capacity(queue) - pcqueue_size(queue);
 }
 
 /**
@@ -135,8 +131,8 @@ static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
  *
  * \return The initialized queue, or NULL if an error occurred.
  */
-RCSW_API struct pcqueue * pcqueue_init(struct pcqueue *pcqueue_in,
-                                       const struct pcqueue_params * params) RCSW_WUR;
+RCSW_API struct pcqueue* pcqueue_init(
+  struct pcqueue* pcqueue_in, const struct pcqueue_config* params) RCSW_WUR;
 
 /**
  * \brief Destroy a producer-consumer queue.
@@ -145,7 +141,7 @@ RCSW_API struct pcqueue * pcqueue_init(struct pcqueue *pcqueue_in,
  *
  * \param pcqueue The queue handle.
  */
-RCSW_API void pcqueue_destroy(struct pcqueue * pcqueue);
+RCSW_API void pcqueue_destroy(struct pcqueue* pcqueue);
 
 /**
  * \brief Push an item to the back of the queue, waiting if necessary for space
@@ -156,7 +152,7 @@ RCSW_API void pcqueue_destroy(struct pcqueue * pcqueue);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
+RCSW_API status_t pcqueue_push(struct pcqueue* pcqueue, const void* e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting if
@@ -167,7 +163,7 @@ RCSW_API status_t pcqueue_push(struct pcqueue * pcqueue, const void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
+RCSW_API status_t pcqueue_pop(struct pcqueue* pcqueue, void* e);
 
 /**
  * \brief Pop and return the first element in the queue, waiting until the
@@ -179,9 +175,9 @@ RCSW_API status_t pcqueue_pop(struct pcqueue * pcqueue, void * e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_timedpop(struct pcqueue * pcqueue,
-                            const struct timespec * to,
-                           void * e);
+RCSW_API status_t pcqueue_timedpop(struct pcqueue*        pcqueue,
+                                   const struct timespec* to,
+                                   void*                  e);
 
 /**
  * \brief Get the first element in the queue if it exists.
@@ -200,9 +196,9 @@ RCSW_API status_t pcqueue_timedpop(struct pcqueue * pcqueue,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_timedpeek(struct pcqueue* const queue,
-                           const struct timespec* const to,
-                           void** const e);
+RCSW_API status_t pcqueue_timedpeek(struct pcqueue* const        queue,
+                                    const struct timespec* const to,
+                                    void** const                 e);
 /**
  * \brief Get the first element in the queue if it exists, with a timeout.
  *

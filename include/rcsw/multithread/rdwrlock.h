@@ -1,13 +1,11 @@
 /**
- * \file rdwrlock.h
- * \ingroup multithread
- * \brief Implementation of fair reader-writer lock.
- *
- * Guarantees that no reader or writer will starve.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -15,8 +13,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/compilers.h"
 #include "rcsw/multithread/csem.h"
-#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Type Definitions
@@ -62,7 +60,7 @@ enum rdwrlock_scope {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -76,8 +74,8 @@ BEGIN_C_DECLS
  *
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
-RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
-                            uint32_t flags) RCSW_WUR;
+RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in,
+                                     uint32_t               flags) RCSW_WUR;
 
 /**
  * \brief Destroy a reader/writer fair lock
@@ -86,8 +84,7 @@ RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock *const rdwr_in,
  *
  * \param rdwr The lock handle.
  */
-RCSW_API void rdwrl_destroy(struct rdwrlock *const rdwr);
-
+RCSW_API void rdwrl_destroy(struct rdwrlock* const rdwr);
 
 /**
  * \brief Request to enter a critical section.
@@ -99,7 +96,7 @@ RCSW_API void rdwrl_destroy(struct rdwrlock *const rdwr);
  *
  * \param scope The scope of the privileges requested.
  */
-RCSW_API void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
+RCSW_API void rdwrl_req(struct rdwrlock* const rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Exit a critical section.
@@ -111,8 +108,7 @@ RCSW_API void rdwrl_req(struct rdwrlock *const rdwr, enum rdwrlock_scope scope);
  *
  * \param scope The scope of the privileges requested.
  */
-RCSW_API void rdwrl_exit(struct rdwrlock *const rdwr,
-                         enum rdwrlock_scope scope);
+RCSW_API void rdwrl_exit(struct rdwrlock* const rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Request to enter a critical section with a timeout.
@@ -130,8 +126,8 @@ RCSW_API void rdwrl_exit(struct rdwrlock *const rdwr,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rdwrl_timedreq(struct rdwrlock *const rdwr,
-                                 enum rdwrlock_scope scope,
-                                 const struct timespec *const to);
+RCSW_API status_t rdwrl_timedreq(struct rdwrlock* const       rdwr,
+                                 enum rdwrlock_scope          scope,
+                                 const struct timespec* const to);
 
 END_C_DECLS

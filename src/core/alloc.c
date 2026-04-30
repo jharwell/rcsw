@@ -1,26 +1,32 @@
 /**
- * \file alloc.c
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier:
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
+#include "rcsw/core/alloc.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include "rcsw/core/core.h"
+#include "rcsw/core/flags.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-void* rcsw_alloc(void* ptr, size_t n_bytes, RCSW_UNUSED uint32_t flags) {
+void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   void* ret = NULL;
 
 #if defined(RCSW_CONFIG_NOALLOC)
   /*
-   * Memory allocation is disabled entirely.
+   * Memory allocation is disabled entirely: always use the caller-supplied
+   * pointer.
    */
   ret = ptr;
 
@@ -45,11 +51,11 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, RCSW_UNUSED uint32_t flags) {
    * If SOME kind of "don't do memory allocation for XXX" flag is passed, assume
    * that the passed pointer should be used instead.
    */
-  if ((flags & RCSW_NOALLOC_HANDLE) ||
-      (flags & RCSW_NOALLOC_DATA) ||
+  if ((flags & RCSW_NOALLOC_HANDLE) || (flags & RCSW_NOALLOC_DATA) ||
       (flags & RCSW_NOALLOC_META)) {
     ret = ptr;
   } else {
+
 #if defined(RCSW_CONFIG_ZALLOC)
     ret = calloc(1, n_bytes);
 
@@ -87,8 +93,7 @@ void rcsw_free(void* ptr, uint32_t flags) {
    * If SOME kind of "don't do memory allocation for XXX" flag was passed to
    * rcsw_alloc(), nothing to do.
    */
-  if ((flags & RCSW_NOALLOC_HANDLE) ||
-      (flags & RCSW_NOALLOC_DATA) ||
+  if ((flags & RCSW_NOALLOC_HANDLE) || (flags & RCSW_NOALLOC_DATA) ||
       (flags & RCSW_NOALLOC_META)) {
     return;
   } else {

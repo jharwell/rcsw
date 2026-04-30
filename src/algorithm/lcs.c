@@ -1,5 +1,5 @@
 /**
- * \file lcs.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,13 +11,15 @@
  ******************************************************************************/
 #include "rcsw/algorithm/lcs.h"
 
-#include "rcsw/common/fpc.h"
+#include <string.h>
+
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/flags.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
 
 /*******************************************************************************
- * Forward Declarations
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -33,27 +35,23 @@ BEGIN_C_DECLS
  *
  * \return  LCS(x,y)
  */
-static int lcs_rec_sub(const char* x,
-                       const char* y,
-                       int* c,
-                       size_t i,
-                       size_t j,
-                       size_t length);
+static int lcs_rec_sub(
+  const char* x, const char* y, int* c, size_t i, size_t j, size_t length);
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 status_t lcs_init(struct lcs_calculator* lcs, const char* x, const char* y) {
   RCSW_FPC_NV(ERROR, NULL != lcs, NULL != x, NULL != y);
 
-  lcs->len_x = strlen(x);
-  lcs->len_y = strlen(y);
-  lcs->x = x;
-  lcs->y = y;
-  lcs->size = 0;
-  lcs->results  = rcsw_alloc(NULL,
-                             (lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int),
-                             RCSW_NONE);
+  lcs->len_x   = strlen(x);
+  lcs->len_y   = strlen(y);
+  lcs->x       = x;
+  lcs->y       = y;
+  lcs->size    = 0;
+  lcs->results = rcsw_alloc(NULL,
+                            (lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int),
+                            RCSW_NONE);
   RCSW_CHECK_PTR(lcs->results);
   memset(lcs->results, -1, (lcs->len_x + 1) * (lcs->len_y + 1) * sizeof(int));
   return OK;
@@ -86,21 +84,19 @@ int lcs_iter(struct lcs_calculator* lcs) {
         lcs->results[i * lcs->len_x + j] = 0;
       } else if (lcs->x[i - 1] == lcs->y[j - 1]) {
         lcs->results[i * lcs->len_x + j] =
-            lcs->results[(i - 1) * lcs->len_x + j - 1] + 1;
+          lcs->results[(i - 1) * lcs->len_x + j - 1] + 1;
       } else {
         lcs->results[i * lcs->len_x + j] =
-            RCSW_MAX(lcs->results[(i - 1) * lcs->len_x + j],
-                     lcs->results[i * lcs->len_x + j - 1]);
+          RCSW_MAX(lcs->results[(i - 1) * lcs->len_x + j],
+                   lcs->results[i * lcs->len_x + j - 1]);
       }
     } /* for(i=0...) */
   } /* for(j=0...) */
   lcs->size = (size_t)lcs->results[lcs->len_x * lcs->len_x + lcs->len_y];
 
-  lcs->sequence  = rcsw_alloc(NULL,
-                              (lcs->size + 1) * sizeof(char),
-                              RCSW_NONE);
+  lcs->sequence = rcsw_alloc(NULL, (lcs->size + 1) * sizeof(char), RCSW_NONE);
   lcs->sequence[lcs->size] = '\0';
-  size_t index = lcs->size;
+  size_t index             = lcs->size;
 
   /*
    * Start from the right-most-bottom-most corner and
@@ -138,12 +134,8 @@ error:
 /*******************************************************************************
  * Static Functions
  ******************************************************************************/
-static int lcs_rec_sub(const char* x,
-                       const char* y,
-                       int* c,
-                       size_t i,
-                       size_t j,
-                       size_t length) {
+static int lcs_rec_sub(
+  const char* x, const char* y, int* c, size_t i, size_t j, size_t length) {
   /*
    * Base case: one of the strings has no characters: no possible match, so
    * the LCS is 0

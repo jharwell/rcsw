@@ -1,11 +1,13 @@
 /**
- * \file algorithm.h
- * \ingroup algorithm
- * \brief Useful algorithms for arrays, lists, matrices, sequences, etc.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup algorithm
+ *
+ * \brief Useful algorithms for arrays, lists, matrices, sequences, etc.
  */
 
 #pragma once
@@ -13,10 +15,13 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -33,12 +38,13 @@ BEGIN_C_DECLS
  *
  * \return \ref bool_t
  **/
-RCSW_API bool_t str_is_parenthesizable(const char *x,
-                                       char *r, char el,
+RCSW_API bool_t str_is_parenthesizable(const char* x,
+                                       char*       r,
+                                       char        el,
                                        char (*multiply_cb)(char x, char y));
 
 /*******************************************************************************
- * RCSW Private Functions
+ * Private API
  ******************************************************************************/
 /**
  * \brief Find the largest # in an array of non-negative integers
@@ -48,7 +54,7 @@ RCSW_API bool_t str_is_parenthesizable(const char *x,
  *
  * \return The largest #, or 0 if an ERROR occurred
  */
-RCSW_LOCAL size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
+RCSW_LOCAL size_t alg_arr_largest_num(const size_t* array, size_t n_elts);
 
 /**
  * \brief Find the largest # in an array of integers
@@ -58,6 +64,6 @@ RCSW_LOCAL size_t alg_arr_largest_num(const size_t * array, size_t n_elts);
  *
  * \return The largest #, or 0 if an ERROR occurred
  */
-RCSW_LOCAL int alg_arr_largest_num2(const int * array, size_t n_elts);
+RCSW_LOCAL int alg_arr_largest_num2(const int* array, size_t n_elts);
 
 END_C_DECLS

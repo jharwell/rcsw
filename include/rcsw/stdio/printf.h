@@ -1,5 +1,8 @@
 /**
- * \file printf.h
+ * \file
+ *
+ * \copyright 2017 John Harwell, All rights reserved.
+ * SPDX-License-Identifier: MIT
  *
  * \brief Wrapper over the eyalroz/printf library, providing the RCSW
  * stdio_printf() family of functions.
@@ -7,9 +10,6 @@
  * This header adapts the upstream eyalroz/printf API to the RCSW naming
  * convention and type system. Application code should include this header
  * rather than the upstream <printf.h> directly.
- *
- * \copyright 2017 John Harwell, All rights reserved.
- * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -21,7 +21,7 @@
 
 #include <eyalroz/printf.h>
 
-#include "rcsw/common/common.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Public API

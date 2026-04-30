@@ -1,5 +1,5 @@
 /**
- * \file algorithm.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -12,13 +12,13 @@
 #include "rcsw/algorithm/algorithm.h"
 
 #include <stdio.h>
+#include <string.h>
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/utils/utils.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 size_t alg_arr_largest_num(const size_t* const array, size_t n_elts) {
   RCSW_FPC_NV(0, NULL != array);
@@ -33,8 +33,8 @@ size_t alg_arr_largest_num(const size_t* const array, size_t n_elts) {
 } /* largest_num() */
 
 bool_t str_is_parenthesizable(const char* const x,
-                              char* const r,
-                              char el,
+                              char* const       r,
+                              char              el,
                               char (*multiply_cb)(char x, char y)) {
   RCSW_FPC_NV(false, NULL != x, NULL != r, NULL != multiply_cb);
 
@@ -50,7 +50,7 @@ bool_t str_is_parenthesizable(const char* const x,
     r[len * i + i] = x[i];
   } /* for(i..) */
 
-  for (size_t i = 1; i <= len; i++) { /* starting subsequence index */
+  for (size_t i = 1; i <= len; i++) {       /* starting subsequence index */
     for (size_t j = 0; j <= len - i; j++) { /* subsequence length */
       size_t k = j + i - 1;
       for (int q = (int)j; q <= (int)k - 1; q++) {

@@ -1,9 +1,5 @@
 /**
- * \file rbtree.h
- * \ingroup ds
- * \brief Implementation of Red-Black Tree.
- *
- * This was really hard to get to work.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -40,11 +36,10 @@ RCSW_API void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node)
  * \param tree The rbtree handle.
  * \param node The parent the node that was inserted.
  */
-RCSW_API void rbtree_insert_fixup(struct bstree* tree,
-                                  struct bstree_node * node);
+RCSW_API void rbtree_insert_fixup(struct bstree* tree, struct bstree_node* node);
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Get the black height of a node in an RB Tree.
@@ -54,6 +49,6 @@ RCSW_API void rbtree_insert_fixup(struct bstree* tree,
  * \return The height or 0 if the node is NULL.
  *
  **/
-RCSW_API int rbtree_node_black_height(const struct bstree_node *node) RCSW_PURE;
+RCSW_API int rbtree_node_black_height(const struct bstree_node* node) RCSW_PURE;
 
 END_C_DECLS

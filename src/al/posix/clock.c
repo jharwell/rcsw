@@ -1,9 +1,9 @@
 /**
- * \file time.c
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
@@ -11,12 +11,10 @@
  ******************************************************************************/
 #include "rcsw/al/posix/clock.h"
 
-#include <time.h>
-
 #include "rcsw/utils/time.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 

@@ -1,5 +1,5 @@
 /**
- * \file version_info.h
+ * \file
  *
  * \copyright 2022 John Harwell, All rights reserved.
  *
@@ -20,18 +20,23 @@
  * \struct version_info
  * \ingroup version
  *
- * \brief Version information (duh).
+ * \brief The release version and associated license notice for a project.
+ *
+ * The \c version string is in whatever format the project chooses (semver,
+ * date-based, etc.). The \c license fields hold the pre-formatted text
+ * produced by the \ref RCSW_LICENSE_SHORT and \ref RCSW_LICENSE_FULL macros,
+ * suitable for printing at program startup.
  */
 struct version_info {
   /* clang-format off */
 
   /**
-   * The version for the project (in whatever format).
+   * Human-readable version string (e.g. \c "v1.2.3").
    */
   const char*         version;
 
   /**
-   * License info for the project.
+   * License notice for the project.
    */
   struct license_info license;
   /* clang-format on */

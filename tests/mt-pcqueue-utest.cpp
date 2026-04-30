@@ -25,7 +25,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using pcqueue_test = void (*)(const struct pcqueue_params* const params,
+using pcqueue_test = void (*)(const struct pcqueue_config* const config,
                               size_t                             n_prod,
                               size_t                             n_cons);
 
@@ -34,19 +34,19 @@ using pcqueue_test = void (*)(const struct pcqueue_params* const params,
  ******************************************************************************/
 template <typename T>
 static void run_test(pcqueue_test test, size_t n_prod = 1, size_t n_cons = 1) {
-  struct pcqueue_params params;
-  params.flags     = 0;
-  params.printe    = NULL;
-  params.elt_size  = sizeof(T);
-  params.max_elts  = TH_NUM_MT_ITEMS * 10;
+  struct pcqueue_config config;
+  config.flags     = 0;
+  config.printe    = NULL;
+  config.elt_size  = sizeof(T);
+  config.max_elts  = TH_NUM_MT_ITEMS * 10;
   uint32_t flags[] = {
     RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
   };
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    params.flags = flags[i];
-    test(&params, n_prod, n_cons);
+    config.flags = flags[i];
+    test(&config, n_prod, n_cons);
   }
 } /* test_runner() */
 
@@ -54,25 +54,25 @@ static void run_test(pcqueue_test test, size_t n_prod = 1, size_t n_cons = 1) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void serial_test(const struct pcqueue_params* const params,
+static void serial_test(const struct pcqueue_config* const config,
                         size_t,
                         size_t) {
   struct pcqueue  queue_in;
   struct pcqueue* queue;
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    queue = pcqueue_init(NULL, params);
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    queue = pcqueue_init(NULL, config);
     CATCH_REQUIRE(nullptr == queue);
-    queue = pcqueue_init(&queue_in, params);
+    queue = pcqueue_init(&queue_in, config);
   } else {
-    queue = pcqueue_init(&queue_in, params);
+    queue = pcqueue_init(&queue_in, config);
   }
   CATCH_REQUIRE(nullptr != queue);
 
   std::vector<T> vals;
   auto           prod_cb = [&](auto* const q) {
     size_t                   count = 0;
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
     while (true) {
       T e = g.next();
 
@@ -110,15 +110,15 @@ static void serial_test(const struct pcqueue_params* const params,
 }
 
 template <typename T>
-static void concurrent_test(const struct pcqueue_params* const params,
+static void concurrent_test(const struct pcqueue_config* const config,
                             size_t                             n_prod,
                             size_t                             n_cons) {
   struct pcqueue  queue_in;
-  struct pcqueue* queue = pcqueue_init(&queue_in, params);
+  struct pcqueue* queue = pcqueue_init(&queue_in, config);
   CATCH_REQUIRE(nullptr != queue);
 
   auto prod_cb = [&](auto* const q) {
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
     /*
      * Advance so the first element put in the queue is 1 not
      * 0.
@@ -205,14 +205,14 @@ static void concurrent_test(const struct pcqueue_params* const params,
 }
 
 template <typename T>
-void timeout_test(const struct pcqueue_params* const params,
+void timeout_test(const struct pcqueue_config* const config,
                   size_t                             n_prod,
                   size_t                             n_cons) {
   struct pcqueue  queue_in;
-  struct pcqueue* queue = pcqueue_init(&queue_in, params);
+  struct pcqueue* queue = pcqueue_init(&queue_in, config);
   CATCH_REQUIRE(nullptr != queue);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
   auto                     prod_cb = [&](auto* const q) {
     size_t count = 0;
 

@@ -1,11 +1,13 @@
 /**
- * \file procm.h
- * \ingroup multiprocess
- * \brief Useful routines related to fork()/exec() process management.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multiprocess
+ *
+ * \brief Useful routines related to fork()/exec() process management.
  */
 
 #pragma once
@@ -13,7 +15,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <sys/types.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Function Prototypes
@@ -33,14 +39,19 @@ status_t procm_socket_lock(int socket);
  * \brief Wrapper for fork()/exec() functonality.
  *
  * \param cmd The cmd to run exec() on
+ *
  * \param new_wd The new working directory of the fork()ed process, or NULL if
  * no change is desired.
+ *
  * \param stdout_sup If true, then the stdout of the child process will be sent
- * to /dev/null.
+ * to \c /dev/null. stderr is not touched.
+ *
  * \param pipefd If not NULL, the child will read data from the parent's stdin.
  * \return The pid of the child in the parent, nothing in the child.
  */
-pid_t procm_fork_exec(char** const cmd, const char* new_wd,
-                      bool_t stdout_sup, int* pipefd);
+pid_t procm_fork_exec(char** const cmd,
+                      const char*  new_wd,
+                      bool_t       stdout_sup,
+                      int*         pipefd);
 
 END_C_DECLS

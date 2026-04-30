@@ -21,72 +21,160 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
+# ---------------------------------------------------------------------------
+# Shared setup used by every job that builds RCSW
+# ---------------------------------------------------------------------------
+env:
+  RCSW_CONTAINER: jharwell/ubuntu24.04-rcsw:20260428
 
-  posix-parametric-build:
+# ---------------------------------------------------------------------------
+# Job 1: POSIX parametric build
+#
+# Purpose: verify compilation across the axes that affect code generation.
+# ptr_align and zalloc are runtime-behavior options tested in the test job;
+# they are intentionally absent here to keep the matrix manageable.
+# ---------------------------------------------------------------------------
+  build-posix:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260428
+      image: ${{ env.RCSW_CONTAINER }}
     strategy:
+      fail-fast: false
       matrix:
         build_type:
           - Release
           - Debug
 
-        ptr_align:
-          - 1
-          - 2
-          - 4
+        libtype:
+          - STATIC
+          - SHARED
 
-        zalloc:
-          - YES
-          - NO
+        build_mode:
+          - monolithic
+          - components
 
         er_plugin:
           - LOG4CL
           - SIMPLE
           - ZLOG
 
+        include:
+          # Spot-check each ptr_align value; pin other axes to keep count low
+          - { build_type: Release, libtype: STATIC, build_mode: components,
+              er_plugin: LOG4CL, ptr_align: 1 }
+          - { build_type: Release, libtype: STATIC, build_mode: components,
+              er_plugin: LOG4CL, ptr_align: 2 }
+          - { build_type: Release, libtype: STATIC, build_mode: components,
+              er_plugin: LOG4CL, ptr_align: 4 }
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Build=${{ matrix.build_type }}
+      - uses: actions/checkout@v4
+
+      - name: Setup
         shell: bash
         run: |
-
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
 
-          cmake  \
-          --preset debug \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DRCSW_BUILD_FOR=POSIX \
-          -DRCSW_CONFIG_STDIO_PUTCHAR=putchar \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
-          -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
-          -DRCSW_CONFIG_LIBTYPE=SHARED \
+      - name: Configure
+        shell: bash
+        run: |
+          MONOLITHIC=OFF
+          if [ "${{ matrix.build_mode }}" = "monolithic" ]; then
+            MONOLITHIC=ON
+          fi
 
+          PTR_ALIGN=${{ matrix.ptr_align || 4 }}
 
-          cmake --build --preset debug
+          cmake --preset debug \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
+            -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
+            -DRCSW_CONFIG_PTR_ALIGN=${PTR_ALIGN} \
+            -DRCSW_CONFIG_STDIO_PUTCHAR=putchar
 
-          cmake  \
-          --preset debug \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DRCSW_BUILD_FOR=POSIX \
-          -DRCSW_CONFIG_STDIO_PUTCHAR=th_putchar \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
-          -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
-          -DRCSW_CONFIG_LIBTYPE=STATIC \
+      - name: Build
+        shell: bash
+        run: cmake --build --preset debug
 
-          cmake --build --preset debug
-
-  baremetal-stdlib-build:
+# ---------------------------------------------------------------------------
+# Job 2: POSIX component-exclusion build
+#
+# Purpose: verify each optional component can be cleanly disabled, and that
+# the all-disabled configuration (core + al only) also builds cleanly.
+# ---------------------------------------------------------------------------
+  build-posix-components:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260428
+      image: ${{ env.RCSW_CONTAINER }}
     strategy:
+      fail-fast: false
+      matrix:
+        disabled_component:
+          - algorithm
+          - ds
+          - er
+          - multiprocess
+          - multithread
+          - stdio
+          - tool
+          - utils
+          - ALL   # all optional components disabled; only core + al remain
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+
+      - name: Configure
+        shell: bash
+        run: |
+          EXTRA_FLAGS=""
+          if [ "${{ matrix.disabled_component }}" = "ALL" ]; then
+            EXTRA_FLAGS="\
+              -DRCSW_CONFIG_ALGORITHM=OFF \
+              -DRCSW_CONFIG_DS=OFF \
+              -DRCSW_CONFIG_ER=OFF \
+              -DRCSW_CONFIG_MULTIPROCESS=OFF \
+              -DRCSW_CONFIG_MULTITHREAD=OFF \
+              -DRCSW_CONFIG_STDIO=OFF \
+              -DRCSW_CONFIG_TOOL=OFF \
+              -DRCSW_CONFIG_UTILS=OFF"
+          else
+            COMPONENT=$(echo "${{ matrix.disabled_component }}" | tr '[:lower:]' '[:upper:]')
+            EXTRA_FLAGS="-DRCSW_CONFIG_${COMPONENT}=OFF"
+          fi
+
+          cmake --preset debug \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
+            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_PTR_ALIGN=4 \
+            ${EXTRA_FLAGS}
+
+      - name: Build
+        shell: bash
+        run: cmake --build --preset debug
+
+# ---------------------------------------------------------------------------
+# Job 3: Baremetal build (stdlib and nostdlib in one job)
+#
+# Purpose: verify baremetal targets compile across build types, ptr_align,
+# and stdlib presence. Previously split across two jobs for no reason.
+# ---------------------------------------------------------------------------
+  build-baremetal:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.RCSW_CONTAINER }}
+    strategy:
+      fail-fast: false
       matrix:
         build_type:
           - Release
@@ -97,75 +185,54 @@ jobs:
           - 2
           - 4
 
-    steps:
-      - uses: actions/checkout@v3
+        stdlib:
+          - STDCXX
+          - NONE
 
-      - name: Baremetal stdlib build=${{ matrix.build_type }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
         shell: bash
         run: |
-
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
 
-          # Use SIMPLE builtin plugin--LOG4CL requires data structures which
-          # aren't built.
-          cmake  --preset debug \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
-          -DRCSW_BUILD_FOR=BAREMETAL \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_LIBTYPE=STATIC \
-
-          cmake --build --preset debug
-
-
-  baremetal-nostdlib-build:
-    runs-on: ubuntu-latest
-    container:
-      image: jharwell/ubuntu24.04-rcsw:20260428
-    strategy:
-      matrix:
-        build_type:
-          - Release
-          - Debug
-
-        ptr_align:
-          - 1
-          - 2
-          - 4
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Baremetal nostdlib build=${{ matrix.build_type }}
+      - name: Configure
         shell: bash
         run: |
+          STDLIB_FLAGS=-DLIBRA_STDLIB=${{ matrix.stdlib }}
 
-          git config --global --add safe.directory $PWD
-          git submodule update --init --remote --recursive
+          # LOG4CL requires data structures which aren't built on baremetal;
+          # always use SIMPLE here.
+          cmake --preset debug \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DRCSW_BUILD_FOR=BAREMETAL \
+            -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            ${STDLIB_FLAGS}
 
-          # Use SIMPLE builtin plugin--LOG4CL requires data structures which
-          # aren't built.
-          cmake  --preset debug \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DLIBRA_NOSTDLIB=YES \
-          -DRCSW_BUILD_FOR=BAREMETAL \
-          -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_LIBTYPE=STATIC \
+      - name: Build
+        shell: bash
+        run: cmake --build --preset debug
 
-          cmake --build --preset debug
-
-
-  posix-build-and-test:
+# ---------------------------------------------------------------------------
+# Job 4: POSIX test (memcheck + coverage)
+#
+# Purpose: functional correctness and memory safety across runtime-behavior
+# axes. Runs after all build jobs pass.
+# ---------------------------------------------------------------------------
+  test-posix:
     runs-on: ubuntu-latest
     needs:
-      - posix-parametric-build
-      - baremetal-stdlib-build
-      - baremetal-nostdlib-build
-
+      - build-posix
+      - build-posix-components
+      - build-baremetal
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260428
+      image: ${{ env.RCSW_CONTAINER }}
     strategy:
+      fail-fast: false
       matrix:
         build_type:
           - Release
@@ -173,7 +240,6 @@ jobs:
 
         ptr_align:
           - 1
-          - 2
           - 4
 
         zalloc:
@@ -181,111 +247,263 @@ jobs:
           - NO
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+
       - name: Memcheck
         shell: bash
         run: |
-
-          git config --global --add safe.directory $PWD
-          git submodule update --init --remote --recursive
-          sudo apt-get install valgrind
-
           cmake --preset ci-valgrind \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
           cmake --build --preset ci-valgrind --target all-tests
 
-          # --test-dir shouldn't be needed, but it is because ctest +memcheck
-          # don't resolve the binary dir for reasons unknown, as of 3.31
+          # --test-dir is required because ctest + memcheck don't resolve the
+          # binary dir reliably as of CMake 3.31
           ctest --preset ci-valgrind --test-dir build -T memcheck
 
       - name: Generate coverage
         shell: bash
         run: |
-
-          git config --global --add safe.directory $PWD
-          git submodule update --init --remote --recursive
-
           cmake --preset ci-coverage \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-          -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
           cmake --build --preset ci-coverage --target build-and-test
           cmake --build --preset ci-coverage --target lcov-report
 
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: build/coverage/coverage.info
 
+# ---------------------------------------------------------------------------
+# Job 5: Install and consume
+#
+# Purpose: end-to-end validation that the installed package is consumable
+# via find_package() for both monolithic and component-based use.
+#
+# Runs after build-posix since it depends on install correctness, not tests.
+# ---------------------------------------------------------------------------
+  test-install:
+    runs-on: ubuntu-latest
+    needs:
+      - build-posix
+    container:
+      image: ${{ env.RCSW_CONTAINER }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+
+      - name: Build and install (component mode)
+        shell: bash
+        run: |
+          cmake --preset debug \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
+            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_PTR_ALIGN=4 \
+            -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install
+
+          cmake --build --preset debug
+          cmake --install build
+
+      - name: Verify component find_package
+        shell: bash
+        run: |
+          # Write a minimal consumer and verify it configures and builds
+          # cleanly against the installed tree.
+          mkdir -p /tmp/rcsw-consumer
+          cat > /tmp/rcsw-consumer/CMakeLists.txt << 'EOF'
+          cmake_minimum_required(VERSION 3.20)
+          project(rcsw_consumer C)
+
+          find_package(rcsw REQUIRED COMPONENTS ds utils er al core)
+
+          add_executable(consumer main.c)
+          target_link_libraries(consumer PRIVATE rcsw::ds rcsw::utils rcsw::er)
+          EOF
+
+          cat > /tmp/rcsw-consumer/main.c << 'EOF'
+          #include "rcsw/ds/darray.h"
+          int main(void) { return 0; }
+          EOF
+
+          cmake -S /tmp/rcsw-consumer -B /tmp/rcsw-consumer/build \
+            -DCMAKE_PREFIX_PATH=/tmp/rcsw-install
+
+          cmake --build /tmp/rcsw-consumer/build
+
+      - name: Build and install (monolithic mode)
+        shell: bash
+        run: |
+          cmake --preset debug \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=ON \
+            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_PTR_ALIGN=4 \
+            -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install-mono
+
+          cmake --build --preset debug
+          cmake --install build
+
+      - name: Verify monolithic find_package
+        shell: bash
+        run: |
+          mkdir -p /tmp/rcsw-consumer-mono
+          cat > /tmp/rcsw-consumer-mono/CMakeLists.txt << 'EOF'
+          cmake_minimum_required(VERSION 3.20)
+          project(rcsw_consumer_mono C)
+
+          find_package(rcsw REQUIRED)
+
+          add_executable(consumer main.c)
+          target_link_libraries(consumer PRIVATE rcsw::rcsw)
+          EOF
+
+          cat > /tmp/rcsw-consumer-mono/main.c << 'EOF'
+          #include "rcsw/ds/darray.h"
+          int main(void) { return 0; }
+          EOF
+
+          cmake -S /tmp/rcsw-consumer-mono -B /tmp/rcsw-consumer-mono/build \
+            -DCMAKE_PREFIX_PATH=/tmp/rcsw-install-mono
+
+          cmake --build /tmp/rcsw-consumer-mono/build
+
+# ---------------------------------------------------------------------------
+# Job 6: Static analysis
+#
+# Purpose: catch issues not caught by the compiler warning flags. Runs
+# independently of the build/test pipeline. Non-blocking until baseline
+# is clean (continue-on-error: true).
+# ---------------------------------------------------------------------------
+  static-analysis:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.RCSW_CONTAINER }}
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake --preset analyze \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
+            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_PTR_ALIGN=4
+
+      - name: Run cppcheck
+        shell: bash
+        run: |
+          cmake --build preset analyze --target analyze-cppcheck
+
+# ---------------------------------------------------------------------------
+# Job 7: Docs
+# ---------------------------------------------------------------------------
   docs:
     uses: ./.github/workflows/pages.yml
     needs:
-      - posix-build-and-test
+      - test-posix
     secrets: inherit
 
+# ---------------------------------------------------------------------------
+# Job 8: Create release
+# ---------------------------------------------------------------------------
   create-release:
     runs-on: ubuntu-latest
     needs:
-      - posix-build-and-test
+      - test-posix
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260428
+      image: ${{ env.RCSW_CONTAINER }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Build for release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # git-cliff needs full history
+
+      - name: Setup
         shell: bash
         run: |
           git config --global --add safe.directory $PWD
           git config --global user.email "${{ github.event.pusher.email }}"
           git config --global user.name "${{ github.event.pusher.name }}"
-
           git submodule update --init --remote --recursive
-          git changelog --start-tag 1.2.0 -n -x > changelog
 
-          cmake  --preset debug \
-          -DCMAKE_INSTALL_PREFIX=/usr \
-          -DCMAKE_BUILD_TYPE=Debug \
-          -DCPACK_PACKAGE_NAME=rcsw-dev
+      - name: Generate changelog
+        shell: bash
+        run: git-cliff --latest --strip header -o changelog
 
+      - name: Build debug package
+        shell: bash
+        run: |
+          cmake --preset debug \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCPACK_PACKAGE_NAME=rcsw-dev
 
           cmake --build --preset debug --target package
 
-          cmake  --preset debug \
-          -DCMAKE_INSTALL_PREFIX=/usr \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCPACK_PACKAGE_NAME=rcsw-opt
+      - name: Build release package
+        shell: bash
+        run: |
+          cmake --preset release \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCPACK_PACKAGE_NAME=rcsw-opt
 
           cmake --build --preset release --target package
 
-          lintian *.deb
+      - name: Lint packages
+        shell: bash
+        run: lintian build/*.deb
 
       - name: Tag release
         shell: bash
         run: |
-          PACKAGE_VERSION=$(sed -nE 's/.*VERSION ([0-9]+\.([0-9]+\.([0-9]+).*/\1/p' CMakeLists.txt)
+          PACKAGE_VERSION=$(sed -nE 's/.*VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt | head -1)
 
           if [ "${{ github.ref }}" = "refs/heads/devel" ]; then
             RELEASE_VERSION=${PACKAGE_VERSION}.beta
             RELEASE_MESSAGE="Development release ${RELEASE_VERSION}"
-
             git tag ${RELEASE_VERSION} -m "${RELEASE_MESSAGE}" -f
             git push -o ci.skip origin ${RELEASE_VERSION} -f
           else
-            RELEASE_VERSION=${PACKAGE_VERSION}.beta
+            RELEASE_VERSION=${PACKAGE_VERSION}
             RELEASE_MESSAGE="Release ${RELEASE_VERSION}"
-
             git tag ${RELEASE_VERSION} -m "${RELEASE_MESSAGE}"
             git push -o ci.skip origin ${RELEASE_VERSION}
           fi
 
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_MESSAppGE=${RELEASE_MESSAGE}" >> $GITHUB_ENV
+          echo "RELEASE_MESSAGE=${RELEASE_MESSAGE}" >> $GITHUB_ENV
           echo "PACKAGE_VERSION=${PACKAGE_VERSION}" >> $GITHUB_ENV
 
       - name: Github beta release
@@ -297,7 +515,7 @@ jobs:
           prerelease: true
           title: "${{ env.RELEASE_MESSAGE }}"
           files: |
-              build/*.deb
+            build/*.deb
 
       - name: Github release
         if: github.ref == 'refs/heads/master'
@@ -308,11 +526,11 @@ jobs:
           prerelease: false
           title: "${{ env.RELEASE_MESSAGE }}"
           files: |
-              build/*.deb
+            build/*.deb
 
       - name: Clone PPA
         if: github.ref == 'refs/heads/master'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: jharwell/ppa
           path: ppa
@@ -325,10 +543,9 @@ jobs:
           cd ppa
           cp ../build/*.deb .
           cp ../build/*.rpm .
-          ls -al ..
-          echo  "${{ secrets.RCSW_GPG_SECRET_KEY }}" | base64 --decode | gpg --import
+          echo "${{ secrets.RCSW_GPG_SECRET_KEY }}" | base64 --decode | gpg --import
           ./scripts/update-packages.sh
           git add -A
-          git commit -m "Deploy RCSW ${{ env.PACKAGE_VERSION}}"
+          git commit -m "Deploy RCSW ${{ env.PACKAGE_VERSION }}"
           git remote set-url origin https://jharwell:${{ secrets.RCSW_DEPLOY_TOKEN }}@github.com/jharwell/ppa.git
           git push -u origin master

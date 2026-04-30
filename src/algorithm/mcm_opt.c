@@ -1,5 +1,5 @@
 /**
- * \file mcm_opt.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,15 +13,15 @@
 
 #include <limits.h>
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/flags.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
 
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
- BEGIN_C_DECLS
+BEGIN_C_DECLS
 /**
  * \brief Print the optimal parenthesization to stdout
  *
@@ -34,9 +34,9 @@
  *
  */
 static void mcm_opt_print_parens(const size_t* arr,
-                                 size_t i,
-                                 size_t j,
-                                 size_t length) {
+                                 size_t        i,
+                                 size_t        j,
+                                 size_t        length) {
   if (i == j) {
     DPRINTF("A%zu", i);
   } else {
@@ -47,7 +47,6 @@ static void mcm_opt_print_parens(const size_t* arr,
     DPRINTF(")");
   }
 } /* mcm_opt_print_parens() */
-
 
 /**
  * \brief Report optimal parenthesization
@@ -65,11 +64,11 @@ static void mcm_opt_print_parens(const size_t* arr,
  *
  */
 static void mcm_opt_report_parens(const size_t* arr,
-                                  size_t i,
-                                  size_t j,
-                                  size_t length,
-                                  size_t* ordering,
-                                  size_t* count) {
+                                  size_t        i,
+                                  size_t        j,
+                                  size_t        length,
+                                  size_t*       ordering,
+                                  size_t*       count) {
   if (i == j) {
   } else {
     size_t k = arr[i + length * j];
@@ -87,22 +86,19 @@ static void mcm_opt_report_parens(const size_t* arr,
 } /* mcm_opt_report_parens() */
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-status_t
-mcm_opt_init(struct mcm_optimizer* mcm, const size_t* matrices, size_t size) {
+status_t mcm_opt_init(struct mcm_optimizer* mcm,
+                      const size_t*         matrices,
+                      size_t                size) {
   RCSW_FPC_NV(ERROR, NULL != mcm, NULL != matrices, size >= 2);
   mcm->matrices = matrices;
-  mcm->size = size;
+  mcm->size     = size;
 
-  mcm->results  = rcsw_alloc(NULL,
-                             size * size * sizeof(size_t),
-                             RCSW_ZALLOC);
+  mcm->results = rcsw_alloc(NULL, size * size * sizeof(size_t), RCSW_ZALLOC);
   RCSW_CHECK_PTR(mcm->results);
 
-  mcm->route  = rcsw_alloc(NULL,
-                             size * size * sizeof(size_t),
-                             RCSW_ZALLOC);
+  mcm->route = rcsw_alloc(NULL, size * size * sizeof(size_t), RCSW_ZALLOC);
   RCSW_CHECK_PTR(mcm->route);
   return OK;
 
@@ -162,7 +158,7 @@ status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
               mcm->matrices[j - 1] * mcm->matrices[q] * mcm->matrices[k];
         if (num < mcm->results[j + mcm->size * k]) {
           mcm->results[j + mcm->size * k] = num;
-          mcm->route[j + mcm->size * k] = q;
+          mcm->route[j + mcm->size * k]   = q;
         }
       } /* for(q=j)... */
     } /* for(j=1)... */
@@ -174,8 +170,12 @@ status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
 status_t mcm_opt_report(const struct mcm_optimizer* mcm, size_t* ordering) {
   RCSW_FPC_NV(ERROR, NULL != mcm, NULL != ordering);
   size_t count = 0;
-  mcm_opt_report_parens(
-      mcm->route, 1, mcm->size - 1, mcm->size, ordering, &count);
+  mcm_opt_report_parens(mcm->route,
+                        1,
+                        mcm->size - 1,
+                        mcm->size,
+                        ordering,
+                        &count);
   return OK;
 } /* mcm_opt_report() */
 

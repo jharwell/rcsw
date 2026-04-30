@@ -1,5 +1,5 @@
 /**
- * \file inttree.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,11 +13,10 @@
 
 #include <limits.h>
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/er/client.h"
-#include "rcsw/utils/utils.h"
 
 /*******************************************************************************
  * Private Functions
@@ -60,17 +59,16 @@ static int inttree_cmp_key(const void* a, const void* b) {
  * RCSW Private Functions
  ******************************************************************************/
 void inttree_init_helper(const struct bstree* tree) {
-  struct interval_data nil_data = { .low = INT_MIN, .high = INT_MIN };
+  struct interval_data nil_data = {.low = INT_MIN, .high = INT_MIN};
   ds_elt_copy(tree->nil->data, &nil_data, tree->elt_size);
   ds_elt_copy(tree->root->data, &nil_data, tree->elt_size);
-  ((struct inttree_node*)tree->nil)->max_high = INT_MIN;
+  ((struct inttree_node*)tree->nil)->max_high  = INT_MIN;
   ((struct inttree_node*)tree->root)->max_high = INT_MIN;
 } /* inttree_init_helper() */
 
-void inttree_high_fixup(const struct bstree* tree,
-                               struct inttree_node* node) {
+void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
   struct interval_data* data = (struct interval_data*)node->data;
-  node->max_high = data->high;
+  node->max_high             = data->high;
 
   while (node != RCSW_INTTREE_ROOT(tree)) {
     inttree_node_update_max(node);
@@ -79,19 +77,19 @@ void inttree_high_fixup(const struct bstree* tree,
 } /* inttree_high_fixup() */
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct bstree* inttree_init(struct bstree* const tree_in,
-                            struct bstree_params* const params) {
+struct bstree* inttree_init(struct bstree* const        tree_in,
+                            struct bstree_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
   params->cmpkey = inttree_cmp_key;
   return bstree_init_internal(tree_in, params, sizeof(struct inttree_node));
 }
 
-struct inttree_node*
-inttree_overlap_search(const struct bstree* tree,
-                       struct inttree_node* root,
-                       const struct interval_data* interval) {
+struct inttree_node* inttree_overlap_search(
+  const struct bstree*        tree,
+  struct inttree_node*        root,
+  const struct interval_data* interval) {
   RCSW_FPC_NV(NULL, NULL != tree, NULL != root, NULL != interval);
 
   /*
@@ -120,13 +118,11 @@ inttree_overlap_search(const struct bstree* tree,
   }
 } /* inttree_overlap_search() */
 
-status_t inttree_insert(struct bstree* tree,
-                        struct interval_data* interval) {
-
-  return  bstree_insert_internal(tree,
-                                 &(interval)->low,
-                                 interval,
-                                 sizeof(struct inttree_node));
+status_t inttree_insert(struct bstree* tree, struct interval_data* interval) {
+  return bstree_insert_internal(tree,
+                                &(interval)->low,
+                                interval,
+                                sizeof(struct inttree_node));
 }
 
 END_C_DECLS

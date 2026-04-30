@@ -1,5 +1,5 @@
 /**
- * \file procm.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "rcsw/er/client.h"
@@ -32,9 +33,9 @@ BEGIN_C_DECLS
  ******************************************************************************/
 status_t procm_socket_lock(int socket) {
   cpu_set_t cpuset;
-  char buffer[50];
-  char* line;
-  int64_t n_sockets, cores_per_socket, n_cpus;
+  char      buffer[50];
+  char*     line;
+  int64_t   n_sockets, cores_per_socket, n_cpus;
 
   CPU_ZERO(&cpuset);
   FILE* f = popen("lscpu | grep Socket|awk '{print $2}'", "r");
@@ -44,8 +45,8 @@ status_t procm_socket_lock(int socket) {
   RCSW_CHECK_PTR(line);
   pclose(f);
 
-  n_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-  n_sockets = atoi(line);
+  n_cpus           = sysconf(_SC_NPROCESSORS_ONLN);
+  n_sockets        = atoi(line);
   cores_per_socket = n_cpus / n_sockets;
 
   for (int64_t i = socket * cores_per_socket; i < (socket + 1) * cores_per_socket;
@@ -57,19 +58,20 @@ status_t procm_socket_lock(int socket) {
   return OK;
 
 error:
+  pclose(f);
   return ERROR;
-} /* procm_socket_lock() */
+}
 
 pid_t procm_fork_exec(char** const cmd,
-                      const char* new_wd,
-                      bool_t stdout_sup,
-                      int* pipefd) {
+                      const char*  new_wd,
+                      bool_t       stdout_sup,
+                      int*         pipefd) {
   pid_t pid = fork();
   if (0 == pid) {
     /* change to the working directory before exec()ing if requested */
     if (NULL != new_wd) {
       if (0 != chdir(new_wd)) {
-        return ERROR;
+        exit(EXIT_FAILURE);
       }
     }
 
@@ -77,6 +79,7 @@ pid_t procm_fork_exec(char** const cmd,
     if (stdout_sup) {
       int fd = open("/dev/null", O_WRONLY);
       dup2(fd, 1);
+      close(fd);
     }
 
     /* the child will read data on stdin from the parent */
@@ -90,6 +93,6 @@ pid_t procm_fork_exec(char** const cmd,
   } else {
     return pid;
   }
-} /* procm_fork_exec() */
+}
 
 END_C_DECLS

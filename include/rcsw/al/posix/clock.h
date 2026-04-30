@@ -1,9 +1,9 @@
 /**
- * \file clock.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -11,10 +11,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <time.h>
+
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 

@@ -1,9 +1,9 @@
 /**
- * \file alloc.h
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -11,10 +11,13 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/common/common.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Allocate \p n_bytes of memory using malloc()/calloc()/etc.
@@ -42,9 +45,9 @@
  * - \ref RCSW_ZALLOC
  *
  */
-void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);
+RCSW_LOCAL void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);
 
 /**
  * \brief Free memory previously allocated with \ref rcsw_alloc().
  */
-void rcsw_free(void* ptr, uint32_t flags);
+RCSW_LOCAL void rcsw_free(void* ptr, uint32_t flags);

@@ -1,10 +1,11 @@
 /**
- * \file csem.h
- * \ingroup multithread
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -14,8 +15,8 @@
  ******************************************************************************/
 #include <semaphore.h>
 
+#include "rcsw/core/compilers.h"
 #include "rcsw/multithread/mutex.h"
-#include "rcsw/rcsw.h"
 
 /*******************************************************************************
  * Type Definitions
@@ -58,16 +59,16 @@ BEGIN_C_DECLS
  *
  * \return The initialization counting semaphore, or NULL if an ERROR occurred.
  */
-RCSW_API struct csem* csem_init(struct csem *sem_in,
-                          size_t value,
-                          uint32_t flags);
+RCSW_API struct csem* csem_init(struct csem* sem_in,
+                                size_t       value,
+                                uint32_t     flags);
 
 /**
  * \brief Destroy a counting semaphore.
  *
  * \param sem The semaphore to destroy.
  */
-RCSW_API void csem_destroy(struct csem * sem);
+RCSW_API void csem_destroy(struct csem* sem);
 
 /**
  * \brief Increment (unlock) a counting semaphore.
@@ -76,7 +77,7 @@ RCSW_API void csem_destroy(struct csem * sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t csem_post(struct csem * sem);
+RCSW_API status_t csem_post(struct csem* sem);
 
 /**
  * Wait on a counting semaphore with a timeout.
@@ -89,7 +90,18 @@ RCSW_API status_t csem_post(struct csem * sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t csem_timedwait(struct csem * sem, const struct timespec * to);
+RCSW_API status_t csem_timedwait(struct csem* sem, const struct timespec* to);
+
+/**
+ * Wait on a counting semaphore with a timeout.
+ *
+ * \param sem The semaphore handle.
+ *
+ * \param to An ABSOLUTE timeout, NOT an RELATIVE timeout.
+ *
+ * \return \ref status_t.
+ */
+RCSW_API status_t csem_timedwait_abs(struct csem* sem, const struct timespec* to);
 
 /**
  * \brief Wait on (lock) a counting semaphore.
@@ -98,7 +110,7 @@ RCSW_API status_t csem_timedwait(struct csem * sem, const struct timespec * to);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t csem_wait(struct csem *sem);
+RCSW_API status_t csem_wait(struct csem* sem);
 
 /**
  * \brief Lock the semaphore only if it is currently available.
@@ -109,6 +121,6 @@ RCSW_API status_t csem_wait(struct csem *sem);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t csem_trywait(struct csem *sem);
+RCSW_API status_t csem_trywait(struct csem* sem);
 
 END_C_DECLS

@@ -1,5 +1,5 @@
 /**
- * \file pcqueue.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,17 +11,17 @@
  ******************************************************************************/
 #include "rcsw/multithread/pcqueue.h"
 
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct pcqueue* pcqueue_init(struct pcqueue* queue_in,
-                             const struct pcqueue_params* const params) {
+struct pcqueue* pcqueue_init(struct pcqueue*                    queue_in,
+                             const struct pcqueue_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->max_elts > 0, params->elt_size > 0);
 
   struct pcqueue* queue = rcsw_alloc(queue_in,
@@ -30,22 +30,19 @@ struct pcqueue* pcqueue_init(struct pcqueue* queue_in,
 
   RCSW_CHECK_PTR(queue);
 
-  queue->flags = params->flags;
-
   /* create FIFO */
-  struct fifo_params impl_params = { .max_elts = params->max_elts,
-                                     .printe = NULL,
-                                     .elt_size = params->elt_size,
-                                     .elements = params->elements,
-                                     .flags = params->flags };
+  struct fifo_config impl_params = {.max_elts = params->max_elts,
+                                    .printe   = NULL,
+                                    .elt_size = params->elt_size,
+                                    .elements = params->elements,
+                                    .flags    = params->flags};
   impl_params.flags |= RCSW_NOALLOC_HANDLE;
 
   RCSW_CHECK(NULL != fifo_init(&queue->fifo, &impl_params));
 
   /* all slots available initially */
-  RCSW_CHECK_PTR(csem_init(&queue->slots_avail,
-                           params->max_elts,
-                           RCSW_NOALLOC_HANDLE));
+  RCSW_CHECK_PTR(
+    csem_init(&queue->slots_avail, params->max_elts, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(csem_init(&queue->slots_inuse, 0, RCSW_NOALLOC_HANDLE));
   RCSW_CHECK_PTR(mutex_init(&queue->mutex, RCSW_NOALLOC_HANDLE));
   return queue;
@@ -65,7 +62,7 @@ void pcqueue_destroy(struct pcqueue* const queue) {
   csem_destroy(&queue->slots_avail);
   csem_destroy(&queue->slots_inuse);
 
-  rcsw_free(queue, queue->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(queue, queue->fifo.rb.flags & RCSW_NOALLOC_HANDLE);
 } /* pcqueue_destroy() */
 
 status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {
@@ -100,9 +97,9 @@ status_t pcqueue_pop(struct pcqueue* const queue, void* const e) {
   return rval;
 } /* pcqueue_pop() */
 
-status_t pcqueue_timedpop(struct pcqueue* const queue,
-                            const struct timespec* const to,
-                            void* const e) {
+status_t pcqueue_timedpop(struct pcqueue* const        queue,
+                          const struct timespec* const to,
+                          void* const                  e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != to);
 
   RCSW_CHECK(OK == csem_timedwait(&queue->slots_inuse, to));
@@ -125,9 +122,9 @@ error:
   return ERROR;
 } /* pcqueue_pop() */
 
-status_t pcqueue_timedpeek(struct pcqueue* const queue,
+status_t pcqueue_timedpeek(struct pcqueue* const        queue,
                            const struct timespec* const to,
-                           void** const e) {
+                           void** const                 e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != to, NULL != e);
 
   RCSW_CHECK(OK == csem_timedwait(&queue->slots_inuse, to));
@@ -146,8 +143,7 @@ error:
   return ERROR;
 } /* pcqueue_timedpeek() */
 
-status_t pcqueue_peek(struct pcqueue* const queue,
-                      void** const e) {
+status_t pcqueue_peek(struct pcqueue* const queue, void** const e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
 
   csem_wait(&queue->slots_inuse);

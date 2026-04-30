@@ -1,12 +1,11 @@
 /**
- * \file ostree_node.h
- * \cond INTERNAL
- * \ingroup ds
- * \brief Functions related to ostree nodes
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \cond INTERNAL
  */
 
 #pragma once
@@ -24,8 +23,8 @@
  * different)
  */
 enum ostree_fixup_type {
-    ekOSTREE_FIXUP_INSERT,
-    ekOSTREE_FIXUP_DELETE,
+  ekOSTREE_FIXUP_INSERT,
+  ekOSTREE_FIXUP_DELETE,
 };
 
 /*******************************************************************************
@@ -41,9 +40,9 @@ BEGIN_C_DECLS
  * \param node The node to fixup.
  * \param type The type of fixup to perform.
  */
-RCSW_LOCAL void ostree_count_fixup(const struct bstree* tree,
-                        struct ostree_node * node,
-                        enum ostree_fixup_type type);
+RCSW_LOCAL void ostree_count_fixup(const struct bstree*   tree,
+                                   struct ostree_node*    node,
+                                   enum ostree_fixup_type type);
 /**
  * \brief Update the subtree size for a node.
  *

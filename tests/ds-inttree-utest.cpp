@@ -16,7 +16,6 @@
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree.h"
 #include "rcsw/ds/rbtree.h"
-#include "rcsw/utils/utils.h"
 #include "tests/ds_bstree_test.hpp"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
@@ -24,7 +23,7 @@
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using inttree_test_t = void (*)(int len, struct bstree_params *params);
+using inttree_test_t = void (*)(int len, struct bstree_config *config);
 
 /*******************************************************************************
  * Global Variables
@@ -35,12 +34,12 @@ int n_elements; /* global var for # elements in RBTREE */
  * Test Helper Functions
  ******************************************************************************/
 static void run_test(inttree_test_t test) {
-  struct bstree_params params;
-  memset(&params, 0, sizeof(bstree_params));
-  params.flags    = 0;
-  params.elt_size = sizeof(struct interval_data);
-  params.max_elts = TH_NUM_ITEMS;
-  th::ds_init(&params);
+  struct bstree_config config;
+  memset(&config, 0, sizeof(bstree_config));
+  config.flags    = 0;
+  config.elt_size = sizeof(struct interval_data);
+  config.max_elts = TH_NUM_ITEMS;
+  th::ds_init(&config);
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -57,15 +56,15 @@ static void run_test(inttree_test_t test) {
       applied |= flags[j];
 
       for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
-        params.flags = applied | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
-        test(m, &params);
+        config.flags = applied | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
+        test(m, &config);
       } /* for(m..) */
 
       applied &= ~flags[j];
     } /* for(j..) */
   } /* for(i..) */
 
-  th::ds_shutdown(&params);
+  th::ds_shutdown(&config);
 } /* run_test() */
 
 /*******************************************************************************
@@ -74,12 +73,12 @@ static void run_test(inttree_test_t test) {
 /**
  * \brief Test inserting nodes in an interval tree and verifying
  */
-static void inttree_insert_test(int len, struct bstree_params *params) {
+static void inttree_insert_test(int len, struct bstree_config *config) {
   struct bstree       *tree;
   struct bstree        mytree;
   struct interval_data arr1[TH_NUM_ITEMS];
 
-  tree = inttree_init(&mytree, params);
+  tree = inttree_init(&mytree, config);
   CATCH_REQUIRE(NULL != tree);
 
   /*
@@ -114,12 +113,12 @@ static void inttree_insert_test(int len, struct bstree_params *params) {
 /**
  * \brief Test removeing nodes in an interval tree and verifying
  */
-static void inttree_remove_test(int len, struct bstree_params *params) {
+static void inttree_remove_test(int len, struct bstree_config *config) {
   struct bstree       *tree;
   struct bstree        mytree;
   struct interval_data arr1[TH_NUM_ITEMS];
 
-  tree = inttree_init(&mytree, params);
+  tree = inttree_init(&mytree, config);
   CATCH_REQUIRE(NULL != tree);
 
   /*
@@ -159,17 +158,17 @@ static void inttree_remove_test(int len, struct bstree_params *params) {
 /**
  * \brief Test overlap search for interval trees
  */
-static void inttree_overlap_test(int len, struct bstree_params *params) {
+static void inttree_overlap_test(int len, struct bstree_config *config) {
   struct bstree       *tree;
   struct bstree        mytree;
   struct interval_data insert_arr[TH_NUM_ITEMS];
   struct interval_data search_arr[TH_NUM_ITEMS];
   bool                 overlap_arr[TH_NUM_ITEMS];
 
-  if (params->flags & RCSW_NOALLOC_HANDLE) {
-    tree = inttree_init(&mytree, params);
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    tree = inttree_init(&mytree, config);
   } else {
-    tree = inttree_init(NULL, params);
+    tree = inttree_init(NULL, config);
   }
   CATCH_REQUIRE(NULL != tree);
 

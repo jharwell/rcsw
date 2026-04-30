@@ -1,7 +1,9 @@
 /**
- * \file stdio.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************

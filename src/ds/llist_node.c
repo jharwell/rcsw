@@ -1,5 +1,5 @@
 /**
- * \file llist_node.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -13,13 +13,13 @@
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
 #define RCSW_ER_MODID ekLOG4CL_DS_LLIST
-#include "rcsw/common/fpc.h"
-#include "rcsw/er/client.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/allocm.h"
-#include "rcsw/common/alloc.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -31,9 +31,8 @@ struct llist_node* llist_node_alloc(struct llist* const list) {
      * corresponding to the element after that current # of elements in the
      * list--this makes the search process O(1) even for large lists.
      */
-    int alloc_idx = allocm_probe(list->space.node_map,
-                                 (size_t)list->max_elts,
-                                 list->current);
+    int alloc_idx =
+      allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
 
     RCSW_CHECK(-1 != alloc_idx);
     node = (list->space.nodes + alloc_idx);
@@ -74,7 +73,7 @@ void llist_node_destroy(struct llist* const list, struct llist_node* node) {
 } /* llist_node_destroy() */
 
 struct llist_node* llist_node_create(struct llist* const list,
-                                     void* const data_in) {
+                                     void* const         data_in) {
   /* get space for llist_node */
   struct llist_node* node = llist_node_alloc(list);
   RCSW_CHECK_PTR(node);
@@ -113,7 +112,9 @@ void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
   }
 
   if (list->flags & RCSW_NOALLOC_DATA) {
-    size_t block_idx = (size_t)((uint8_t*)datablock - (uint8_t*)list->space.datablocks) / list->elt_size;
+    size_t block_idx =
+      (size_t)((uint8_t*)datablock - (uint8_t*)list->space.datablocks) /
+      list->elt_size;
 
     /* mark data block as available */
     allocm_mark_free(list->space.db_map + block_idx);
@@ -134,9 +135,10 @@ dptr_t* llist_node_datablock_alloc(struct llist* const list) {
      * list--this makes the search process O(1) even for large lists.
      */
     int alloc_idx =
-        allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
+      allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
     RCSW_CHECK(-1 != alloc_idx);
-    datablock = (void*)((uint8_t*)list->space.datablocks + (size_t)alloc_idx * list->elt_size);
+    datablock = (void*)((uint8_t*)list->space.datablocks +
+                        (size_t)alloc_idx * list->elt_size);
 
     /* mark data block as inuse */
     allocm_mark_inuse(list->space.db_map + alloc_idx);

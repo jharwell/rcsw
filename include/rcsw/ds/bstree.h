@@ -1,10 +1,11 @@
 /**
- * \file bstree.h
- * \ingroup ds
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -12,8 +13,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
-#include "rcsw/common/fpc.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -41,33 +42,33 @@ enum bstree_traversal_type {
 #define RCSW_BSTREE_ROOT(tree) ((tree)->root->left)
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Parameters for \ref bstree.
  */
-struct bstree_params {
+struct bstree_config {
   /**
    * For comparing keys associated with elements. Cannot be NULL.
    */
-  int (*cmpkey)(const void *const e1, const void *const e2);
+  int (*cmpkey)(const void* const e1, const void* const e2);
 
   /**
    * For printing an element. Can be NULL.
    */
-  void (*printe)(const void *e);
+  void (*printe)(const void* e);
 
   /**
    * Pointer to application-allocated space for storing the \ref bstree
    * nodes. Ignored unless \ref RCSW_NOALLOC_META is passed.
    */
-  dptr_t *meta;
+  dptr_t* meta;
 
   /**
    * Pointer to application-allocated space for storing data managed by the \ref
    * bstree. Ignored unless \ref RCSW_NOALLOC_DATA is passed.
    */
-  dptr_t *elements;
+  dptr_t* elements;
 
   /**
    * Size of elements in bytes.
@@ -102,12 +103,12 @@ struct bstree_params {
  * Must be packed and aligned to the same size as \ref dptr_t so that casts from
  * \ref bstree_node.data are safe on all targets.
  */
-struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) bstree_node {
-  uint8_t key[RCSW_BSTREE_NODE_KEYSIZE];
-  dptr_t *data;
-  struct bstree_node *left;
-  struct bstree_node *right;
-  struct bstree_node *parent;
+struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) bstree_node {
+  uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
+  dptr_t*             data;
+  struct bstree_node* left;
+  struct bstree_node* right;
+  struct bstree_node* parent;
 
   /**
    * If the tree is used as a red-black tree, then this field is used to
@@ -126,25 +127,25 @@ struct RCSW_ATTR(packed, aligned (sizeof(dptr_t))) bstree_node {
 struct bstree_space_mgmt {
   /**
    * Space for the data elements. Used if \ref RCSW_NOALLOC_DATA passed in \ref
-   * bstree_params.flags.
+   * bstree_config.flags.
    */
-  dptr_t*             datablocks;
+  dptr_t* datablocks;
 
   /**
    * Space for the allocation map for datablocks. Used if \ref RCSW_NOALLOC_DATA
-   * passed in \ref bstree_params.flags.
+   * passed in \ref bstree_config.flags.
    */
   struct allocm_entry* db_map;
 
   /**
    * Space for \ref bstree_node objects. Used if \ref RCSW_NOALLOC_META
-   * passed in \ref bstree_params.flags.
+   * passed in \ref bstree_config.flags.
    */
-  struct bstree_node*  nodes;
+  struct bstree_node* nodes;
 
   /**
    * Space for the allocation map for \ref bstree_node objects. Used if \ref
-   * RCSW_NOALLOC_META passed in \ref bstree_params.flags.
+   * RCSW_NOALLOC_META passed in \ref bstree_config.flags.
    */
   struct allocm_entry* node_map;
 };
@@ -156,12 +157,12 @@ struct bstree {
   /**
    * For comparing the keys from two different elements. Cannot be NULL.
    */
-  int (*cmpkey)(const void *const a, const void *const b);
+  int (*cmpkey)(const void* const a, const void* const b);
 
   /**
    * For printing an element. Can be NULL.
    */
-  void (*printe)(const void *const e);
+  void (*printe)(const void* const e);
 
   /**
    * Management of all node and element space for the tree.
@@ -209,18 +210,18 @@ struct bstree {
    * which is the root of the tree. Use this so that there are fewer special
    * cases/less checking for NULL pointers.
    */
-  struct bstree_node *root;
+  struct bstree_node* root;
 
   /**
    * Sentinel. Points to a node which should always be black (for red-black
    * trees) but has aribtrary children and parent. Use this so that there are no
    * fewer special cases in the code/less checking for NULL pointers.
    */
-  struct bstree_node *nil;
+  struct bstree_node* nil;
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -239,9 +240,10 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t
  */
-RCSW_LOCAL status_t bstree_insert_internal(struct bstree * tree,
-                                void * key, void * data,
-                                size_t node_size);
+RCSW_LOCAL status_t bstree_insert_internal(struct bstree* tree,
+                                           void*          key,
+                                           void*          data,
+                                           size_t         node_size);
 /**
  * \brief Initialize a binary search (or related) tree, which may have different
  * node sizes.
@@ -249,7 +251,7 @@ RCSW_LOCAL status_t bstree_insert_internal(struct bstree * tree,
  * This should NEVER be called by an application--for internal use only.
  *
  * \param tree_in The BST handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \ref bstree_params.flags.
+ *                RCSW_NOALLOC_HANDLE passed in \ref bstree_config.flags.
  *
  * \param params Initialization parameters
  *
@@ -257,13 +259,12 @@ RCSW_LOCAL status_t bstree_insert_internal(struct bstree * tree,
  *
  * \return The initialized tree, or NULL if an error occurred
  */
-RCSW_LOCAL struct bstree *bstree_init_internal(struct bstree *tree_in,
-                                    const struct bstree_params * params,
-                                    size_t node_size) RCSW_WUR;
-
+RCSW_LOCAL struct bstree* bstree_init_internal(struct bstree* tree_in,
+                                               const struct bstree_config* params,
+                                               size_t node_size) RCSW_WUR;
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 /**
  * \brief Determine if a \ref bstree is currently full.
@@ -274,7 +275,7 @@ RCSW_LOCAL struct bstree *bstree_init_internal(struct bstree *tree_in,
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
-  return (bst->current == (size_t)bst->max_elts);
+  return (bst->max_elts != -1) && (bst->current == (size_t)bst->max_elts);
 }
 
 /**
@@ -315,7 +316,7 @@ static inline size_t bstree_size(const struct bstree* const bst) {
  * \return The total # of bytes the application would need to allocate
  */
 static inline size_t bstree_element_space(size_t max_elts, size_t elt_size) {
-  return ds_elt_space_with_meta(max_elts+2, elt_size);
+  return ds_elt_space_with_meta(max_elts + 2, elt_size);
 }
 
 /**
@@ -329,8 +330,8 @@ static inline size_t bstree_element_space(size_t max_elts, size_t elt_size) {
  * \return The # of bytes required.
  */
 static inline size_t bstree_meta_space(size_t max_elts) {
-  return ds_meta_space(max_elts+2) +
-      ds_elt_space_simple(max_elts+2, sizeof(struct bstree_node));
+  return ds_meta_space(max_elts + 2) +
+         ds_elt_space_simple(max_elts + 2, sizeof(struct bstree_node));
 }
 
 /**
@@ -343,8 +344,8 @@ static inline size_t bstree_meta_space(size_t max_elts) {
  * \param data The data to insert
  */
 RCSW_API status_t bstree_insert(struct bstree* tree,
-                                void* const key,
-                                void* const data);
+                                void* const    key,
+                                void* const    data);
 
 /**
  * \brief Initialize a \ref bstree.
@@ -353,8 +354,8 @@ RCSW_API status_t bstree_insert(struct bstree* tree,
  *
  * \param params Initialization parameters
  */
-RCSW_API struct bstree* bstree_init(struct bstree* tree_in,
-                                    const struct bstree_params* const params);
+RCSW_API struct bstree* bstree_init(struct bstree*                    tree_in,
+                                    const struct bstree_config* const params);
 
 /**
  * \brief Destroy a binary search tree
@@ -364,8 +365,7 @@ RCSW_API struct bstree* bstree_init(struct bstree* tree_in,
  * \param tree The BST to destroy
  *
  */
-RCSW_API void bstree_destroy(struct bstree *tree);
-
+RCSW_API void bstree_destroy(struct bstree* tree);
 
 /**
  * \brief Remove the node in a BST that contains data that matches the given key
@@ -375,7 +375,7 @@ RCSW_API void bstree_destroy(struct bstree *tree);
  *
  * \return \ref status_t
  */
-RCSW_API status_t bstree_remove(struct bstree * tree, const void * key);
+RCSW_API status_t bstree_remove(struct bstree* tree, const void* key);
 
 /**
  * \brief Delete a node from the tree
@@ -388,8 +388,9 @@ RCSW_API status_t bstree_remove(struct bstree * tree, const void * key);
  *
  * \return \ref status_t
  */
-RCSW_API status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
-                       void * elt);
+RCSW_API status_t bstree_delete(struct bstree*      tree,
+                                struct bstree_node* victim,
+                                void*               elt);
 
 /**
  * \brief Query a BST for a specific node, starting the search at the specified
@@ -402,9 +403,9 @@ RCSW_API status_t bstree_delete(struct bstree* tree, struct bstree_node* victim,
  *
  * \return The node with the matching key, or NULL if not found
  */
-RCSW_API struct bstree_node *bstree_node_query(const struct bstree* tree,
-                                      struct bstree_node* search_root,
-                                      const void* key);
+RCSW_API struct bstree_node* bstree_node_query(const struct bstree* tree,
+                                               struct bstree_node*  search_root,
+                                               const void*          key);
 
 /**
  * \brief Get the data associated with a key
@@ -418,7 +419,7 @@ RCSW_API struct bstree_node *bstree_node_query(const struct bstree* tree,
  * \return The data associated with the key, or NULL if no match for key was
  * found
  */
-RCSW_API void *bstree_data_query(const struct bstree * tree, const void * key);
+RCSW_API void* bstree_data_query(const struct bstree* tree, const void* key);
 
 /**
  * \brief Traverse a binary search tree and operate on each node's data.
@@ -439,18 +440,50 @@ RCSW_API void *bstree_data_query(const struct bstree * tree, const void * key);
  * \return Return code of last callback that was non-zero, or 0 if callback
  * succeeded on all nodes
  */
-RCSW_API int bstree_traverse(struct bstree * tree,
-                    int (*cb)(const struct bstree* tree,
-                              struct bstree_node * node),
-                    enum bstree_traversal_type type);
+RCSW_API int bstree_traverse(struct bstree* tree,
+                             int (*cb)(const struct bstree* tree,
+                                       struct bstree_node*  node),
+                             enum bstree_traversal_type type);
+
+/**
+ * \brief Apply a function to the data of every node in a \ref bstree.
+ *
+ * This is the uniform higher-order counterpart to \ref bstree_traverse().
+ * The callback receives only the element data pointer (not the internal node),
+ * matching the signature used by \ref darray_map(), \ref llist_map(), etc.
+ *
+ * \param tree The BST handle.
+ * \param f    Callback applied to each element. May modify element data but
+ *             must not insert or remove nodes.
+ * \param type Traversal order: pre-, in-, or post-order.
+ *
+ * \return \ref status_t.
+ */
+RCSW_API status_t bstree_map(struct bstree* tree,
+                             void (*f)(void* e),
+                             enum bstree_traversal_type type);
+
+/**
+ * \brief Compute a cumulative result over all elements in a \ref bstree.
+ *
+ * \param tree   The BST handle.
+ * \param f      Callback applied to each element. First argument is the
+ *               element data; second argument is \p result.
+ * \param result Initial result value, updated in place by \p f.
+ * \param type   Traversal order.
+ *
+ * \return \ref status_t.
+ */
+RCSW_API status_t bstree_inject(struct bstree* tree,
+                                void (*f)(void* e, void* result),
+                                void*                      result,
+                                enum bstree_traversal_type type);
 
 /**
  * \brief Print a BSTREE
  *
  * \param tree The BST handle
  */
-RCSW_API void bstree_print(struct bstree * tree);
-
-
+RCSW_API void bstree_print(struct bstree* tree);
 
 END_C_DECLS

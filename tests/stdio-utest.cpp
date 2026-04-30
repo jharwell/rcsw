@@ -16,6 +16,7 @@
 
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Helper Functions
@@ -83,7 +84,7 @@ CATCH_TEST_CASE("Char Test", "[stdio]") {
 } /* char_test() */
 
 CATCH_TEST_CASE("Memory Test", "[stdio]") {
-  int data[10] = {0, 1, 2, 4, 10000, -12345, 17, 0x56789, ONEE9, -23};
+  int data[10] = {0, 1, 2, 4, 10000, -12345, 17, 0x56789, RCSW_E9, -23};
   int dest[10];
 
   memset(dest, 0, sizeof(dest));

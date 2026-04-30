@@ -1,5 +1,5 @@
 /**
- * \file allocm.c
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
@@ -12,7 +12,7 @@
 #include "rcsw/ds/allocm.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -24,10 +24,10 @@ void allocm_init(struct allocm_entry* map, size_t max_elts) {
 
 int allocm_probe(struct allocm_entry* map, size_t max_elts, size_t index) {
   bool_t wrap = false;
-  size_t i = index;
-  int ret = -1;
+  size_t i    = index;
+  int    ret  = -1;
 
-  while (!wrap || (i != index)) {
+  do {
     if (map[i].value == -1) {
       ret = (int)i;
       break;
@@ -35,11 +35,11 @@ int allocm_probe(struct allocm_entry* map, size_t max_elts, size_t index) {
     /* wrapped around to index 0 */
     if (i + 1 == max_elts) {
       wrap = true;
-      i = 0;
+      i    = 0;
     } else {
       i++;
     }
-  } /* while() */
+  } while (!wrap || (i != index));
 
   return ret;
 } /* ds_meta_probe() */

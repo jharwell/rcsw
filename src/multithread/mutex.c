@@ -1,5 +1,5 @@
 /**
- * \file mt_mutex.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,20 +11,19 @@
  ******************************************************************************/
 #include "rcsw/multithread/mutex.h"
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/flags.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
 struct mutex* mutex_init(struct mutex* mutex_in, uint32_t flags) {
-  struct mutex* mutex = rcsw_alloc(mutex_in,
-                                   sizeof(struct mutex),
-                                   flags & RCSW_NOALLOC_HANDLE);
+  struct mutex* mutex =
+    rcsw_alloc(mutex_in, sizeof(struct mutex), flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(mutex);
   mutex->flags = flags;

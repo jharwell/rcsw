@@ -1,5 +1,5 @@
 /**
- * \file edit_dist.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,10 +11,11 @@
  ******************************************************************************/
 #include "rcsw/algorithm/edit_dist.h"
 
-#include "rcsw/common/fpc.h"
-#include "rcsw/er/client.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/flags.h"
+#include <string.h>
+
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/flags.h"
+#include "rcsw/core/fpc.h"
 
 /*******************************************************************************
  * Private Functions
@@ -35,10 +36,10 @@ BEGIN_C_DECLS
  */
 static int edit_dist_rec_sub(const char* a,
                              const char* b,
-                             int* c,
-                             size_t i,
-                             size_t j,
-                             size_t length,
+                             int*        c,
+                             size_t      i,
+                             size_t      j,
+                             size_t      length,
                              bool_t (*cmpe)(const void* e1, const void* e2),
                              size_t elt_size) {
   /* If we have memoized solution, return it */
@@ -63,19 +64,25 @@ static int edit_dist_rec_sub(const char* a,
   if (true ==
       cmpe(((const uint8_t*)a) + (i - 1), ((const uint8_t*)b) + (j - 1))) {
     c[i * length + j] =
-        edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, elt_size);
+      edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, elt_size);
     return c[i * length + j];
   } else {
     c[i * length + j] =
-        1 +
-        RCSW_MIN3(
-            edit_dist_rec_sub(
-                a, b, c, i - 1, j - 1, length, cmpe, elt_size), /* substitute
-                                                                */
-            edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, elt_size), /* delete
-                                                                          */
-            edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, elt_size)); /* insert
-                                                                           */
+      1 +
+      RCSW_MIN3(
+        edit_dist_rec_sub(a,
+                          b,
+                          c,
+                          i - 1,
+                          j - 1,
+                          length,
+                          cmpe,
+                          elt_size), /* substitute
+                                      */
+        edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, elt_size),  /* delete
+                                                                        */
+        edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, elt_size)); /* insert
+                                                                        */
     return c[i * length + j];
   }
 } /* edit_dist_rec_sub() */
@@ -99,7 +106,7 @@ static int edit_dist_rec_sub(const char* a,
  */
 static int edit_dist_rec(const char* a,
                          const char* b,
-                         int* c,
+                         int*        c,
                          size_t (*seq_len)(const void* seq),
                          bool_t (*cmpe)(const void* e1, const void* e2),
                          size_t elt_size) {
@@ -126,7 +133,7 @@ static int edit_dist_rec(const char* a,
  */
 static int edit_dist_iter(const void* a,
                           const void* b,
-                          int* c,
+                          int*        c,
                           size_t (*seq_len)(const void* seq),
                           bool_t (*cmpe)(const void* e1, const void* e2),
                           size_t elt_size) {
@@ -145,8 +152,8 @@ static int edit_dist_iter(const void* a,
         c[i * m + j] = c[(i - 1) * m + j - 1];
       } else {
         c[i * m + j] = 1 + RCSW_MIN3(c[(i - 1) * m + j - 1], /* substitute */
-                                     c[(i - 1) * m + j], /* delete */
-                                     c[(i)*m + j - 1]); /* insert */
+                                     c[(i - 1) * m + j],     /* delete */
+                                     c[(i)*m + j - 1]);      /* insert */
       }
     } /* for(j..) */
   } /* for(i..) */
@@ -154,14 +161,13 @@ static int edit_dist_iter(const void* a,
   return c[m * m + n];
 } /* edit_dist_iter() */
 
-
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 status_t edit_dist_init(struct edit_dist_finder* finder,
-                        const void* a,
-                        const void* b,
-                        size_t elt_size,
+                        const void*              a,
+                        const void*              b,
+                        size_t                   elt_size,
                         bool_t (*cmpe)(const void* e1, const void* e2),
                         size_t (*seq_len)(const void* seq)) {
   RCSW_FPC_NV(ERROR,
@@ -171,17 +177,16 @@ status_t edit_dist_init(struct edit_dist_finder* finder,
               elt_size > 0,
               NULL != cmpe,
               NULL != seq_len);
-  finder->seq_a = a;
-  finder->seq_b = b;
+  finder->seq_a    = a;
+  finder->seq_b    = b;
   finder->elt_size = elt_size;
-  finder->cmpe = cmpe;
-  finder->seq_len = seq_len;
+  finder->cmpe     = cmpe;
+  finder->seq_len  = seq_len;
 
   size_t n_elts1 = finder->seq_len(a) + 1;
   size_t n_elts2 = finder->seq_len(b) + 1;
-  finder->memoization  = rcsw_alloc(NULL,
-                                    n_elts1 * n_elts2 * sizeof(int),
-                                    RCSW_NONE);
+  finder->memoization =
+    rcsw_alloc(NULL, n_elts1 * n_elts2 * sizeof(int), RCSW_NONE);
   RCSW_CHECK_PTR(finder->memoization);
 
   return OK;
@@ -197,8 +202,7 @@ void edit_dist_destroy(struct edit_dist_finder* finder) {
   rcsw_free(finder->memoization, RCSW_NONE);
 } /* edit_dist_destroy() */
 
-int edit_dist_find(struct edit_dist_finder* finder,
-                   enum exec_type type) {
+int edit_dist_find(struct edit_dist_finder* finder, enum exec_type type) {
   RCSW_FPC_NV(-1, NULL != finder);
   switch (type) {
     case ekEXEC_REC:
@@ -219,6 +223,5 @@ int edit_dist_find(struct edit_dist_finder* finder,
       return -1;
   } /* switch() */
 } /* edit_dist_find() */
-
 
 END_C_DECLS

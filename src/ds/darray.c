@@ -1,5 +1,5 @@
 /**
- * \file darray.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -19,18 +19,16 @@
 #define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
-#include "rcsw/common/alloc.h"
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
+#include "rcsw/ds/iter.h"
 #include "rcsw/er/client.h"
-
-/*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
-BEGIN_C_DECLS
+#include "rcsw/er/macros.h"
 
 /*******************************************************************************
  * Private API
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief Increase the capacity of a darray by a set amount
  *
@@ -104,11 +102,41 @@ error:
   return ERROR;
 } /* darray_shrink() */
 
+static void* darray_iter_next_impl(struct ds_iterator* iter) {
+  struct darray* arr = iter->container;
+  size_t*        idx = (size_t*)&iter->cursor; /* cursor stores index */
+
+  if (*idx >= arr->current) {
+    return NULL;
+  }
+  return darray_data_get(arr, (*idx)++);
+} /* darray_iter_next_impl() */
+
+static void* darray_iter_prev_impl(struct ds_iterator* iter) {
+  struct darray* arr = iter->container;
+  /*
+   * cursor stores (index + 1) so that 0 means "before the first element"
+   * without needing a signed type. On init, darray_iter_init() sets it to
+   * arr->current so the first prev() call returns element [current-1].
+   */
+  size_t* idx = (size_t*)&iter->cursor;
+
+  if (*idx == 0) {
+    return NULL;
+  }
+  return darray_data_get(arr, --(*idx));
+} /* darray_iter_prev_impl() */
+
+static const struct ds_ops darray_iter_ops = {
+  .next = darray_iter_next_impl,
+  .prev = darray_iter_prev_impl,
+};
+
 /*******************************************************************************
  * Public API
  ******************************************************************************/
 struct darray* darray_init(struct darray*                    arr_in,
-                           const struct darray_params* const params) {
+                           const struct darray_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->elt_size > 0, params->max_elts != 0);
 
   struct darray* arr = rcsw_alloc(arr_in,
@@ -318,6 +346,7 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
+  ER_ASSERT(index < arr->current, "Index %zu >= %zu", index, arr->current);
   return ((uint8_t*)arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 
@@ -395,7 +424,7 @@ struct darray* darray_filter(struct darray* const arr,
                              void*    elements) {
   RCSW_FPC_NV(NULL, NULL != arr, NULL != pred, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct darray_params params = {.init_size = 0,
+  struct darray_config params = {.init_size = 0,
                                  .cmpe      = arr->cmpe,
                                  .printe    = arr->printe,
                                  .elt_size  = arr->elt_size,
@@ -442,7 +471,7 @@ struct darray* darray_copy(const struct darray* const arr,
                            void*                      elements) {
   RCSW_FPC_NV(NULL, arr != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct darray_params params = {.init_size = arr->current,
+  struct darray_config params = {.init_size = arr->current,
                                  .cmpe      = arr->cmpe,
                                  .printe    = arr->printe,
                                  .elt_size  = arr->elt_size,
@@ -492,4 +521,16 @@ status_t darray_inject(const struct darray* const arr,
   return OK;
 } /* darray_inject() */
 
+struct ds_iterator* darray_iter_init(struct ds_iterator* iter,
+                                     struct darray*      arr,
+                                     enum ds_iter_type   type,
+                                     bool_t (*classify)(void* e)) {
+  RCSW_FPC_NV(NULL, iter != NULL, arr != NULL);
+
+  /* Seed cursor BEFORE calling ds_iter_init, which must not overwrite it. */
+  iter->cursor =
+    (type == ekITER_FORWARD) ? (void*)(size_t)0 : (void*)(size_t)arr->current;
+
+  return ds_iter_init(iter, arr, type, &darray_iter_ops, classify);
+}
 END_C_DECLS

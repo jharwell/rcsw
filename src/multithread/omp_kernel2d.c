@@ -1,5 +1,5 @@
 /**
- * \file omp_kernel2d.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -11,14 +11,14 @@
  ******************************************************************************/
 #include "rcsw/multithread/omp_kernel2d.h"
 
-#include "rcsw/common/fpc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 status_t omp_kernel2d_convolve1(float const* const __restrict__ input,
-                                float kernel[3][3],
+                                float  kernel[3][3],
                                 size_t width,
                                 size_t height,
                                 float* const __restrict__ output) {
@@ -28,12 +28,12 @@ status_t omp_kernel2d_convolve1(float const* const __restrict__ input,
 /* just copy boundaries */
 #pragma omp for schedule(static) nowait
     for (size_t j = 0; j < width; ++j) {
-      output[j + (0)] = input[j + (0)];
+      output[j + (0)]                    = input[j + (0)];
       output[j + ((height - 1) * width)] = input[j + ((height - 1) * width)];
     }
 #pragma omp for schedule(static) nowait
     for (size_t i = 0; i < height; ++i) {
-      output[0 + (i * width)] = input[0 + (i * width)];
+      output[0 + (i * width)]           = input[0 + (i * width)];
       output[(width - 1) + (i * width)] = input[(width - 1) + (i * width)];
     }
 

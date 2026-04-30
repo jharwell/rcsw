@@ -13,14 +13,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/fifo.h"
-#include "rcsw/utils/utils.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
-using fifo_test_t = void (*)(int len, struct fifo_params *params);
+using fifo_test_t = void (*)(int len, struct fifo_config *config);
 
 /*******************************************************************************
  * Test Helper Functions
@@ -29,12 +28,12 @@ template <typename T>
 static void run_test(fifo_test_t test) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
 
-  struct fifo_params params;
-  memset(&params, 0, sizeof(fifo_params));
-  params.flags    = 0;
-  params.printe   = th::printe<T>;
-  params.elt_size = sizeof(T);
-  CATCH_REQUIRE(th::ds_init(&params) == OK);
+  struct fifo_config config;
+  memset(&config, 0, sizeof(fifo_config));
+  config.flags    = 0;
+  config.printe   = th::printe<T>;
+  config.elt_size = sizeof(T);
+  CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {
     RCSW_NONE,
@@ -50,16 +49,16 @@ static void run_test(fifo_test_t test) {
       applied |= flags[j];
 
       for (int k = 1; k < TH_NUM_ITEMS; ++k) {
-        params.flags    = applied;
-        params.max_elts = k;
-        test(k, &params);
+        config.flags    = applied;
+        config.max_elts = k;
+        test(k, &config);
       } /* for(k..) */
 
       applied &= ~flags[j];
     } /* for(j..) */
   } /* for(i..) */
 
-  th::ds_shutdown(&params);
+  th::ds_shutdown(&config);
 
   RCSW_ER_DEINIT();
 }
@@ -68,14 +67,14 @@ static void run_test(fifo_test_t test) {
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void rdwr_test(int len, struct fifo_params *params) {
+static void rdwr_test(int len, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
-  fifo = fifo_init(&myfifo, params);
+  fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
 
   for (int i = 0; i < len * 2; i++) {
     T e = g.next();
@@ -100,11 +99,11 @@ static void rdwr_test(int len, struct fifo_params *params) {
 } /* rdwr_test() */
 
 template <typename T>
-static void map_test(int, struct fifo_params *params) {
+static void map_test(int, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
-  fifo = fifo_init(&myfifo, params);
+  fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE((nullptr != fifo));
 
   /*
@@ -117,11 +116,11 @@ static void map_test(int, struct fifo_params *params) {
 } /* map_test() */
 
 template <typename T>
-static void inject_test(int, struct fifo_params *params) {
+static void inject_test(int, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
-  fifo = fifo_init(&myfifo, params);
+  fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
   /*
@@ -134,14 +133,14 @@ static void inject_test(int, struct fifo_params *params) {
 } /* inject_test() */
 
 template <typename T>
-static void print_test(int len, struct fifo_params *params) {
+static void print_test(int len, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
-  fifo = fifo_init(&myfifo, params);
+  fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, params->max_elts);
+  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
 
   for (int i = 0; i < len * 2; i++) {
     T e = g.next();

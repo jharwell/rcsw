@@ -1,5 +1,5 @@
 /**
- * \file build_info.h
+ * \file
  *
  * \copyright 2022 John Harwell, All rights reserved.
  *
@@ -9,59 +9,58 @@
 #pragma once
 
 /*******************************************************************************
- * Includes
- ******************************************************************************/
-#include "rcsw/rcsw.h"
-
-/*******************************************************************************
  * Struct Definitions
  ******************************************************************************/
 /**
  * \struct build_info
  * \ingroup version
  *
- * \brief Build information (duh).
+ * \brief Snapshot of the build environment captured at compile time.
+ *
+ * Populated automatically by the CMake template \c version.c.in. Fields
+ * sourced from the LIBRA build framework are set to \c "" when not available
+ * (e.g. when building outside a git repository).
  */
 struct build_info {
-  /* clang-format off */
   /**
-   * The current git revision.
+   * The git commit hash (short form) at the time of the build, or \c ""
+   * if unavailable.
    */
-  const char*         git_rev;
+  const char* const git_rev;
 
   /**
-   * "+" if the current tree is dirty, "" otherwise.
+   * \c "+" if the working tree had uncommitted changes at build time,
+   * \c "" otherwise.
    */
-  const char*         git_diff;
+  const char* const git_diff;
 
   /**
-   * Current git tag if it exists, "" otherwise.
+   * The git tag pointing at the build commit, or \c "" if none exists.
    */
-  const char*         git_tag;
+  const char* const git_tag;
 
   /**
-   * Current git branch if it exists.
+   * The git branch active at build time, or \c "" if unavailable.
    */
-  const char*         git_branch;
+  const char* const git_branch;
 
   /**
-   * Revelant compiler flags used to build the library/application.
+   * Relevant compiler flags used to build the library or application.
    */
-  const char*         compile_flags;
+  const char* const compile_flags;
 
   /**
-   * Revelant link flags used to build the library/application.
+   * Relevant linker flags used to build the library or application.
    */
-  const char*         link_flags;
+  const char* const link_flags;
 
   /**
-   * The date of the build.
+   * The calendar date of the build, as reported by \c __DATE__.
    */
-  const char*         date;
+  const char* const date;
 
   /**
-   * The time of the build.
+   * The wall-clock time of the build, as reported by \c __TIME__.
    */
-  const char*         time;
-  /* clang-format on */
+  const char* const time;
 };

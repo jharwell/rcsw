@@ -1,11 +1,11 @@
 /**
- * \file omp_kernel2d.h
- * \ingroup multithread
- * \brief Convolution of 2D array with 3x3 kernel via OpenMP
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup multithread
  */
 
 #pragma once
@@ -13,7 +13,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Function Prototypes
@@ -31,8 +34,9 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t.
  */
-status_t omp_kernel2d_convolve1(float const * const __restrict__ input,
-                                float kernel[3][3],
-                                size_t width, size_t height,
-                                float * const __restrict__ output);
+RCSW_API status_t omp_kernel2d_convolve1(float const* const __restrict__ input,
+                                         float  kernel[3][3],
+                                         size_t width,
+                                         size_t height,
+                                         float* const __restrict__ output);
 END_C_DECLS

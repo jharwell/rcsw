@@ -1,10 +1,11 @@
 /**
- * \file grind.h
- * \ingroup tool
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup tool
  */
 
 /*******************************************************************************
@@ -13,14 +14,15 @@
 #include "rcsw/tool/grind.h"
 
 #include <math.h>
+#include <string.h>
 
 #include "rcsw/al/clock.h"
 #define RCSW_ER_MODID ekLOG4CL_GRIND
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "profile", "grind")
+#include "rcsw/core/alloc.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-#include "rcsw/common/fpc.h"
 #include "rcsw/utils/time.h"
-#include "rcsw/common/alloc.h"
 
 /*******************************************************************************
  * Macros
@@ -29,8 +31,59 @@
   ((ekRCSW_GRIND_COUNT == the_grinder->mode) ? "counting" : "timing")
 
 /*******************************************************************************
- * Private Functions
+ * Private API
  ******************************************************************************/
+/**
+ * \brief Find the largest datapoint of a \ref grindee.
+ *
+ * This function searches through all gathered datapoints of a grindee and finds
+ * the largest one. Can be called at any time.
+ *
+ * \return The max datapoint.
+ */
+static size_t grindee_data_max(const struct grindee* const grindee) {
+  RCSW_FPC_NV(0, NULL != grindee, grindee->tindex > 0);
+
+  size_t max = 0;
+
+  for (size_t i = 0; i < grindee->tindex; ++i) {
+    max = RCSW_MAX(max, grindee->table[i]);
+  }
+  return max;
+}
+
+/**
+ * \brief Find the smallest datapoint of a \ref grindee.
+ *
+ * This function searches through all gathered datapoints of a grindee
+ * and finds the smallest one. Can be called at any time.
+ *
+ * \return The min time
+ */
+static size_t grindee_data_min(const struct grindee* const grindee) {
+  RCSW_FPC_NV(0, NULL != grindee, grindee->tindex > 0);
+
+  size_t min = SIZE_MAX;
+
+  for (size_t i = 0; i < grindee->tindex; ++i) {
+    min = RCSW_MIN(min, grindee->table[i]);
+  }
+  return min;
+}
+
+/**
+ * \brief Sum all datapoints for the \ref grindee.
+ */
+static size_t grindee_data_sum(const struct grindee* const grindee) {
+  RCSW_FPC_NV(0, NULL != grindee);
+
+  size_t sum = 0;
+  for (size_t i = 0; i < grindee->tindex; ++i) {
+    sum += grindee->table[i];
+  }
+  return sum;
+}
+
 /**
  * \brief Report basic statistics for a \ref grindee.
  */
@@ -55,19 +108,19 @@ static void grind_report_stats(const struct grinder* the_grinder,
   DPRINTF("Minimum            : %zu ns\n", min);
 
   /* get average time */
-  size_t sum = grindee_data_sum(grindee);
-  double mean = (double)sum / (double)grindee->tsize;
+  size_t sum  = grindee_data_sum(grindee);
+  double mean = (double)sum / (double)grindee->tindex;
 
   DPRINTF("Mean               : %.8e ns\n", mean);
 
   /* calculate standard deviation and variance */
-  double RCSW_UNUSED std_dev = 0.0;
+  double std_dev  = 0.0;
   double variance = 0.0;
-  for (size_t i = 0; i < grindee->tsize; i++) {
+  for (size_t i = 0; i < grindee->tindex; i++) {
     variance += pow((double)grindee->table[i] - mean, 2.0);
   }
 
-  variance /= (double)grindee->tsize;
+  variance /= (double)grindee->tindex;
   std_dev = sqrt(variance);
 
   DPRINTF("Variance           : %.8e\n", variance);
@@ -97,11 +150,16 @@ static void grind_report_hist(const struct grinder* const the_grinder,
   memset(hist_arr, 0, sizeof(hist_arr));
 
   size_t bin_count_max = 0;
-  for (size_t i = 0; i < grindee->tsize; ++i) {
+  for (size_t i = 0; i < grindee->tindex; ++i) {
     for (size_t j = 1; j <= 50; ++j) {
-      if (RCSW_IS_BETWEENHO(
-              (double)grindee->table[i], (double)min + (double)(j - 1) * binsize,
-              (double)min + (double)j * binsize)) {
+      bool_t match =
+        (j == 50) ? RCSW_IS_BETWEENC((double)grindee->table[i],
+                                     (double)min + (double)(j - 1) * binsize,
+                                     (double)min + (double)j * binsize)
+                  : RCSW_IS_BETWEENHO((double)grindee->table[i],
+                                      (double)min + (double)(j - 1) * binsize,
+                                      (double)min + (double)j * binsize);
+      if (match) {
         hist_arr[j - 1]++;
         bin_count_max = RCSW_MAX(bin_count_max, hist_arr[j - 1]);
       }
@@ -116,11 +174,11 @@ static void grind_report_hist(const struct grinder* const the_grinder,
       DPRINTF("%8zu | ", i);
     } else {
       DPRINTF("%8zu.%08zu sec | ",
-              (size_t)((double)min + (double)i * binsize) / ONEE9,
-              (size_t)((double)min + (double)i * binsize) % ONEE9);
+              (size_t)((double)min + (double)i * binsize) / RCSW_E9,
+              (size_t)((double)min + (double)i * binsize) % RCSW_E9);
     }
     double scale = (double)hist_arr[i] / (double)bin_count_max;
-    size_t fill = (size_t)(scale * (double)xmax);
+    size_t fill  = (size_t)(scale * (double)xmax);
     for (size_t j = 0; j < fill; ++j) {
       DPRINTF("*");
     } /* for(j..) */
@@ -133,7 +191,7 @@ static void grind_report_hist(const struct grinder* const the_grinder,
 /**
  * \brief Report the collected datapoints for a grindee to stdout.
  */
-static void grind_report_datapoints(const struct grinder* the_grinder,
+static void grind_report_datapoints(const struct grinder*       the_grinder,
                                     const struct grindee* const grindee) {
   DPRINTF("----------------------------------------\n");
   DPRINTF("               DATAPOINTS               \n");
@@ -142,11 +200,11 @@ static void grind_report_datapoints(const struct grinder* the_grinder,
   DPRINTF("    Index        Value\n");
   DPRINTF("-------------+--------------------------\n");
 
-  for (size_t i = 0; i < grindee->tsize; ++i) {
+  for (size_t i = 0; i < grindee->tindex; ++i) {
     if (ekRCSW_GRIND_COUNT == the_grinder->mode) {
       DPRINTF("%8zu            %08zu\n", i, grindee->table[i]);
     } else {
-      struct timespec ts = time_monons2ts(grindee->table[i]);
+      struct timespec ts = utils_monons2ts(grindee->table[i]);
       DPRINTF("%8zu            %8zu.%08zu sec\n",
               i,
               (size_t)ts.tv_sec,
@@ -159,7 +217,7 @@ static void grind_report_datapoints(const struct grinder* the_grinder,
  * \brief Report timing info for a \ref grindee.
  */
 static void grind_report_time(const struct grinder* const the_grinder,
-                              struct grindee* const grindee) {
+                              struct grindee* const       grindee) {
   grind_report_stats(the_grinder, grindee);
 
   if (the_grinder->flags & RCSW_GRIND_REPORT_DATAPOINTS) {
@@ -168,16 +226,13 @@ static void grind_report_time(const struct grinder* const the_grinder,
   if (the_grinder->flags & RCSW_GRIND_REPORT_HISTOGRAM) {
     grind_report_hist(the_grinder, grindee);
   }
-
-  /* reset stats for instance */
-  grind_reset(the_grinder, grindee);
 }
 
 /**
  * \brief Report execution count info for a \ref grindee.
  */
 static void grind_report_count(const struct grinder* const the_grinder,
-                               struct grindee* const grindee) {
+                               struct grindee* const       grindee) {
   /* show statistics metadata */
   DPRINTF("Total count        : %zu\n", grindee->count);
 
@@ -190,21 +245,21 @@ static void grind_report_count(const struct grinder* const the_grinder,
 
   /* get average time */
   double mean = 0;
-  for (size_t i = 0; i < grindee->tsize; ++i) {
+  for (size_t i = 0; i < grindee->tindex; ++i) {
     mean += (double)grindee->table[i];
   }
-  mean /= (double)grindee->tsize;
+  mean /= (double)grindee->tindex;
 
   DPRINTF("Mean               : %.8f\n", mean);
 
   /* calculate standard deviation and variance */
-  RCSW_UNUSED double std_dev = 0;
+  double std_dev  = 0;
   double variance = 0;
-  for (size_t i = 0; i < grindee->tsize; i++) {
+  for (size_t i = 0; i < grindee->tindex; i++) {
     variance += pow((double)grindee->table[i] - mean, 2);
   }
 
-  variance /= (double)grindee->tsize;
+  variance /= (double)grindee->tindex;
   std_dev = sqrt(variance);
 
   DPRINTF("Variance           : %.8f\n", variance);
@@ -216,23 +271,21 @@ static void grind_report_count(const struct grinder* const the_grinder,
   if (the_grinder->flags & RCSW_GRIND_REPORT_HISTOGRAM) {
     grind_report_hist(the_grinder, grindee);
   }
-  /* reset stats for instance */
-  grind_reset(the_grinder, grindee);
 }
 
 /**
  * \brief Capture the current time for a grindee.
  */
 static void grind_ts_capture(const struct grinder* const the_grinder,
-                             struct grindee* const grindee) {
+                             struct grindee* const       grindee) {
   struct timespec ts = the_grinder->gettime();
 
   if (ekRCSW_GRIND_DURATION == the_grinder->mode) {
     if (grindee->domain.duration.active) {
-      grindee->domain.duration.end = ts;
+      grindee->domain.duration.end    = ts;
       grindee->domain.duration.active = false;
     } else {
-      grindee->domain.duration.start = ts;
+      grindee->domain.duration.start  = ts;
       grindee->domain.duration.active = true;
     }
   } else if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
@@ -267,9 +320,9 @@ static status_t grind_housekeeping_pre_capture(struct grinder* const the_grinder
     ER_TRACE("Interval start=%zu.%zu/%zu",
              (size_t)curr_time.tv_sec,
              (size_t)curr_time.tv_nsec,
-             time_ts2monons(&curr_time));
+             utils_ts2monons(&curr_time));
     the_grinder->interval_start = curr_time;
-    the_grinder->in_interval = true;
+    the_grinder->in_interval    = true;
   }
 
   /*
@@ -280,8 +333,8 @@ static status_t grind_housekeeping_pre_capture(struct grinder* const the_grinder
   if ((the_grinder->flags & RCSW_GRIND_INTERVAL) &&
       (the_grinder->flags & RCSW_GRIND_RESET_AUTO)) {
     struct timespec diff;
-    time_ts_diff(&the_grinder->interval_start, &curr_time, &diff);
-    if (time_ts_cmp(&diff, &the_grinder->interval) >= 0) {
+    utils_ts_diff(&the_grinder->interval_start, &curr_time, &diff);
+    if (utils_ts_cmp(&diff, &the_grinder->interval) >= 0) {
       grind_reset_all(the_grinder);
       ER_TRACE("Reset statistics for all grindees: %zu.%zu seconds elapsed",
                (size_t)the_grinder->interval.tv_sec,
@@ -312,9 +365,9 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
     if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
       struct timespec curr_time = the_grinder->gettime();
       struct timespec diff;
-      time_ts_diff(&the_grinder->interval_start, &curr_time, &diff);
+      utils_ts_diff(&the_grinder->interval_start, &curr_time, &diff);
 
-      if (time_ts_cmp(&diff, &the_grinder->interval) >= 0) {
+      if (utils_ts_cmp(&diff, &the_grinder->interval) >= 0) {
         grind_reset_all(the_grinder);
         ER_TRACE("Reset statistics all grindees: %zu.%zu seconds elapsed.",
                  (size_t)the_grinder->interval.tv_sec,
@@ -331,62 +384,58 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
   return OK;
 }
 
-static struct timespec grind_gettime(void) {
-  return clock_realtime();
-}
+static struct timespec grind_gettime(void) { return clock_realtime(); }
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
-struct grinder* grind_init(struct grinder* grind_in,
-                           const struct grind_params* const params) {
+struct grinder* grind_init(struct grinder*                  grind_in,
+                           const struct grind_config* const config) {
   RCSW_FPC_NV(NULL,
-              NULL != params,
-              NULL != params->names,
-              params->n_inst > 0,
-              params->res > 0);
+              NULL != config,
+              NULL != config->names,
+              config->n_inst > 0,
+              config->res > 0);
 
   RCSW_ER_MODULE_INIT();
 
   struct grinder* the_grinder = rcsw_alloc(grind_in,
                                            sizeof(struct grinder),
-                                           params->flags & RCSW_NOALLOC_HANDLE);
+                                           config->flags & RCSW_NOALLOC_HANDLE);
   RCSW_CHECK_PTR(the_grinder);
 
-  the_grinder->interval = params->interval;
-  the_grinder->n_inst = params->n_inst;
-  the_grinder->flags = params->flags;
-  the_grinder->res = params->res;
-  the_grinder->avail = 0;
-  the_grinder->mode = params->mode;
-  the_grinder->gettime = (NULL != params->gettime) ? params->gettime
-                                                   : grind_gettime;
+  the_grinder->interval = config->interval;
+  the_grinder->n_inst   = config->n_inst;
+  the_grinder->flags    = config->flags;
+  the_grinder->res      = config->res;
+  the_grinder->avail    = 0;
+  the_grinder->mode     = config->mode;
+  the_grinder->gettime =
+    (NULL != config->gettime) ? config->gettime : grind_gettime;
 
   /* the array of grindees */
-  the_grinder->grindees = rcsw_alloc(NULL,
-                                     params->n_inst * sizeof(struct grindee),
-                                     RCSW_NONE);
+  the_grinder->grindees =
+    rcsw_alloc(NULL, config->n_inst * sizeof(struct grindee), RCSW_NONE);
   RCSW_CHECK_PTR(the_grinder->grindees);
 
   /* initialize the table for each grindee */
-  for (size_t i = 0; i < params->n_inst; ++i) {
-    the_grinder->grindees[i].table = rcsw_alloc(NULL,
-                                                params->tsize * sizeof(size_t),
-                                                RCSW_NONE);
+  for (size_t i = 0; i < config->n_inst; ++i) {
+    the_grinder->grindees[i].table =
+      rcsw_alloc(NULL, config->tsize * sizeof(size_t), RCSW_NONE);
     RCSW_CHECK_PTR(the_grinder->grindees[i].table);
     snprintf(the_grinder->grindees[i].name,
              sizeof(the_grinder->grindees[i].name),
              "%s",
-             params->names[i]);
-    the_grinder->grindees[i].count = 0;
+             config->names[i]);
+    the_grinder->grindees[i].count  = 0;
     the_grinder->grindees[i].tindex = 0;
-    the_grinder->grindees[i].full = 0;
+    the_grinder->grindees[i].full   = 0;
     memset(&the_grinder->grindees[i].domain, 0, sizeof(union grind_mode_impl));
 
     if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
       the_grinder->grindees[i].domain.tick.first = true;
     }
-    the_grinder->grindees[i].tsize = params->tsize;
+    the_grinder->grindees[i].tsize = config->tsize;
   } /* for(i..) */
 
   ER_DEBUG("Configured for %s\n", GRINDER_TYPE(the_grinder));
@@ -423,11 +472,11 @@ void grind_destroy(struct grinder* the_grinder) {
 } /* grind_destroy() */
 
 status_t grind_capture_start(struct grinder* const the_grinder,
-                             const char* const name) {
+                             const char* const     name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
 
   /* find grindee */
-  int index = grindee_lookup(the_grinder, name);
+  int index = grind_lookup(the_grinder, name);
   ER_CHECK(-1 != index, "'%s' not found: cannnot start grind", name);
 
   struct grindee* grindee = &the_grinder->grindees[index];
@@ -444,11 +493,11 @@ error:
 } /* grind_start */
 
 status_t grind_capture_end(struct grinder* const the_grinder,
-                           const char* const name) {
+                           const char* const     name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
 
   /* find grindee */
-  int index = grindee_lookup(the_grinder, name);
+  int index = grind_lookup(the_grinder, name);
 
   ER_CHECK(-1 != index, "'%s' not found: cannnot finish grind", name);
 
@@ -466,8 +515,9 @@ status_t grind_capture_end(struct grinder* const the_grinder,
      */
     if (grindee->count < the_grinder->res) {
       struct timespec rel;
-      time_ts_diff(
-          &grindee->domain.duration.start, &grindee->domain.duration.end, &rel);
+      utils_ts_diff(&grindee->domain.duration.start,
+                    &grindee->domain.duration.end,
+                    &rel);
 
       ER_TRACE("'%s': %zu/%zu samples for duration datapoint %zu/%zu",
                name,
@@ -476,7 +526,7 @@ status_t grind_capture_end(struct grinder* const the_grinder,
                grindee->tindex,
                grindee->tsize);
 
-      grindee->domain.duration.accum += time_ts2monons(&rel);
+      grindee->domain.duration.accum += utils_ts2monons(&rel);
       grindee->count++;
     }
 
@@ -491,13 +541,13 @@ status_t grind_capture_end(struct grinder* const the_grinder,
                grindee->tindex,
                grindee->tsize,
                avg,
-               grindee->domain.duration.accum,
+               grindee->domain.tick.accum,
                the_grinder->res);
 
       grindee->table[grindee->tindex++] = avg;
-      grindee->count = 0;
-      grindee->domain.duration.accum = 0;
-      grindee->full = (grindee->tindex == grindee->tsize);
+      grindee->count                    = 0;
+      grindee->domain.duration.accum    = 0;
+      grindee->full                     = (grindee->tindex == grindee->tsize);
 
       if (grindee->full) {
         ER_DEBUG("'%s' duration statistics available", name);
@@ -514,11 +564,11 @@ error:
 }
 
 status_t grind_capture_tick(struct grinder* const the_grinder,
-                            const char* const name) {
+                            const char* const     name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
 
   /* find grindee */
-  int index = grindee_lookup(the_grinder, name);
+  int index = grind_lookup(the_grinder, name);
   ER_CHECK(-1 != index, "'%s' not found: cannnot capture", name);
 
   struct grindee* grindee = &the_grinder->grindees[index];
@@ -545,20 +595,21 @@ status_t grind_capture_tick(struct grinder* const the_grinder,
      */
     if (grindee->count < the_grinder->res) {
       struct timespec rel;
-      time_ts_diff(&previous, &grindee->domain.tick.current, &rel);
-      grindee->domain.tick.accum += time_ts2monons(&rel);
+      utils_ts_diff(&previous, &grindee->domain.tick.current, &rel);
+      grindee->domain.tick.accum += utils_ts2monons(&rel);
       grindee->count++;
 
-      ER_TRACE("'%s': %zu/%zu samples for period datapoint %zu/%zu: "
-               "accum=%zu,rel=%zu.%zu",
-               name,
-               grindee->count,
-               the_grinder->res,
-               grindee->tindex,
-               grindee->tsize,
-               grindee->domain.tick.accum,
-               (size_t)rel.tv_sec,
-               (size_t)rel.tv_nsec);
+      ER_TRACE(
+        "'%s': %zu/%zu samples for period datapoint %zu/%zu: "
+        "accum=%zu,rel=%zu.%zu",
+        name,
+        grindee->count,
+        the_grinder->res,
+        grindee->tindex,
+        grindee->tsize,
+        grindee->domain.tick.accum,
+        (size_t)rel.tv_sec,
+        (size_t)rel.tv_nsec);
     }
 
     /*
@@ -572,13 +623,13 @@ status_t grind_capture_tick(struct grinder* const the_grinder,
                grindee->tindex,
                grindee->tsize,
                avg,
-               grindee->domain.duration.accum,
+               grindee->domain.tick.accum,
                the_grinder->res);
 
       grindee->table[grindee->tindex++] = avg;
-      grindee->count = 0;
-      grindee->domain.tick.accum = 0;
-      grindee->full = (grindee->tindex == grindee->tsize);
+      grindee->count                    = 0;
+      grindee->domain.tick.accum        = 0;
+      grindee->full                     = (grindee->tindex == grindee->tsize);
 
       if (grindee->full) {
         ER_DEBUG("'%s' period statistics available", name);
@@ -595,10 +646,10 @@ error:
 }
 
 status_t grind_capture_count(struct grinder* const the_grinder,
-                             const char* const name) {
+                             const char* const     name) {
   RCSW_FPC_NV(ERROR, the_grinder != NULL, NULL != name);
 
-  int index = grindee_lookup(the_grinder, name);
+  int index = grind_lookup(the_grinder, name);
   ER_CHECK(-1 != index, "'%s' not found: cannnot start grind", name);
 
   struct grindee* grindee = &the_grinder->grindees[index];
@@ -633,12 +684,12 @@ status_t grind_capture_count(struct grinder* const the_grinder,
        * specified resolution; if not, it doesn't because the count will always
        * equal the resolution, and the result will always be 1.
        */
-      size_t avg = grindee->count / (the_grinder->flags & RCSW_GRIND_INTERVAL)
-                       ? the_grinder->res
-                       : 1;
+      size_t avg =
+        grindee->count /
+        ((the_grinder->flags & RCSW_GRIND_INTERVAL) ? the_grinder->res : 1);
       grindee->table[grindee->tindex++] = avg;
-      grindee->count = 0;
-      grindee->full = (grindee->tindex == grindee->tsize);
+      grindee->count                    = 0;
+      grindee->full                     = (grindee->tindex == grindee->tsize);
 
       if (grindee->full) {
         ER_DEBUG("'%s' counting statistics available", name);
@@ -662,7 +713,7 @@ void grind_report_all(const struct grinder* const the_grinder) {
 } /* grind_report_all() */
 
 status_t grind_report(const struct grinder* const the_grinder,
-                      struct grindee* const grindee) {
+                      struct grindee* const       grindee) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != grindee);
 
   if ((the_grinder->flags & RCSW_GRIND_REPORT_REQ_FULL)) {
@@ -670,8 +721,9 @@ status_t grind_report(const struct grinder* const the_grinder,
              "'%s' stats not full yet--will not report.",
              grindee->name);
   }
-  DPRINTF("**********************************************************************"
-          "**********\n");
+  DPRINTF(
+    "**********************************************************************"
+    "**********\n");
   DPRINTF("\nReport for grindee '%s':\n\n", grindee->name);
 
   if (ekRCSW_GRIND_COUNT == the_grinder->mode) {
@@ -679,29 +731,30 @@ status_t grind_report(const struct grinder* const the_grinder,
   } else {
     grind_report_time(the_grinder, grindee);
   }
-  DPRINTF("**********************************************************************"
-          "**********\n");
+  DPRINTF(
+    "**********************************************************************"
+    "**********\n");
   return OK;
 
 error:
   return ERROR;
 } /* grind_report() */
 
-int grind_report_utilization2(const struct grinder* const the_grinder,
-                              char* const buf) {
+int grind_report_utilization_buf(const struct grinder* const the_grinder,
+                                 char* const                 buf) {
   RCSW_FPC_NV(-1, NULL != the_grinder, NULL != buf);
 
-  size_t inst_total = 0;
+  size_t          inst_total = 0;
   struct grindee* grindee;
-  double divisor;
-  char* buf_ptr = buf;
+  double          divisor;
+  char*           buf_ptr = buf;
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = (double)the_grinder->interval.tv_sec +
-              ((double)the_grinder->interval.tv_nsec / 1000000000.0);
+    divisor = (double)the_grinder->interval.tv_sec * RCSW_E9 +
+              ((double)the_grinder->interval.tv_nsec);
   } else { /* use the cumulative total time of ALL grindees */
     size_t sum = grind_sum_all(the_grinder);
-    divisor = (double)sum;
+    divisor    = (double)sum;
   }
 
   buf_ptr += sprintf(buf_ptr, "Interval: %.8f", divisor);
@@ -709,7 +762,7 @@ int grind_report_utilization2(const struct grinder* const the_grinder,
                      "     Name           Time         Utilization"
                      "+---------------+--------------+---------------+");
   for (size_t i = 0; i < the_grinder->n_inst; ++i) {
-    grindee = &the_grinder->grindees[i];
+    grindee    = &the_grinder->grindees[i];
     inst_total = grindee_data_sum(grindee);
     buf_ptr += sprintf(buf_ptr,
                        "  %-15.15s  %-18zu   %3.2f",
@@ -718,31 +771,33 @@ int grind_report_utilization2(const struct grinder* const the_grinder,
                        ((double)inst_total / divisor) * 100.0);
   }
   return (int)(buf_ptr - buf);
-} /* grind_report_utilization2() */
+}
 
 status_t grind_report_utilization(const struct grinder* const the_grinder) {
-  RCSW_FPC_NV(-1, NULL != the_grinder);
+  RCSW_FPC_NV(ERROR, NULL != the_grinder);
 
-  DPRINTF("----------------------------------------"
-          "Utilization"
-          "----------------------------------------");
-  RCSW_UNUSED size_t inst_total = 0;
+  DPRINTF(
+    "----------------------------------------"
+    "Utilization"
+    "----------------------------------------");
+  size_t          inst_total = 0;
   struct grindee* grindee;
-  double divisor;
+  double          divisor;
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = (double)the_grinder->interval.tv_sec * ONEE9 +
-              (double)the_grinder->interval.tv_nsec / 1000000000;
+    divisor = (double)the_grinder->interval.tv_sec * RCSW_E9 +
+              (double)the_grinder->interval.tv_nsec;
   } else { /* use the cumulative total time of ALL grindees */
     size_t sum = grind_sum_all(the_grinder);
-    divisor = (double)sum;
+    divisor    = (double)sum;
   }
 
   DPRINTF("Interval: %.8f", divisor);
-  DPRINTF("     Name           Time         Utilization"
-          "+---------------+--------------+---------------+");
+  DPRINTF(
+    "     Name           Time         Utilization"
+    "+---------------+--------------+---------------+");
   for (size_t i = 0; i < the_grinder->n_inst; ++i) {
-    grindee = &the_grinder->grindees[i];
+    grindee    = &the_grinder->grindees[i];
     inst_total = grindee_data_sum(grindee);
     DPRINTF("%-15.15s   %-18zu    %3.2f%%",
             grindee->name,
@@ -753,12 +808,12 @@ status_t grind_report_utilization(const struct grinder* const the_grinder) {
   return OK;
 } /* grind_report_utilization() */
 
-double grind_get_utilization(struct grinder* the_grinder,
+double grind_get_utilization(struct grinder*   the_grinder,
                              const char* const name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
 
   /* find the grindee */
-  int index = grindee_lookup(the_grinder, name);
+  int index = grind_lookup(the_grinder, name);
   ER_CHECK(-1 != index, "'%s' not found: cannnot compute utilization", name);
   struct grindee* grindee = the_grinder->grindees + index;
 
@@ -773,11 +828,11 @@ double grind_get_utilization(struct grinder* the_grinder,
   inst_total = grindee_data_sum(grindee);
 
   if (the_grinder->flags & RCSW_GRIND_INTERVAL) {
-    divisor = (double)the_grinder->interval.tv_sec * ONEE9 +
-              (double)the_grinder->interval.tv_nsec / ONEE9;
+    divisor = (double)the_grinder->interval.tv_sec * RCSW_E9 +
+              (double)the_grinder->interval.tv_nsec / RCSW_E9;
   } else { /* use the cumulative total time of ALL grindees */
     size_t sum = grind_sum_all(the_grinder);
-    divisor = (double)sum;
+    divisor    = (double)sum;
   }
 
   return ((double)inst_total / divisor) * 100.0;
@@ -795,22 +850,22 @@ void grind_reset_all(struct grinder* const the_grinder) {
   the_grinder->in_interval = false;
 } /* grind_reset_all() */
 
-void grind_reset(const struct grinder* const the_grinder,
+void grind_reset(struct grinder* const the_grinder,
                  struct grindee* const grindee) {
   RCSW_FPC_V(NULL != the_grinder, NULL != grindee);
   /* reset grindees for instance */
   memset(grindee->table, 0, grindee->tsize * sizeof(size_t));
   grindee->tindex = 0;
-  grindee->count = 0;
-  grindee->full = false;
+  grindee->count  = 0;
+  grindee->full   = false;
   if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
     grindee->domain.tick.first = true;
     memset(&grindee->domain.tick.current, 0, sizeof(struct timespec));
   }
 } /* grind_reset() */
 
-int grindee_lookup(const struct grinder* const the_grinder,
-                   const char* const name) {
+int grind_lookup(const struct grinder* const the_grinder,
+                 const char* const           name) {
   for (size_t i = 0; i < the_grinder->n_inst; ++i) {
     if (strcmp(the_grinder->grindees[i].name, name) == 0) {
       return (int)i;
@@ -819,38 +874,6 @@ int grindee_lookup(const struct grinder* const the_grinder,
   }
 
   return -1;
-} /* grind_name2index() */
-
-size_t grindee_data_max(const struct grindee* const grindee) {
-  RCSW_FPC_NV(0, NULL != grindee, grindee->tindex > 0);
-
-  size_t max = 0;
-
-  for (size_t i = 0; i < grindee->tindex; ++i) {
-    max = RCSW_MAX(max, grindee->table[i]);
-  }
-  return max;
-}
-
-size_t grindee_data_min(const struct grindee* const grindee) {
-  RCSW_FPC_NV(0, NULL != grindee, grindee->tindex > 0);
-
-  size_t min = SIZE_MAX;
-
-  for (size_t i = 0; i < grindee->tindex; ++i) {
-    min = RCSW_MIN(min, grindee->table[i]);
-  }
-  return min;
-}
-
-size_t grindee_data_sum(const struct grindee* const grindee) {
-  RCSW_FPC_NV(0, NULL != grindee);
-
-  size_t sum = 0;
-  for (size_t i = 0; i < grindee->tindex; ++i) {
-    sum += grindee->table[i];
-  }
-  return sum;
 }
 
 size_t grind_sum_all(const struct grinder* const the_grinder) {

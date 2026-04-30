@@ -1,21 +1,27 @@
 /**
- * \file edit_dist.h
- * \brief Algorithm for finding the edit distance between two
- * sequences of objects.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \brief Algorithm for finding the edit distance between two sequences of
+ * objects.
  */
 #pragma once
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include <stddef.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
+#include "rcsw/ds/ds.h"
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Algorithm handle for finding the edit distance between two contiguous
@@ -25,12 +31,12 @@ struct edit_dist_finder {
   /**
    * Sequence #1.
    */
-  const void *seq_a;
+  const void* seq_a;
 
   /**
    * Sequence #1.
    */
-  const void *seq_b;
+  const void* seq_b;
 
   /**
    * Size of each element in a sequence in bytes.
@@ -45,8 +51,7 @@ struct edit_dist_finder {
   /**
    * Compare two elements for equality.
    */
-  bool_t (*cmpe)(const void* const e1,
-                 const void* const e2);
+  bool_t (*cmpe)(const void* const e1, const void* const e2);
 
   /**
    * Get the length of a sequence.
@@ -55,7 +60,7 @@ struct edit_dist_finder {
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -76,20 +81,19 @@ BEGIN_C_DECLS
  *
  * \return \ref status_t
  */
-RCSW_API status_t edit_dist_init(struct edit_dist_finder * finder,
-                                 const void* a,
-                        const void*b,
-                        size_t elt_size,
-                        bool_t (*cmpe)(const void* e1,
-                                       const void* e2),
-                        size_t (*seq_len)(const void* seq));
+RCSW_API status_t edit_dist_init(struct edit_dist_finder* finder,
+                                 const void*              a,
+                                 const void*              b,
+                                 size_t                   elt_size,
+                                 bool_t (*cmpe)(const void* e1, const void* e2),
+                                 size_t (*seq_len)(const void* seq));
 /**
  * \brief Destroy an edit distance finder
  *
  * \param finder The finder handle
  *
  */
-RCSW_API void edit_dist_destroy(struct edit_dist_finder * finder);
+RCSW_API void edit_dist_destroy(struct edit_dist_finder* finder);
 
 /**
  * \brief Find the edit distance between two sequences
@@ -101,6 +105,5 @@ RCSW_API void edit_dist_destroy(struct edit_dist_finder * finder);
  *
  * \return The edit distance, or -1 on error
  */
-RCSW_API int edit_dist_find(struct edit_dist_finder * finder,
-                            enum exec_type type);
+RCSW_API int edit_dist_find(struct edit_dist_finder* finder, enum exec_type type);
 END_C_DECLS

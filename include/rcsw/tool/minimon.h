@@ -1,41 +1,9 @@
 /**
- * \file minimon.h
- * \brief Bare-metal interactive monitor for board bring-up and hardware
- * validation.
- *
- * Minimon reads commands from a serial stream (stream0), executes them,
- * and prints results back. It has no dynamic memory requirements and no
- * OS dependencies, making it suitable for use before an RTOS or memory
- * allocator is initialized.
- *
- * \section minimon_streams Streams
- *
- * Minimon uses up to two streams:
- * - **stream0** — always \ref stdio_putchar() / \ref stdio_getchar(). Used
- *   for interactive user input and output.
- * - **stream1** — optional; provided via \ref minimon_params.stream1. If
- *   supplied, the \c load and \c send commands use stream1 for data
- *   transfer and print progress to stream0. If omitted, \c load and \c
- *   send share stream0 and suppress progress output.
- *
- * \section minimon_custom_cmds Custom Commands
- *
- * To add commands beyond the built-ins, populate an array of \ref
- * minimon_cmd structs and pass it via \ref minimon_params.cmds and \ref
- * minimon_params.n_cmds to \ref minimon_init(). Set \ref
- * minimon_params.include_builtin to TRUE to retain the standard command
- * set alongside your custom ones, or FALSE to replace it entirely (the
- * HELP command is always included regardless).
- *
- * Each \ref minimon_cmd specifies a name, an optional short alias, a help
- * string, a \ref minimon_cmd.hook function pointer, and up to \ref
- * MINIMON_CMD_MAX_ARGS parameter descriptors. The hook receives the
- * command name and any parsed arguments via variadic arguments; retrieve
- * them with \c va_start() / \c va_arg().
+ * \file
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
- * SPDX-License Identifier: MIT
+ * SPDX-License-Identifier: MIT
  */
 
 #pragma once
@@ -43,32 +11,30 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/rcsw.h"
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
 /** \brief Maximum number of arguments a command may accept. */
-#define MINIMON_CMD_MAX_ARGS  4
+#define MINIMON_CMD_MAX_ARGS 4
 
 /** \brief Maximum number of commands (built-in + custom) minimon supports. */
-#define MINIMON_MAX_CMDS 20
+#define MINIMON_MAX_CMDS 20UL
 
 /** \brief Maximum length of a command name string, including null terminator. */
-#define MINIMON_CMD_MAX_NAMELEN 5
+#define MINIMON_CMD_MAX_NAMELEN 16
 
 enum minimon_param_type {
   ekMINIMON_PARAM_UINT32,
   ekMINIMON_PARAM_STR,
 };
 
-enum minimon_help_type {
-  ekMINIMON_HELP_SHORT,
-  ekMINIMON_HELP_LONG
-};
+enum minimon_help_type { ekMINIMON_HELP_SHORT, ekMINIMON_HELP_LONG };
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Optional interrupt-related callbacks invoked around command
@@ -93,7 +59,7 @@ struct minimon_stream_callbacks {
 /**
  * \brief Initialization parameters for \ref minimon_init().
  */
-struct minimon_params {
+struct minimon_config {
   /**
    * \brief Optional interrupt callbacks. May be zero-initialized if not
    * needed.
@@ -145,7 +111,7 @@ struct minimon_params {
  */
 union minimon_cmd_arg {
   uint32_t num;
-  char* s;
+  char*    s;
 };
 
 /**
@@ -155,12 +121,12 @@ union minimon_cmd_arg {
  * which holds what was actually passed.
  */
 struct minimon_cmd_param {
-  const char* name;
+  const char*             name;
   enum minimon_param_type type;
-  const char* short_help;
-  const char* long_help;
-  bool_t required;
-  union minimon_cmd_arg dflt;
+  const char*             short_help;
+  const char*             long_help;
+  bool_t                  required;
+  union minimon_cmd_arg   dflt;
 };
 
 /**
@@ -189,7 +155,7 @@ struct minimon_cmd {
    * \brief Command implementation function.
    *
    * Called by the monitor with the matched command name and any parsed
-   * arguments (in the order defined by \ref params). Retrieve arguments
+   * arguments (in the order defined by \ref config). Retrieve arguments
    * with \c va_start() / \c va_arg(). The same hook may be registered
    * for multiple commands; use \p cmdname to distinguish them.
    */
@@ -198,18 +164,49 @@ struct minimon_cmd {
   /**
    * \brief Array of parameter definitions for the command.
    */
-  struct minimon_cmd_param params[MINIMON_CMD_MAX_ARGS];
+  struct minimon_cmd_param config[MINIMON_CMD_MAX_ARGS];
 };
 
 /**
- * \brief Monitor state structure.
+ * \brief Bare-metal interactive monitor for board bring-up and hardware
+ * validation.
+ *
+ * Minimon reads commands from a serial stream (stream0), executes them,
+ * and prints results back. It has no dynamic memory requirements and no
+ * OS dependencies, making it suitable for use before an RTOS or memory
+ * allocator is initialized.
+ *
+ * \section minimon_streams Streams
+ *
+ * Minimon uses up to two streams:
+ * - **stream0** — always \ref stdio_putchar() / \ref stdio_getchar(). Used
+ *   for interactive user input and output.
+ * - **stream1** — optional; provided via \ref minimon_config.stream1. If
+ *   supplied, the \c load and \c send commands use stream1 for data
+ *   transfer and print progress to stream0. If omitted, \c load and \c
+ *   send share stream0 and suppress progress output.
+ *
+ * \section minimon_custom_cmds Custom Commands
+ *
+ * To add commands beyond the built-ins, populate an array of \ref
+ * minimon_cmd structs and pass it via \ref minimon_config.cmds and \ref
+ * minimon_config.n_cmds to \ref minimon_init(). Set \ref
+ * minimon_config.include_builtin to TRUE to retain the standard command
+ * set alongside your custom ones, or FALSE to replace it entirely (the
+ * HELP command is always included regardless).
+ *
+ * Each \ref minimon_cmd specifies a name, an optional short alias, a help
+ * string, a \ref minimon_cmd.hook function pointer, and up to \ref
+ * MINIMON_CMD_MAX_ARGS parameter descriptors. The hook receives the
+ * command name and any parsed arguments via variadic arguments; retrieve
+ * them with \c va_start() / \c va_arg().
  */
 struct minimon {
   struct minimon_stream_callbacks stream0;
   struct minimon_stream_callbacks stream1;
-  struct minimon_cmd cmds[MINIMON_MAX_CMDS];
-  struct minimon_irq_callbacks irqcb;
-  bool_t help_on_start;
+  struct minimon_cmd              cmds[MINIMON_MAX_CMDS];
+  struct minimon_irq_callbacks    irqcb;
+  bool_t                          help_on_start;
 };
 
 /*******************************************************************************
@@ -218,7 +215,7 @@ struct minimon {
 typedef void (*vfp_t)(void);
 
 /******************************************************************************
- * API Functions
+ * Public API
  *****************************************************************************/
 BEGIN_C_DECLS
 
@@ -226,14 +223,14 @@ BEGIN_C_DECLS
  * \brief Initialize the monitor.
  *
  * Must be called before \ref minimon_start(). Registers the command set,
- * IRQ callbacks, and stream callbacks. \p params may be NULL to use
+ * IRQ callbacks, and stream callbacks. \p config may be NULL to use
  * defaults (built-in commands only, help on start, no IRQ callbacks, no
  * stream1).
  *
- * \param params Initialization parameters, or NULL for defaults.
+ * \param config Initialization parameters, or NULL for defaults.
  */
 
-RCSW_API void minimon_init(const struct minimon_params* params);
+RCSW_API void minimon_init(const struct minimon_config* config);
 
 /**
  * \brief Start the monitor loop.
@@ -243,6 +240,6 @@ RCSW_API void minimon_init(const struct minimon_params* params);
  * operation; may transfer control to another address if the \c jump
  * command is executed.
  */
-RCSW_API void minimon_start(void) RCSW_DEAD;
+RCSW_API void minimon_start(void) RCSW_NORETURN;
 
 END_C_DECLS

@@ -1,5 +1,5 @@
 /**
- * \file dyn_matrix.c
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -9,26 +9,26 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/dyn_matrix.h"
+#include "rcsw/ds/dynmatrix.h"
 
-#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "dyn_matrix")
-#define RCSW_ER_MODID ekLOG4CL_DS_DYN_MATRIX
-#include "rcsw/common/alloc.h"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "dynmatrix")
+#define RCSW_ER_MODID ekLOG4CL_DS_DYNMATRIX
+#include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
-                                   const struct dyn_matrix_params* const params) {
+struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
+                                 const struct dynmatrix_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->n_rows > 0, params->n_cols > 0)
   RCSW_ER_MODULE_INIT();
 
-  struct dyn_matrix* matrix = rcsw_alloc(matrix_in,
-                                         sizeof(struct dyn_matrix),
-                                         params->flags & RCSW_NOALLOC_HANDLE);
+  struct dynmatrix* matrix = rcsw_alloc(matrix_in,
+                                        sizeof(struct dynmatrix),
+                                        params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(matrix);
   matrix->flags    = params->flags;
@@ -37,7 +37,7 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
   matrix->n_rows   = params->n_rows;
   matrix->n_cols   = params->n_cols;
 
-  struct darray_params handle_params = {.init_size = matrix->n_rows,
+  struct darray_config handle_params = {.init_size = matrix->n_rows,
                                         .cmpe      = NULL,
                                         .printe    = NULL,
                                         .elements  = NULL,
@@ -47,7 +47,7 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
   matrix->rows                       = darray_init(NULL, &handle_params);
   RCSW_CHECK_PTR(matrix->rows);
 
-  struct darray_params row_params = {.init_size = matrix->n_cols,
+  struct darray_config row_params = {.init_size = matrix->n_cols,
                                      .cmpe      = NULL,
                                      .printe    = NULL,
                                      .elements  = NULL,
@@ -62,11 +62,11 @@ struct dyn_matrix* dyn_matrix_init(struct dyn_matrix* const matrix_in,
   return matrix;
 
 error:
-  dyn_matrix_destroy(matrix);
+  dynmatrix_destroy(matrix);
   return NULL;
-} /* dyn_matrix_init() */
+} /* dynmatrix_init() */
 
-void dyn_matrix_destroy(struct dyn_matrix* const matrix) {
+void dynmatrix_destroy(struct dynmatrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
 
   for (size_t i = 0; i < matrix->n_rows; ++i) {
@@ -75,24 +75,24 @@ void dyn_matrix_destroy(struct dyn_matrix* const matrix) {
   darray_destroy(matrix->rows);
 
   rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
-} /* dyn_matrix_destroy() */
+} /* dynmatrix_destroy() */
 
-status_t dyn_matrix_set(struct dyn_matrix* const matrix,
-                        size_t                   u,
-                        size_t                   v,
-                        const void* const        w) {
+status_t dynmatrix_set(struct dynmatrix* const matrix,
+                       size_t                  u,
+                       size_t                  v,
+                       const void* const       w) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
   if (u >= matrix->n_rows || v >= matrix->n_cols) {
-    RCSW_CHECK(OK == dyn_matrix_resize(matrix, u + 1, v + 1));
+    RCSW_CHECK(OK == dynmatrix_resize(matrix, u + 1, v + 1));
   }
-  ds_elt_copy(dyn_matrix_access(matrix, u, v), w, matrix->elt_size);
+  ds_elt_copy(dynmatrix_access(matrix, u, v), w, matrix->elt_size);
   return OK;
 
 error:
   return ERROR;
-} /* dyn_matrix_set() */
+} /* dynmatrix_set() */
 
-status_t dyn_matrix_resize(struct dyn_matrix* const matrix, size_t u, size_t v) {
+status_t dynmatrix_resize(struct dynmatrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix);
 
   ER_DEBUG("Resizing matrix [%zu x %zu] -> [%zu x %zu]",
@@ -103,7 +103,7 @@ status_t dyn_matrix_resize(struct dyn_matrix* const matrix, size_t u, size_t v) 
 
   if (u >= matrix->n_rows) {
     RCSW_CHECK(OK == darray_resize(matrix->rows, u));
-    struct darray_params row_params = {.init_size = matrix->n_cols,
+    struct darray_config row_params = {.init_size = matrix->n_cols,
                                        .cmpe      = NULL,
                                        .printe    = NULL,
                                        .elements  = NULL,
@@ -126,10 +126,10 @@ status_t dyn_matrix_resize(struct dyn_matrix* const matrix, size_t u, size_t v) 
 
 error:
   return ERROR;
-} /* dyn_matrix_resize() */
+} /* dynmatrix_resize() */
 
-status_t dyn_matrix_transpose(struct dyn_matrix* const matrix) {
-  RCSW_FPC_NV(ERROR, NULL != matrix, dyn_matrix_issquare(matrix));
+status_t dynmatrix_transpose(struct dynmatrix* const matrix) {
+  RCSW_FPC_NV(ERROR, NULL != matrix, dynmatrix_issquare(matrix));
 
   /*
    * Assuming matrix is square, the simple algorithm can be used. First and
@@ -138,22 +138,22 @@ status_t dyn_matrix_transpose(struct dyn_matrix* const matrix) {
   ER_DEBUG("Transpose %zu x %zu matrix", matrix->n_rows, matrix->n_cols);
   for (size_t i = 1; i < matrix->n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
-      ds_elt_swap(dyn_matrix_access(matrix, i, j),
-                  dyn_matrix_access(matrix, j, i),
+      ds_elt_swap(dynmatrix_access(matrix, i, j),
+                  dynmatrix_access(matrix, j, i),
                   matrix->elt_size);
     } /* for(j..) */
   } /* for(i..) */
   return OK;
-} /* dyn_matrix_transpose() */
+} /* dynmatrix_transpose() */
 
-void dyn_matrix_print(const struct dyn_matrix* const matrix) {
+void dynmatrix_print(const struct dynmatrix* const matrix) {
   RCSW_FPC_V(NULL != matrix, NULL != matrix->printe);
 
   DPRINTF("{");
   for (size_t i = 0; i < matrix->n_rows; ++i) {
     DPRINTF("{");
     for (size_t j = 0; j < matrix->n_cols; ++j) {
-      matrix->printe(dyn_matrix_access(matrix, i, j));
+      matrix->printe(dynmatrix_access(matrix, i, j));
       if (j < matrix->n_cols - 1) {
         DPRINTF(",");
       }
@@ -165,6 +165,6 @@ void dyn_matrix_print(const struct dyn_matrix* const matrix) {
     }
   } /* for(i..) */
   DPRINTF("}\n");
-} /* dyn_matrix_print() */
+}
 
 END_C_DECLS

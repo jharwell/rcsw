@@ -17,14 +17,14 @@
 #include "rcsw/ds/binheap.h"
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/ds/dyn_matrix.h"
+#include "rcsw/ds/dynmatrix.h"
 #include "rcsw/ds/fifo.h"
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/ds/ostree.h"
 #include "rcsw/ds/rbuffer.h"
-#include "rcsw/ds/adj_matrix.h"
+#include "rcsw/ds/adjmatrix.h"
 #include "rcsw/ds/matrix.h"
 #include "rcsw/ds/multififo.h"
 
@@ -230,52 +230,57 @@ void map_func(void *e) {
  *     int - 1 if should be returned, 0 if not
  */
 template<typename T>
-bool_t iter_func(void *e) {
+bool_t iter_func_even(void *e) {
   T* e1 = reinterpret_cast<T*>(e);
   return (e1->value1 % 2 == 0);
 }
 
-status_t ds_init(darray_params *const params);
-status_t ds_init(rbuffer_params *const params);
-status_t ds_init(fifo_params *const params);
-status_t ds_init(multififo_params *const params);
-status_t ds_init(llist_params *const params);
-status_t ds_init(binheap_params *const params);
-status_t ds_init(adj_matrix_params *const params);
-status_t ds_init(hashmap_params *const params);
-status_t ds_init(bstree_params *const params);
-status_t ds_init(matrix_params *const params);
-status_t ds_init(dyn_matrix_params *const params);
+  template<typename T>
+bool_t iter_func_all(void *e) {
+  return true;
+}
+
+status_t ds_init(darray_config *const config);
+status_t ds_init(rbuffer_config *const config);
+status_t ds_init(fifo_config *const config);
+status_t ds_init(multififo_config *const config);
+status_t ds_init(llist_config *const config);
+status_t ds_init(binheap_config *const config);
+status_t ds_init(adjmatrix_config *const config);
+status_t ds_init(hashmap_config *const config);
+status_t ds_init(bstree_config *const config);
+status_t ds_init(matrix_config *const config);
+status_t ds_init(dynmatrix_config *const config);
 
 
 template<typename T>
-void ds_shutdown(const T *const params) {
+void ds_shutdown(const T *const config) {
   if constexpr(has_elements<T>::value) {
-     if (params->elements) {
-       free(params->elements);
+     if (config->elements) {
+       free(config->elements);
       }
   }
   if constexpr (has_meta<T>::value) {
-    if (params->meta) {
-      free(params->meta);
+    if (config->meta) {
+      free(config->meta);
     }
   }
 }
 
 template<typename T>
-int leak_check_data(const T *params) {
+int leak_check_data(const T *config) {
   int i;
   int len;
-  if constexpr(std::is_same<T,struct bstree_params>::value) {
-    len = params->max_elts;
-  } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
-    len = params->bsize * params->n_buckets;
+  if constexpr(std::is_same<T,struct bstree_config>::value) {
+    len = config->max_elts;
+  } else if constexpr(std::is_same<T,struct hashmap_config>::value) {
+    len = config->bsize * config->n_buckets;
   } else {
-    len = params->max_elts;
+    len = config->max_elts;
   }
-  if (params->flags & RCSW_NOALLOC_DATA) {
+  if (config->flags & RCSW_NOALLOC_DATA) {
     for (i = 0; i < len; ++i) {
-      ER_CHECK((reinterpret_cast<allocm_entry*>(params->elements))[i].value == -1,
+      ER_CHECK((reinterpret_cast<allocm_entry*>(config->elements))[i].value == -1,
                "Memory leak at index %d in data block area", i);
     } /* for() */
   }
@@ -286,25 +291,25 @@ error:
 }
 
 template<typename T>
-int leak_check_nodes(const T *params) {
+int leak_check_nodes(const T *config) {
   int i;
   int len;
-  if constexpr(std::is_same<T,struct bstree_params>::value) {
-      len = params->max_elts;
-    } else if constexpr(std::is_same<T,struct hashmap_params>::value) {
-      len = params->bsize * params->n_buckets;
+  if constexpr(std::is_same<T,struct bstree_config>::value) {
+      len = config->max_elts;
+    } else if constexpr(std::is_same<T,struct hashmap_config>::value) {
+      len = config->bsize * config->n_buckets;
     } else {
-    len = params->max_elts;
+    len = config->max_elts;
   }
   /* It's not valid to check for leaks in this case, because you are sharing
    * things between two or more lists
    */
-  if (params->flags & RCSW_DS_LLIST_DB_DISOWN) {
+  if (config->flags & RCSW_DS_LLIST_DB_DISOWN) {
     return 0;
   }
-  if (params->flags & RCSW_NOALLOC_META) {
+  if (config->flags & RCSW_NOALLOC_META) {
     for (i = 0; i < len; ++i) {
-      ER_CHECK((reinterpret_cast< allocm_entry *>(params->meta))[i].value == -1,
+      ER_CHECK((reinterpret_cast< allocm_entry *>(config->meta))[i].value == -1,
                "Memory leak at index %d in meta area", i);
     }
   }

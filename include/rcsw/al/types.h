@@ -1,11 +1,13 @@
 /**
- * \file types.h
- * \ingroup al
- * \brief Base type definitions for RCSW.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup al
+ *
+ * \brief Base type definitions for RCSW.
  */
 
 #pragma once
@@ -13,7 +15,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
- #include "rcsw/al/al.h"
+#include "rcsw/al/al.h"
 
 /*******************************************************************************
  * Basic Type Definitions
@@ -26,23 +28,15 @@
 #define __linux__ 1
 #endif
 
-
-
 /*
  * For Linux applications.
  */
-#if defined(__linux__)
+#if defined(RCSW_PLATFORM_POSIX)
 
-#include <stdint.h>
 #include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
 #include <stdbool.h>
-#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #if defined(DOXYGEN_DOCUMENTATION_BUILD)
 
@@ -55,10 +49,7 @@
  * In linux, this is the same as bool; on embedded/baremetal platforms it maybe
  * defined differently.
  */
-typedef enum {
-  false = 0,
-  true  = 1
-} bool_t;
+typedef enum { false = 0, true = 1 } bool_t;
 #else
 #define bool_t bool
 #endif
@@ -66,13 +57,16 @@ typedef enum {
 /*
  * For bare-metal applications with no OS (can still use stdlib)
  */
-#elif defined(__baremetal__)
-
+#elif defined(RCSW_PLATFORM_BAREMETAL)
 
 /*
  * For stdlib-less bare-metal applications.
  */
-#if defined(__nostdlib__)
+#if defined(LIBRA_NOSTDLIB)
+#define RCSW_NOSTDLIB LIBRA_NOSTDLIB
+#endif
+
+#if defined(RCSW_NOSTDLIB)
 
 /*
  * These are OK to include because they are header-only, and don't rely on
@@ -81,6 +75,7 @@ typedef enum {
  * bootstrap platform.
  */
 #include <limits.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 /*
@@ -90,24 +85,11 @@ typedef enum {
  * gcc -dM -E - < /dev/null
  */
 
-/* typedefs */
-typedef unsigned short uint16_t;
-typedef unsigned char uint8_t;
-
-typedef short int16_t;
-/* typedef uint32_t size_t; */
-/* typedef signed long int64_t; */
-/* typedef long ptrdiff_t; */
-/* typedef long intmax_t; */
-/* typedef int64_t int_fast64_t; */
-
-extern uint32_t errno;
-
 #define EINVAL -1
 
 /* defines */
 #ifndef NULL
-#define NULL ((void *)0)
+#define NULL ((void*)0)
 #endif /* NULL */
 
 #if defined(true) || defined(false)
@@ -125,88 +107,62 @@ extern uint32_t errno;
 
 #define bool_t bool
 
-#include <stdint.h>
 #include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
 #include <stdbool.h>
-#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
 #endif
 
 #else
-#error Bad AL target: {__baremetal__, __linux__} supported
+#error Bad AL target: {RCSW_PLATFORM_BAREMETAL, RCSW_PLATFORM_POSIX} supported
 #endif
 
 /*******************************************************************************
  * Custom Type Definitions
  ******************************************************************************/
 /**
- * \brief A C status type.
- *
- * The basic unit of determining if a function has succeeded or not.
- */
-#if defined(OK) || defined(ERROR)
-#undef OK
-#undef ERROR
-#endif
-typedef enum {
-    /** Return this on function success. */
-    OK       = 0,
-    /** Return this when a function fails. */
-    ERROR    = -1,
-} status_t;
-
-/**
- * \brief A runtime exec method switch for SOMETHING.
- */
-enum exec_type {
-  /**
-   * Use a recursive runtime implementation.
-   */
-  ekEXEC_REC,
-  /**
-   * Use an iterative runtime implementation.
-   */
-  ekEXEC_ITER,
-};
-
-/**
  * \brief A C data pointer type.
  *
- * This is the pointer type to store all persistent runtime data in RCSW, which
- * enables casts like:
+ * All persistent runtime data in RCSW is stored via this type so that casts
+ * like:
  *
  * \code
  * (struct mystruct*)node->data
  * \endcode
  *
- * work as intended on all targets. On some embedded targets like ARM, if \code
- * node->data \endcode has an alignment of 1 because it points to an address on
- * the stack, then casting to \code mystruct \endcode which may have alignment >
- * 1 can cause a hardware trap mecause the low-level instructions the compiler
- * generates to access \code mystruct \endcode assumes whatever is pointed at
- * has the expected alignment.
+ * work as intended on all targets. On some embedded targets (e.g., ARM), if
+ * \c node->data points to a stack address with alignment 1, casting to a
+ * struct with alignment > 1 can cause a hardware trap because the compiler
+ * generates load/store instructions that assume the required alignment.
  *
- * This can be overriden at compile time.
+ * \par Implementation
+ * Alignment is enforced by choosing an integer typedef whose natural alignment
+ * matches \c RCSW_CONFIG_PTR_ALIGN. The compiler guarantees that an array
+ * element of this type is aligned to at least \c sizeof(the type), which
+ * satisfies the safe-cast requirement.
+ *
+ * \note A C11 \c _Alignas approach was considered but rejected: \c _Alignas
+ * is not permitted on a \c typedef (C11 §6.7.5), and placing it on a
+ * single-member struct wrapper breaks call-site transparency between the C11
+ * and pre-C11 paths. The integer-width trick is already sufficient — \c
+ * sizeof(uint32_t)==4 guarantees 4-byte-aligned array elements just as
+ * reliably as \c _Alignas(4) would.
+ *
  */
-/*
- * Pointer alignment not relevant for bare-metal targets, because none of the
- * data structures or more complex modules are built.
- */
-#if !defined(__baremetal__)
+#if !defined(RCSW_CONFIG_PTR_ALIGN)
+#error No pointer alignment defined on non-baremetal target. \
+  Define RCSW_CONFIG_PTR_ALIGN to 1, 2, or 4.
+#endif
+
+#if (RCSW_CONFIG_PTR_ALIGN != 1) && (RCSW_CONFIG_PTR_ALIGN != 2) && \
+  (RCSW_CONFIG_PTR_ALIGN != 4)
+#error RCSW_CONFIG_PTR_ALIGN must be 1, 2, or 4.
+#endif
 
 #if (RCSW_CONFIG_PTR_ALIGN == 4)
 typedef uint32_t dptr_t;
 #elif (RCSW_CONFIG_PTR_ALIGN == 2)
 typedef uint16_t dptr_t;
-#elif (RCSW_CONFIG_PTR_ALIGN == 1)
+#else /* RCSW_CONFIG_PTR_ALIGN == 1 */
 typedef uint8_t dptr_t;
-#else
-#error No pointer alignment defined. RCSW currently supports [1,2,4] byte pointer alignment.
-#endif
-
 #endif

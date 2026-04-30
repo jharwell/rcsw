@@ -1,7 +1,5 @@
 /**
- * \file csmatrix.h
- * \ingroup ds
- * \brief Compressed sparse matrix implementation in row major order.
+ * \file
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -22,19 +20,15 @@
 /**
  * The valid types of data that the sparse matrix will hold.
  */
-enum csmatrix_type {
-    ekCSMATRIX_INT,
-    ekCSMATRIX_FLOAT,
-    ekCSMATRIX_DOUBLE
-};
+enum csmatrix_type { ekCSMATRIX_INT, ekCSMATRIX_FLOAT, ekCSMATRIX_DOUBLE };
 
 /*******************************************************************************
- * Structure Definitions
+ * Types
  ******************************************************************************/
 /**
  * \brief Sparse matrix initialization parameters.
  */
-struct csmatrix_params {
+struct csmatrix_config {
   /**
    * Initial number of rows in the matrix.
    */
@@ -124,26 +118,25 @@ struct csmatrix {
    * Array of linked lists, one per column, containing the row indices that
    * for that column. Necessary for transposes so things don't take FOREVER.
    */
-  struct llist *cols;
-
+  struct llist* cols;
 
   /**
    * Space for link list nodes (use one contiguous block to improve cache
    * performance)
    */
-  uint8_t * nodes;
+  uint8_t* nodes;
 
   /**
    * Space for link list elements (use one contiguous block to improve cache
    * performance)
    */
-  uint8_t * elts;
+  uint8_t* elts;
 
   int* csizes;
 };
 
 /*******************************************************************************
- * API Functions
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -159,17 +152,17 @@ static inline size_t csmatrix_type_size(const struct csmatrix* const matrix) {
 
   switch (matrix->type) {
     case ekCSMATRIX_INT:
-        return sizeof(int);
-        break;
+      return sizeof(int);
+      break;
     case ekCSMATRIX_FLOAT:
-        return sizeof(float);
-        break;
+      return sizeof(float);
+      break;
     case ekCSMATRIX_DOUBLE:
-        return sizeof(double);
-        break;
+      return sizeof(double);
+      break;
     default:
       break;
-    } /* switch() */
+  } /* switch() */
   return 0;
 } /* csmatrix_type_size() */
 
@@ -181,15 +174,14 @@ static inline size_t csmatrix_type_size(const struct csmatrix* const matrix) {
  *
  * \return The # of rows.
  */
-static inline size_t csmatrix_n_rows(
-    const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
+static inline size_t csmatrix_n_rows(const struct csmatrix* const matrix) {
+  RCSW_FPC_NV(0, NULL != matrix);
 
-    /*
-     * Last element does not correspond to a row--just there to make math
-     * simple
-     */
-    return darray_size(&matrix->outer_starts) - 1;
+  /*
+   * Last element does not correspond to a row--just there to make math
+   * simple
+   */
+  return darray_size(&matrix->outer_starts) - 1;
 } /* csmatrix_n_rows() */
 
 /**
@@ -202,8 +194,8 @@ static inline size_t csmatrix_n_rows(
  * \return The # of effective columns.
  */
 static inline size_t csmatrix_n_eff_cols(const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return matrix->n_eff_cols;
+  RCSW_FPC_NV(0, NULL != matrix);
+  return matrix->n_eff_cols;
 } /* csmatrix_n_eff_cols() */
 
 /**
@@ -218,30 +210,28 @@ static inline size_t csmatrix_n_eff_cols(const struct csmatrix* const matrix) {
  * \return The total # of columns.
  */
 static inline size_t csmatrix_n_cols(const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return matrix->n_cols;
+  RCSW_FPC_NV(0, NULL != matrix);
+  return matrix->n_cols;
 } /* csmatrix_n_eff_cols() */
 
 /**
  * \brief Get the current # elements in a \ref csmatrix,
  */
-static inline size_t csmatrix_size(
-    const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return (size_t)*(int*)darray_data_get(&matrix->outer_starts,
-                                          darray_size(&matrix->outer_starts)-1);
+static inline size_t csmatrix_size(const struct csmatrix* const matrix) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return (size_t)*(int*)darray_data_get(&matrix->outer_starts,
+                                        darray_size(&matrix->outer_starts) - 1);
 } /* csmatrix_size() */
 
 /**
  * \brief Get a row in \ref matrix.
  */
-static inline int* csmatrix_row(const struct csmatrix* const matrix,
-                                size_t row) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return darray_data_get(&matrix->inner_indices,
-                           (size_t)*(int*)darray_data_get(&matrix->outer_starts, row));
+static inline int* csmatrix_row(const struct csmatrix* const matrix, size_t row) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return darray_data_get(
+    &matrix->inner_indices,
+    (size_t)*(int*)darray_data_get(&matrix->outer_starts, row));
 } /* csmatrix_row() */
-
 
 /**
  * \brief Get the # of non-zero entries in a row.
@@ -251,15 +241,13 @@ static inline int* csmatrix_row(const struct csmatrix* const matrix,
  *
  * \return The # of non-zero entries
  */
-static inline size_t csmatrix_rsize(
-    const struct csmatrix* const matrix, size_t row) {
-    RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
-    size_t row_start = (size_t)*(int*)darray_data_get(&matrix->outer_starts,
-                                                      row);
-    size_t row_end = (size_t)*(int*)darray_data_get(&matrix->outer_starts,
-                                                    row+1);
+static inline size_t csmatrix_rsize(const struct csmatrix* const matrix,
+                                    size_t                       row) {
+  RCSW_FPC_NV(0, NULL != matrix, row < darray_size(&matrix->outer_starts));
+  size_t row_start = (size_t)*(int*)darray_data_get(&matrix->outer_starts, row);
+  size_t row_end = (size_t)*(int*)darray_data_get(&matrix->outer_starts, row + 1);
 
-    return row_end - row_start;
+  return row_end - row_start;
 } /* csmatrix_rsize() */
 
 /**
@@ -271,9 +259,9 @@ static inline size_t csmatrix_rsize(
  * \return The # of non-zero entries
  */
 static inline size_t csmatrix_csize(const struct csmatrix* const matrix,
-                                    size_t col) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return (size_t)matrix->csizes[col];
+                                    size_t                       col) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return (size_t)matrix->csizes[col];
 } /* csmatrix_csize() */
 
 /**
@@ -284,8 +272,8 @@ static inline size_t csmatrix_csize(const struct csmatrix* const matrix,
  * \return Pointer to first element in csizes array
  */
 static inline int* csmatrix_csizes(const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return matrix->csizes;
+  RCSW_FPC_NV(0, NULL != matrix);
+  return matrix->csizes;
 } /* csmatrix_csize() */
 
 /**
@@ -295,10 +283,9 @@ static inline int* csmatrix_csizes(const struct csmatrix* const matrix) {
  *
  * \return Pointer to the first element in the inner indices array.
  */
-static inline int* csmatrix_inner_indices(
-    const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return darray_data_get(&matrix->inner_indices, 0);
+static inline int* csmatrix_inner_indices(const struct csmatrix* const matrix) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return darray_data_get(&matrix->inner_indices, 0);
 } /* csmatrix_rsize() */
 
 /**
@@ -308,10 +295,9 @@ static inline int* csmatrix_inner_indices(
  *
  * \return Pointer to the first element in the outer starts array.
  */
-static inline int* csmatrix_outer_starts(
-    const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return darray_data_get(&matrix->outer_starts, 0);
+static inline int* csmatrix_outer_starts(const struct csmatrix* const matrix) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return darray_data_get(&matrix->outer_starts, 0);
 } /* csmatrix_rsize() */
 
 /**
@@ -321,14 +307,13 @@ static inline int* csmatrix_outer_starts(
  *
  * \return Pointer to the first element in the values array.
  */
-static inline double* csmatrix_values(
-    const struct csmatrix* const matrix) {
-    RCSW_FPC_NV(0, NULL != matrix);
-    return darray_data_get(&matrix->values, 0);
+static inline double* csmatrix_values(const struct csmatrix* const matrix) {
+  RCSW_FPC_NV(0, NULL != matrix);
+  return darray_data_get(&matrix->values, 0);
 } /* csmatrix_rsize() */
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 /**
  * \brief Initialize a compressed, sparse matrix. It should be noted that once
@@ -342,8 +327,8 @@ static inline double* csmatrix_values(
  *
  * \return The initialized matrix, or NULL if an error occurred.
  */
-struct csmatrix* csmatrix_init(struct csmatrix* matrix_in,
-                               const struct csmatrix_params* params);
+RCSW_API struct csmatrix* csmatrix_init(struct csmatrix*              matrix_in,
+                                        const struct csmatrix_config* params);
 
 /**
  * \brief Destroy a csmatrix.
@@ -352,7 +337,7 @@ struct csmatrix* csmatrix_init(struct csmatrix* matrix_in,
  *
  * \param matrix The matrix handle.
  */
-void csmatrix_destroy(struct csmatrix* matrix);
+RCSW_API void csmatrix_destroy(struct csmatrix* matrix);
 
 /**
  * \brief Add an entry to the matrix.
@@ -369,9 +354,11 @@ void csmatrix_destroy(struct csmatrix* matrix);
  *
  * \return \ref status_t.
  */
-status_t csmatrix_entry_add(struct csmatrix* matrix,
-                            bool_t sequential_insertions, size_t row,
-                            size_t col, const void* e);
+RCSW_API status_t csmatrix_entry_add(struct csmatrix* matrix,
+                                     bool_t           sequential_insertions,
+                                     size_t           row,
+                                     size_t           col,
+                                     const void*      e);
 /**
  * \brief Remove an entry to the matrix.
  *
@@ -384,8 +371,9 @@ status_t csmatrix_entry_add(struct csmatrix* matrix,
  *
  * \return \ref status_t.
  */
-status_t csmatrix_entry_delete(struct csmatrix* matrix,
-                               size_t row, size_t col);
+RCSW_API status_t csmatrix_entry_delete(struct csmatrix* matrix,
+                                        size_t           row,
+                                        size_t           col);
 
 /**
  * \brief Set a currently existing entry in the matrix to a new value.
@@ -400,10 +388,10 @@ status_t csmatrix_entry_delete(struct csmatrix* matrix,
  *
  * \return \ref status_t.
  */
-status_t csmatrix_entry_set(struct csmatrix* matrix,
-                            size_t row,
-                            size_t col,
-                            const void* e);
+RCSW_API status_t csmatrix_entry_set(struct csmatrix* matrix,
+                                     size_t           row,
+                                     size_t           col,
+                                     const void*      e);
 
 /**
  * \brief Get the index of a specific (row, col) within the inner index array.
@@ -415,8 +403,9 @@ status_t csmatrix_entry_set(struct csmatrix* matrix,
  * \return The index, or -1 if an ERROR occurred or the (row, col) wasn't
  * found.
  */
-int csmatrix_inner_index_get(const struct csmatrix* matrix,
-                             size_t row, size_t col);
+RCSW_API int csmatrix_inner_index_get(const struct csmatrix* matrix,
+                                      size_t                 row,
+                                      size_t                 col);
 
 /**
  * \brief Get a reference to a specific (row, col) within the matrix.
@@ -428,8 +417,9 @@ int csmatrix_inner_index_get(const struct csmatrix* matrix,
  * \return The entry, or NULL if an ERROR occurred or the (row, col) wasn't
  * found.
  */
-void* csmatrix_entry_get(const struct csmatrix* matrix,
-                         size_t row, size_t col);
+RCSW_API void* csmatrix_entry_get(const struct csmatrix* matrix,
+                                  size_t                 row,
+                                  size_t                 col);
 
 /**
  * \brief Normalize across the columns of the matrix.
@@ -440,7 +430,7 @@ void* csmatrix_entry_get(const struct csmatrix* matrix,
  *
  * \return \ref status_t.
  */
-status_t csmatrix_cols_normalize(struct csmatrix* matrix);
+RCSW_API status_t csmatrix_cols_normalize(struct csmatrix* matrix);
 
 /**
  * \brief Multiply a sparse matrix with a vector.
@@ -456,9 +446,9 @@ status_t csmatrix_cols_normalize(struct csmatrix* matrix);
  *
  * \return \ref status_t.
  */
-status_t csmatrix_vmult(const struct csmatrix* matrix,
-                        const struct darray* vector_in,
-                        struct darray* vector_out);
+RCSW_API status_t csmatrix_vmult(const struct csmatrix* matrix,
+                                 const struct darray*   vector_in,
+                                 struct darray*         vector_out);
 
 /**
  * \brief Transpose a matrix, returning a new matrix.
@@ -469,7 +459,7 @@ status_t csmatrix_vmult(const struct csmatrix* matrix,
  *
  * \return The transposed matrix, or NULL if an error occurred.
  */
-struct csmatrix* csmatrix_transpose(struct csmatrix* matrix);
+RCSW_API struct csmatrix* csmatrix_transpose(struct csmatrix* matrix);
 
 /**
  * \brief Resize a matrix to the specified row x col.
@@ -483,8 +473,9 @@ struct csmatrix* csmatrix_transpose(struct csmatrix* matrix);
  *
  * \return \ref status_t.
  */
-status_t csmatrix_resize(struct csmatrix* matrix, size_t n_rows,
-                         size_t n_nz_elts);
+RCSW_API status_t csmatrix_resize(struct csmatrix* matrix,
+                                  size_t           n_rows,
+                                  size_t           n_nz_elts);
 
 /**
  * \brief Calculate the column lists for a matrix
@@ -497,13 +488,13 @@ status_t csmatrix_resize(struct csmatrix* matrix, size_t n_rows,
  *
  * \return \ref status_t.
  */
-status_t csmatrix_calc_clists(struct csmatrix* matrix);
+RCSW_API status_t csmatrix_calc_clists(struct csmatrix* matrix);
 
 /**
  * \brief Print a csmatrix to stdout.
  *
  * \param matrix The matrix handle.
  */
-void csmatrix_print(const struct csmatrix* matrix);
+RCSW_API void csmatrix_print(const struct csmatrix* matrix);
 
 END_C_DECLS

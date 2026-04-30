@@ -28,11 +28,11 @@ using bst_verify_cb = int(*)(const struct bstree* const tree,
                              struct bstree_node * const node);
 
 using test_t = void(*)(int len,
-                       struct bstree_params *params,
+                       struct bstree_config *config,
                        bst_verify_cb verify_cb);
 using rm_test_t = void (*)(int len,
                                      int remove_type,
-                                     struct bstree_params *params,
+                                     struct bstree_config *config,
                                      bst_verify_cb verify_cb);
 typedef int (*int_verify_cb)(const struct bstree* const tree,
                              struct inttree_node * const node);
