@@ -251,7 +251,7 @@ endif()
 # Installation, but only on POSIX/linux platforms. For embedded platforms it
 # doesn't make sense.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
-  libra_configure_exports(${PROJECT_NAME})
+  libra_configure_exports(TARGET ${PROJECT_NAME} COMPATIBILITY SameMinorVersion)
   libra_register_target_for_install(${PROJECT_NAME})
   libra_register_headers_for_install(include/${PROJECT_NAME})
 
