@@ -168,7 +168,9 @@ endforeach()
 
 libra_add_library(${PROJECT_NAME} ${RCSW_CONFIG_LIBTYPE} ${rcsw_components_SRC})
 # Available whether installed or subdirectory via CPM
-add_library(rcsw::rcsw ALIAS rcsw)
+if(NOT TARGET rcsw::rcsw)
+  add_library(rcsw::rcsw ALIAS rcsw)
+endif()
 
 # Setting this results in TWO files being installed: the actual library with the
 # version embedded, and a symlink to the actual library with the same name sans
