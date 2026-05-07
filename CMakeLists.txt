@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 
-project(rcsw VERSION 1.2.27)
-
 # ##############################################################################
 # Packaging bootstrap
 # ##############################################################################
@@ -34,9 +32,9 @@ cpmaddpackage(
   GIT_REPOSITORY
   https://github.com/jharwell/libra.git
   VERSION
-  0.12.7
-  DOWNLOAD_ONLY
-  YES)
+  0.12.8
+  GIT_TAG
+  v0.12.8-dev.5)
 
 if(libra_ADDED)
   # Downloaded
@@ -47,5 +45,16 @@ else()
   # libra/XX
   list(APPEND CMAKE_MODULE_PATH ${libra_DIR}/..)
 endif()
+
+include(libra/version)
+libra_extract_version()
+
+project(
+  rcsw
+  LANGUAGES C CXX
+  VERSION ${LIBRA_PROJECT_VERSION_NUMERIC})
+
+message(
+  STATUS "Configuring RCSW v${PROJECT_VERSION} (${LIBRA_PROJECT_VERSION})")
 
 include(libra/project)

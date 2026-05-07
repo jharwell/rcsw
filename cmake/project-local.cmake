@@ -252,16 +252,15 @@ endif()
 # doesn't make sense.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
   libra_configure_exports(TARGET ${PROJECT_NAME} COMPATIBILITY SameMinorVersion)
-  libra_register_target_for_install(${PROJECT_NAME})
-  libra_register_headers_for_install(include/${PROJECT_NAME})
+  libra_install_target(${PROJECT_NAME})
+  libra_install_headers(DIRECTORY include/${PROJECT_NAME})
 
   # Deployment
   if(NOT CPACK_PACKAGE_NAME)
     set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
   endif()
 
-  libra_register_copyright_for_install(${PROJECT_NAME}
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+  libra_install_copyright(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 
   set(RCSW_PKG_SUMMARY
       "Collection of Reusable C SoftWare (RCSW) modules for embedded programming"
