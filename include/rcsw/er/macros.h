@@ -93,11 +93,11 @@
                 __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_FATAL_IMPL(handle, ...)                          \
-  {                                                         \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, RCSW_ERL_FATAL)) { \
-      ER_REPORT(FATAL, handle, __VA_ARGS__)                 \
-    }                                                       \
+#define ER_FATAL_IMPL(handle, ...)                 \
+  {                                                \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, FATAL)) { \
+      ER_REPORT(FATAL, handle, __VA_ARGS__)        \
+    }                                              \
   }
 /* \endcond */
 #endif

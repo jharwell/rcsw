@@ -20,7 +20,11 @@
 /******************************************************************************
  * Private API
  ******************************************************************************/
-#define RCSW_DS_ELT_SWAP_MAXSIZE 64
+/*
+ * This is currently > max value of anything RCSW needs internally to swap; it
+ * should be a pretty good bound for downstream use as well.
+ */
+#define RCSW_DS_ELT_SWAP_MAXSIZE 128
 
 /*******************************************************************************
  * Public API

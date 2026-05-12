@@ -82,12 +82,12 @@ struct darray {
   size_t current;
 
   /**
-   * Current capacity of array in # slots
+   * Current capacity of array in # slots.
    */
   size_t capacity;
 
   /**
-   * Size in bytes of an element
+   * Size in bytes of an element.
    **/
   size_t elt_size;
 

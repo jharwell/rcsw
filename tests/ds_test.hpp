@@ -12,6 +12,7 @@
  * Includes
  ******************************************************************************/
 #include <vector>
+#include <algorithm>
 
 #include "rcsw/er/client.h"
 #include "rcsw/ds/binheap.h"
@@ -29,6 +30,8 @@
 #include "rcsw/ds/multififo.h"
 
 #include "tests/ds_test.h"
+#include "tests/ds_test.hpp"
+#include "tests/element.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -326,4 +329,64 @@ error:
 template<typename T>
 bool operator<(const T& lhs, const T& rhs) {
   return lhs.value1 < rhs.value1;
+}
+
+/**
+ * run_test_flags
+ *
+ * Runs test(len, config) for:
+ *   1. RCSW_NONE alone
+ *   2. Each flag alone
+ *   3. All pairwise combinations of flags
+ * across len = 1..max_len.
+ */
+template <typename Config, typename TestFn>
+static void run_test_flags(Config&              config,
+                           const uint32_t*      flags,
+                           size_t               n_flags,
+                           int                  max_len,
+                           TestFn               test) {
+  /* 1. RCSW_NONE */
+  for (int k = 1; k <= max_len; ++k) {
+    config.flags = RCSW_NONE;
+    test(k, &config);
+  }
+
+  /* 2. Each flag alone */
+  for (size_t i = 0; i < n_flags; ++i) {
+    for (int k = 1; k <= max_len; ++k) {
+      config.flags = flags[i];
+      test(k, &config);
+    }
+  }
+
+  /* 3. Pairwise combinations */
+  for (size_t i = 0; i < n_flags; ++i) {
+    for (size_t j = i + 1; j < n_flags; ++j) {
+      uint32_t combo = flags[i] | flags[j];
+      for (int k = 1; k <= max_len; ++k) {
+        config.flags = combo;
+        test(k, &config);
+      }
+    }
+  }
+}
+
+/**
+ * Checks that [sorted, sorted+n) is:
+ *   1. In non-decreasing order per cmpe
+ *   2. A permutation of original
+ */
+template <typename T>
+static void verify_sort_permutation(const std::vector<T>& original,
+                                    const T*              sorted,
+                                    size_t                n) {
+  for (size_t i = 0; i + 1 < n; ++i) {
+    CATCH_REQUIRE(th::cmpe<T>(sorted + i, sorted + i + 1) <= 0);
+  }
+  std::vector<T> a = original;
+  std::vector<T> b(sorted, sorted + n);
+  std::sort(a.begin(), a.end());
+  std::sort(b.begin(), b.end());
+  CATCH_REQUIRE(a == b);
 }

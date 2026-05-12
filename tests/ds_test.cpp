@@ -19,9 +19,10 @@
 namespace th {
 
 /*******************************************************************************
- * Non-Member Functions
+ * Public API
  ******************************************************************************/
 status_t ds_init(darray_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
 
   /* *2 is to allow the splice tests succeed without segfault */
@@ -32,6 +33,7 @@ status_t ds_init(darray_config *const config) {
 }
 
 status_t ds_init(rbuffer_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   config->elements = reinterpret_cast<dptr_t *>(
     malloc(rbuffer_element_space(config->elt_size, TH_NUM_ITEMS)));
@@ -39,6 +41,7 @@ status_t ds_init(rbuffer_config *const config) {
 }
 
 status_t ds_init(fifo_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   config->elements = reinterpret_cast<dptr_t *>(
     malloc(fifo_element_space(config->elt_size, TH_NUM_ITEMS)));
@@ -46,6 +49,7 @@ status_t ds_init(fifo_config *const config) {
 }
 
 status_t ds_init(multififo_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   config->elements = reinterpret_cast<dptr_t *>(
     malloc(multififo_element_space(config->elt_size, TH_NUM_ITEMS)));
@@ -55,6 +59,7 @@ status_t ds_init(multififo_config *const config) {
 }
 
 status_t ds_init(llist_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   /*  *2 is to allow the splice_tests() succeed without segfault */
   config->max_elts = TH_NUM_ITEMS * 2;
@@ -66,6 +71,7 @@ status_t ds_init(llist_config *const config) {
 }
 
 status_t ds_init(binheap_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   config->elements = reinterpret_cast<dptr_t *>(
     malloc(binheap_element_space(TH_NUM_ITEMS, config->elt_size)));
@@ -76,6 +82,7 @@ status_t ds_init(binheap_config *const config) {
 }
 
 status_t ds_init(adjmatrix_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   /* Just do weighted all the time--need the space.... */
   config->elements = reinterpret_cast<dptr_t *>(
@@ -84,7 +91,10 @@ status_t ds_init(adjmatrix_config *const config) {
   return OK;
 }
 status_t ds_init(hashmap_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
+  log4cl_insmod(ekLOG4CL_DS_HASHMAP, "rcsw.ds.hashmap");
+
   config->meta =
     reinterpret_cast<dptr_t *>(malloc(hashmap_meta_space(TH_NUM_BUCKETS)));
   config->elements = reinterpret_cast<dptr_t *>(
@@ -108,6 +118,7 @@ status_t ds_init(bstree_config *const config) {
   return OK;
 }
 status_t ds_init(matrix_config *const config) {
+  RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
   config->elements = reinterpret_cast<dptr_t *>(malloc(
     matrix_element_space(config->n_rows, config->n_cols, config->elt_size)));

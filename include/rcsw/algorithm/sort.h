@@ -44,11 +44,12 @@ BEGIN_C_DECLS
  * \param el_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
-RCSW_API void qsort_rec(void*  a,
-                        int    min_index,
-                        int    max_index,
-                        size_t el_size,
-                        int (*cmpe)(const void* const e1, const void* const e2));
+RCSW_API status_t qsort_rec(void*  a,
+                            int    min_index,
+                            int    max_index,
+                            size_t el_size,
+                            int (*cmpe)(const void* const e1,
+                                        const void* const e2));
 
 /**
  * \brief Sort an array using iterative quicksort.
@@ -69,10 +70,11 @@ RCSW_API void qsort_rec(void*  a,
  * \param el_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
-RCSW_API void qsort_iter(void*  a,
-                         int    max_index,
-                         size_t el_size,
-                         int (*cmpe)(const void* const e1, const void* const e2));
+RCSW_API status_t qsort_iter(void*  a,
+                             int    max_index,
+                             size_t el_size,
+                             int (*cmpe)(const void* const e1,
+                                         const void* const e2));
 
 /**
  * \brief Sort an array of non-negative integers using radix sort
@@ -86,7 +88,10 @@ RCSW_API void qsort_iter(void*  a,
  * \param n_elts Number of elements in \p arr and \p tmp.
  * \param base   Numeric base for digit decomposition (e.g., 10, 8, 16).
  */
-RCSW_API void radix_sort(size_t* arr, size_t* tmp, size_t n_elts, size_t base);
+RCSW_API status_t radix_sort(size_t* arr,
+                             size_t* tmp,
+                             size_t  n_elts,
+                             size_t  base);
 
 /**
  * \brief Sort an array using insertion sort.
@@ -101,11 +106,11 @@ RCSW_API void radix_sort(size_t* arr, size_t* tmp, size_t n_elts, size_t base);
  * \param elt_size Size of each element in bytes.
  * \param cmpe     Comparison function for elements.
  */
-RCSW_API void insertion_sort(void*  arr,
-                             size_t n_elts,
-                             size_t elt_size,
-                             int (*cmpe)(const void* const e1,
-                                         const void* const e2));
+RCSW_API status_t insertion_sort(void*  arr,
+                                 size_t n_elts,
+                                 size_t elt_size,
+                                 int (*cmpe)(const void* const e1,
+                                             const void* const e2));
 
 /******************************************************************************
  * Private API

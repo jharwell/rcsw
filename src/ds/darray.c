@@ -261,7 +261,7 @@ status_t darray_insert(struct darray* const arr,
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = false;
-    darray_sort(arr, ekEXEC_ITER);
+    RCSW_CHECK(OK == darray_sort(arr, ekEXEC_ITER));
   }
   return OK;
 
@@ -270,7 +270,7 @@ error:
 } /* darray_insert() */
 
 status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, index <= darray_size(arr));
+  RCSW_FPC_NV(ERROR, arr != NULL, index < darray_size(arr));
 
   if (e != NULL) {
     darray_idx_serve(arr, e, index);
@@ -284,7 +284,7 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
 
   /*
    * If array is sorted, shift all items AFTER index down by one, otherwise,
-   * overwrite removed idx with last item in array (MUCH faster)
+   * overwrite removed idx with last item in array (MUCH faster).
    */
   if (arr->flags & RCSW_DS_SORTED) {
     memmove(darray_data_get(arr, index),
@@ -326,7 +326,9 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
   int rval = -1;
 
   if (arr->sorted) {
-    ER_DEBUG("Currently sorted: performing binary search");
+    ER_DEBUG("Currently sorted: performing binary search (%zu elements)",
+             arr->current);
+
     rval = bsearch_rec(arr->elements,
                        e,
                        arr->cmpe,
@@ -346,7 +348,7 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
-  ER_ASSERT(index < arr->current, "Index %zu >= %zu", index, arr->current);
+  ER_ASSERT(index <= arr->current, "Index %zu > %zu", index, arr->current);
   return ((uint8_t*)arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 
@@ -399,16 +401,19 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
    * already sorted
    */
   if (arr->current <= 1 || arr->sorted) {
-    ER_DEBUG("Already sorted: nothing to do\n");
+    ER_DEBUG("Already sorted: nothing to do (%zu elements)");
   } else {
     if (type == ekEXEC_REC) {
-      qsort_rec(arr->elements,
-                0,
-                (int)arr->current - 1,
-                arr->elt_size,
-                arr->cmpe);
+      RCSW_CHECK(OK == qsort_rec(arr->elements,
+                                 0,
+                                 (int)arr->current - 1,
+                                 arr->elt_size,
+                                 arr->cmpe));
     } else if (type == ekEXEC_ITER) {
-      qsort_iter(arr->elements, (int)arr->current - 1, arr->elt_size, arr->cmpe);
+      RCSW_CHECK(OK == qsort_iter(arr->elements,
+                                  (int)arr->current - 1,
+                                  arr->elt_size,
+                                  arr->cmpe));
     } else {
       return ERROR; /* bad sort type */
     }
@@ -416,7 +421,10 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
     arr->sorted = true;
   }
   return OK;
-} /* darray_sort() */
+
+error:
+  return OK;
+}
 
 struct darray* darray_filter(struct darray* const arr,
                              bool_t (*pred)(const void* const e),

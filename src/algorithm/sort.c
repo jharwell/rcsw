@@ -5,12 +5,12 @@
  *
  * SPDX-License-Identifier: MIT
  */
-
 /*******************************************************************************
  * Includes
  ******************************************************************************/
 #include "rcsw/algorithm/sort.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "rcsw/algorithm/algorithm.h"
@@ -108,23 +108,25 @@ error:
 /*******************************************************************************
  * Public API
  ******************************************************************************/
-void qsort_rec(void* const a,
-               int         min_index,
-               int         max_index,
-               size_t      elt_size,
-               int (*cmpe)(const void* const e1, const void* const e2)) {
+status_t qsort_rec(void* const a,
+                   int         min_index,
+                   int         max_index,
+                   size_t      elt_size,
+                   int (*cmpe)(const void* const e1, const void* const e2)) {
+  status_t ret = OK;
   if (max_index > min_index) {
     int pivot = partition(a, min_index, max_index, elt_size, cmpe);
-    qsort_rec(a, min_index, pivot - 1, elt_size, cmpe);
-    qsort_rec(a, pivot + 1, max_index, elt_size, cmpe);
+    ret |= qsort_rec(a, min_index, pivot - 1, elt_size, cmpe);
+    ret |= qsort_rec(a, pivot + 1, max_index, elt_size, cmpe);
   }
+  return ret;
 }
 
-void qsort_iter(void* const a,
-                int         max_index,
-                size_t      elt_size,
-                int (*cmpe)(const void* const e1, const void* const e2)) {
-  RCSW_FPC_V(elt_size <= RCSW_SORT_MAX_ELT_SIZE, max_index > 0);
+status_t qsort_iter(void* const a,
+                    int         max_index,
+                    size_t      elt_size,
+                    int (*cmpe)(const void* const e1, const void* const e2)) {
+  RCSW_FPC_NV(ERROR, elt_size <= RCSW_SORT_MAX_ELT_SIZE, max_index > 0);
   int min_index = 0;
 
   /*
@@ -170,18 +172,20 @@ void qsort_iter(void* const a,
       stack[++top] = max_index; /* new max_index */
     }
   } /* while (top >= 0) */
+  return OK;
 }
-RCSW_WARNING_DISABLE_POP()
 
-void insertion_sort(void*  arr,
-                    size_t n_elts,
-                    size_t elt_size,
-                    int (*cmpe)(const void* const e1, const void* const e2)) {
-  RCSW_FPC_V(NULL != arr,
-             n_elts > 1,
-             elt_size > 0,
-             elt_size < RCSW_SORT_MAX_ELT_SIZE);
-
+status_t insertion_sort(void*  arr,
+                        size_t n_elts,
+                        size_t elt_size,
+                        int (*cmpe)(const void* const e1, const void* const e2)) {
+  RCSW_FPC_NV(ERROR,
+              NULL != arr,
+              elt_size > 0,
+              elt_size < RCSW_SORT_MAX_ELT_SIZE);
+  if (1 == n_elts) {
+    return OK;
+  }
   /*
    * The element at j is the element you are currently comparing with/the
    * temporary element. Start at index j-1, move downward through the array,
@@ -202,19 +206,22 @@ void insertion_sort(void*  arr,
     } /* while() */
     memcpy((uint8_t*)arr + ((j + 1) * (int)elt_size), key, elt_size);
   } /* for(j..) */
+  return OK;
 }
 
-void radix_sort(size_t* const arr,
-                size_t* const tmp,
-                size_t        n_elts,
-                size_t        base) {
+status_t radix_sort(size_t* const arr,
+                    size_t* const tmp,
+                    size_t        n_elts,
+                    size_t        base) {
+  status_t ret = OK;
   /* get largest # in array to get total # of digits */
   size_t m = alg_arr_largest_num(arr, n_elts);
 
   /* Do counting sort on each digit */
   for (size_t exp = 1; m / exp > 0; exp *= base) {
-    radix_counting_sort(arr, tmp, n_elts, exp, base);
+    ret |= radix_counting_sort(arr, tmp, n_elts, exp, base);
   } /* for(exp...) */
+  return ret;
 }
 
 status_t radix_sort_prefix_sum(const size_t* const arr,

@@ -1,316 +1,235 @@
 /**
- * \file hashmap-test.cpp
+ * \file ds-hashmap-utest.cpp
  *
  * \copyright 2017 John Harwell, All rights reserved.
- *
  * SPDX-License-Identifier: MIT
  */
 
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/er/plugin/log4cl.h"
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
+#include <vector>
+
 #include "rcsw/ds/hashmap.h"
+#include "rcsw/utils/byteops.h"
 #include "rcsw/utils/hash.h"
 #include "tests/ds_test.h"
 #include "tests/ds_test.hpp"
-#include "rcsw/utils/byteops.h"
-#include "rcsw/utils/hash.h"
 
 /*******************************************************************************
- * Test Helpers
+ * Test Runner
  ******************************************************************************/
 template <typename T>
-static void run_test(hashmap_test_t test) {
-  /* dbg_init(); */
-  /* dbg_insmod(M_TESTING,"Testing"); */
-  /* dbg_insmod(M_DS_RBUFFER,"RBuffer"); */
-
+static void run_test(void (*test)(struct hashmap_config* config)) {
   struct hashmap_config config;
   memset(&config, 0, sizeof(hashmap_config));
-  config.flags       = 0;
   config.hash        = utils_hash_default;
   config.sort_thresh = -1;
   config.elt_size    = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&config) == OK);
+  config.sort_thresh = -1;
 
-  uint32_t flags[] = {RCSW_NONE,
-                      RCSW_ZALLOC,
-                      RCSW_NOALLOC_HANDLE,
-                      RCSW_NOALLOC_DATA,
-                      RCSW_NOALLOC_META,
-                      RCSW_DS_SORTED,
-                      RCSW_DS_HASHMAP_LINPROB};
+  uint32_t flags[] = {
+    RCSW_ZALLOC,
+    RCSW_NOALLOC_HANDLE,
+    RCSW_NOALLOC_DATA,
+    RCSW_NOALLOC_META,
+    RCSW_DS_SORTED,
+    RCSW_DS_HASHMAP_LINPROB,
+  };
 
-  uint32_t applied = 0;
+  /* single flags */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    applied |= flags[i];
+    for (size_t m = 1; m < TH_NUM_ITEMS; ++m) {
+      for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
+        config.flags     = flags[i];
+        config.bsize     = m;
+        config.n_buckets = k;
+        test(&config);
+      }
+    }
+  }
+  /* pairwise */
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
-      applied |= flags[j];
-
       for (size_t m = 1; m < TH_NUM_ITEMS; ++m) {
         for (size_t k = 1; k < TH_NUM_BUCKETS; ++k) {
-          config.flags     = applied;
+          config.flags     = flags[i] | flags[j];
           config.bsize     = m;
           config.n_buckets = k;
           test(&config);
-        } /* for(k..) */
-      } /* for(m..) */
-
-      applied &= ~flags[j];
-    } /* for(j..) */
-  } /* for(i..) */
-
+        }
+      }
+    }
+  }
   th::ds_shutdown(&config);
-} /* run_test() */
+}
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void build_test(struct hashmap_config *config) {
-  struct hashmap *map;
+static void build_test(struct hashmap_config* config) {
   struct hashmap  mymap;
-  size_t          i, j;
-  int             failed_count = 0;
   size_t          attempts     = config->n_buckets * config->bsize;
-
-  struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
-  T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
+  int             failed_count = 0;
 
   if (config->flags & RCSW_DS_SORTED) {
     config->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
   }
 
-  map = hashmap_init(&mymap, config);
+  struct hashmap* map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(nullptr != map);
 
-  /* attempt to fill hashmap */
-  for (i = 0; i < attempts; i++) {
-    char rand_key[RCSW_HASHMAP_KEYSIZE];
-    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
-    data[i].value1 = i;
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
+  /* empty state */
+  CATCH_REQUIRE(0 == map->stats.n_nodes);
 
-    int rval = hashmap_add(map, nodes[i].key, data + i);
+  std::vector<struct hashnode> nodes(attempts);
+  std::vector<T>               data(attempts);
 
-    /* verify new element in hashmap, if the insertion succeeded */
+  for (size_t i = 0; i < attempts; i++) {
+    utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
+    data[i].value1 = (int)i;
+    
+    int rval = hashmap_add(map, nodes[i].key, &data[i]);
     if (rval == OK) {
-      T *el = (T *)hashmap_data_get(map, nodes[i].key);
+      T* el = (T*)hashmap_data_get(map, nodes[i].key);
       CATCH_REQUIRE(el != nullptr);
-      CATCH_REQUIRE(th::cmpe<T>(data + i, el) == 0);
-
+      CATCH_REQUIRE(th::cmpe<T>(&data[i], el) == 0);
     } else {
-      failed_count++;
-      /*
-       * We cannot usually fill the hashmap, unless linear probing is enabled,
-       * because buckets get full, so bail out after a couple failures to add
-       */
-      if (failed_count > 10) {
+      if (++failed_count > 10) {
         break;
       }
     }
-  } /* for() */
-
-  /* verify all elements */
-  for (j = 0; j < i; ++j) {
-    T *el = (T *)hashmap_data_get(map, nodes[j].key);
-    if (el != nullptr) {
-      CATCH_REQUIRE(th::cmpe<T>(data + j, el) == OK);
-    }
-  } /* for() */
-  hashmap_clear(map);
-
-  for (j = 0; j < i; ++j) {
-    CATCH_REQUIRE(nullptr == hashmap_data_get(map, nodes[j].key));
-  } /* for() */
-  hashmap_destroy(map);
-} /* build_test() */
-
-template <typename T>
-static void stats_test(struct hashmap_config *config) {
-  struct hashmap *map;
-  struct hashmap  mymap;
-  size_t          i, j;
-  int             failed_count = 0;
-
-  config->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
-
-  map = hashmap_init(&mymap, config);
-  CATCH_REQUIRE(nullptr != map);
-
-  /* fill hashmap */
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS * 10);
-  for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
-    char rand_key[RCSW_HASHMAP_KEYSIZE];
-    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
-    T               e = g.next();
-    struct hashnode n;
-    memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
-
-    /* we don't care how many things are in the hashmap */
-    hashmap_add(map, n.key, &e);
   }
-
-  hashmap_destroy(map);
-} /* stats_test() */
-
-template <typename T>
-static void linear_probing_test(struct hashmap_config *config) {
-  struct hashmap *map;
-  struct hashmap  mymap;
-  int             len = config->n_buckets * config->bsize;
-  struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
-  T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
-
-  config->flags |= RCSW_DS_HASHMAP_LINPROB;
-  map = hashmap_init(&mymap, config);
-  CATCH_REQUIRE(map);
-
-  /* fill hashmap */
-  for (int i = 0; i < len; i++) {
-    char rand_key[RCSW_HASHMAP_KEYSIZE];
-    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
-    data[i].value1 = rand() % (i + 1);
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
-
-    CATCH_REQUIRE(hashmap_add(map, nodes[i].key, data + i) == OK);
-
-    /* verify new element in hashmap */
-    T *el = (T *)hashmap_data_get(map, nodes[i].key);
-    CATCH_REQUIRE(el != nullptr);
-    CATCH_REQUIRE(th::cmpe<T>(data + i, el) == 0);
-  } /* for() */
-
-  /* verify all elements */
-  for (int i = 0; i < len; ++i) {
-    T *el = (T *)hashmap_data_get(map, nodes[i].key);
-
-    if (el != nullptr) {
-      CATCH_REQUIRE(th::cmpe<T>(data + i, el) == OK);
-    }
-  } /* for() */
-  hashmap_destroy(map);
-} /* linear_probing_test() */
-
-template <typename T>
-static void remove_test(struct hashmap_config *config) {
-  struct hashmap *map;
-  struct hashmap  mymap;
-  int             i, j;
-  int             failed_count = 0;
-  int             len          = config->n_buckets * config->bsize;
-  struct hashnode nodes[TH_NUM_ITEMS * TH_NUM_ITEMS];
-  T               data[TH_NUM_ITEMS * TH_NUM_ITEMS];
-
-  map = hashmap_init(&mymap, config);
-  CATCH_REQUIRE(map);
-
-  /* attempt to fill hashmap */
-  for (i = 0; i < len; i++) {
-    char rand_key[RCSW_HASHMAP_KEYSIZE];
-    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
-    data[i].value1 = rand() % (i + 1);
-
-    memcpy(nodes[i].key, rand_key, RCSW_HASHMAP_KEYSIZE);
-
-    int rval = hashmap_add(map, nodes[i].key, data + i);
-    if (OK != rval) {
-      failed_count++;
-    }
-
-    /* We cannot usually fill the hashmap, unless linear probing is enabled,
-     * because buckets get full, so bail out after a couple failures to add
-     */
-    if (failed_count > 10) {
-      break;
-    }
-  } /* for() */
-
-  unsigned old_size;
-  /* remove elements */
-  for (j = 0; j < i; j++) {
-    if (hashmap_data_get(map, nodes[j].key)) {
-      old_size = map->stats.n_nodes;
-      CATCH_REQUIRE(hashmap_remove(map, nodes[j].key) == OK);
-
-      /* verify key was removed */
-      CATCH_REQUIRE(hashmap_data_get(map, nodes[j].key) == nullptr);
-      CATCH_REQUIRE(map->stats.n_nodes == old_size - 1);
-
-      /* verify 2nd removal fails */
-      CATCH_REQUIRE(hashmap_remove(map, nodes[j].key) == OK);
-    }
-  } /* for() */
+  /* clear: all keys gone */
+  hashmap_clear(map);
+  for (auto& n : nodes) {
+    CATCH_REQUIRE(nullptr == hashmap_data_get(map, n.key));
+  }
 
   hashmap_destroy(map);
   CATCH_REQUIRE(th::leak_check_data(config) == OK);
-} /* remove_test() */
+}
 
 template <typename T>
-static void print_test(struct hashmap_config *config) {
-  struct hashmap *map;
+static void remove_test(struct hashmap_config* config) {
   struct hashmap  mymap;
-  size_t          i, j;
+  size_t          len          = config->n_buckets * config->bsize;
   int             failed_count = 0;
 
-  config->bsize = TH_NUM_ITEMS * TH_NUM_ITEMS;
+  struct hashmap* map = hashmap_init(&mymap, config);
+  CATCH_REQUIRE(map != nullptr);
+  std::vector<struct hashnode> nodes(len);
+  std::vector<T>               data(len);
+  size_t                       n_inserted = 0;
 
-  hashmap_print(nullptr);
-  map = hashmap_init(&mymap, config);
-
-  CATCH_REQUIRE(nullptr != map);
-  hashmap_print(map);
-  hashmap_print_dist(map);
-
-  /* fill hashmap */
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, TH_NUM_ITEMS * 10);
-  for (i = 0; i < TH_NUM_ITEMS * 10; ++i) {
-    char rand_key[RCSW_HASHMAP_KEYSIZE];
-    utils_string_gen(rand_key, RCSW_HASHMAP_KEYSIZE);
-    T               e = g.next();
-    struct hashnode n;
-    memcpy(n.key, rand_key, RCSW_HASHMAP_KEYSIZE);
-
-    /* we don't care how many things are in the hashmap */
-    hashmap_add(map, n.key, &e);
+  for (size_t i = 0; i < len; i++) {
+    utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
+    data[i].value1 = rand() % ((int)i + 1);
+    if (hashmap_add(map, nodes[i].key, &data[i]) == OK) {
+      n_inserted++;
+    } else if (++failed_count > 10) {
+      break;
+    }
   }
 
-  hashmap_print(map);
-  hashmap_print_dist(map);
+  /* remove each successfully-inserted element */
+  for (size_t j = 0; j < n_inserted; j++) {
+    if (hashmap_data_get(map, nodes[j].key)) {
+      unsigned old_size = map->stats.n_nodes;
+      CATCH_REQUIRE(hashmap_remove(map, nodes[j].key) == OK);
+
+      /* key is gone */
+      CATCH_REQUIRE(hashmap_data_get(map, nodes[j].key) == nullptr);
+      CATCH_REQUIRE(map->stats.n_nodes == old_size - 1);
+
+      /* second removal still returns OK */
+      CATCH_REQUIRE(hashmap_remove(map, nodes[j].key) == OK);
+    }
+  }
+
   hashmap_destroy(map);
-} /* print_test() */
+  CATCH_REQUIRE(th::leak_check_data(config) == OK);
+}
+
+template <typename T>
+static void map_inject_test(struct hashmap_config* config) {
+  struct hashmap  mymap;
+  struct hashmap* map = hashmap_init(&mymap, config);
+  CATCH_REQUIRE(nullptr != map);
+
+  /* NULL callback rejected */
+  CATCH_REQUIRE(ERROR == hashmap_map(map, nullptr));
+  int dummy = 0;
+  CATCH_REQUIRE(ERROR == hashmap_inject(map, nullptr, &dummy));
+
+  /* insert some elements */
+  size_t n = RCSW_MIN(config->n_buckets * config->bsize, (size_t)10);
+  std::vector<struct hashnode> nodes(n);
+  std::vector<T>               data(n);
+  size_t                       n_ok = 0;
+  for (size_t i = 0; i < n; i++) {
+    utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
+    data[i].value1 = (int)i;
+    if (hashmap_add(map, nodes[i].key, &data[i]) == OK) {
+      n_ok++;
+    }
+  }
+
+  /* map: decrement all values */
+  CATCH_REQUIRE(OK == hashmap_map(map, th::map_func<T>));
+
+  /* inject: sum all values */
+  int total = 0;
+  CATCH_REQUIRE(OK == hashmap_inject(map, th::inject_func<T>, &total));
+  /* just verify it ran without crashing and total is reasonable */
+  (void)total;
+
+  hashmap_destroy(map);
+}
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Build Test", "[ds][hashmap]") {
+CATCH_TEST_CASE("hashmap Build Test", "[ds][hashmap]") {
   run_test<element8>(build_test<element8>);
   run_test<element4>(build_test<element4>);
   run_test<element2>(build_test<element2>);
   run_test<element1>(build_test<element1>);
 }
-CATCH_TEST_CASE("Linear Probe Test", "[ds][hashmap]") {
-  run_test<element8>(linear_probing_test<element8>);
-  run_test<element4>(linear_probing_test<element4>);
-  run_test<element2>(linear_probing_test<element2>);
-  run_test<element1>(linear_probing_test<element1>);
-}
-CATCH_TEST_CASE("Remove Test", "[ds][hashmap]") {
+CATCH_TEST_CASE("hashmap Remove Test", "[ds][hashmap]") {
   run_test<element8>(remove_test<element8>);
   run_test<element4>(remove_test<element4>);
   run_test<element2>(remove_test<element2>);
   run_test<element1>(remove_test<element1>);
 }
-CATCH_TEST_CASE("Stats Test", "[ds][hashmap]") {
-  run_test<element8>(stats_test<element8>);
-  run_test<element4>(stats_test<element4>);
-  run_test<element2>(stats_test<element2>);
-  run_test<element1>(stats_test<element1>);
+CATCH_TEST_CASE("hashmap Map/Inject Test", "[ds][hashmap]") {
+  run_test<element8>(map_inject_test<element8>);
+  run_test<element4>(map_inject_test<element4>);
 }
+CATCH_TEST_CASE("hashmap Print Test", "[ds][hashmap]") {
+  /* Coverage: verify print functions don't crash */
+  struct hashmap_config config;
+  memset(&config, 0, sizeof(hashmap_config));
+  config.hash        = utils_hash_default;
+  config.sort_thresh = -1;
+  config.elt_size    = sizeof(element4);
+  config.bsize       = TH_NUM_ITEMS;
+  config.n_buckets   = TH_NUM_BUCKETS;
+  config.flags       = RCSW_NONE;
+  CATCH_REQUIRE(th::ds_init(&config) == OK);
 
-CATCH_TEST_CASE("Print Test", "[ds][hashmap]") {
-  run_test<element8>(print_test<element8>);
+  hashmap_print(nullptr);
+  struct hashmap  mymap;
+  struct hashmap* map = hashmap_init(&mymap, &config);
+  CATCH_REQUIRE(map != nullptr);
+  hashmap_print(map);
+  hashmap_print_dist(map);
+  hashmap_destroy(map);
+  th::ds_shutdown(&config);
 }

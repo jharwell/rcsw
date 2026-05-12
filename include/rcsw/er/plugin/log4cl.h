@@ -40,7 +40,8 @@
 
 #define RCSW_ER_PLUGIN_HANDLE(ID, NAME) log4cl_mod_query(ID)
 
-#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) log4cl_mod_emit(HANDLE, 1)
+#define RCSW_ER_PLUGIN_LVL_CHECK(HANDLE, LVL) \
+  log4cl_mod_emit(HANDLE, RCSW_JOIN(RCSW_ERL_, LVL))
 
 #define RCSW_LOG4CL_NAMELEN 32
 
