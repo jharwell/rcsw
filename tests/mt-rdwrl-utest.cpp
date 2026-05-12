@@ -17,7 +17,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/rdwrlock.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

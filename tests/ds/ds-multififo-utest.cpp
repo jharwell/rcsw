@@ -14,8 +14,7 @@
 
 #include "rcsw/ds/fifo.h"
 #include "rcsw/ds/multififo.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

@@ -17,8 +17,7 @@
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/utils/byteops.h"
 #include "rcsw/utils/hash.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Test Runner

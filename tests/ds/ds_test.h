@@ -18,7 +18,7 @@
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/ds/iter.h"
 #include "rcsw/er/client.h"
-#include "tests/element.h"
+#include "tests/ds/element.h"
 #include "tests/test.h"
 
 /*******************************************************************************

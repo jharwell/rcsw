@@ -15,9 +15,8 @@
 #include "rcsw/ds/bstree.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/rbtree.h"
-#include "tests/ds_bstree_test.hpp"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_bstree_test.hpp"
+#include "tests/ds/ds_test.hpp"
 #include "rcsw/utils/byteops.h"
 
 /*******************************************************************************

@@ -23,8 +23,7 @@
 #include "rcsw/utils/hash.h"
 #include "rcsw/utils/mem.h"
 #include "rcsw/utils/time.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Callbacks

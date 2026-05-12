@@ -17,8 +17,7 @@
 
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helpers

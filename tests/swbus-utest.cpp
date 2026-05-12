@@ -19,7 +19,7 @@
 
 #include "rcsw/er/client.h"
 #include "rcsw/swbus/swbus.h"
-#include "tests/ds_test.h"
+#include "tests/ds/ds_test.h"
 #include "tests/swbus_test.h"
 
 /*******************************************************************************

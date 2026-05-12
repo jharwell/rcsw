@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "rcsw/ds/darray.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Test Runner

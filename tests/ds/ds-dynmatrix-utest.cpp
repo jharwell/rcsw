@@ -16,8 +16,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/dynmatrix.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helper Functions

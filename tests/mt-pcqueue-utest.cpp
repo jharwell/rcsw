@@ -18,7 +18,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/pcqueue.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 #define TH_NUM_MT_ITEMS 1000
 

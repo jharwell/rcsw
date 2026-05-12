@@ -16,9 +16,8 @@
 #include "rcsw/ds/inttree.h"
 #include "rcsw/ds/ostree.h"
 #include "rcsw/ds/rbtree.h"
-#include "tests/ds_bstree_test.hpp"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_bstree_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls

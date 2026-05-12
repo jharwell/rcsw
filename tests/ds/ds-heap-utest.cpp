@@ -15,8 +15,7 @@
 
 #include "rcsw/ds/binheap.h"
 #include "rcsw/utils/mem.h"
-#include "tests/ds_test.h"
-#include "tests/ds_test.hpp"
+#include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
  * Test Helper Functions
