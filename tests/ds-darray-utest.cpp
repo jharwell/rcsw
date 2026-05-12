@@ -383,12 +383,12 @@ static void iter_test(int len, struct darray_config *config) {
   T                  *e;
   struct ds_iterator iter;
 
-  CATCH_REQUIRE(NULL != darray_iter_init(&iter, arr, ekITER_FORWARD, th::iter_func_even<T>));
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_FORWARD, th::iter_func_even<T>));
   while ((e = (T *)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
-  CATCH_REQUIRE(NULL != darray_iter_init(&iter, arr, ekITER_FORWARD, th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_FORWARD, th::iter_func_all<T>));
   size_t count = 0;
   while ((e = (T *)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
@@ -396,7 +396,7 @@ static void iter_test(int len, struct darray_config *config) {
   }
   CATCH_REQUIRE(count == darray_size(arr));
 
-  CATCH_REQUIRE(NULL != darray_iter_init(&iter, arr, ekITER_BACKWARD, th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_BACKWARD, th::iter_func_all<T>));
 
   count = 0;
   while ((e = (T *)ds_iter_next(&iter)) != nullptr) {

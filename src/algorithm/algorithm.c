@@ -54,12 +54,16 @@ bool_t str_is_parenthesizable(const char* const x,
     for (size_t j = 0; j <= len - i; j++) { /* subsequence length */
       size_t k = j + i - 1;
       for (int q = (int)j; q <= (int)k - 1; q++) {
-        if (el ==
-            multiply_cb(r[j + (size_t)q * len], r[(size_t)q + 1 + len * k])) {
+        char prod =
+          multiply_cb(r[j + (size_t)q * len], r[(size_t)q + 1 + len * k]);
+        /* 'a' (el) takes priority; only write non-el if cell not already set */
+        if (prod == el) {
           r[j + len * k] = el;
+        } else if (r[j + len * k] == '\0') {
+          r[j + len * k] = prod;
         }
-      } /* for(q=j)... */
+      }
     } /* for(j=1)... */
   } /* for(i=1)... */
-  return (bool_t)(r[0 * len + len] == el);
+  return (bool_t)(r[0 + len * (len - 1)] == el);
 } /* str_is_parenthesizable() */

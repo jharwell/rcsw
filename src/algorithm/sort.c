@@ -19,6 +19,12 @@
 #include "rcsw/ds/llist.h"
 #include "rcsw/er/client.h"
 
+/******************************************************************************
+ * Constants
+ ******************************************************************************/
+#define RCSW_SORT_MAX_ELT_SIZE 64
+#define RCSW_SORT_MAX_STACK_DEPTH 4096
+
 /*******************************************************************************
  * Private API
  ******************************************************************************/
@@ -47,24 +53,21 @@ BEGIN_C_DECLS
  *
  * \return The partition index
  */
-RCSW_WARNING_DISABLE_PUSH()
-RCSW_WARNING_DISABLE_VLA()
 static int partition(void* const a,
                      int         min_index,
                      int         max_index,
                      size_t      elt_size,
                      int (*cmpe)(const void* const e1, const void* const e2)) {
-  int left;  /* index starts at min_index and increases */
-  int right; /* index starts and max_index and decreases */
+  int left  = min_index; /* index starts at min_index and increases */
+  int right = max_index; /* index starts and max_index and decreases */
+  RCSW_CHECK(elt_size <= RCSW_SORT_MAX_ELT_SIZE);
 
   uint8_t* const arr = a;
 
   /* chose pivot element */
   uint8_t* const pivot = arr + (min_index * (int)elt_size);
 
-  uint8_t tmp[elt_size];
-  left  = min_index;
-  right = max_index;
+  uint8_t tmp[RCSW_SORT_MAX_ELT_SIZE];
 
   while (left < right) {
     while (cmpe(arr + (left * (int)elt_size), pivot) <= 0 && left < max_index) {
@@ -75,9 +78,10 @@ static int partition(void* const a,
     while (cmpe(arr + (right * (int)elt_size), pivot) > 0 && right > 0) {
       right--;
     }
-    /* at this point arr[left] must be > pivot and arr[right]
-     * must be < pivot, so swap them if the position pointers have not
-     * crossed */
+    /*
+     * At this point arr[left] must be > pivot and arr[right] must be < pivot,
+     * so swap them if the position pointers have not crossed.
+     */
     if (left < right) {
       memmove(&tmp, arr + (left * (int)elt_size), elt_size);
       memmove(arr + (left * (int)elt_size),
@@ -87,16 +91,19 @@ static int partition(void* const a,
     }
   } /* while() */
 
-  /* arr[right] is <= pivot and in the upper half so swap it and the
-   * item in the first position */
+  /*
+   * arr[right] is <= pivot and in the upper half so swap it and the
+   * item in the first position.
+   */
   memmove(&tmp, pivot, elt_size);
   memmove(arr + (min_index * (int)elt_size),
           arr + (right * (int)elt_size),
           elt_size);
   memmove(arr + (right * (int)elt_size), &tmp, elt_size);
+
+error:
   return right;
-} /* partition() */
-RCSW_WARNING_DISABLE_POP()
+}
 
 /*******************************************************************************
  * Public API
@@ -111,22 +118,20 @@ void qsort_rec(void* const a,
     qsort_rec(a, min_index, pivot - 1, elt_size, cmpe);
     qsort_rec(a, pivot + 1, max_index, elt_size, cmpe);
   }
-} /* qsort_recursive() */
+}
 
-RCSW_WARNING_DISABLE_PUSH()
-RCSW_WARNING_DISABLE_VLA()
 void qsort_iter(void* const a,
                 int         max_index,
                 size_t      elt_size,
                 int (*cmpe)(const void* const e1, const void* const e2)) {
+  RCSW_FPC_V(elt_size <= RCSW_SORT_MAX_ELT_SIZE, max_index > 0);
   int min_index = 0;
 
   /*
    * Create an auxiliary stack. This is used to emulate the call stack for a
    * recursive implementation of quicksort.
    */
-
-  int stack[max_index - min_index + 1];
+  int stack[RCSW_SORT_MAX_STACK_DEPTH * 2];
 
   /*
    * Initialize top of stack. In this case, the top points to the topmost USED
@@ -165,16 +170,17 @@ void qsort_iter(void* const a,
       stack[++top] = max_index; /* new max_index */
     }
   } /* while (top >= 0) */
-} /* qsort_iter() */
+}
 RCSW_WARNING_DISABLE_POP()
 
-RCSW_WARNING_DISABLE_PUSH()
-RCSW_WARNING_DISABLE_VLA()
 void insertion_sort(void*  arr,
                     size_t n_elts,
                     size_t elt_size,
                     int (*cmpe)(const void* const e1, const void* const e2)) {
-  RCSW_FPC_V(n_elts > 0, elt_size > 0);
+  RCSW_FPC_V(NULL != arr,
+             n_elts > 1,
+             elt_size > 0,
+             elt_size < RCSW_SORT_MAX_ELT_SIZE);
 
   /*
    * The element at j is the element you are currently comparing with/the
@@ -182,7 +188,7 @@ void insertion_sort(void*  arr,
    * until you find an element that is NOT > the element at j, and swap j
    * into that position.
    */
-  uint8_t key[elt_size];
+  uint8_t key[RCSW_SORT_MAX_ELT_SIZE];
 
   int i, j;
   for (i = 1; i < (int)n_elts; ++i) {
@@ -196,8 +202,7 @@ void insertion_sort(void*  arr,
     } /* while() */
     memcpy((uint8_t*)arr + ((j + 1) * (int)elt_size), key, elt_size);
   } /* for(j..) */
-} /* insertion_sort() */
-RCSW_WARNING_DISABLE_POP()
+}
 
 void radix_sort(size_t* const arr,
                 size_t* const tmp,
@@ -210,7 +215,7 @@ void radix_sort(size_t* const arr,
   for (size_t exp = 1; m / exp > 0; exp *= base) {
     radix_counting_sort(arr, tmp, n_elts, exp, base);
   } /* for(exp...) */
-} /* radix_sort() */
+}
 
 status_t radix_sort_prefix_sum(const size_t* const arr,
                                size_t              n_elts,
@@ -233,7 +238,7 @@ status_t radix_sort_prefix_sum(const size_t* const arr,
     prefix_sums[i] += prefix_sums[i - 1];
   } /* for(i..) */
   return OK;
-} /* radix_sort_prefix_sum() */
+}
 
 status_t radix_counting_sort(size_t* const arr,
                              size_t* const tmp,
@@ -250,7 +255,7 @@ status_t radix_counting_sort(size_t* const arr,
   radix_sort_prefix_sum(arr, n_elts, digit, base, prefix_sums);
 
   /* Sort elements */
-  for (size_t i = n_elts - 1; i != 0; i--) {
+  for (size_t i = n_elts; i-- > 0;) {
     tmp[prefix_sums[(arr[i] / digit) % base] - 1] = arr[i];
     prefix_sums[(arr[i] / digit) % base]--;
   } /* for(i..) */
@@ -261,6 +266,6 @@ status_t radix_counting_sort(size_t* const arr,
   } /* for(i..) */
 
   return OK;
-} /* counting_sort() */
+}
 
 END_C_DECLS

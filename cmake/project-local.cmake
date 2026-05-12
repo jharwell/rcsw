@@ -79,7 +79,7 @@ option(RCSW_CONFIG_TOOL_NO_GRIND "Compile out RCSW_GRIND_XX() macros" OFF)
 
 option(RCSW_CONFIG_BUILD_MONOLITHIC
        "Build the monolithic rcsw library in addition to component libraries"
-       OFF)
+       YES)
 
 # These aren't really optional disabling them will cause bad things to happen in
 # the build, but it is far more convenient when emitting the summary if they are

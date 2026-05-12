@@ -97,7 +97,7 @@ RCSW_API void radix_sort(size_t* arr, size_t* tmp, size_t n_elts, size_t base);
  * mergesort_iter().
  *
  * \param arr      The array to sort.
- * \param n_elts   Number of elements in the array (must be >= 3).
+ * \param n_elts   Number of elements in the array.
  * \param elt_size Size of each element in bytes.
  * \param cmpe     Comparison function for elements.
  */

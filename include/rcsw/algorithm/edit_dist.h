@@ -106,4 +106,5 @@ RCSW_API void edit_dist_destroy(struct edit_dist_finder* finder);
  * \return The edit distance, or -1 on error
  */
 RCSW_API int edit_dist_find(struct edit_dist_finder* finder, enum exec_type type);
+
 END_C_DECLS

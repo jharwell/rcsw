@@ -18,7 +18,7 @@
 #include "rcsw/core/fpc.h"
 
 /*******************************************************************************
- * Private Functions
+ * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -115,8 +115,8 @@ static int edit_dist_rec(const char* a,
   size_t len_y = seq_len(b);
 
   memset(c, -1, sizeof(int) * (len_x + 1) * (len_y + 1));
-  return edit_dist_rec_sub(a, b, c, len_x, len_y, len_x, cmpe, elt_size);
-} /* edit_dist_rec() */
+  return edit_dist_rec_sub(a, b, c, len_x, len_y, len_y + 1, cmpe, elt_size);
+}
 
 /**
  * \brief Compute min # of operations to convert A -> B using
@@ -139,27 +139,30 @@ static int edit_dist_iter(const void* a,
                           size_t elt_size) {
   size_t m = seq_len(a);
   size_t n = seq_len(b);
-  memset(c, -1, m * n * sizeof(int));
+
+  /* table is (m+1) x (n+1); stride is (n+1) */
+  memset(c, -1, (m + 1) * (n + 1) * sizeof(int));
 
   for (size_t i = 0; i <= m; ++i) {
     for (size_t j = 0; j <= n; ++j) {
       if (0 == i) {
-        c[i * m + j] = (int)j;
+        c[i * (n + 1) + j] = (int)j;
       } else if (0 == j) {
-        c[i * m + j] = (int)i;
+        c[i * (n + 1) + j] = (int)i;
       } else if (true == cmpe(((const uint8_t*)a) + (i - 1) * elt_size,
                               ((const uint8_t*)b) + (j - 1) * elt_size)) {
-        c[i * m + j] = c[(i - 1) * m + j - 1];
+        c[i * (n + 1) + j] = c[(i - 1) * (n + 1) + (j - 1)];
       } else {
-        c[i * m + j] = 1 + RCSW_MIN3(c[(i - 1) * m + j - 1], /* substitute */
-                                     c[(i - 1) * m + j],     /* delete */
-                                     c[(i)*m + j - 1]);      /* insert */
+        c[i * (n + 1) + j] =
+          1 + RCSW_MIN3(c[(i - 1) * (n + 1) + (j - 1)], /* substitute */
+                        c[(i - 1) * (n + 1) + j],       /* delete */
+                        c[i * (n + 1) + (j - 1)]);      /* insert */
       }
-    } /* for(j..) */
-  } /* for(i..) */
+    }
+  }
 
-  return c[m * m + n];
-} /* edit_dist_iter() */
+  return c[m * (n + 1) + n];
+}
 
 /*******************************************************************************
  * Public API
