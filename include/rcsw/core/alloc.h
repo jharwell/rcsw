@@ -19,6 +19,7 @@
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief Allocate \p n_bytes of memory using malloc()/calloc()/etc.
  *
@@ -51,3 +52,5 @@ RCSW_LOCAL void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);
  * \brief Free memory previously allocated with \ref rcsw_alloc().
  */
 RCSW_LOCAL void rcsw_free(void* ptr, uint32_t flags);
+
+END_C_DECLS

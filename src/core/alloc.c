@@ -20,6 +20,8 @@
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+BEGIN_C_DECLS
+
 void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   void* ret = NULL;
 
@@ -54,6 +56,13 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   if ((flags & RCSW_NOALLOC_HANDLE) || (flags & RCSW_NOALLOC_DATA) ||
       (flags & RCSW_NOALLOC_META)) {
     ret = ptr;
+    /*
+     * Allow per-call override to get zeroed memory, as some modules rely on
+     * that unconditionally (e.g., mpool).
+     */
+    if (flags & RCSW_ZALLOC) {
+      memset(ret, 0, n_bytes);
+    }
   } else {
 
 #if defined(RCSW_CONFIG_ZALLOC)
@@ -76,7 +85,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
 #endif /* RCSW_CONFIG_NOALLOC */
 
   return ret;
-} /* rcsw_alloc() */
+}
 
 void rcsw_free(void* ptr, uint32_t flags) {
   RCSW_CHECK_PTR(ptr);
@@ -103,4 +112,6 @@ void rcsw_free(void* ptr, uint32_t flags) {
 
 error:
   return;
-} /* rcsw_free() */
+}
+
+END_C_DECLS
