@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "rcsw/algorithm/sort.h"
-#include "tests/ds/ds_test.hpp"
-#include "tests/ds/element.hpp"
+#include "tests/element.hpp"
+#include "tests/test.h"
 
 /*******************************************************************************
  * Test Helpers

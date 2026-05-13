@@ -1,7 +1,7 @@
 /**
- * \file ds-adjmatrix-test.cpp
+ * \file ds-adjmatrix-utest.cpp
  *
- * Test of adjacency matrix (static only at the moment...)
+ * Unit tests for adjmatrix (adjacency matrix for graphs).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -21,12 +21,16 @@
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
+/*
+ * The adjmatrix element type is always double (edge weights) or boolean
+ * (unweighted); the T parameter is only used to vary elt_size for coverage.
+ */
 template <typename T>
-void run_test(void (*test)(struct adjmatrix_config *config)) {
+static void run_test(void (*test)(struct adjmatrix_config *)) {
   struct adjmatrix_config config;
   memset(&config, 0, sizeof(adjmatrix_config));
-  config.flags    = 0;
-  config.elt_size = sizeof(T);
+  config.elt_size    = sizeof(T);
+  config.n_vertices  = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {
@@ -36,33 +40,42 @@ void run_test(void (*test)(struct adjmatrix_config *config)) {
     RCSW_NOALLOC_DATA,
   };
 
-  uint32_t applied = 0;
+  /* is_directed × is_weighted combinations:
+   *   (directed=false, weighted=false) → undirected unweighted
+   *   (directed=true,  weighted=false) → directed unweighted
+   *   (directed=true,  weighted=true)  → directed weighted
+   * (directed=false, weighted=true) is illegal and skipped. */
+  struct { bool_t directed; bool_t weighted; } graph_types[] = {
+    { false, false },
+    { true,  false },
+    { true,  true  },
+  };
+
+  /* Each allocation flag in isolation, all graph types */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    applied |= flags[i];
+    for (auto &gt : graph_types) {
+      config.flags       = flags[i];
+      config.is_directed = gt.directed;
+      config.is_weighted = gt.weighted;
+      test(&config);
+    }
+  }
+
+  /* Pairwise allocation flag combinations, all graph types */
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
-      applied |= flags[j];
-
-      for (size_t m = 0; m < 2; ++m) {
-        for (size_t k = 0; k < 2; ++k) {
-          /* cannot have matrix that is weighted but undirected */
-          if (k && !m) {
-            continue;
-          }
-          config.is_directed = (bool_t)m;
-          config.is_weighted = (bool_t)k;
-          config.n_vertices  = TH_NUM_ITEMS;
-          config.flags       = applied;
-
-          test(&config);
-        } /* for(k..) */
-      } /* for(m..) */
-
-      applied &= ~flags[j];
-    } /* for(j..) */
-  } /* for(i..) */
+      uint32_t applied = flags[i] | flags[j];
+      for (auto &gt : graph_types) {
+        config.flags       = applied;
+        config.is_directed = gt.directed;
+        config.is_weighted = gt.weighted;
+        test(&config);
+      }
+    }
+  }
 
   th::ds_shutdown(&config);
-} /* run_test() */
+}
 
 /*******************************************************************************
  * Test Functions
@@ -72,21 +85,31 @@ static void edge_add_test(struct adjmatrix_config *config) {
   struct adjmatrix *matrix;
   struct adjmatrix  mymatrix;
 
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    CATCH_REQUIRE(nullptr == adjmatrix_init(nullptr, config));
+  }
   matrix = adjmatrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
+
+  /* Initially no edges */
+  CATCH_REQUIRE(adjmatrix_isempty(matrix));
 
   for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
-      CATCH_REQUIRE(OK == adjmatrix_edge_addd(matrix, i - 1, i, &val));
+      CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
-      CATCH_REQUIRE(OK == adjmatrix_edge_addu(matrix, i - 1, i));
+      CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
     }
-    CATCH_REQUIRE(true == adjmatrix_edge_query(matrix, i - 1, i));
+
+    CATCH_REQUIRE(adjmatrix_edge_query(matrix, i - 1, i) == true);
+
+    /* Undirected: reverse direction must also be set */
     if (!matrix->is_directed) {
-      CATCH_REQUIRE(true == adjmatrix_edge_query(matrix, i, i - 1));
+      CATCH_REQUIRE(adjmatrix_edge_query(matrix, i, i - 1) == true);
     }
-  } /* for(i..) */
+  }
+
   adjmatrix_destroy(matrix);
 }
 
@@ -98,31 +121,29 @@ static void edge_remove_test(struct adjmatrix_config *config) {
   matrix = adjmatrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
-  size_t max = config->n_vertices;
-  for (size_t i = 1; i < max; ++i) {
+  /* Build a chain of edges */
+  for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
-      CATCH_REQUIRE(OK == adjmatrix_edge_addd(matrix, i - 1, i, &val));
+      CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
-      CATCH_REQUIRE(OK == adjmatrix_edge_addu(matrix, i - 1, i));
+      CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
     }
-    CATCH_REQUIRE(true == adjmatrix_edge_query(matrix, i - 1, i));
-    if (!matrix->is_directed) {
-      CATCH_REQUIRE(true == adjmatrix_edge_query(matrix, i, i - 1));
-    }
-  } /* for(i..) */
+  }
 
+  /* Remove edges randomly until the matrix is empty */
+  size_t max = config->n_vertices;
   while (!adjmatrix_isempty(matrix)) {
     size_t u = rand() % max;
     size_t v = rand() % max;
     if (adjmatrix_edge_query(matrix, u, v)) {
-      CATCH_REQUIRE(OK == adjmatrix_edge_remove(matrix, u, v));
-      CATCH_REQUIRE(false == adjmatrix_edge_query(matrix, u, v));
+      CATCH_REQUIRE(adjmatrix_edge_remove(matrix, u, v) == OK);
+      CATCH_REQUIRE(adjmatrix_edge_query(matrix, u, v) == false);
       if (!matrix->is_directed) {
-        CATCH_REQUIRE(false == adjmatrix_edge_query(matrix, v, u));
+        CATCH_REQUIRE(adjmatrix_edge_query(matrix, v, u) == false);
       }
     }
-  } /* while() */
+  }
 
   adjmatrix_destroy(matrix);
 }
@@ -135,71 +156,77 @@ static void transpose_test(struct adjmatrix_config *config) {
   matrix = adjmatrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
-  size_t max = config->n_vertices;
-  for (size_t i = 1; i < max; ++i) {
+  /* Build a chain */
+  for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
-      CATCH_REQUIRE(OK == adjmatrix_edge_addd(matrix, i - 1, i, &val));
+      CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
-      CATCH_REQUIRE(OK == adjmatrix_edge_addu(matrix, i - 1, i));
+      CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
     }
-  } /* for(i..) */
+  }
 
-  CATCH_REQUIRE(OK == adjmatrix_transpose(matrix));
+  CATCH_REQUIRE(adjmatrix_transpose(matrix) == OK);
 
-  for (size_t i = 1; i < max; ++i) {
-    CATCH_REQUIRE(true == adjmatrix_edge_query(matrix, i, i - 1));
-  } /* for(i..) */
+  /* After transpose each directed edge i-1 → i should appear as i → i-1 */
+  for (size_t i = 1; i < config->n_vertices; ++i) {
+    CATCH_REQUIRE(adjmatrix_edge_query(matrix, i, i - 1) == true);
+  }
 
   adjmatrix_destroy(matrix);
 }
+
 template <typename T>
 static void print_test(struct adjmatrix_config *config) {
   struct adjmatrix *matrix;
   struct adjmatrix  mymatrix;
 
-  adjmatrix_print(NULL);
+  /* NULL handle must not crash */
+  adjmatrix_print(nullptr);
+
   matrix = adjmatrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
-  adjmatrix_print(matrix);
 
-  size_t max = config->n_vertices;
-  for (size_t i = 1; i < max; ++i) {
+  adjmatrix_print(matrix); /* empty */
+
+  for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
       double val = rand() % 10 + 1;
-      CATCH_REQUIRE(OK == adjmatrix_edge_addd(matrix, i - 1, i, &val));
+      CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
-      CATCH_REQUIRE(OK == adjmatrix_edge_addu(matrix, i - 1, i));
+      CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
     }
-  } /* for(i..) */
+  }
 
-  adjmatrix_print(matrix);
+  adjmatrix_print(matrix); /* populated */
   adjmatrix_destroy(matrix);
 }
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Edge Add Test", "[ds][adjmatrix]") {
+CATCH_TEST_CASE("adjmatrix Edge Add Test", "[ds][adjmatrix]") {
   run_test<element8>(edge_add_test<element8>);
   run_test<element4>(edge_add_test<element4>);
   run_test<element2>(edge_add_test<element2>);
   run_test<element1>(edge_add_test<element1>);
 }
-CATCH_TEST_CASE("Edge Remove Test", "[ds][adjmatrix]") {
+
+CATCH_TEST_CASE("adjmatrix Edge Remove Test", "[ds][adjmatrix]") {
   run_test<element8>(edge_remove_test<element8>);
   run_test<element4>(edge_remove_test<element4>);
   run_test<element2>(edge_remove_test<element2>);
   run_test<element1>(edge_remove_test<element1>);
 }
-CATCH_TEST_CASE("Transpose Test", "[ds][adjmatrix]") {
+
+CATCH_TEST_CASE("adjmatrix Transpose Test", "[ds][adjmatrix]") {
   run_test<element8>(transpose_test<element8>);
   run_test<element4>(transpose_test<element4>);
   run_test<element2>(transpose_test<element2>);
   run_test<element1>(transpose_test<element1>);
 }
 
-CATCH_TEST_CASE("Print Test", "[ds][adjmatrix]") {
+CATCH_TEST_CASE("adjmatrix Print Test", "[ds][adjmatrix]") {
   run_test<element8>(print_test<element8>);
   run_test<element4>(print_test<element4>);
   run_test<element2>(print_test<element2>);

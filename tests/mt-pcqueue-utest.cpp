@@ -18,7 +18,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/pcqueue.h"
-#include "tests/ds/ds_test.hpp"
+#include "tests/element.hpp"
 
 #define TH_NUM_MT_ITEMS 1000
 
@@ -72,7 +72,7 @@ static void serial_test(const struct pcqueue_config* const config,
   std::vector<T> vals;
   auto           prod_cb = [&](auto* const q) {
     size_t                   count = 0;
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
     while (true) {
       T e = g.next();
 
@@ -118,7 +118,7 @@ static void concurrent_test(const struct pcqueue_config* const config,
   CATCH_REQUIRE(nullptr != queue);
 
   auto prod_cb = [&](auto* const q) {
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
     /*
      * Advance so the first element put in the queue is 1 not
      * 0.
@@ -212,7 +212,7 @@ void timeout_test(const struct pcqueue_config* const config,
   struct pcqueue* queue = pcqueue_init(&queue_in, config);
   CATCH_REQUIRE(nullptr != queue);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   auto                     prod_cb = [&](auto* const q) {
     size_t count = 0;
 

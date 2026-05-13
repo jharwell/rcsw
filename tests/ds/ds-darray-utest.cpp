@@ -63,7 +63,7 @@ static void addremove_test(int len, struct darray_config* config) {
   T dummy{};
   CATCH_REQUIRE(ERROR == darray_remove(arr, &dummy, 0));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   std::vector<T>           inserted;
 
   for (int i = 0; i < len; i++) {
@@ -108,7 +108,7 @@ static void sort_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   std::vector<T>           original;
 
   for (int i = 0; i < len; i++) {
@@ -142,7 +142,7 @@ static void copy_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr1);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -182,7 +182,7 @@ static void map_test(int len, struct darray_config* config) {
   /* NULL callback rejected */
   CATCH_REQUIRE(ERROR == darray_map(arr, nullptr));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
@@ -214,7 +214,7 @@ static void inject_test(int len, struct darray_config* config) {
   int dummy = 0;
   CATCH_REQUIRE(ERROR == darray_inject(arr, nullptr, &dummy));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   int expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -241,7 +241,7 @@ static void iter_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
@@ -306,7 +306,7 @@ static void filter_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr1);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -344,7 +344,7 @@ static void binarysearch_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     inserted.push_back(e);

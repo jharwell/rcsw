@@ -29,7 +29,6 @@ static void run_test(fifo_test_t test) {
 
   struct fifo_config config;
   memset(&config, 0, sizeof(fifo_config));
-  config.flags    = 0;
   config.printe   = th::printe<T>;
   config.elt_size = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&config) == OK);
@@ -41,24 +40,28 @@ static void run_test(fifo_test_t test) {
     RCSW_NOALLOC_DATA,
   };
 
-  uint32_t applied = 0;
+  /* Test each flag in isolation */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    applied |= flags[i];
-    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
-      applied |= flags[j];
+    for (int k = 1; k < TH_NUM_ITEMS; ++k) {
+      config.flags    = flags[i];
+      config.max_elts = k;
+      test(k, &config);
+    }
+  }
 
+  /* Test all pairwise combinations */
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      uint32_t applied = flags[i] | flags[j];
       for (int k = 1; k < TH_NUM_ITEMS; ++k) {
         config.flags    = applied;
         config.max_elts = k;
         test(k, &config);
-      } /* for(k..) */
-
-      applied &= ~flags[j];
-    } /* for(j..) */
-  } /* for(i..) */
+      }
+    }
+  }
 
   th::ds_shutdown(&config);
-
   RCSW_ER_DEINIT();
 }
 
@@ -70,119 +73,126 @@ static void rdwr_test(int len, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
+  /* RCSW_NOALLOC_HANDLE requires a non-NULL handle */
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    CATCH_REQUIRE(nullptr == fifo_init(nullptr, config));
+  }
   fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  /* Verify empty-state invariants before any inserts */
+  CATCH_REQUIRE(fifo_isempty(fifo));
+  CATCH_REQUIRE(fifo_size(fifo) == 0);
+  {
+    T dummy;
+    CATCH_REQUIRE(fifo_remove(fifo, &dummy) == ERROR);
+  }
 
-  for (int i = 0; i < len * 2; i++) {
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+
+  /* Fill to capacity; attempts beyond capacity must fail */
+  for (int i = 0; i < len * 2; ++i) {
     T e = g.next();
     if (i < len) {
       CATCH_REQUIRE(fifo_add(fifo, &e) == OK);
     } else {
       CATCH_REQUIRE(fifo_add(fifo, &e) == ERROR);
     }
-  } /* for() */
+  }
+
+  CATCH_REQUIRE(!fifo_isempty(fifo));
+  CATCH_REQUIRE((int)fifo_size(fifo) == len);
   fifo_print(fifo);
 
-  /* verify fifo contents */
+  /* Drain and verify FIFO ordering (ekINC_VALS → 0, 1, 2, ...) */
   for (int i = 0; i < len; ++i) {
     T e;
-    CATCH_REQUIRE(OK == fifo_remove(fifo, &e));
+    CATCH_REQUIRE(fifo_remove(fifo, &e) == OK);
     CATCH_REQUIRE(e.value1 == i);
-  } /* for() */
+  }
+
   CATCH_REQUIRE(fifo_isempty(fifo));
-  T e;
-  CATCH_REQUIRE(fifo_remove(fifo, &e) == ERROR);
+  {
+    T dummy;
+    CATCH_REQUIRE(fifo_remove(fifo, &dummy) == ERROR);
+  }
+
   fifo_destroy(fifo);
-} /* rdwr_test() */
+}
 
 template <typename T>
 static void map_test(int, struct fifo_config *config) {
-  struct fifo *fifo;
-  struct fifo  myfifo;
-
-  fifo = fifo_init(&myfifo, config);
-  CATCH_REQUIRE((nullptr != fifo));
-
-  /*
-   * Stub--this is already tested in rbuffer test; this is only here for code
-   * coverage.
-   */
-  CATCH_REQUIRE(ERROR == fifo_map(fifo, nullptr));
-
-  fifo_destroy(fifo);
-} /* map_test() */
-
-template <typename T>
-static void inject_test(int, struct fifo_config *config) {
-  struct fifo *fifo;
-  struct fifo  myfifo;
-
-  fifo = fifo_init(&myfifo, config);
+  struct fifo myfifo;
+  struct fifo *fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
   /*
-   * Stub--this is already tested in rbuffer test; this is only here for code
-   * coverage.
+   * map/inject logic lives in rbuffer and is tested there; here we only
+   * verify that a NULL callback returns ERROR through the fifo wrapper.
    */
-  CATCH_REQUIRE(ERROR == fifo_inject(fifo, nullptr, nullptr));
+  CATCH_REQUIRE(fifo_map(fifo, nullptr) == ERROR);
 
   fifo_destroy(fifo);
-} /* inject_test() */
+}
+
+template <typename T>
+static void inject_test(int, struct fifo_config *config) {
+  struct fifo myfifo;
+  struct fifo *fifo = fifo_init(&myfifo, config);
+  CATCH_REQUIRE(nullptr != fifo);
+
+  /* See map_test comment above. */
+  CATCH_REQUIRE(fifo_inject(fifo, nullptr, nullptr) == ERROR);
+
+  fifo_destroy(fifo);
+}
 
 template <typename T>
 static void print_test(int len, struct fifo_config *config) {
   struct fifo *fifo;
   struct fifo  myfifo;
 
+  /* Coverage: NULL handle must not crash */
+  fifo_print(nullptr);
+
   fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  /* Print empty */
+  fifo_print(fifo);
 
-  for (int i = 0; i < len * 2; i++) {
-    T e = g.next();
-    if (i < len) {
-      CATCH_REQUIRE(fifo_add(fifo, &e) == OK);
-    } else {
-      CATCH_REQUIRE(fifo_add(fifo, &e) == ERROR);
-    }
-  } /* for() */
-
-  /* verify fifo contents */
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; ++i) {
-    T e;
-    CATCH_REQUIRE(OK == fifo_remove(fifo, &e));
-    CATCH_REQUIRE(e.value1 == i);
-  } /* for() */
+    T e = g.next();
+    CATCH_REQUIRE(fifo_add(fifo, &e) == OK);
+  }
 
-  fifo_print(nullptr);
+  /* Print populated */
   fifo_print(fifo);
   fifo_destroy(fifo);
-} /* print_test() */
+}
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("RDWR Test", "[ds][fifo]") {
+CATCH_TEST_CASE("fifo RDWR Test", "[ds][fifo]") {
   run_test<element8>(rdwr_test<element8>);
   run_test<element4>(rdwr_test<element4>);
   run_test<element2>(rdwr_test<element2>);
   run_test<element1>(rdwr_test<element1>);
 }
-CATCH_TEST_CASE("Map Test", "[ds][fifo]") {
+CATCH_TEST_CASE("fifo Map Test", "[ds][fifo]") {
   run_test<element8>(map_test<element8>);
   run_test<element4>(map_test<element4>);
   run_test<element2>(map_test<element2>);
   run_test<element1>(map_test<element1>);
 }
-CATCH_TEST_CASE("Inject Test", "[ds][fifo]") {
+CATCH_TEST_CASE("fifo Inject Test", "[ds][fifo]") {
   run_test<element8>(inject_test<element8>);
   run_test<element4>(inject_test<element4>);
   run_test<element2>(inject_test<element2>);
   run_test<element1>(inject_test<element1>);
 }
-CATCH_TEST_CASE("Print Test", "[ds][fifo]") {
+CATCH_TEST_CASE("fifo Print Test", "[ds][fifo]") {
   run_test<element8>(print_test<element8>);
 }

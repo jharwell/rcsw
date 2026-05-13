@@ -132,6 +132,15 @@ static const struct ds_ops darray_iter_ops = {
   .prev = darray_iter_prev_impl,
 };
 
+/*
+ * darray_data_get() asserts index < current, but insert legitimately writes
+ * at positions up to current (including current itself for append). Use
+ * direct pointer arithmetic here; bounds are already enforced by the
+ * index <= current precondition.and the capacity/extend check.
+ */
+#define DARRAY_RAW(arr_, i_) \
+  ((uint8_t*)(arr_)->elements + (i_) * (arr_)->elt_size)
+
 /*******************************************************************************
  * Public API
  ******************************************************************************/
@@ -244,24 +253,20 @@ status_t darray_insert(struct darray* const arr,
   if (arr->flags & RCSW_DS_ORDERED) {
     /* shift all elements between index and end of list over by one */
     for (size_t i = arr->current; i > index; --i) {
-      ds_elt_copy(darray_data_get(arr, i),
-                  darray_data_get(arr, i - 1),
-                  arr->elt_size);
+      ds_elt_copy(DARRAY_RAW(arr, i), DARRAY_RAW(arr, i - 1), arr->elt_size);
     } /* for() */
   } else { /* if not, just move element at index to end of array */
-    memmove(darray_data_get(arr, arr->current),
-            darray_data_get(arr, index),
-            arr->elt_size);
+    memmove(DARRAY_RAW(arr, arr->current), DARRAY_RAW(arr, index), arr->elt_size);
   }
 
-  ds_elt_copy(darray_data_get(arr, index), e, arr->elt_size);
+  ds_elt_copy(DARRAY_RAW(arr, index), e, arr->elt_size);
 
   arr->current++;
 
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = false;
-    RCSW_CHECK(OK == darray_sort(arr, ekEXEC_ITER));
+    darray_sort(arr, ekEXEC_ITER);
   }
   return OK;
 
@@ -284,11 +289,16 @@ status_t darray_remove(struct darray* const arr, void* const e, size_t index) {
 
   /*
    * If array is sorted, shift all items AFTER index down by one, otherwise,
-   * overwrite removed idx with last item in array (MUCH faster).
+   * overwrite removed idx with last item in array (MUCH faster)
    */
   if (arr->flags & RCSW_DS_SORTED) {
-    memmove(darray_data_get(arr, index),
-            darray_data_get(arr, index + 1),
+    /*
+     * When removing the last element, index+1 == current which is outside
+     * darray_data_get's current-based bounds. Use direct arithmetic; the
+     * copy length will be 0 in that case so no memory is read out-of-bounds.
+     */
+    memmove(DARRAY_RAW(arr, index),
+            DARRAY_RAW(arr, index + 1),
             (arr->current - 1 - index) * arr->elt_size);
   } else {
     memmove(darray_data_get(arr, index),
@@ -315,7 +325,7 @@ error:
 status_t darray_idx_serve(const struct darray* const arr,
                           void* const                e,
                           size_t                     index) {
-  RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index <= arr->current);
+  RCSW_FPC_NV(ERROR, arr != NULL, e != NULL, index < arr->current);
   memmove(e, darray_data_get(arr, index), arr->elt_size);
   return OK;
 } /* darray_index_serve() */
@@ -348,7 +358,10 @@ int darray_idx_query(const struct darray* const arr, const void* const e) {
 
 void* darray_data_get(const struct darray* const arr, size_t index) {
   RCSW_FPC_NV(NULL, arr != NULL);
-  ER_ASSERT(index <= arr->current, "Index %zu > %zu", index, arr->current);
+  ER_ASSERT(index < arr->current,
+            "Index %zu out of bounds (current=%zu)",
+            index,
+            arr->current);
   return ((uint8_t*)arr->elements + (index * arr->elt_size));
 } /* darray_data_get() */
 

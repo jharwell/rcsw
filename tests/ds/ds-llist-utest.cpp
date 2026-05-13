@@ -59,7 +59,7 @@ static void insert_test(int len, struct llist_config* config) {
   CATCH_REQUIRE(llist_isempty(list));
   CATCH_REQUIRE(llist_size(list) == 0);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   std::vector<T>           inserted;
 
   for (int i = 0; i < len; i++) {
@@ -99,7 +99,7 @@ static void remove_if_test(int len, struct llist_config* config) {
   }
   CATCH_REQUIRE(nullptr != list);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -136,7 +136,7 @@ static void copy_test(int len, struct llist_config* config) {
   }
   CATCH_REQUIRE(nullptr != list1);
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -220,7 +220,7 @@ static void inject_test(int len, struct llist_config* config) {
   int dummy = 0;
   CATCH_REQUIRE(ERROR == llist_inject(list, nullptr, &dummy));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   int expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -247,7 +247,7 @@ static void iter_test(int len, struct llist_config* config) {
   }
   CATCH_REQUIRE(nullptr != list);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(llist_append(list, &e) == OK);

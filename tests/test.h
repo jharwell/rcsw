@@ -16,6 +16,8 @@
 /*******************************************************************************
  * Constants
  ******************************************************************************/
+#define TH_NUM_ITEMS 16
+
 #if RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_ZLOG
 #define TH_ZLOG_CONF "./test.conf"
 #else

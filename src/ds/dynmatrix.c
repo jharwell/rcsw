@@ -46,6 +46,12 @@ struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
                                         .flags     = RCSW_ZALLOC};
   matrix->rows                       = darray_init(NULL, &handle_params);
   RCSW_CHECK_PTR(matrix->rows);
+  /*
+   * darray_init() always sets current=0 (init_size only controls capacity).
+   * Pre-mark all row slots accessible so darray_data_get() bounds checks
+   * pass during the init loop below and all subsequent dynmatrix operations.
+   */
+  matrix->rows->current = matrix->n_rows;
 
   struct darray_config row_params = {.init_size = matrix->n_cols,
                                      .cmpe      = NULL,
@@ -56,7 +62,10 @@ struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
                                      .flags = RCSW_NOALLOC_HANDLE | RCSW_ZALLOC};
 
   for (size_t i = 0; i < matrix->n_rows; ++i) {
-    RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
+    struct darray* row = (struct darray*)darray_data_get(matrix->rows, i);
+    RCSW_CHECK_PTR(darray_init(row, &row_params));
+    /* Same: pre-mark all column slots accessible. */
+    row->current = matrix->n_cols;
   } /* for(i..) */
 
   return matrix;
@@ -112,7 +121,9 @@ status_t dynmatrix_resize(struct dynmatrix* const matrix, size_t u, size_t v) {
                                        .flags     = RCSW_NOALLOC_HANDLE};
 
     for (size_t i = matrix->n_rows; i < u; ++i) {
-      RCSW_CHECK_PTR(darray_init(darray_data_get(matrix->rows, i), &row_params));
+      struct darray* row = (struct darray*)darray_data_get(matrix->rows, i);
+      RCSW_CHECK_PTR(darray_init(row, &row_params));
+      row->current = matrix->n_cols; /* pre-mark columns accessible */
     } /* for(i..) */
     matrix->n_rows = u;
   }

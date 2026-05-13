@@ -11,13 +11,99 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "tests/ds/element.h"
+#include "tests/element.h"
+#include <vector>
+#include <stdlib.h>
 
 /******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 namespace th {
+
+/*******************************************************************************
+ * Structure Definitions
+ ******************************************************************************/
+enum gen_elt_type { ekINC_VALS, ekDEC_VALS, ekRAND_VALS, ekPACKED_VALS };
   
+  template<typename T>
+class element_generator {
+ public:
+  element_generator(enum gen_elt_type type, int max_elts)
+    : m_type(type),
+      m_max_elts(max_elts),
+      m_i(0) {}
+
+  void reset(void) {
+    m_i = 0;
+  }
+
+  static T sentinel(void) {
+    T e;
+    e.value1 = -1;
+    return e;
+  }
+
+  template <typename U = T,
+            typename std::enable_if<std::is_same<U, element1>::value,
+                                    int>::type = 0>
+  U next(void) {
+    U e{};
+    if (ekINC_VALS == m_type) {
+      e.value1 = m_i;
+    } else if (ekDEC_VALS == m_type) {
+      e.value1 = m_max_elts - m_i;
+    } else {
+      e.value1 = rand() % m_max_elts;
+    }
+    ++m_i;
+    return e;
+  }
+
+  template <typename U = T,
+            typename std::enable_if<!std::is_same<U, element1>::value,
+                                    int>::type = 0>
+  T next(void) {
+    T e{};
+    e.value2 = 17;
+    if (ekINC_VALS == m_type) {
+      e.value1 = m_i;
+    } else if (ekDEC_VALS == m_type) {
+      e.value1 = m_max_elts - m_i;
+    } else if (ekPACKED_VALS == m_type) {
+      auto upper = (m_i & (-1UL << std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2));
+      auto lower = (m_i & (-1UL >> (std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2)));
+      e.value1 = upper | lower;
+    } else {
+      e.value1 = rand() % m_max_elts;
+    }
+    ++m_i;
+    return e;
+  }
+
+ private:
+  enum gen_elt_type m_type;
+  int               m_max_elts;
+  int64_t           m_i;
+};
+
+  /* Test data element for all data structures */
+template<typename T>
+struct element_set {
+  explicit element_set(size_t size) : elts(size) {}
+
+  void data_gen(void) {
+    element_generator<T> g(gen_elt_type::ekDEC_VALS, elts.size());
+    for (size_t i = 0; i < elts.size(); ++i) {
+      elts[i] = g.next();
+    } /* for(i..) */
+  }
+  std::vector<T> elts;
+};
+
+/******************************************************************************
+ * Public API
+ ******************************************************************************/
+
 /**
  * \brief Generate an element.
  */
@@ -118,6 +204,11 @@ bool_t iter_func_all(void *e) {
 /*******************************************************************************
  * Operators
  ******************************************************************************/
+template<typename T>
+auto operator<(const T& lhs, const T& rhs) -> bool {
+  return lhs.value1 < rhs.value1;
+}
+
 static inline auto operator==(const element8& lhs, const element8 &rhs) -> bool {
   return lhs.value1 == rhs.value1 && lhs.value2 == rhs.value2;
 }

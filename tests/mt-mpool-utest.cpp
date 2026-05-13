@@ -16,7 +16,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/mpool.h"
-#include "tests/ds/ds_test.hpp"
+#include "tests/element.hpp"
+#include "tests/test.h"
+#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -116,7 +118,7 @@ static void concurrency_test(const struct mpool_config* const config,
   std::mutex        mtx;
   auto              cb = [&](auto* const p, size_t id) {
     std::vector<T*>          vals;
-    th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
     struct timespec          to = {.tv_sec = 0, .tv_nsec = 1000};
 
     while (vals.size() < TH_NUM_MT_ITEMS) {

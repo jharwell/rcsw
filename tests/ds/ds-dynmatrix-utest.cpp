@@ -1,7 +1,7 @@
 /**
- * \file dynmatrix-test.cpp
+ * \file ds-dynmatrix-utest.cpp
  *
- * Test of dynamic matrix.
+ * Unit tests for dynmatrix (heap-allocated 2-D matrix).
  *
  * \copyright 2017 John Harwell, All rights reserved.
  *
@@ -22,12 +22,10 @@
  * Test Helper Functions
  ******************************************************************************/
 template <typename T>
-void run_test(void (*test)(struct dynmatrix_config* config)) {
+static void run_test(void (*test)(struct dynmatrix_config *)) {
   struct dynmatrix_config config;
   memset(&config, 0, sizeof(dynmatrix_config));
   config.elt_size = sizeof(T);
-  config.n_cols   = TH_NUM_ITEMS;
-  config.n_rows   = TH_NUM_ITEMS;
   config.printe   = th::printe<T>;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
@@ -38,150 +36,162 @@ void run_test(void (*test)(struct dynmatrix_config* config)) {
     RCSW_NOALLOC_DATA,
   };
 
-  uint32_t applied = 0;
+  /* Each flag in isolation */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    applied |= flags[i];
-    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
-      applied |= flags[j];
+    for (size_t r = 1; r <= 10; ++r) {
+      for (size_t c = 1; c <= 10; ++c) {
+        config.n_rows = r;
+        config.n_cols = c;
+        config.flags  = flags[i];
+        test(&config);
+      }
+    }
+  }
 
-      for (size_t m = 1; m <= 10; ++m) {
-        for (size_t n = 1; n <= 10; ++n) {
-          config.n_cols = m;
-          config.n_rows = n;
+  /* Pairwise combinations */
+  for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
+    for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
+      uint32_t applied = flags[i] | flags[j];
+      for (size_t r = 1; r <= 10; ++r) {
+        for (size_t c = 1; c <= 10; ++c) {
+          config.n_rows = r;
+          config.n_cols = c;
           config.flags  = applied;
           test(&config);
-        } /* for(m..) */
-      } /* for(n..) */
-
-      applied &= ~flags[j];
-    } /* for(j..) */
-  } /* for(i..) */
+        }
+      }
+    }
+  }
 
   th::ds_shutdown(&config);
-} /* run_test() */
+}
 
 /*******************************************************************************
  * Test Functions
  ******************************************************************************/
 template <typename T>
-static void addremove_test(struct dynmatrix_config* config) {
-  struct dynmatrix* matrix;
+static void addremove_test(struct dynmatrix_config *config) {
+  struct dynmatrix *matrix;
   struct dynmatrix  mymatrix;
 
+  if (config->flags & RCSW_NOALLOC_HANDLE) {
+    CATCH_REQUIRE(nullptr == dynmatrix_init(nullptr, config));
+  }
   matrix = dynmatrix_init(&mymatrix, config);
-
   CATCH_REQUIRE(nullptr != matrix);
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             config->n_rows * config->n_cols);
+
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+                              config->n_rows * config->n_cols);
 
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
-      CATCH_REQUIRE(OK == dynmatrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 ==
-                    memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)));
-      CATCH_REQUIRE(OK == dynmatrix_clear(matrix, i, j));
-      CATCH_REQUIRE(true ==
-                    utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)));
-    } /* for(j..) */
-  } /* for(..) */
+
+      CATCH_REQUIRE(dynmatrix_set(matrix, i, j, &val) == OK);
+      CATCH_REQUIRE(
+        memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)) == 0);
+
+      CATCH_REQUIRE(dynmatrix_clear(matrix, i, j) == OK);
+      CATCH_REQUIRE(
+        utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)) == true);
+    }
+  }
 
   dynmatrix_destroy(matrix);
 }
 
 template <typename T>
-static void transpose_test(struct dynmatrix_config* config) {
-  struct dynmatrix* matrix;
+static void transpose_test(struct dynmatrix_config *config) {
+  struct dynmatrix *matrix;
   struct dynmatrix  mymatrix;
 
   matrix = dynmatrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
   /*
-   * If the # of rows and columns isn't equal, the transpose will fail, so
-   * don't try
+   * dynmatrix_transpose() requires a square matrix; verify the contract and
+   * skip the ordering check for non-square shapes.
    */
   if (config->n_rows != config->n_cols) {
+    CATCH_REQUIRE(dynmatrix_transpose(matrix) == ERROR);
     dynmatrix_destroy(matrix);
     return;
   }
 
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             config->n_rows * config->n_cols);
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+                              config->n_rows * config->n_cols);
 
+  /* Snapshot values before transposing */
+  std::vector<T> snapshot(config->n_rows * config->n_cols);
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
-      CATCH_REQUIRE(OK == dynmatrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 ==
-                    memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)));
-      CATCH_REQUIRE(OK == dynmatrix_clear(matrix, i, j));
-      CATCH_REQUIRE(utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)));
-    } /* for(j..) */
-  } /* for(..) */
+      CATCH_REQUIRE(dynmatrix_set(matrix, i, j, &val) == OK);
+      snapshot[i * config->n_cols + j] = val;
+    }
+  }
 
-  CATCH_REQUIRE(OK == dynmatrix_transpose(matrix));
+  CATCH_REQUIRE(dynmatrix_transpose(matrix) == OK);
 
+  /* After transpose: element [i][j] should equal original [j][i] */
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
-      T* e1 = (T*)dynmatrix_access(matrix, i, j);
-      T* e2 = (T*)dynmatrix_access(matrix, j, i);
-
-      CATCH_REQUIRE(e1->value1 == e2->value1);
+      T *transposed = (T *)dynmatrix_access(matrix, i, j);
+      T &original   = snapshot[j * config->n_cols + i];
+      CATCH_REQUIRE(transposed->value1 == original.value1);
       if constexpr (!std::is_same<T, element1>::value) {
-        CATCH_REQUIRE(e1->value2 == e2->value2);
+        CATCH_REQUIRE(transposed->value2 == original.value2);
       }
-    } /* for(j..) */
-  } /* for(..) */
+    }
+  }
 
   dynmatrix_destroy(matrix);
 }
 
 template <typename T>
-static void print_test(struct dynmatrix_config* config) {
-  struct dynmatrix* matrix;
+static void print_test(struct dynmatrix_config *config) {
+  struct dynmatrix *matrix;
   struct dynmatrix  mymatrix;
 
-  dynmatrix_print(NULL);
+  /* NULL handle must not crash */
+  dynmatrix_print(nullptr);
+
   matrix = dynmatrix_init(&mymatrix, config);
-  dynmatrix_print(matrix);
-
   CATCH_REQUIRE(nullptr != matrix);
-  th::element_generator<T> g(gen_elt_type::ekRAND_VALS,
-                             config->n_rows * config->n_cols);
 
+  dynmatrix_print(matrix); /* empty */
+
+  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+                              config->n_rows * config->n_cols);
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
-      CATCH_REQUIRE(OK == dynmatrix_set(matrix, i, j, &val));
-      CATCH_REQUIRE(0 ==
-                    memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)));
-      CATCH_REQUIRE(OK == dynmatrix_clear(matrix, i, j));
-      CATCH_REQUIRE(true ==
-                    utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)));
-    } /* for(j..) */
-  } /* for(..) */
+      CATCH_REQUIRE(dynmatrix_set(matrix, i, j, &val) == OK);
+    }
+  }
 
-  dynmatrix_print(matrix);
+  dynmatrix_print(matrix); /* populated */
   dynmatrix_destroy(matrix);
 }
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Add/Remove Test", "[ds][dynmatrix]") {
+CATCH_TEST_CASE("dynmatrix Add/Remove Test", "[ds][dynmatrix]") {
   run_test<element8>(addremove_test<element8>);
   run_test<element4>(addremove_test<element4>);
   run_test<element2>(addremove_test<element2>);
   run_test<element1>(addremove_test<element1>);
 }
-CATCH_TEST_CASE("Transpose Test", "[ds][dynmatrix]") {
+
+CATCH_TEST_CASE("dynmatrix Transpose Test", "[ds][dynmatrix]") {
   run_test<element8>(transpose_test<element8>);
   run_test<element4>(transpose_test<element4>);
   run_test<element2>(transpose_test<element2>);
   run_test<element1>(transpose_test<element1>);
 }
-CATCH_TEST_CASE("Print Test", "[ds][dynmatrix]") {
+
+CATCH_TEST_CASE("dynmatrix Print Test", "[ds][dynmatrix]") {
   run_test<element8>(print_test<element8>);
   run_test<element4>(print_test<element4>);
   run_test<element2>(print_test<element2>);

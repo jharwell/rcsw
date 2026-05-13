@@ -76,7 +76,7 @@ static void child_test(int len, struct multififo_config* config) {
   multififo = multififo_init(&mymultififo, config);
   CATCH_REQUIRE(nullptr != multififo);
 
-  th::element_generator<T> g(gen_elt_type::ekPACKED_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekPACKED_VALS, config->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();

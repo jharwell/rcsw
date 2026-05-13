@@ -30,7 +30,7 @@
 #include "rcsw/ds/multififo.h"
 
 #include "tests/ds/ds_test.h"
-#include "tests/ds/element.hpp"
+#include "tests/element.hpp"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -51,85 +51,6 @@ struct has_elements : std::false_type { };
 
 template <typename T>
 struct has_elements <T, decltype((void) T::elements, 0)> : std::true_type { };
-
-/*******************************************************************************
- * Class Definitions
- ******************************************************************************/
-template<typename T>
-class element_generator {
- public:
-  element_generator(enum gen_elt_type type, int max_elts)
-    : m_type(type),
-      m_max_elts(max_elts),
-      m_i(0) {}
-
-  void reset(void) {
-    m_i = 0;
-  }
-
-  static T sentinel(void) {
-    T e;
-    e.value1 = -1;
-    return e;
-  }
-
-  template <typename U = T,
-            typename std::enable_if<std::is_same<U, element1>::value,
-                                    int>::type = 0>
-  U next(void) {
-    U e{};
-    if (ekINC_VALS == m_type) {
-      e.value1 = m_i;
-    } else if (ekDEC_VALS == m_type) {
-      e.value1 = m_max_elts - m_i;
-    } else {
-      e.value1 = rand() % m_max_elts;
-    }
-    ++m_i;
-    return e;
-  }
-
-  template <typename U = T,
-            typename std::enable_if<!std::is_same<U, element1>::value,
-                                    int>::type = 0>
-  T next(void) {
-    T e{};
-    e.value2 = 17;
-    if (ekINC_VALS == m_type) {
-      e.value1 = m_i;
-    } else if (ekDEC_VALS == m_type) {
-      e.value1 = m_max_elts - m_i;
-    } else if (ekPACKED_VALS == m_type) {
-      auto upper = (m_i & (-1UL << std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2));
-      auto lower = (m_i & (-1UL >> (std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2)));
-      e.value1 = upper | lower;
-    } else {
-      e.value1 = rand() % m_max_elts;
-    }
-    ++m_i;
-    return e;
-  }
-
- private:
-  enum gen_elt_type m_type;
-  int               m_max_elts;
-  int64_t           m_i;
-};
-
-/* Test data element for all data structures */
-template<typename T>
-struct element_set {
-  explicit element_set(size_t size) : elts(size) {}
-
-  void data_gen(void) {
-    element_generator<T> g(gen_elt_type::ekDEC_VALS, elts.size());
-    for (size_t i = 0; i < elts.size(); ++i) {
-      elts[i] = g.next();
-    } /* for(i..) */
-  }
-  std::vector<T> elts;
-};
-
 
 /*******************************************************************************
  * Public API
@@ -229,11 +150,6 @@ error:
 /*******************************************************************************
  * Operators
  ******************************************************************************/
-template<typename T>
-bool operator<(const T& lhs, const T& rhs) {
-  return lhs.value1 < rhs.value1;
-}
-
 /**
  * run_test_flags
  *

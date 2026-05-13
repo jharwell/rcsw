@@ -69,7 +69,7 @@ static void rdwr_test(int len, struct rbuffer_config* config) {
   T dummy{};
   CATCH_REQUIRE(ERROR == rbuffer_remove(rb, &dummy));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);
@@ -100,7 +100,7 @@ static void overwrite_test(int len, struct rbuffer_config* config) {
 
   std::vector<T>           arr;
   size_t                   tail = 0;
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
 
   for (int i = 0; i < len * len; i++) {
     T e = g.next();
@@ -130,7 +130,7 @@ static void map_test(int len, struct rbuffer_config* config) {
   /* NULL callback rejected */
   CATCH_REQUIRE(ERROR == rbuffer_map(rb, nullptr));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   std::vector<int>         expected;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -158,7 +158,7 @@ static void inject_test(int len, struct rbuffer_config* config) {
   int dummy = 0;
   CATCH_REQUIRE(ERROR == rbuffer_inject(rb, nullptr, &dummy));
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   int expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -182,7 +182,7 @@ static void fifo_test(int len, struct rbuffer_config* config) {
   struct rbuffer* rb = rbuffer_init(&myrb, config);
   CATCH_REQUIRE(nullptr != rb);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   std::vector<T>           arr;
 
   for (int i = 0; i < len * 2; ++i) {
@@ -212,7 +212,7 @@ static void iter_test(int len, struct rbuffer_config* config) {
   struct rbuffer* rb = rbuffer_init(&myrb, config);
   CATCH_REQUIRE(rb != nullptr);
 
-  th::element_generator<T> g(gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(rbuffer_add(rb, &e) == OK);

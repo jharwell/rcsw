@@ -8,8 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef TESTS_DS_TEST_H_
-#define TESTS_DS_TEST_H_
+#pragma once
 
 /*******************************************************************************
  * Includes
@@ -18,30 +17,25 @@
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/ds/iter.h"
 #include "rcsw/er/client.h"
-#include "tests/ds/element.h"
+#include "tests/element.h"
 #include "tests/test.h"
 
 /*******************************************************************************
- * Constant Definitions
+ * Constants
  ******************************************************************************/
-#define TH_NUM_ITEMS 16
 #define TH_NUM_BUCKETS 10
 #define NUM_MERGE_ITEMS 10
 #define TH_MULTIFIFO_CHILDREN 1
 
-/*******************************************************************************
- * Structure Definitions
- ******************************************************************************/
-enum gen_elt_type { ekINC_VALS, ekDEC_VALS, ekRAND_VALS, ekPACKED_VALS };
-
 struct hashmap_params;
+
 /*******************************************************************************
- * Type Definitions
+ * Types
  ******************************************************************************/
 typedef void (*hashmap_test_t)(struct hashmap_config* config);
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -62,5 +56,3 @@ int th_key_cmp(const void* a, const void* b) RCSW_PURE;
 int th_putchar(int c);
 
 END_C_DECLS
-
-#endif /* TESTS_DS_TEST_H_ */
