@@ -11,6 +11,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <assert.h>
+
 #include "rcsw/er/er.h"
 
 /*******************************************************************************
@@ -55,22 +57,23 @@
 /**
  * \brief Print a token AND it's value in decimal/hexadecimal.
  */
-#define DPRINT_TOK(tok) DPRINTF(STR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok));
+#define DPRINT_TOK(tok) \
+  DPRINTF(RCSW_XSTR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok));
 
 /**
  * \brief Print a token AND it's value in decimal.
  */
-#define DPRINT_TOKD(tok) DPRINTF(STR(tok) ": %d\n", (int)(tok));
+#define DPRINT_TOKD(tok) DPRINTF(RCSW_XSTR(tok) ": %d\n", (int)(tok));
 
 /**
  * \brief Print a token AND it's value in hexadecimal.
  */
-#define DPRINT_TOKX(tok) DPRINTF(STR(tok) ": 0x%x\n", (int)(tok));
+#define DPRINT_TOKX(tok) DPRINTF(RCSW_XSTR(tok) ": 0x%x\n", (int)(tok));
 
 /**
  * \brief Print a token AND it's value in floating point.
  */
-#define DPRINT_TOKF(tok) DPRINTF(STR(tok) ": %.8f\n", (float)(tok));
+#define DPRINT_TOKF(tok) DPRINTF(RCSW_XSTR(tok) ": %.8f\n", (float)(tok));
 
 #endif /* RCSW_ERL >= RCSW_ERL_FATAL */
 

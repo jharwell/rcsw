@@ -37,7 +37,7 @@ set_target_properties(printf PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
 file(WRITE "${CMAKE_BINARY_DIR}/include/eyalroz/printf.h"
      "#include \"${printf_SOURCE_DIR}/src/printf/printf.h\"\n")
 
-set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain)
+set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain printf)
 
 function(rcsw_message type msg)
   message(${type} "[RCSW] ${msg}")
@@ -402,15 +402,16 @@ _rcsw_apply_includes(${PROJECT_NAME})
 
 # Some components need the generated eyalroz/printf.h wrapper
 if(RCSW_CONFIG_STDIO)
-  target_include_directories(${PROJECT_NAME}_stdio
-                             PRIVATE ${CMAKE_BINARY_DIR}/include)
+  target_include_directories(
+    ${PROJECT_NAME}_stdio PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
   if(RCSW_CONFIG_TOOL)
-    target_include_directories(${PROJECT_NAME}_tool
-                               PRIVATE ${CMAKE_BINARY_DIR}/include)
+    target_include_directories(
+      ${PROJECT_NAME}_tool
+      PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
   endif()
   if(RCSW_CONFIG_BUILD_MONOLITHIC)
-    target_include_directories(${PROJECT_NAME}
-                               PRIVATE ${CMAKE_BINARY_DIR}/include)
+    target_include_directories(
+      ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
   endif()
 endif()
 
