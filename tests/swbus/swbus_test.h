@@ -65,7 +65,7 @@ struct cvt {                               /* current value table */
 extern struct cvt cvt;
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 int      thr_create(uint32_t thr_i);
 status_t join_threads(void);

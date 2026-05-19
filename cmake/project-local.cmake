@@ -444,7 +444,7 @@ endif()
 # ##############################################################################
 # Installation and deployment
 # ##############################################################################
-# Only applies to POSIX/Linux; embedding targets don't install.
+# Only applies to POSIX/Linux for s; embedding targets don't install.
 if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
   libra_configure_exports(${PROJECT_NAME})
 

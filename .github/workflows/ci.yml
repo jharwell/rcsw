@@ -70,13 +70,16 @@ env:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Setup
         shell: bash
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
 
-      - name: Configure
+      - name: Configure and build
         shell: bash
         run: |
           MONOLITHIC=OFF
@@ -86,18 +89,13 @@ env:
 
           PTR_ALIGN=${{ matrix.ptr_align || 4 }}
 
-          cmake --preset debug \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          clibra build --preset ${{ matrix.build_type }} \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
             -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
             -DRCSW_CONFIG_PTR_ALIGN=${PTR_ALIGN} \
             -DRCSW_CONFIG_STDIO_PUTCHAR=putchar
-
-      - name: Build
-        shell: bash
-        run: cmake --build --preset debug
 
 # ---------------------------------------------------------------------------
 # Job 2: POSIX component-exclusion build
@@ -126,13 +124,16 @@ env:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Setup
         shell: bash
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
 
-      - name: Configure
+      - name: Configure and build
         shell: bash
         run: |
           EXTRA_FLAGS=""
@@ -151,17 +152,13 @@ env:
             EXTRA_FLAGS="-DRCSW_CONFIG_${COMPONENT}=OFF"
           fi
 
-          cmake --preset debug \
+          clibra build --preset debug \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4 \
             ${EXTRA_FLAGS}
-
-      - name: Build
-        shell: bash
-        run: cmake --build --preset debug
 
 # ---------------------------------------------------------------------------
 # Job 3: Baremetal build (stdlib and nostdlib in one job)
@@ -192,30 +189,28 @@ env:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Setup
         shell: bash
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
 
-      - name: Configure
+      - name: Configure and build
         shell: bash
         run: |
           STDLIB_FLAGS=-DLIBRA_STDLIB=${{ matrix.stdlib }}
 
           # LOG4CL requires data structures which aren't built on baremetal;
           # always use SIMPLE here.
-          cmake --preset debug \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          clibra build --preset ${{ matrix.build_type }} \
             -DRCSW_BUILD_FOR=BAREMETAL \
             -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             ${STDLIB_FLAGS}
-
-      - name: Build
-        shell: bash
-        run: cmake --build --preset debug
 
 # ---------------------------------------------------------------------------
 # Job 4: POSIX test (memcheck + coverage)
@@ -249,6 +244,9 @@ env:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Setup
         shell: bash
         run: |
@@ -258,11 +256,9 @@ env:
       - name: Memcheck
         shell: bash
         run: |
-          cmake --preset ci-valgrind \
+          clibra build --preset ci-valgrind \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
-
-          cmake --build --preset ci-valgrind --target all-tests
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} -t all-tests
 
           # --test-dir is required because ctest + memcheck don't resolve the
           # binary dir reliably as of CMake 3.31
@@ -271,13 +267,13 @@ env:
       - name: Generate coverage
         shell: bash
         run: |
-          cmake --preset ci-coverage \
+          clibra build --preset ci-coverage \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          cmake --build --preset ci-coverage --target build-and-test
-          cmake --build --preset ci-coverage --target lcov-report
+          clibra build --preset ci-coverage --target build-and-test
+          clibra build --preset ci-coverage --target lcov-report
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
@@ -302,6 +298,8 @@ env:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Setup
         shell: bash
@@ -312,16 +310,13 @@ env:
       - name: Build and install (component mode)
         shell: bash
         run: |
-          cmake --preset debug \
+          clibra install --preset debug \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4 \
             -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install
-
-          cmake --build --preset debug
-          cmake --install build
 
       - name: Verify component find_package
         shell: bash
@@ -352,16 +347,13 @@ env:
       - name: Build and install (monolithic mode)
         shell: bash
         run: |
-          cmake --preset debug \
+          clibra install --preset debug \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=ON \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4 \
             -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install-mono
-
-          cmake --build --preset debug
-          cmake --install build
 
       - name: Verify monolithic find_package
         shell: bash
@@ -412,17 +404,12 @@ env:
       - name: Configure
         shell: bash
         run: |
-          cmake --preset analyze \
+          clibra analyze \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4
-
-      - name: Run cppcheck
-        shell: bash
-        run: |
-          cmake --build preset analyze --target analyze-cppcheck
 
 # ---------------------------------------------------------------------------
 # Job 7: Docs
@@ -465,21 +452,21 @@ env:
       - name: Build debug package
         shell: bash
         run: |
-          cmake --preset debug \
+          clibra build --preset debug \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCPACK_PACKAGE_NAME=rcsw-dev
 
-          cmake --build --preset debug --target package
+          clibra build --preset debug --target package
 
       - name: Build release package
         shell: bash
         run: |
-          cmake --preset release \
+          clibra build --preset release \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCMAKE_BUILD_TYPE=Release \
             -DCPACK_PACKAGE_NAME=rcsw-opt
 
-          cmake --build --preset release --target package
+          clibra build --preset release --target package
 
       - name: Lint packages
         shell: bash
