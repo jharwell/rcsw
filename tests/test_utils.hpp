@@ -1,11 +1,11 @@
 /**
- * \file er_test_utils.hpp
+ * \file utils_test_utils.hpp
  *
- * Shared helpers for ER unit tests.
+ * Shared helpers for utils unit tests.
  *
- * Provides capture_stdout() – a thin wrapper around pipe/dup2 that captures
- * everything written to fd 1 (including printf output from the SIMPLE plugin)
- * within the scope of a lambda.
+ * Provides capture_stdout() — a thin pipe/dup2 wrapper that captures
+ * everything written to fd 1 (including printf/DPRINTF output) within the
+ * scope of a lambda, and RCSW_ARRAY_ELTS for C-array sizing.
  *
  * \copyright 2023 John Harwell, All rights reserved.
  *
@@ -20,18 +20,17 @@
 #include <string>
 #include <unistd.h>
 
+#include "rcsw/core/core.h"
+
 /*******************************************************************************
- * Public API
+ * Free Functions
  ******************************************************************************/
+
 /**
  * \brief Execute \p fn and return everything it wrote to stdout (fd 1).
  *
- * Flushes stdout before redirecting so that any buffered output already
- * produced by Catch2 (e.g. the "Randomness seeded to:" line) is drained to
- * the real file descriptor before the pipe is installed.  Only output
- * produced during the execution of \p fn is returned.
- *
- * Works for both printf-style (fd 1) and std::cout output.
+ * Flushes stdout before installing the pipe so that any buffered Catch2
+ * header output is drained before the capture window opens.
  */
 static inline std::string capture_stdout(std::function<void()> fn) {
   fflush(stdout);

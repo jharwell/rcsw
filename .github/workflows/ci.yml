@@ -21,12 +21,7 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
-# ---------------------------------------------------------------------------
-# Shared setup used by every job that builds RCSW
-# ---------------------------------------------------------------------------
-env:
-  RCSW_CONTAINER: jharwell/ubuntu24.04-rcsw:20260428
-
+jobs:
 # ---------------------------------------------------------------------------
 # Job 1: POSIX parametric build
 #
@@ -37,7 +32,7 @@ env:
   build-posix:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       fail-fast: false
       matrix:
@@ -73,11 +68,13 @@ env:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+
       - name: Setup
         shell: bash
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
+          cargo install clibra
 
       - name: Configure and build
         shell: bash
@@ -106,7 +103,7 @@ env:
   build-posix-components:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       fail-fast: false
       matrix:
@@ -132,6 +129,7 @@ env:
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
+          cargo install clibra
 
       - name: Configure and build
         shell: bash
@@ -169,7 +167,7 @@ env:
   build-baremetal:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       fail-fast: false
       matrix:
@@ -197,6 +195,7 @@ env:
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
+          cargo install clibra
 
       - name: Configure and build
         shell: bash
@@ -225,7 +224,7 @@ env:
       - build-posix-components
       - build-baremetal
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+        image: jharwell/ubuntu24.04-rcsw:20260428
     strategy:
       fail-fast: false
       matrix:
@@ -252,6 +251,7 @@ env:
         run: |
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
+          cargo install clibra
 
       - name: Memcheck
         shell: bash
@@ -294,7 +294,7 @@ env:
     needs:
       - build-posix
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
 
     steps:
       - uses: actions/checkout@v4
@@ -389,7 +389,7 @@ env:
   static-analysis:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
     continue-on-error: true
 
     steps:
@@ -418,17 +418,22 @@ env:
     uses: ./.github/workflows/pages.yml
     needs:
       - test-posix
+      - test-install
+      - static-analysis
     secrets: inherit
 
 # ---------------------------------------------------------------------------
 # Job 8: Create release
 # ---------------------------------------------------------------------------
   create-release:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs:
       - test-posix
+      - test-install
+      - static-analysis
     container:
-      image: ${{ env.RCSW_CONTAINER }}
+      image: jharwell/ubuntu24.04-rcsw:20260428
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
