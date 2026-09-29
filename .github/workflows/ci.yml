@@ -5,9 +5,18 @@ name: Build and test
 # - Every month. Scheduling helps keep drift/issues with updates
 #   to runners at bay.
 # - On pushes to relevant paths.
+# - On pushes of stable release tags (vX.Y.Z), which cut a GitHub release.
 #
 on:
   push:
+    # Listing tags means branches must be listed too, or branch pushes stop
+    # triggering. Path filters only apply to branch pushes; tag pushes always
+    # run. The tag pattern only matches stable vX.Y.Z tags, so dev tags don't
+    # trigger a release.
+    branches:
+      - "**"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
     paths:
       - "src/**"
       - "include/**"
@@ -19,7 +28,9 @@ on:
 
 concurrency:
   group: ${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on master/devel partway through: that could leave a
+  # pushed tag without its release.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/devel' }}
 
 jobs:
 # ---------------------------------------------------------------------------
@@ -404,24 +415,31 @@ jobs:
     secrets: inherit
 
 # ---------------------------------------------------------------------------
-# Job 8: Create release
+# Job 8: Tag development version (devel only)
+#
+# LIBRA derives the project version from git tags, so "bumping" the version
+# is just pushing the next vX.Y.Z-dev.N tag. `clibra version --bump` computes
+# it from the most recent tag:
+#
+#   vX.Y.Z        -> vX.Y.(Z+1)-dev.1
+#   vX.Y.Z-dev.N  -> vX.Y.Z-dev.(N+1)
 # ---------------------------------------------------------------------------
-  create-release:
-    if: github.ref == 'refs/heads/master'
+  tag-devel:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/devel'
     runs-on: ubuntu-latest
     needs:
       - test-posix
       - test-install
       - static-analysis
+    permissions:
+      contents: write
     container:
       image: jharwell/ubuntu24.04-rcsw:20260929
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # git-cliff needs full history
+          fetch-depth: 0   # version resolution needs full history + tags
 
       - name: Setup
         shell: bash
@@ -432,9 +450,63 @@ jobs:
           git submodule update --init --remote --recursive
           cargo install clibra
 
-      - name: Generate changelog
+      - name: Bump and tag
         shell: bash
-        run: git-cliff --latest --strip header -o changelog
+        run: |
+          # Re-runs of this job on an already-tagged commit must not create a
+          # second dev tag for the same commit.
+          if EXISTING=$(git describe --exact-match --tags HEAD 2>/dev/null); then
+            echo "HEAD is already tagged ${EXISTING}; nothing to do."
+            exit 0
+          fi
+
+          # clibra reads the version from the configured build dir, so
+          # configure first.
+          cmake --preset release
+          NEXT_VERSION=$(clibra version --preset release --bump)
+
+          git tag "v${NEXT_VERSION}" -m "Development release ${NEXT_VERSION}"
+          git push origin "v${NEXT_VERSION}"
+
+# ---------------------------------------------------------------------------
+# Job 9: Create release (stable tag push)
+#
+# Triggered by pushing a vX.Y.Z tag on a master commit. The version is
+# whatever the tag says; it doesn't have to follow the devel bump scheme.
+# ---------------------------------------------------------------------------
+  create-release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs:
+      - test-posix
+      - test-install
+      - static-analysis
+    permissions:
+      contents: write
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20260929
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # version resolution needs full history + tags
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git config --global user.email "${{ github.event.pusher.email }}"
+          git config --global user.name "${{ github.event.pusher.name }}"
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Verify tag is on master
+        shell: bash
+        run: |
+          if ! git merge-base --is-ancestor HEAD origin/master; then
+            echo "::error::Tag ${GITHUB_REF_NAME} is not on master; refusing to release."
+            exit 1
+          fi
 
       - name: Build release package
         shell: bash
@@ -446,49 +518,42 @@ jobs:
 
           clibra build --preset release --target package
 
+      - name: Verify version
+        shell: bash
+        run: |
+          # Make sure LIBRA resolved the same version as the pushed tag, so
+          # the package version matches the release. This fails if another
+          # tag on the same commit (e.g. a dev tag) won out.
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          clibra version --preset release --full --check "${RELEASE_VERSION}"
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
+
       - name: Lint packages
         shell: bash
         run: lintian build/*.deb
 
+      # Tag only after everything above has succeeded, so a failed run
+      # doesn't leave a release tag behind.
       - name: Tag release
         shell: bash
         run: |
-          PACKAGE_VERSION=$(sed -nE 's/.*VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt | head -1)
+          git tag "${RELEASE_TAG}" -m "Release ${RELEASE_VERSION}"
+          git push origin "${RELEASE_TAG}"
 
-          if [ "${{ github.ref }}" = "refs/heads/devel" ]; then
-            RELEASE_VERSION=${PACKAGE_VERSION}.beta
-            RELEASE_MESSAGE="Development release ${RELEASE_VERSION}"
-            git tag ${RELEASE_VERSION} -m "${RELEASE_MESSAGE}" -f
-            git push -o ci.skip origin ${RELEASE_VERSION} -f
-          else
-            RELEASE_VERSION=${PACKAGE_VERSION}
-            RELEASE_MESSAGE="Release ${RELEASE_VERSION}"
-            git tag ${RELEASE_VERSION} -m "${RELEASE_MESSAGE}"
-            git push -o ci.skip origin ${RELEASE_VERSION}
-          fi
-
-          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_MESSAGE=${RELEASE_MESSAGE}" >> $GITHUB_ENV
-          echo "PACKAGE_VERSION=${PACKAGE_VERSION}" >> $GITHUB_ENV
-
-      - name: Github beta release
-        if: github.ref == 'refs/heads/devel'
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ env.RELEASE_VERSION }}
-          prerelease: true
-          title: "${{ env.RELEASE_MESSAGE }}"
-          files: |
-            build/*.deb
+      - name: Generate changelog
+        shell: bash
+        run: |
+          # Only consider stable tags, so the changelog covers everything
+          # since the previous release rather than since the last dev tag.
+          git-cliff --latest --strip header \
+            --tag-pattern '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            -o changelog
 
       - name: Github release
-        if: github.ref == 'refs/heads/master'
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ env.RELEASE_VERSION }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ env.RELEASE_VERSION }}
+          body_path: changelog
           prerelease: false
-          title: "${{ env.RELEASE_MESSAGE }}"
-          files: |
-            build/*.deb
+          files: build/*.deb

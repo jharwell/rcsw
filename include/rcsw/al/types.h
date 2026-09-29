@@ -76,6 +76,7 @@ typedef enum { false = 0, true = 1 } bool_t;
  */
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -84,8 +85,6 @@ typedef enum { false = 0, true = 1 } bool_t;
  *
  * gcc -dM -E - < /dev/null
  */
-
-#define EINVAL -1
 
 /* defines */
 #ifndef NULL
@@ -97,7 +96,7 @@ typedef enum { false = 0, true = 1 } bool_t;
 #undef false
 #endif
 
-typedef enum { false = 0, true = 1 } bool_t;
+#define bool_t bool
 
 #else /* we can use stdlib */
 
