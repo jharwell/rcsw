@@ -12,7 +12,9 @@
  * Includes
  ******************************************************************************/
 #include <limits.h>
+
 #define CATCH_CONFIG_PREFIX_ALL
+#include <catch2/catch_get_random_seed.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/binheap.h"
@@ -21,7 +23,7 @@
 #include "tests/element.hpp"
 
 /*******************************************************************************
- * Test Helper Functions
+ * Test Harness
  ******************************************************************************/
 template <typename T>
 static void run_test(void (*test)(th::gen_elt_type, struct binheap_config *),
@@ -172,7 +174,9 @@ static void delete_test(th::gen_elt_type type, struct binheap_config *config) {
 
   size_t old_elts = binheap_size(heap);
   while (!binheap_isempty(heap)) {
-    size_t index = std::max<int>(rand() % binheap_size(heap), 1);
+    size_t upper = std::max<size_t>(old_elts - 1, 1);
+    size_t index = std::uniform_int_distribution<size_t>(1, upper)(th::make_rng());
+
     CATCH_REQUIRE(binheap_delete_key(heap, index, &minmax) == OK);
     CATCH_REQUIRE(binheap_delete_key(nullptr, index, &minmax) == ERROR);
     CATCH_REQUIRE(binheap_size(heap) == old_elts - 1);
@@ -237,13 +241,13 @@ static void structure_test(th::gen_elt_type type, struct binheap_config *config)
     CATCH_REQUIRE(binheap_extract(heap, &e) == OK);
 
     /* For INC_VALS min-heap or DEC_VALS max-heap: extract in original order */
-    if (((type == th::gen_elt_type::ekINC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
-        ((type == th::gen_elt_type::ekDEC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
+    if (((type == th::gen_elt_type::INC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
+        ((type == th::gen_elt_type::DEC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
       CATCH_REQUIRE(e.value1 == arr[i].value1);
     }
     /* For DEC_VALS min-heap or INC_VALS max-heap: extract in reverse order */
-    else if (((type == th::gen_elt_type::ekDEC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
-             ((type == th::gen_elt_type::ekINC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
+    else if (((type == th::gen_elt_type::DEC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
+             ((type == th::gen_elt_type::INC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
       CATCH_REQUIRE(e.value1 == arr[config->max_elts - i - 1].value1);
     }
   }
@@ -279,21 +283,21 @@ static void print_test(th::gen_elt_type type, struct binheap_config *config) {
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("binheap Insert Test", "[ds][binheap]") {
-  run_test<element8>(insert_test<element8>, th::gen_elt_type::ekINC_VALS);
-  run_test<element8>(insert_test<element8>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element8>(insert_test<element8>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element8>(insert_test<element8>, th::gen_elt_type::INC_VALS);
+  run_test<element8>(insert_test<element8>, th::gen_elt_type::DEC_VALS);
+  run_test<element8>(insert_test<element8>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element4>(insert_test<element4>, th::gen_elt_type::ekINC_VALS);
-  run_test<element4>(insert_test<element4>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element4>(insert_test<element4>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element4>(insert_test<element4>, th::gen_elt_type::INC_VALS);
+  run_test<element4>(insert_test<element4>, th::gen_elt_type::DEC_VALS);
+  run_test<element4>(insert_test<element4>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element2>(insert_test<element2>, th::gen_elt_type::ekINC_VALS);
-  run_test<element2>(insert_test<element2>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element2>(insert_test<element2>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element2>(insert_test<element2>, th::gen_elt_type::INC_VALS);
+  run_test<element2>(insert_test<element2>, th::gen_elt_type::DEC_VALS);
+  run_test<element2>(insert_test<element2>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element1>(insert_test<element1>, th::gen_elt_type::ekINC_VALS);
-  run_test<element1>(insert_test<element1>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element1>(insert_test<element1>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element1>(insert_test<element1>, th::gen_elt_type::INC_VALS);
+  run_test<element1>(insert_test<element1>, th::gen_elt_type::DEC_VALS);
+  run_test<element1>(insert_test<element1>, th::gen_elt_type::RAND_VALS);
 }
 
 CATCH_TEST_CASE("binheap Delete Test", "[ds][binheap]") {
@@ -301,43 +305,43 @@ CATCH_TEST_CASE("binheap Delete Test", "[ds][binheap]") {
    * Only run with element8: delete uses a sentinel value1 of INT_MIN/INT_MAX.
    * Smaller element types cannot represent those values correctly.
    */
-  run_test<element8>(delete_test<element8>, th::gen_elt_type::ekINC_VALS);
-  run_test<element8>(delete_test<element8>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element8>(delete_test<element8>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element8>(delete_test<element8>, th::gen_elt_type::INC_VALS);
+  run_test<element8>(delete_test<element8>, th::gen_elt_type::DEC_VALS);
+  run_test<element8>(delete_test<element8>, th::gen_elt_type::RAND_VALS);
 }
 
 CATCH_TEST_CASE("binheap Make Test", "[ds][binheap]") {
-  run_test<element8>(make_test<element8>, th::gen_elt_type::ekINC_VALS);
-  run_test<element8>(make_test<element8>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element8>(make_test<element8>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element8>(make_test<element8>, th::gen_elt_type::INC_VALS);
+  run_test<element8>(make_test<element8>, th::gen_elt_type::DEC_VALS);
+  run_test<element8>(make_test<element8>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element4>(make_test<element4>, th::gen_elt_type::ekINC_VALS);
-  run_test<element4>(make_test<element4>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element4>(make_test<element4>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element4>(make_test<element4>, th::gen_elt_type::INC_VALS);
+  run_test<element4>(make_test<element4>, th::gen_elt_type::DEC_VALS);
+  run_test<element4>(make_test<element4>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element2>(make_test<element2>, th::gen_elt_type::ekINC_VALS);
-  run_test<element2>(make_test<element2>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element2>(make_test<element2>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element2>(make_test<element2>, th::gen_elt_type::INC_VALS);
+  run_test<element2>(make_test<element2>, th::gen_elt_type::DEC_VALS);
+  run_test<element2>(make_test<element2>, th::gen_elt_type::RAND_VALS);
 
-  run_test<element1>(make_test<element1>, th::gen_elt_type::ekINC_VALS);
-  run_test<element1>(make_test<element1>, th::gen_elt_type::ekDEC_VALS);
-  run_test<element1>(make_test<element1>, th::gen_elt_type::ekRAND_VALS);
+  run_test<element1>(make_test<element1>, th::gen_elt_type::INC_VALS);
+  run_test<element1>(make_test<element1>, th::gen_elt_type::DEC_VALS);
+  run_test<element1>(make_test<element1>, th::gen_elt_type::RAND_VALS);
 }
 
 CATCH_TEST_CASE("binheap Structure Test", "[ds][binheap]") {
-  run_test<element8>(structure_test<element8>, th::gen_elt_type::ekINC_VALS);
-  run_test<element8>(structure_test<element8>, th::gen_elt_type::ekDEC_VALS);
+  run_test<element8>(structure_test<element8>, th::gen_elt_type::INC_VALS);
+  run_test<element8>(structure_test<element8>, th::gen_elt_type::DEC_VALS);
 
-  run_test<element4>(structure_test<element4>, th::gen_elt_type::ekINC_VALS);
-  run_test<element4>(structure_test<element4>, th::gen_elt_type::ekDEC_VALS);
+  run_test<element4>(structure_test<element4>, th::gen_elt_type::INC_VALS);
+  run_test<element4>(structure_test<element4>, th::gen_elt_type::DEC_VALS);
 
-  run_test<element2>(structure_test<element2>, th::gen_elt_type::ekINC_VALS);
-  run_test<element2>(structure_test<element2>, th::gen_elt_type::ekDEC_VALS);
+  run_test<element2>(structure_test<element2>, th::gen_elt_type::INC_VALS);
+  run_test<element2>(structure_test<element2>, th::gen_elt_type::DEC_VALS);
 
-  run_test<element1>(structure_test<element1>, th::gen_elt_type::ekINC_VALS);
-  run_test<element1>(structure_test<element1>, th::gen_elt_type::ekDEC_VALS);
+  run_test<element1>(structure_test<element1>, th::gen_elt_type::INC_VALS);
+  run_test<element1>(structure_test<element1>, th::gen_elt_type::DEC_VALS);
 }
 
 CATCH_TEST_CASE("binheap Print Test", "[ds][binheap]") {
-  run_test<element8>(print_test<element8>, th::gen_elt_type::ekINC_VALS);
+  run_test<element8>(print_test<element8>, th::gen_elt_type::INC_VALS);
 }

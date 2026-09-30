@@ -242,7 +242,7 @@ BEGIN_C_DECLS
  *
  * \return The top of the queue, or NULL if no such packet or an error occurred.
  */
-RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue* const queue);
+RCSW_API struct swbus_rxq_ent* swbus_rxq_front(struct pcqueue* queue);
 
 /**
  * \brief Initialize a \ref swbus instance.

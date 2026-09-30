@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "rcsw/al/clock.h"
-#define RCSW_ER_MODID ekLOG4CL_GRIND
+#define RCSW_ER_MODID LOG4CL_GRIND
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "profile", "grind")
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"
@@ -29,7 +29,7 @@
  * Macros
  ******************************************************************************/
 #define GRINDER_TYPE(the_grinder) \
-  ((ekRCSW_GRIND_COUNT == the_grinder->mode) ? "counting" : "timing")
+  ((RCSW_GRIND_COUNT == the_grinder->mode) ? "counting" : "timing")
 
 /*******************************************************************************
  * Private API
@@ -171,7 +171,7 @@ static void grind_report_hist(const struct grinder* const the_grinder,
 
   /* print histogram */
   for (size_t i = 0; i < 50; ++i) {
-    if (ekRCSW_GRIND_COUNT == the_grinder->mode) {
+    if (RCSW_GRIND_COUNT == the_grinder->mode) {
       DPRINTF("%8zu | ", i);
     } else {
       DPRINTF("%8zu.%08zu sec | ",
@@ -202,7 +202,7 @@ static void grind_report_datapoints(const struct grinder*       the_grinder,
   DPRINTF("-------------+--------------------------\n");
 
   for (size_t i = 0; i < grindee->tindex; ++i) {
-    if (ekRCSW_GRIND_COUNT == the_grinder->mode) {
+    if (RCSW_GRIND_COUNT == the_grinder->mode) {
       DPRINTF("%8zu            %08zu\n", i, grindee->table[i]);
     } else {
       struct timespec ts = utils_monons2ts(grindee->table[i]);
@@ -281,7 +281,7 @@ static void grind_ts_capture(const struct grinder* const the_grinder,
                              struct grindee* const       grindee) {
   struct timespec ts = the_grinder->gettime();
 
-  if (ekRCSW_GRIND_DURATION == the_grinder->mode) {
+  if (RCSW_GRIND_DURATION == the_grinder->mode) {
     if (grindee->domain.duration.active) {
       grindee->domain.duration.end    = ts;
       grindee->domain.duration.active = false;
@@ -289,7 +289,7 @@ static void grind_ts_capture(const struct grinder* const the_grinder,
       grindee->domain.duration.start  = ts;
       grindee->domain.duration.active = true;
     }
-  } else if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
+  } else if (RCSW_GRIND_PERIOD == the_grinder->mode) {
     grindee->domain.tick.current = ts;
   }
 }
@@ -354,7 +354,7 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
   if (grindee->full && (the_grinder->flags & RCSW_GRIND_REPORT_AUTO)) {
     grind_report(the_grinder, grindee);
   }
-  if (ekRCSW_GRIND_DURATION == the_grinder->mode) {
+  if (RCSW_GRIND_DURATION == the_grinder->mode) {
     grindee->domain.duration.active = false;
   }
 
@@ -433,7 +433,7 @@ struct grinder* grind_init(struct grinder*                  grind_in,
     the_grinder->grindees[i].full   = 0;
     memset(&the_grinder->grindees[i].domain, 0, sizeof(union grind_mode_impl));
 
-    if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
+    if (RCSW_GRIND_PERIOD == the_grinder->mode) {
       the_grinder->grindees[i].domain.tick.first = true;
     }
     the_grinder->grindees[i].tsize = config->tsize;
@@ -727,7 +727,7 @@ status_t grind_report(const struct grinder* const the_grinder,
     "**********\n");
   DPRINTF("\nReport for grindee '%s':\n\n", grindee->name);
 
-  if (ekRCSW_GRIND_COUNT == the_grinder->mode) {
+  if (RCSW_GRIND_COUNT == the_grinder->mode) {
     grind_report_count(the_grinder, grindee);
   } else {
     grind_report_time(the_grinder, grindee);
@@ -859,7 +859,7 @@ void grind_reset(struct grinder* const the_grinder,
   grindee->tindex = 0;
   grindee->count  = 0;
   grindee->full   = false;
-  if (ekRCSW_GRIND_PERIOD == the_grinder->mode) {
+  if (RCSW_GRIND_PERIOD == the_grinder->mode) {
     grindee->domain.tick.first = true;
     memset(&grindee->domain.tick.current, 0, sizeof(struct timespec));
   }

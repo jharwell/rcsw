@@ -17,8 +17,8 @@
 #define RCSW_CONFIG_ER_PLUGIN 1 /* RCSW_ER_PLUGIN_SIMPLE */
 
 #include "rcsw/er/er.h"
-#include "rcsw/er/plugin/simple.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
@@ -30,6 +30,7 @@
  *
  * Level ordering is a foundational contract; verify it once at build time.
  ******************************************************************************/
+// NOLINTBEGIN(misc-redundant-expression)
 static_assert(RCSW_ERL == RCSW_ERL_ALL,       "default ERL must be ERL_ALL");
 static_assert(RCSW_ERL_ALL == RCSW_ERL_TRACE,  "ERL_ALL must equal ERL_TRACE");
 static_assert(RCSW_ERL_TRACE > RCSW_ERL_DEBUG, "TRACE > DEBUG");
@@ -38,6 +39,7 @@ static_assert(RCSW_ERL_INFO  > RCSW_ERL_WARN,  "INFO  > WARN");
 static_assert(RCSW_ERL_WARN  > RCSW_ERL_ERROR, "WARN  > ERROR");
 static_assert(RCSW_ERL_ERROR > RCSW_ERL_FATAL, "ERROR > FATAL");
 static_assert(RCSW_ERL_FATAL > RCSW_ERL_NONE,  "FATAL > NONE");
+// NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
  * Test Helper Functions
@@ -59,7 +61,7 @@ static_assert(RCSW_ERL_FATAL > RCSW_ERL_NONE,  "FATAL > NONE");
 
 static void level_output_test() {
   /* Every active level must emit its level tag and the module name. */
-  for (auto& [tag, out] : {
+  for (const auto& [tag, out] : {
          std::pair<const char*, std::string>{"[FATAL]", capture_stdout([] { ER_FATAL("hello %d", 42); })},
          {"[ERROR]", capture_stdout([] { ER_ERR  ("world %d", 99); })},
          {"[WARN ]", capture_stdout([] { ER_WARN ("warn msg");     })},
@@ -82,7 +84,7 @@ static void ansi_color_test() {
   CATCH_REQUIRE(error_out.find(RCSW_ER_FAILC) != std::string::npos);
   CATCH_REQUIRE(error_out.find(RCSW_ER_ENDC)  != std::string::npos);
 
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_WARN("w");  }),
          capture_stdout([] { ER_INFO("i");  }),
          capture_stdout([] { ER_DEBUG("d"); }),
@@ -94,7 +96,7 @@ static void ansi_color_test() {
 
 static void crlf_suffix_test() {
   /* ER_REPORT appends "\r\n" to every emitted line. */
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
          capture_stdout([] { ER_ERR  ("e"); }),
          capture_stdout([] { ER_WARN ("w"); }),
@@ -109,7 +111,7 @@ static void crlf_suffix_test() {
 
 static void modname_prefix_test() {
   /* The module name must appear at position 0 on every emitted line. */
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
          capture_stdout([] { ER_ERR  ("e"); }),
          capture_stdout([] { ER_WARN ("w"); }),
@@ -133,11 +135,14 @@ static void dprintf_macros_test() {
   CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOK(x);  }) == "x: 42/0x2a\n");
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 static void er_assert_test() {
   /* ER_ASSERT must be silent and must not abort when its condition is true. */
+  // NOLINTNEXTLINE(bugprone-sizeof-expression)
   CATCH_REQUIRE(capture_stdout([] { ER_ASSERT(1 == 1, "must not fire"); }).empty());
 
   bool reached = false;
+  // NOLINTNEXTLINE(misc-static-assert,cert-dcl03-c)
   ER_ASSERT(true, "must not abort");
   reached = true;
   CATCH_REQUIRE(reached);
@@ -148,6 +153,7 @@ static void er_assert_test() {
    */
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 static void er_cond_macros_test() {
   /* ER_CONDW/CONDI/CONDD emit when their condition is true, are silent on false. */
   CATCH_REQUIRE(capture_stdout([] { ER_CONDW(true,  "condw"); }).find("[WARN ]") != std::string::npos);
@@ -160,6 +166,7 @@ static void er_cond_macros_test() {
   CATCH_REQUIRE(capture_stdout([] { ER_CONDD(false, "condd"); }).empty());
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 static void er_check_test() {
   /* ER_CHECK must NOT jump when its condition is true. */
   {

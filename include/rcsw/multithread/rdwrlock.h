@@ -55,8 +55,8 @@ struct rdwrlock {
  * OR a single writer in a critical section at a given time.
  */
 enum rdwrlock_scope {
-  ekSCOPE_RD,
-  ekSCOPE_WR,
+  SCOPE_RD,
+  SCOPE_WR,
 };
 
 /*******************************************************************************
@@ -74,8 +74,8 @@ BEGIN_C_DECLS
  *
  * \return The initialized RDWR lock, or NULL if an ERROR occurred.
  */
-RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in,
-                                     uint32_t               flags) RCSW_WUR;
+RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock* rdwr_in,
+                                     uint32_t         flags) RCSW_WUR;
 
 /**
  * \brief Destroy a reader/writer fair lock
@@ -84,7 +84,7 @@ RCSW_API struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in,
  *
  * \param rdwr The lock handle.
  */
-RCSW_API void rdwrl_destroy(struct rdwrlock* const rdwr);
+RCSW_API void rdwrl_destroy(struct rdwrlock* rdwr);
 
 /**
  * \brief Request to enter a critical section.
@@ -96,7 +96,7 @@ RCSW_API void rdwrl_destroy(struct rdwrlock* const rdwr);
  *
  * \param scope The scope of the privileges requested.
  */
-RCSW_API void rdwrl_req(struct rdwrlock* const rdwr, enum rdwrlock_scope scope);
+RCSW_API void rdwrl_req(struct rdwrlock* rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Exit a critical section.
@@ -108,7 +108,7 @@ RCSW_API void rdwrl_req(struct rdwrlock* const rdwr, enum rdwrlock_scope scope);
  *
  * \param scope The scope of the privileges requested.
  */
-RCSW_API void rdwrl_exit(struct rdwrlock* const rdwr, enum rdwrlock_scope scope);
+RCSW_API void rdwrl_exit(struct rdwrlock* rdwr, enum rdwrlock_scope scope);
 
 /**
  * \brief Request to enter a critical section with a timeout.
@@ -126,8 +126,8 @@ RCSW_API void rdwrl_exit(struct rdwrlock* const rdwr, enum rdwrlock_scope scope)
  *
  * \return \ref status_t.
  */
-RCSW_API status_t rdwrl_timedreq(struct rdwrlock* const       rdwr,
-                                 enum rdwrlock_scope          scope,
-                                 const struct timespec* const to);
+RCSW_API status_t rdwrl_timedreq(struct rdwrlock*       rdwr,
+                                 enum rdwrlock_scope    scope,
+                                 const struct timespec* to);
 
 END_C_DECLS

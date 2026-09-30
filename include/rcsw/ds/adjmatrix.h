@@ -161,18 +161,17 @@ static inline size_t adjmatrix_element_space(size_t n_vertices,
  *
  * \return \ref bool_t.
  */
-static inline bool_t adjmatrix_edge_query(struct adjmatrix* const matrix,
-                                          size_t                  u,
-                                          size_t                  v) {
+static inline bool_t adjmatrix_edge_query(const struct adjmatrix* const matrix,
+                                          size_t                        u,
+                                          size_t                        v) {
   RCSW_FPC_NV(false,
               NULL != matrix,
               u < matrix->n_vertices,
               v < matrix->n_vertices);
   if (matrix->is_weighted) {
     return (!isnan(*(double*)adjmatrix_access(matrix, u, v)));
-  } else {
-    return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->elt_size);
   }
+  return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->elt_size);
 }
 
 /**

@@ -21,8 +21,8 @@
  * \brief The direction of iteration.
  */
 enum ds_iter_type {
-  ekITER_FORWARD,
-  ekITER_BACKWARD,
+  ITER_FORWARD,
+  ITER_BACKWARD,
 };
 
 /*
@@ -54,7 +54,7 @@ struct ds_ops {
    * \brief Advance the iterator backward and return the current element's data.
    *
    * May be NULL if the data structure does not support backward iteration. If
-   * NULL and \ref ekITER_BACKWARD is requested, \ref ds_iter_init() will return
+   * NULL and \ref ITER_BACKWARD is requested, \ref ds_iter_init() will return
    * NULL.
    */
   void* (*prev)(struct ds_iterator* iter);
@@ -72,7 +72,7 @@ struct ds_ops {
  *
  * \code
  * struct ds_iterator it;
- * ds_iter_init(&it, my_darray, ekITER_FORWARD,
+ * ds_iter_init(&it, my_darray, ITER_FORWARD,
  *              &darray_iter_ops,   // defined in darray.c
  *              NULL);              // no filter
  * void* e;
@@ -84,7 +84,7 @@ struct ds_ops {
  * For a filtered iteration pass a classify callback:
  *
  * \code
- * ds_iter_init(&it, my_llist, ekITER_FORWARD, &llist_iter_ops, my_pred);
+ * ds_iter_init(&it, my_llist, ITER_FORWARD, &llist_iter_ops, my_pred);
  * \endcode
  */
 struct ds_iterator {
@@ -134,7 +134,7 @@ BEGIN_C_DECLS
  *               iteration.
  *
  * \return \p iter on success, or NULL if \p ops->prev is NULL but
- *         \ref ekITER_BACKWARD was requested.
+ *         \ref ITER_BACKWARD was requested.
  */
 RCSW_API struct ds_iterator* ds_iter_init(struct ds_iterator*  iter,
                                           void*                ds,

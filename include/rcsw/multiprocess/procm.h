@@ -49,9 +49,9 @@ status_t procm_socket_lock(int socket);
  * \param pipefd If not NULL, the child will read data from the parent's stdin.
  * \return The pid of the child in the parent, nothing in the child.
  */
-pid_t procm_fork_exec(char** const cmd,
-                      const char*  new_wd,
-                      bool_t       stdout_sup,
-                      int*         pipefd);
+pid_t procm_fork_exec(char**      cmd,
+                      const char* new_wd,
+                      bool_t      stdout_sup,
+                      int*        pipefd);
 
 END_C_DECLS

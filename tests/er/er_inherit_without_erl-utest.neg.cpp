@@ -10,6 +10,7 @@
  */
 
 /* Define INHERIT but intentionally omit LIBRA_ERL */
+#undef LIBRA_ERL
 #define LIBRA_ERL_INHERIT
 
 #include "rcsw/er/er.h"

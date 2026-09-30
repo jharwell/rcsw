@@ -16,7 +16,7 @@
 #include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "darray")
-#define RCSW_ER_MODID ekLOG4CL_DS_DARRAY
+#define RCSW_ER_MODID LOG4CL_DS_DARRAY
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/core/alloc.h"
@@ -266,7 +266,7 @@ status_t darray_insert(struct darray* const arr,
   /* re-sort the array if configured to */
   if (arr->flags & RCSW_DS_SORTED) {
     arr->sorted = false;
-    darray_sort(arr, ekEXEC_ITER);
+    darray_sort(arr, EXEC_ITER);
   }
   return OK;
 
@@ -416,13 +416,13 @@ status_t darray_sort(struct darray* const arr, enum exec_type type) {
   if (arr->current <= 1 || arr->sorted) {
     ER_DEBUG("Already sorted: nothing to do (%zu elements)", arr->current);
   } else {
-    if (type == ekEXEC_REC) {
+    if (type == EXEC_REC) {
       RCSW_CHECK(OK == qsort_rec(arr->elements,
                                  0,
                                  (int)arr->current - 1,
                                  arr->elt_size,
                                  arr->cmpe));
-    } else if (type == ekEXEC_ITER) {
+    } else if (type == EXEC_ITER) {
       RCSW_CHECK(OK == qsort_iter(arr->elements,
                                   (int)arr->current - 1,
                                   arr->elt_size,
@@ -550,7 +550,7 @@ struct ds_iterator* darray_iter_init(struct ds_iterator* iter,
 
   /* Seed cursor BEFORE calling ds_iter_init, which must not overwrite it. */
   iter->cursor =
-    (type == ekITER_FORWARD) ? (void*)(size_t)0 : (void*)(size_t)arr->current;
+    (type == ITER_FORWARD) ? (void*)(size_t)0 : (void*)(size_t)arr->current;
 
   return ds_iter_init(iter, arr, type, &darray_iter_ops, classify);
 }

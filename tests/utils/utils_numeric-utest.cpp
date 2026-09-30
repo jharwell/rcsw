@@ -15,11 +15,11 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
 #include <cmath>
+#include <cstring>
 
-#include "rcsw/utils/numeric.h"
 #include "rcsw/core/core.h"
+#include "rcsw/utils/numeric.h"
 
 /*******************************************************************************
  * Callbacks

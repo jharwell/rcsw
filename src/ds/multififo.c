@@ -12,7 +12,7 @@
 #include "rcsw/ds/multififo.h"
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "multififo")
-#define RCSW_ER_MODID ekLOG4CL_DS_MULTIFIFO
+#define RCSW_ER_MODID LOG4CL_DS_MULTIFIFO
 #include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
 

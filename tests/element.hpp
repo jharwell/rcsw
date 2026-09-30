@@ -14,6 +14,10 @@
 #include "tests/element.h"
 #include <vector>
 #include <stdlib.h>
+#include <cassert>
+#include <random>
+
+#include <catch2/catch_get_random_seed.hpp>
 
 /******************************************************************************
  * Namespaces/Decls
@@ -23,9 +27,16 @@ namespace th {
 /*******************************************************************************
  * Structure Definitions
  ******************************************************************************/
-enum gen_elt_type { ekINC_VALS, ekDEC_VALS, ekRAND_VALS, ekPACKED_VALS };
-  
-  template<typename T>
+enum gen_elt_type { INC_VALS, DEC_VALS, RAND_VALS, PACKED_VALS };
+
+
+static inline std::mt19937& make_rng() {
+  static auto rng =  std::mt19937{Catch::getSeed()};
+  return rng;
+}
+
+
+template<typename T>
 class element_generator {
  public:
   element_generator(enum gen_elt_type type, int max_elts)
@@ -48,12 +59,13 @@ class element_generator {
                                     int>::type = 0>
   U next(void) {
     U e{};
-    if (ekINC_VALS == m_type) {
+    if (INC_VALS == m_type) {
       e.value1 = m_i;
-    } else if (ekDEC_VALS == m_type) {
+    } else if (DEC_VALS == m_type) {
       e.value1 = m_max_elts - m_i;
     } else {
-      e.value1 = rand() % m_max_elts;
+      auto dist = std::uniform_int_distribution<size_t>(0, m_max_elts - 1);
+      e.value1 = dist(make_rng());
     }
     ++m_i;
     return e;
@@ -64,12 +76,13 @@ class element_generator {
                                     int>::type = 0>
   T next(void) {
     T e{};
+    assert(m_max_elts > 0);
     e.value2 = 17;
-    if (ekINC_VALS == m_type) {
+    if (INC_VALS == m_type) {
       e.value1 = m_i;
-    } else if (ekDEC_VALS == m_type) {
+    } else if (DEC_VALS == m_type) {
       e.value1 = m_max_elts - m_i;
-    } else if (ekPACKED_VALS == m_type) {
+    } else if (PACKED_VALS == m_type) {
       auto upper = (m_i & (-1UL << std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2));
       auto lower = (m_i & (-1UL >> (std::numeric_limits<decltype(std::declval<T>().value1)>::digits / 2)));
       e.value1 = upper | lower;
@@ -92,7 +105,7 @@ struct element_set {
   explicit element_set(size_t size) : elts(size) {}
 
   void data_gen(void) {
-    element_generator<T> g(gen_elt_type::ekDEC_VALS, elts.size());
+    element_generator<T> g(gen_elt_type::DEC_VALS, elts.size());
     for (size_t i = 0; i < elts.size(); ++i) {
       elts[i] = g.next();
     } /* for(i..) */
@@ -103,7 +116,6 @@ struct element_set {
 /******************************************************************************
  * Public API
  ******************************************************************************/
-
 /**
  * \brief Generate an element.
  */
@@ -111,9 +123,9 @@ template<typename T>
 T gen_elt(enum gen_elt_type type, int i, int max_elts) {
   T e;
   e.value2 = -1;
-  if (ekINC_VALS == type) {
+  if (INC_VALS == type) {
     e.value1 = i;
-  } else if (ekDEC_VALS == type) {
+  } else if (DEC_VALS == type) {
     e.value1 = max_elts - i;
   } else {
     e.value1 = rand() % max_elts;

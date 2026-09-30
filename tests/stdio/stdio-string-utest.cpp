@@ -19,6 +19,7 @@
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
 #include "rcsw/utils/byteops.h"
+#include "tests/element.hpp"
 
 /******************************************************************************
  * Constant Definitions
@@ -52,12 +53,13 @@ CATCH_TEST_CASE("strrep() Test [string]") { strrep_test(); }
 static void strlen_test(void) {
   char s[MAX_STRING_SIZE];
   int  i;
-  int  len1, len2;
+  int  len1;
+  int  len2;
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     utils_string_gen(s, i);
 
-    len1 = stdio_strlen(s);
-    len2 = strlen(s);
+    len1 = (int)stdio_strlen(s);
+    len2 = (int)strlen(s);
     CATCH_REQUIRE(len1 == i - 1);
     CATCH_REQUIRE(len1 == len2);
   }
@@ -66,7 +68,8 @@ static void strlen_test(void) {
 static void strrev_test(void) {
   char s1[MAX_STRING_SIZE];
   char s2[MAX_STRING_SIZE];
-  int  i, j;
+  int  i;
+  int  j;
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     utils_string_gen(s1, i);
     memcpy(s2, s1, i);
@@ -79,16 +82,18 @@ static void strrev_test(void) {
 
 static void strchr_test(void) {
   char        s1[MAX_STRING_SIZE];
-  int         i, j;
+  int         i;
+  int  j;
   char*       rval1;
   const char* rval2;
 
+  auto dist = std::uniform_int_distribution<size_t>(0, 126 - 33);
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     utils_string_gen(s1, i);
     for (j = 0; j < i; j++) {
-      int c = rand() % (126 - 33 + 1) + 33;
+      int c = (int)dist(th::make_rng()) + 33;
       rval1 = strchr(s1, c);
-      rval2 = stdio_strchr(s1, c);
+      rval2 = stdio_strchr(s1, (char)c);
 
       CATCH_REQUIRE(rval1 == rval2);
     }
@@ -111,7 +116,8 @@ static void strcpy_test(void) {
 static void strncpy_test(void) {
   char s1[MAX_STRING_SIZE];
   char s2[MAX_STRING_SIZE];
-  int  i, j;
+  int  i;
+  int j;
 
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     utils_string_gen(s1, i);
@@ -127,7 +133,8 @@ static void strcmp_test(void) {
   char s1[MAX_STRING_SIZE];
   char s2[MAX_STRING_SIZE];
   int  i;
-  int  rval1, rval2;
+  int  rval1;
+  int rval2;
 
   /* test on random strings */
   for (i = 1; i < MAX_STRING_SIZE; i++) {
@@ -151,8 +158,10 @@ static void strcmp_test(void) {
 static void strncmp_test(void) {
   char s1[MAX_STRING_SIZE];
   char s2[MAX_STRING_SIZE];
-  int  i, j;
-  int  rval1, rval2;
+  int  i;
+  int  j;
+  int  rval1;
+  int rval2;
 
   /* test on random strings */
   for (i = 1; i < MAX_STRING_SIZE; i++) {
@@ -182,7 +191,9 @@ static void strrep_test(void) {
   char  pattern[MAX_STRING_SIZE];
   char  replacement[MAX_STRING_SIZE];
   char  new_str[MAX_STRING_SIZE * MAX_STRING_SIZE];
-  int   i, j, k;
+  int   i;
+  int  j;
+  int  k;
   char* tmp;
   int   pat_count = 0;
   int   pat_len   = 2;
@@ -191,26 +202,26 @@ static void strrep_test(void) {
   /* test on random strings */
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     if (((i % (MAX_STRING_SIZE / 10)) == 0) && (i != 0)) {
-      fflush(NULL);
+      (void)fflush(NULL);
     }
     /* generate test string */
     utils_string_gen(original, i);
     rep_len = 2;
 
+    auto dist = std::uniform_int_distribution<size_t>(0, 10);
     for (j = 1; j < MAX_STRING_SIZE; j++) {
       /* generate string pattern to look for */
       utils_string_gen(pattern, pat_len);
 
       /* copy pattern to a few random locations within original */
-      for (k = 0; k < rand() % 10; k++) {
-        int pos = rand() % 10;
+      for (k = 0; k < dist(th::make_rng()); k++) {
+        int pos = (int)dist(th::make_rng());
         if (pos + strlen(pattern) < strlen(original)) {
-          memcpy(original + pos, pattern, strlen(pattern));
+          strncpy(original + pos, pattern, strlen(pattern));
         }
       }
 
       /* figure out how many times replacement pattern occurs in test string */
-      tmp       = original;
       pat_count = 0;
       char* tmp2;
       for (tmp = original; (tmp2 = strstr(tmp, pattern)); tmp = tmp2 + 1) {
@@ -222,8 +233,8 @@ static void strrep_test(void) {
 
       /* replace the all occurrences of pattern in original with replacement */
       stdio_strrep(original, pattern, replacement, new_str);
-      CATCH_REQUIRE(strlen(original) + pat_count * strlen(replacement) -
-                      pat_count * strlen(pattern) ==
+      CATCH_REQUIRE(strlen(original) + (pat_count * strlen(replacement)) -
+                    (pat_count * strlen(pattern)) ==
                     strlen(new_str));
       rep_len++;
     } /* for (j...) */

@@ -16,14 +16,17 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/core/compilers.h"
+#include "rcsw/er/er.h"
 
 /* 2023-11-14 [JRH]: zlog does not come ready to interoperate with C++ :-(. */
 BEGIN_C_DECLS
 
+#if RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_ZLOG
 RCSW_WARNING_DISABLE_PUSH()
 RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
 #include <zlog.h>
 RCSW_WARNING_DISABLE_POP()
+#endif
 
 END_C_DECLS
 
@@ -39,6 +42,7 @@ END_C_DECLS
  */
 enum { ZLOG_LEVEL_TRACE = 10 };
 
+// NOLINTBEGIN(readability-identifier-naming)
 #define zlog_trace(cat, format, ...) \
   zlog(cat,                          \
        __FILE__,                     \
@@ -51,6 +55,7 @@ enum { ZLOG_LEVEL_TRACE = 10 };
        ##__VA_ARGS__)
 
 #define zlog_trace_enabled(zc) zlog_level_enabled(zc, ZLOG_LEVEL_TRACE)
+// NOLINTEND(readability-identifier-naming)
 
 #define RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR "_"
 

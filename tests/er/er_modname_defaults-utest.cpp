@@ -14,8 +14,8 @@
 #define RCSW_CONFIG_ER_PLUGIN 1
 
 #include "rcsw/er/er.h"
-#include "rcsw/er/plugin/simple.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
@@ -32,8 +32,10 @@
  *   RCSW_ER_MODNAME  →  __FILE_NAME__   (compiler-provided basename)
  *   RCSW_ER_MODID    →  0xFFFFFFFF      (sentinel "unknown" ID)
  ******************************************************************************/
+// NOLINTBEGIN(misc-redundant-expression)
 static_assert(RCSW_ER_MODID == 0xFFFFFFFF,
               "default RCSW_ER_MODID must be the sentinel 0xFFFFFFFF");
+// NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
  * Test Helper Functions
@@ -46,7 +48,7 @@ static void default_modname_prefix_test() {
    */
   const std::string expected = __FILE_NAME__;
 
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
          capture_stdout([] { ER_ERR  ("e"); }),
          capture_stdout([] { ER_WARN ("w"); }),
@@ -65,7 +67,7 @@ static void default_modid_test() {
 
 static void default_functionality_test() {
   /* All macros must compile and behave correctly with the default modname/id. */
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
          capture_stdout([] { ER_ERR  ("e"); }),
          capture_stdout([] { ER_WARN ("w"); }),
@@ -83,6 +85,7 @@ static void default_functionality_test() {
 
 static void default_check_flow_test() {
   /* Control-flow macros must not be affected by which modname is active. */
+  // NOLINTNEXTLINE(cert-dcl03-c,misc-static-assert)
   ER_ASSERT(true, "must not abort");
 
   bool jumped = false;

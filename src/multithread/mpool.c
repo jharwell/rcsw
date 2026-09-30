@@ -14,7 +14,7 @@
 #include "rcsw/ds/llist.h"
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "mpool")
-#define RCSW_ER_MODID ekLOG4CL_MT_MPOOL
+#define RCSW_ER_MODID LOG4CL_MT_MPOOL
 #include <string.h>
 
 #include "rcsw/core/alloc.h"
@@ -37,6 +37,7 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
                                       params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(the_pool);
+  memset(the_pool, 0, sizeof(*the_pool));
 
   the_pool->flags    = params->flags;
   the_pool->elt_size = params->elt_size;
@@ -122,10 +123,9 @@ void mpool_destroy(struct mpool* const the_pool) {
 
   rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
   rcsw_free(the_pool->meta, the_pool->flags & RCSW_NOALLOC_META);
-
-  rcsw_free(the_pool->refs, RCSW_NONE);
+  rcsw_free(the_pool->refs, the_pool->flags & RCSW_NOALLOC_META);
   rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
-} /* mpool_destroy() */
+}
 
 void* mpool_req(struct mpool* const the_pool) {
   RCSW_FPC_NV(NULL, NULL != the_pool);

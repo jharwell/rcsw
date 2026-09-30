@@ -12,7 +12,7 @@
 #include "rcsw/ds/llist_node.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
-#define RCSW_ER_MODID ekLOG4CL_DS_LLIST
+#define RCSW_ER_MODID LOG4CL_DS_LLIST
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/allocm.h"

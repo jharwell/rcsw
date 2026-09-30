@@ -107,7 +107,7 @@ RCSW_API size_t stdio_strlen(const char* s) RCSW_PURE;
  * \return The length of the string.
  */
 
-RCSW_API size_t stdio_strnlen(const char* const s, size_t maxsize) RCSW_PURE;
+RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize) RCSW_PURE;
 
 /**
  * \brief Reverse a string of known length.

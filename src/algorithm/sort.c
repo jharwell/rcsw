@@ -146,7 +146,7 @@ status_t qsort_iter(void* const a,
   stack[++top] = max_index;
 
   /* while the stack is not empty you are not done sorting */
-  while (top >= 0) {
+  while (top > 0) {
     /* pop new min_index and max_index */
     max_index = stack[top--];
     min_index = stack[top--];
@@ -194,10 +194,10 @@ status_t insertion_sort(void*  arr,
    */
   uint8_t key[RCSW_SORT_MAX_ELT_SIZE];
 
-  int i, j;
+  int i;
   for (i = 1; i < (int)n_elts; ++i) {
     memcpy(key, (uint8_t*)arr + (i * (int)elt_size), elt_size);
-    j = i - 1;
+    int j = i - 1;
     while (j >= 0 && cmpe((uint8_t*)arr + (j * (int)elt_size), key) > 0) {
       memmove((uint8_t*)arr + ((j + 1) * (int)elt_size),
               (uint8_t*)arr + (j * (int)elt_size),

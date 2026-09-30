@@ -208,14 +208,14 @@ void edit_dist_destroy(struct edit_dist_finder* finder) {
 int edit_dist_find(struct edit_dist_finder* finder, enum exec_type type) {
   RCSW_FPC_NV(-1, NULL != finder);
   switch (type) {
-    case ekEXEC_REC:
+    case EXEC_REC:
       return edit_dist_rec(finder->seq_a,
                            finder->seq_b,
                            finder->memoization,
                            finder->seq_len,
                            finder->cmpe,
                            finder->elt_size);
-    case ekEXEC_ITER:
+    case EXEC_ITER:
       return edit_dist_iter(finder->seq_a,
                             finder->seq_b,
                             finder->memoization,

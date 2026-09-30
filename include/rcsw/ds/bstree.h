@@ -28,9 +28,9 @@
  * \brief The different traversal types the tree supports.
  */
 enum bstree_traversal_type {
-  ekTRAVERSE_PREORDER,
-  ekTRAVERSE_INORDER,
-  ekTRAVERSE_POSTORDER,
+  TRAVERSE_PREORDER,
+  TRAVERSE_INORDER,
+  TRAVERSE_POSTORDER,
 };
 
 /*******************************************************************************
@@ -343,9 +343,7 @@ static inline size_t bstree_meta_space(size_t max_elts) {
  *
  * \param data The data to insert
  */
-RCSW_API status_t bstree_insert(struct bstree* tree,
-                                void* const    key,
-                                void* const    data);
+RCSW_API status_t bstree_insert(struct bstree* tree, void* key, void* data);
 
 /**
  * \brief Initialize a \ref bstree.
@@ -354,8 +352,8 @@ RCSW_API status_t bstree_insert(struct bstree* tree,
  *
  * \param params Initialization parameters
  */
-RCSW_API struct bstree* bstree_init(struct bstree*                    tree_in,
-                                    const struct bstree_config* const params);
+RCSW_API struct bstree* bstree_init(struct bstree*              tree_in,
+                                    const struct bstree_config* params);
 
 /**
  * \brief Destroy a binary search tree

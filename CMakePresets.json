@@ -98,7 +98,15 @@
                 "LIBRA_ERL": "ALL"
             }
         },
-
+      {
+        "name": "ci-asan",
+        "displayName": "AddressSanitizer",
+        "description": "Debug build with ASAN + UBSAN",
+        "inherits": ["asan","ci-base"],
+        "cacheVariables": {
+          "LIBRA_SAN": "ASAN;UBSAN"
+        }
+      },
         {
             "name": "asan",
             "displayName": "AddressSanitizer",

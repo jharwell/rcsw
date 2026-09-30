@@ -63,13 +63,15 @@ static void addremove_test(int len, struct darray_config* config) {
   T dummy{};
   CATCH_REQUIRE(ERROR == darray_remove(arr, &dummy, 0));
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   std::vector<T>           inserted;
+
+  auto dist = std::uniform_int_distribution<size_t>(0, 1);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
     inserted.push_back(e);
-    if (rand() % 2) {
+    if (dist(th::make_rng())) {
       CATCH_REQUIRE(darray_insert(arr, &e, 0) == OK);
     } else {
       CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
@@ -108,7 +110,7 @@ static void sort_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
   std::vector<T>           original;
 
   for (int i = 0; i < len; i++) {
@@ -117,12 +119,15 @@ static void sort_test(int len, struct darray_config* config) {
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  darray_sort(arr, (rand() % 2) ? ekEXEC_ITER : ekEXEC_REC);
+  auto dist = std::uniform_int_distribution<size_t>(0, 1);
+
+  darray_sort(arr, (dist(th::make_rng())) ? EXEC_ITER : EXEC_REC);
 
   /* verify sorted order AND permutation */
   std::vector<T> sorted;
+  sorted.reserve(len);
   for (int i = 0; i < len; i++) {
-    sorted.push_back(*reinterpret_cast<T*>(darray_data_get(arr, i)));
+    sorted.emplace_back(*reinterpret_cast<T*>(darray_data_get(arr, i)));
   }
   verify_sort_permutation(original, sorted.data(), len);
 
@@ -142,7 +147,7 @@ static void copy_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr1);
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -182,7 +187,7 @@ static void map_test(int len, struct darray_config* config) {
   /* NULL callback rejected */
   CATCH_REQUIRE(ERROR == darray_map(arr, nullptr));
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
@@ -214,7 +219,7 @@ static void inject_test(int len, struct darray_config* config) {
   int dummy = 0;
   CATCH_REQUIRE(ERROR == darray_inject(arr, nullptr, &dummy));
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   int expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -230,6 +235,7 @@ static void inject_test(int len, struct darray_config* config) {
 }
 
 template <typename T>
+// NOLINTNEXTLINE(readability-function-size)
 static void iter_test(int len, struct darray_config* config) {
   struct darray* arr;
   struct darray  myarr;
@@ -241,7 +247,7 @@ static void iter_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
@@ -251,14 +257,14 @@ static void iter_test(int len, struct darray_config* config) {
   struct ds_iterator iter;
 
   /* filtered forward: only even values */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_FORWARD,
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_FORWARD,
                                             th::iter_func_even<T>));
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
   /* unfiltered forward: all values in order */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_FORWARD,
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_FORWARD,
                                             th::iter_func_all<T>));
   size_t count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
@@ -268,7 +274,7 @@ static void iter_test(int len, struct darray_config* config) {
   CATCH_REQUIRE(count == darray_size(arr));
 
   /* unfiltered backward: values in reverse order */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ekITER_BACKWARD,
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_BACKWARD,
                                             th::iter_func_all<T>));
   count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
@@ -279,9 +285,9 @@ static void iter_test(int len, struct darray_config* config) {
 
   /* two independent iterators over the same array */
   struct ds_iterator iter2;
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter,  arr, ekITER_FORWARD,
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter,  arr, ITER_FORWARD,
                                             th::iter_func_all<T>));
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter2, arr, ekITER_FORWARD,
+  CATCH_REQUIRE(nullptr != darray_iter_init(&iter2, arr, ITER_FORWARD,
                                             th::iter_func_all<T>));
   T* e1 = (T*)ds_iter_next(&iter);
   T* e2 = (T*)ds_iter_next(&iter2);
@@ -306,7 +312,7 @@ static void filter_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr1);
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   std::vector<T>           inserted;
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -344,14 +350,14 @@ static void binarysearch_test(int len, struct darray_config* config) {
   }
   CATCH_REQUIRE(nullptr != arr);
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
   for (int i = 0; i < len; i++) {
     T e = g.next();
     inserted.push_back(e);
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  darray_sort(arr, ekEXEC_ITER);
+  darray_sort(arr, EXEC_ITER);
 
   /* every inserted element must be found */
   for (auto& e : inserted) {

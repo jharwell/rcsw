@@ -173,7 +173,7 @@ static void test_radix_sort_base(size_t base, size_t n_elts) {
 
   /* permutation check */
   std::vector<size_t> orig_sorted = original;
-  std::sort(orig_sorted.begin(), orig_sorted.end());
+  std::ranges::sort(orig_sorted.begin(), orig_sorted.end());
   CATCH_REQUIRE(arr == orig_sorted);
 }
 
@@ -238,42 +238,39 @@ static void test_qsort_random(size_t n_elts) {
 
 template <typename T>
 static void test_qsort_already_sorted(size_t n_elts) {
-  auto v = make_sorted<T>(n_elts);
-  std::vector<T> original = v;
+  auto original = make_sorted<T>(n_elts);
 
-  std::vector<T> rec = v;
+  std::vector<T> rec = original;
   qsort_rec(rec.data(), 0, (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, rec.data(), n_elts);
 
-  std::vector<T> iter = v;
+  std::vector<T> iter = original;
   qsort_iter(iter.data(), (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, iter.data(), n_elts);
 }
 
 template <typename T>
 static void test_qsort_reverse_sorted(size_t n_elts) {
-  auto v = make_reverse_sorted<T>(n_elts);
-  std::vector<T> original = v;
+  auto original = make_reverse_sorted<T>(n_elts);
 
-  std::vector<T> rec = v;
+  std::vector<T> rec = original;
   qsort_rec(rec.data(), 0, (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, rec.data(), n_elts);
 
-  std::vector<T> iter = v;
+  std::vector<T> iter = original;
   qsort_iter(iter.data(), (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, iter.data(), n_elts);
 }
 
 template <typename T>
 static void test_qsort_all_equal(size_t n_elts) {
-  auto v = make_all_equal<T>(n_elts);
-  std::vector<T> original = v;
+  auto original = make_all_equal<T>(n_elts);
 
-  std::vector<T> rec = v;
+  std::vector<T> rec = original;
   qsort_rec(rec.data(), 0, (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, rec.data(), n_elts);
 
-  std::vector<T> iter = v;
+  std::vector<T> iter = original;
   qsort_iter(iter.data(), (int)n_elts - 1, sizeof(T), th::cmpe<T>);
   verify_sort(original, iter.data(), n_elts);
 }

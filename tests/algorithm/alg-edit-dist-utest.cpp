@@ -40,7 +40,7 @@ static void check_edit_dist(const char* a,
                                      sizeof(char),
                                      char_cmpe,
                                      (size_t(*)(const void*))strlen));
-  int dist_iter = edit_dist_find(&fi, ekEXEC_ITER);
+  int dist_iter = edit_dist_find(&fi, EXEC_ITER);
   CATCH_REQUIRE(dist_iter == expected);
   edit_dist_destroy(&fi);
 
@@ -52,7 +52,7 @@ static void check_edit_dist(const char* a,
                                      sizeof(char),
                                      char_cmpe,
                                      (size_t(*)(const void*))strlen));
-  int dist_rec = edit_dist_find(&fr, ekEXEC_REC);
+  int dist_rec = edit_dist_find(&fr, EXEC_REC);
   CATCH_REQUIRE(dist_rec == expected);
   edit_dist_destroy(&fr);
 

@@ -76,7 +76,7 @@ static void child_test(int len, struct multififo_config* config) {
   multififo = multififo_init(&mymultififo, config);
   CATCH_REQUIRE(nullptr != multififo);
 
-  th::element_generator<T> g(th::gen_elt_type::ekPACKED_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::PACKED_VALS, config->max_elts);
 
   for (int i = 0; i < len; i++) {
     T e = g.next();
@@ -100,6 +100,7 @@ static void child_test(int len, struct multififo_config* config) {
     } /* for(j..) */
     T e;
     CATCH_REQUIRE(multififo_remove(multififo, &e) == OK);
+    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     CATCH_REQUIRE(((T*)assembled_elt)->value1 == e.value1);
   } /* while(..) */
 

@@ -11,6 +11,7 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
+#include <algorithm>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -27,11 +28,11 @@
  ******************************************************************************/
 using swbus_test = void (*)(const struct swbus_config* const config,
                             size_t                           n_threads);
-#define TH_MAX_POOLS 16
-#define TH_MAX_RXQS 16
-#define TH_MAX_SUBS 512
-#define TH_RXQ_SIZE 1024
-#define TH_MAX_BUFSIZE 512
+#define TH_MAX_POOLS 16UL
+#define TH_MAX_RXQS 16UL
+#define TH_MAX_SUBS 512UL
+#define TH_RXQ_SIZE 1024UL
+#define TH_MAX_BUFSIZE 512UL
 #define TH_MAX_PID 16
 
 /*******************************************************************************
@@ -129,6 +130,7 @@ static void subscribe_test(const struct swbus_config* config, size_t) {
  * - Pushing packets to multiple to multiple RXQs
  */
 
+// NOLINTNEXTLINE(readability-function-size)
 static void serial_stress_test(const struct swbus_config* config, size_t) {
   struct swbus  myswbus;
   struct swbus* swbus;
@@ -157,12 +159,12 @@ static void serial_stress_test(const struct swbus_config* config, size_t) {
       CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j);
       CATCH_REQUIRE(swbus_publish(swbus, 0, config->pools[i].elt_size, buf) ==
                     OK);
-      CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j + 1);
-      CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j + 1);
+      CATCH_REQUIRE(pcqueue_size(rxq) == (2 * j) + 1);
+      CATCH_REQUIRE(pcqueue_size(rxq2) == (2 * j) + 1);
       CATCH_REQUIRE(swbus_publish(swbus, 1, config->pools[i].elt_size, buf) ==
                     OK);
-      CATCH_REQUIRE(pcqueue_size(rxq) == 2 * j + 2);
-      CATCH_REQUIRE(pcqueue_size(rxq2) == 2 * j + 2);
+      CATCH_REQUIRE(pcqueue_size(rxq) == (2 * j) + 2);
+      CATCH_REQUIRE(pcqueue_size(rxq2) == (2 * j) + 2);
     } /* for(j..) */
 
     CATCH_REQUIRE(llist_isfull(&bp->alloc));
@@ -205,6 +207,7 @@ static void serial_stress_test(const struct swbus_config* config, size_t) {
  * - Pushing packets to multiple to multiple RXQs
  */
 
+// NOLINTNEXTLINE(readability-function-size)
 static void concurrent_stress_test(const struct swbus_config* config,
                                    size_t                     n_threads) {
   struct swbus  myswbus;
@@ -247,22 +250,24 @@ static void concurrent_stress_test(const struct swbus_config* config,
   std::vector<bool> checks;
   std::mutex        mtx;
 
+                                     auto dist = std::uniform_int_distribution<size_t>(0, config->max_pools -1);
   auto pub_cb = [&]() {
     for (size_t i = 0; i < TH_RXQ_SIZE * 2 / n_threads; ++i) {
       status_t rval =
         swbus_publish(swbus,
                       i % TH_MAX_PID,
-                      config->pools[rand() % config->max_pools].elt_size,
+                      config->pools[dist(th::make_rng())].elt_size,
                       buf);
       mtx.lock();
       checks.push_back(rval == OK);
       mtx.unlock();
     } /* for(i..) */
   };
+auto dist2 = std::uniform_int_distribution<size_t>(0, 1000);
   auto sub_cb = [&](size_t id) {
     size_t          count = 0;
     status_t        rval;
-    struct timespec to   = {.tv_sec = 0, .tv_nsec = (rand() % 1000) + 1};
+    struct timespec to   = {.tv_sec = 0, .tv_nsec = (int64_t)dist2(th::make_rng())};
     auto&           subs = subscriptions[id];
     while (count < 100) {
       struct swbus_rxq_ent* ent = swbus_rxq_timedwait(swbus, rxqs[id], &to);
@@ -271,7 +276,7 @@ static void concurrent_stress_test(const struct swbus_config* config,
       }
       ++count;
       mtx.lock();
-      checks.push_back(std::find(subs.begin(), subs.end(), ent->pid) !=
+      checks.push_back(std::ranges::find(subs, ent->pid) !=
                        subs.end());
 
       mtx.unlock();
@@ -283,12 +288,14 @@ static void concurrent_stress_test(const struct swbus_config* config,
     }
   };
 
-  CATCH_REQUIRE(std::all_of(std::begin(checks), std::end(checks), [&](bool val) {
+  CATCH_REQUIRE(std::ranges::all_of(checks, [&](bool val) {
     return val;
   }));
 
   std::vector<std::thread> consumers;
   std::vector<std::thread> publishers;
+                                     consumers.reserve(n_consumers);
+                                     publishers.reserve(n_publishers);
   for (size_t i = 0; i < n_consumers; ++i) {
     consumers.push_back(std::thread(sub_cb, i));
   } /* for(i..) */
@@ -310,7 +317,7 @@ static void concurrent_stress_test(const struct swbus_config* config,
     auto& subs = subscriptions[i];
     while (!pcqueue_isempty(rxqs[i])) {
       struct swbus_rxq_ent* ent = swbus_rxq_front(rxqs[i]);
-      CATCH_REQUIRE(std::find(subs.begin(), subs.end(), ent->pid) != subs.end());
+      CATCH_REQUIRE(std::ranges::find(subs, ent->pid) != subs.end());
       CATCH_REQUIRE(OK == swbus_rxq_pop_front(rxqs[i], ent));
     }
   } /* for(i..) */

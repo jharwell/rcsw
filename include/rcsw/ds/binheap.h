@@ -32,7 +32,7 @@
 /**
  * \brief Get the index of the right child of an element in a \ref binheap.
  */
-#define RCSW_BINHEAP_RCHILD(i) (2 * (i) + 1)
+#define RCSW_BINHEAP_RCHILD(i) ((2 * (i)) + 1)
 
 /**
  * \brief Get the index of the parent of an element in a \ref binheap.

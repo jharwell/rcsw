@@ -88,7 +88,7 @@ static void addremove_test(struct matrix_config *config) {
   matrix = matrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
                               config->n_rows * config->n_cols);
 
   for (size_t i = 0; i < config->n_rows; ++i) {
@@ -115,7 +115,7 @@ static void transpose_test(struct matrix_config *config) {
   matrix = matrix_init(&mymatrix, config);
   CATCH_REQUIRE(nullptr != matrix);
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
                               config->n_rows * config->n_cols);
 
   /* Snapshot the values before transposing */
@@ -124,7 +124,7 @@ static void transpose_test(struct matrix_config *config) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
       CATCH_REQUIRE(matrix_set(matrix, i, j, &val) == OK);
-      snapshot[i * config->n_cols + j] = val;
+      snapshot[(i * config->n_cols) + j] = val;
     }
   }
 
@@ -137,7 +137,7 @@ static void transpose_test(struct matrix_config *config) {
     for (size_t i = 0; i < config->n_rows; ++i) {
       for (size_t j = 0; j < config->n_cols; ++j) {
         T *transposed = (T *)matrix_access(matrix, i, j);
-        T &original   = snapshot[j * config->n_cols + i];
+        T &original   = snapshot[(j * config->n_cols) + i];
 
         CATCH_REQUIRE(transposed->value1 == original.value1);
         if constexpr (!std::is_same<T, element1>::value) {
@@ -165,7 +165,7 @@ static void print_test(struct matrix_config *config) {
 
   matrix_print(matrix); /* empty */
 
-  th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS,
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
                               config->n_rows * config->n_cols);
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {

@@ -20,7 +20,7 @@
 #include "rcsw/multithread/pcqueue.h"
 #include "tests/element.hpp"
 
-#define TH_NUM_MT_ITEMS 1000
+#define TH_NUM_MT_ITEMS 1000UL
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -38,7 +38,7 @@ static void run_test(pcqueue_test test, size_t n_prod = 1, size_t n_cons = 1) {
   config.flags     = 0;
   config.printe    = NULL;
   config.elt_size  = sizeof(T);
-  config.max_elts  = TH_NUM_MT_ITEMS * 10;
+  config.max_elts  = TH_NUM_MT_ITEMS * 10UL;
   uint32_t flags[] = {
     RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
@@ -72,7 +72,7 @@ static void serial_test(const struct pcqueue_config* const config,
   std::vector<T> vals;
   auto           prod_cb = [&](auto* const q) {
     size_t                   count = 0;
-    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
     while (true) {
       T e = g.next();
 
@@ -118,7 +118,7 @@ static void concurrent_test(const struct pcqueue_config* const config,
   CATCH_REQUIRE(nullptr != queue);
 
   auto prod_cb = [&](auto* const q) {
-    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
     /*
      * Advance so the first element put in the queue is 1 not
      * 0.
@@ -161,7 +161,9 @@ static void concurrent_test(const struct pcqueue_config* const config,
   };
 
   std::vector<std::thread> producers;
+                              producers.reserve(n_prod);
   std::vector<std::thread> consumers;
+                              consumers.reserve(n_cons);
 
   for (size_t i = 0; i < n_prod; ++i) {
     producers.push_back(std::thread(prod_cb, queue));
@@ -205,14 +207,14 @@ static void concurrent_test(const struct pcqueue_config* const config,
 }
 
 template <typename T>
-void timeout_test(const struct pcqueue_config* const config,
+static void timeout_test(const struct pcqueue_config* const config,
                   size_t                             n_prod,
                   size_t                             n_cons) {
   struct pcqueue  queue_in;
   struct pcqueue* queue = pcqueue_init(&queue_in, config);
   CATCH_REQUIRE(nullptr != queue);
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   auto                     prod_cb = [&](auto* const q) {
     size_t count = 0;
 
@@ -243,14 +245,16 @@ void timeout_test(const struct pcqueue_config* const config,
     for (size_t i = 0; i < TH_NUM_MT_ITEMS; ++i) {
       status_t rval = pcqueue_timedpop(q, &to, &e);
       if (OK == rval) {
-        pops[id * TH_NUM_MT_ITEMS + i]     = e;
-        cons_res[id * TH_NUM_MT_ITEMS + i] = rval;
+        pops[(id * TH_NUM_MT_ITEMS) + i]     = e;
+        cons_res[(id * TH_NUM_MT_ITEMS) + i] = rval;
       }
     } /* for(i..) */
   };
 
   std::vector<std::thread> producers;
+                    producers.reserve(n_prod);
   std::vector<std::thread> consumers;
+                    consumers.reserve(n_cons);
 
   for (size_t i = 0; i < n_prod; ++i) {
     producers.push_back(std::thread(prod_cb, queue));

@@ -361,7 +361,7 @@ extern const struct ds_ops rbuffer_iter_ops;
 /**
  * \brief Initialise an iterator over a \ref rbuffer.
  *
- * Only \ref ekITER_FORWARD is supported. Passing \ref ekITER_BACKWARD will
+ * Only \ref ITER_FORWARD is supported. Passing \ref ITER_BACKWARD will
  * cause this function to return NULL.
  *
  * \param iter     Caller-allocated iterator storage.

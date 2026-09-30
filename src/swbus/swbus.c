@@ -15,7 +15,7 @@
 #include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "swb")
-#define RCSW_ER_MODID ekLOG4CL_SWBUS
+#define RCSW_ER_MODID LOG4CL_SWBUS
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
@@ -248,7 +248,7 @@ status_t swbus_publish_release(struct swbus*       swb,
 
   /* Keep application threads from servicing until all subscribers notified */
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_req(&swb->syncl, ekSCOPE_WR);
+    rdwrl_req(&swb->syncl, SCOPE_WR);
   }
 
   ER_TRACE("Check %zu total subscribers on bus '%s'",
@@ -297,7 +297,7 @@ status_t swbus_publish_release(struct swbus*       swb,
 
   /* all users counted now */
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_exit(&swb->syncl, ekSCOPE_WR);
+    rdwrl_exit(&swb->syncl, SCOPE_WR);
   }
   mutex_unlock(&swb->mutex);
   return rstat;
@@ -404,11 +404,11 @@ struct swbus_rxq_ent* swbus_rxq_wait(struct swbus* swb, struct pcqueue* queue) {
    * publish finishes as intended.
    */
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_req(&swb->syncl, ekSCOPE_RD);
+    rdwrl_req(&swb->syncl, SCOPE_RD);
   }
 
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_exit(&swb->syncl, ekSCOPE_RD);
+    rdwrl_exit(&swb->syncl, SCOPE_RD);
   }
 
 error:
@@ -423,11 +423,11 @@ struct swbus_rxq_ent* swbus_rxq_timedwait(struct swbus*    swb,
   RCSW_CHECK(OK == pcqueue_timedpeek(queue, to, (void**)&ent));
 
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_req(&swb->syncl, ekSCOPE_RD);
+    rdwrl_req(&swb->syncl, SCOPE_RD);
   }
 
   if (!(swb->flags & RCSW_SWBUS_ASYNC)) {
-    rdwrl_exit(&swb->syncl, ekSCOPE_RD);
+    rdwrl_exit(&swb->syncl, SCOPE_RD);
   }
 
 error:

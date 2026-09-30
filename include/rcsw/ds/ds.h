@@ -27,11 +27,11 @@ enum exec_type {
   /**
    * Use a recursive runtime implementation.
    */
-  ekEXEC_REC,
+  EXEC_REC,
   /**
    * Use an iterative runtime implementation.
    */
-  ekEXEC_ITER,
+  EXEC_ITER,
 };
 
 /**

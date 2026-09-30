@@ -22,8 +22,8 @@
  * Including plugin.h triggers a #error for every required plugin symbol that
  * is absent; if any are missing this TU will not compile.
  */
-#include "rcsw/er/plugin/plugin.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/plugin.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>

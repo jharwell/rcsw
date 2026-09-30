@@ -70,7 +70,7 @@ RCSW_API void utils_ts_diff(const struct timespec* __restrict__ start,
  *
  * \return Monotonic time in seconds as a \c double.
  */
-RCSW_API double utils_ts2mono(const struct timespec* const ts) RCSW_PURE;
+RCSW_API double utils_ts2mono(const struct timespec* ts) RCSW_PURE;
 
 /**
  * \brief Convert a timespec to a monotonic scalar in nanoseconds.
@@ -79,7 +79,7 @@ RCSW_API double utils_ts2mono(const struct timespec* const ts) RCSW_PURE;
  *
  * \return Monotonic time in nanoseconds as a \c uint64_t.
  */
-RCSW_API uint64_t utils_ts2monons(const struct timespec* const ts) RCSW_PURE;
+RCSW_API uint64_t utils_ts2monons(const struct timespec* ts) RCSW_PURE;
 
 /**
  * \brief Convert a monotonic nanosecond count to a timespec.

@@ -15,7 +15,7 @@
 #include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "hashmap")
-#define RCSW_ER_MODID ekLOG4CL_DS_HASHMAP
+#define RCSW_ER_MODID LOG4CL_DS_HASHMAP
 #include "rcsw/algorithm/sort.h"
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"
@@ -488,7 +488,7 @@ status_t hashmap_sort(struct hashmap* const map) {
   RCSW_FPC_NV(ERROR, map != NULL);
 
   for (size_t i = 0; i < map->n_buckets; i++) {
-    RCSW_CHECK(OK == darray_sort(&map->space.buckets[i], ekEXEC_ITER));
+    RCSW_CHECK(OK == darray_sort(&map->space.buckets[i], EXEC_ITER));
   } /* for() */
 
   map->sorted = true;

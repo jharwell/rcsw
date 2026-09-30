@@ -23,6 +23,7 @@
 /**
  * \brief Producer-consumer queue initialization parameters.
  */
+// NOLINTNEXTLINE(readability-identifier-naming)
 #define pcqueue_config fifo_config
 
 /**
@@ -196,9 +197,9 @@ RCSW_API status_t pcqueue_timedpop(struct pcqueue*        pcqueue,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_timedpeek(struct pcqueue* const        queue,
-                                    const struct timespec* const to,
-                                    void** const                 e);
+RCSW_API status_t pcqueue_timedpeek(struct pcqueue*        queue,
+                                    const struct timespec* to,
+                                    void**                 e);
 /**
  * \brief Get the first element in the queue if it exists, with a timeout.
  *
@@ -212,6 +213,6 @@ RCSW_API status_t pcqueue_timedpeek(struct pcqueue* const        queue,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t pcqueue_peek(struct pcqueue* const queue, void** const e);
+RCSW_API status_t pcqueue_peek(struct pcqueue* queue, void** e);
 
 END_C_DECLS

@@ -13,11 +13,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <climits>
+
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
-
-#include <cstddef>
-#include <climits>
 
 #include "rcsw/core/core.h"
 
@@ -92,7 +91,9 @@ CATCH_TEST_CASE("RCSW_CLAMP - at boundaries", "[core][utils]") {
 }
 
 CATCH_TEST_CASE("RCSW_CLAMP - no double evaluation", "[core][utils]") {
-  int v = 15, lo = 0, hi = 10;
+  int v = 15;
+  int lo = 0;
+  int hi = 10;
   int r = RCSW_CLAMP(v++, lo++, hi++);
   CATCH_REQUIRE(r == 10);
   CATCH_REQUIRE(v == 16);
@@ -104,15 +105,15 @@ CATCH_TEST_CASE("RCSW_CLAMP - no double evaluation", "[core][utils]") {
  * RCSW_IS_ODD / RCSW_IS_EVEN
  ******************************************************************************/
 CATCH_TEST_CASE("RCSW_IS_ODD / RCSW_IS_EVEN", "[core][utils]") {
-  CATCH_REQUIRE(RCSW_IS_ODD(1));
-  CATCH_REQUIRE(RCSW_IS_ODD(3));
+  CATCH_REQUIRE(RCSW_IS_ODD(1UL));
+  CATCH_REQUIRE(RCSW_IS_ODD(3UL));
   CATCH_REQUIRE(RCSW_IS_ODD(INT_MAX));   /* INT_MAX is odd */
-  CATCH_REQUIRE(!RCSW_IS_ODD(0));
-  CATCH_REQUIRE(!RCSW_IS_ODD(4));
+  CATCH_REQUIRE(!RCSW_IS_ODD(0UL));
+  CATCH_REQUIRE(!RCSW_IS_ODD(4UL));
 
-  CATCH_REQUIRE(RCSW_IS_EVEN(0));
-  CATCH_REQUIRE(RCSW_IS_EVEN(4));
-  CATCH_REQUIRE(!RCSW_IS_EVEN(3));
+  CATCH_REQUIRE(RCSW_IS_EVEN(0UL));
+  CATCH_REQUIRE(RCSW_IS_EVEN(4UL));
+  CATCH_REQUIRE(!RCSW_IS_EVEN(3UL));
 }
 
 /*******************************************************************************
@@ -166,7 +167,7 @@ CATCH_TEST_CASE("RCSW_CONTAINER_OF", "[core][utils]") {
     float y;
     char  z;
   };
-  struct outer obj{42, 3.14f, 'A'};
+  struct outer obj{42, std::numbers::pi, 'A'};
 
   float* yp  = &obj.y;
   auto*  got = RCSW_CONTAINER_OF(yp, struct outer, y);
@@ -199,7 +200,7 @@ error:
   return -1;
 }
 
-static int check_ptr_test(void* p) {
+static auto check_ptr_test(void* p) -> int {
   RCSW_CHECK_PTR(p);
   return 1;
 error:

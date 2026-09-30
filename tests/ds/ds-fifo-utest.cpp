@@ -88,7 +88,7 @@ static void rdwr_test(int len, struct fifo_config *config) {
     CATCH_REQUIRE(fifo_remove(fifo, &dummy) == ERROR);
   }
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
 
   /* Fill to capacity; attempts beyond capacity must fail */
   for (int i = 0; i < len * 2; ++i) {
@@ -104,7 +104,7 @@ static void rdwr_test(int len, struct fifo_config *config) {
   CATCH_REQUIRE((int)fifo_size(fifo) == len);
   fifo_print(fifo);
 
-  /* Drain and verify FIFO ordering (ekINC_VALS → 0, 1, 2, ...) */
+  /* Drain and verify FIFO ordering (INC_VALS → 0, 1, 2, ...) */
   for (int i = 0; i < len; ++i) {
     T e;
     CATCH_REQUIRE(fifo_remove(fifo, &e) == OK);
@@ -161,7 +161,7 @@ static void print_test(int len, struct fifo_config *config) {
   /* Print empty */
   fifo_print(fifo);
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   for (int i = 0; i < len; ++i) {
     T e = g.next();
     CATCH_REQUIRE(fifo_add(fifo, &e) == OK);

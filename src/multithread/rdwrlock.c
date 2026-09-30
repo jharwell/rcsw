@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multithread/rdwrlock.h"
 
-#define RCSW_ER_MODID ekLOG4CL_MT_RDWRLOCK
+#define RCSW_ER_MODID LOG4CL_MT_RDWRLOCK
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "rdwrl")
 #include "rcsw/al/clock.h"
 #include "rcsw/core/alloc.h"
@@ -44,12 +44,7 @@ static void rdwrl_wr_enter(struct rdwrlock* const rdwr) {
 
 static status_t rdwrl_wr_timed_enter(struct rdwrlock* const       rdwr,
                                      const struct timespec* const to) {
-  status_t rval = ERROR;
-
-  /*
-   * Convert once to an absolute deadline; all subsequent waits draw from
-   * the same budget by recomputing the remaining relative timeout.
-   */
+  status_t        rval = ERROR;
   struct timespec deadline;
   RCSW_CHECK(OK == utils_ts_make_abs(to, &deadline));
 
@@ -57,13 +52,12 @@ static status_t rdwrl_wr_timed_enter(struct rdwrlock* const       rdwr,
   RCSW_CHECK(OK == csem_timedwait_abs(&rdwr->order, &deadline));
 
   /* request exclusive access to resource */
-  RCSW_CHECK(OK == csem_timedwait_abs(&rdwr->access, &deadline));
+  rval = csem_timedwait_abs(&rdwr->access, &deadline);
 
-  rval = OK;
+  /* release our place in line, whether or not we got access */
+  csem_post(&rdwr->order);
 
 error:
-  /* we have gotten served, so release our place in line */
-  csem_post(&rdwr->order);
   return rval;
 }
 
@@ -106,37 +100,33 @@ static void rdwrl_rd_enter(struct rdwrlock* rdwr) {
 
 static status_t rdwrl_rd_timed_enter(struct rdwrlock* const       rdwr,
                                      const struct timespec* const to) {
-  status_t rval = ERROR;
-
-  /* Total time budget starts now */
+  status_t        rval = ERROR;
   struct timespec deadline;
   RCSW_CHECK(OK == utils_ts_make_abs(to, &deadline));
 
   /* get a place in line (ensure fairness) */
-  struct timespec remaining;
-  RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
-  RCSW_CHECK(OK == csem_timedwait(&rdwr->order, &remaining));
+  RCSW_CHECK(OK == csem_timedwait_abs(&rdwr->order, &deadline));
 
   /* we are going to modify the readers counter */
-  RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
-  RCSW_CHECK(OK == csem_timedwait(&rdwr->read, &remaining));
+  if (OK != csem_timedwait_abs(&rdwr->read, &deadline)) {
+    goto release_order;
+  }
 
-  /* if we are the first reader */
-  if (0 == rdwr->n_readers) {
-    RCSW_CHECK(OK == utils_ts_make_rel(&deadline, &remaining));
-    RCSW_CHECK(OK == csem_timedwait(&rdwr->access, &remaining));
+  /* if we are the first reader, request exclusive access for readers */
+  if (0 == rdwr->n_readers &&
+      OK != csem_timedwait_abs(&rdwr->access, &deadline)) {
+    goto release_read;
   }
   ++rdwr->n_readers;
   rval = OK;
 
-error:
-  /* we have gotten served, so release our place in line */
-  csem_post(&rdwr->order);
-
-  /* finished updating # of readers */
+release_read:
   csem_post(&rdwr->read);
+release_order:
+  csem_post(&rdwr->order);
+error:
   return rval;
-} /* struct rdwrl_rd_timed_enter() */
+}
 
 /*******************************************************************************
  * Public API
@@ -174,10 +164,10 @@ void rdwrl_req(struct rdwrlock* const rdwr, enum rdwrlock_scope scope) {
   RCSW_FPC_V(NULL != rdwr);
 
   switch (scope) {
-    case ekSCOPE_RD:
+    case SCOPE_RD:
       rdwrl_rd_enter(rdwr);
       break;
-    case ekSCOPE_WR:
+    case SCOPE_WR:
       rdwrl_wr_enter(rdwr);
       break;
     default:
@@ -191,10 +181,10 @@ void rdwrl_exit(struct rdwrlock* const rdwr, enum rdwrlock_scope scope) {
   RCSW_FPC_V(NULL != rdwr);
 
   switch (scope) {
-    case ekSCOPE_RD:
+    case SCOPE_RD:
       rdwrl_rd_exit(rdwr);
       break;
-    case ekSCOPE_WR:
+    case SCOPE_WR:
       rdwrl_wr_exit(rdwr);
       break;
     default:
@@ -210,10 +200,10 @@ status_t rdwrl_timedreq(struct rdwrlock* const       rdwr,
   RCSW_FPC_NV(ERROR, NULL != rdwr, NULL != to);
 
   switch (scope) {
-    case ekSCOPE_RD:
+    case SCOPE_RD:
       return rdwrl_rd_timed_enter(rdwr, to);
       break;
-    case ekSCOPE_WR:
+    case SCOPE_WR:
       return rdwrl_wr_timed_enter(rdwr, to);
     default:
       ER_SENTINEL("Bad privilege scope '%d' on enter", scope);

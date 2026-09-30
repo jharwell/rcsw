@@ -27,11 +27,11 @@
 #define MINIMON_CMD_MAX_NAMELEN 16
 
 enum minimon_param_type {
-  ekMINIMON_PARAM_UINT32,
-  ekMINIMON_PARAM_STR,
+  MINIMON_PARAM_UINT32,
+  MINIMON_PARAM_STR,
 };
 
-enum minimon_help_type { ekMINIMON_HELP_SHORT, ekMINIMON_HELP_LONG };
+enum minimon_help_type { MINIMON_HELP_SHORT, MINIMON_HELP_LONG };
 
 /*******************************************************************************
  * Types

@@ -13,13 +13,14 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <thread>
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
 #include <unistd.h>
 
-#include "rcsw/utils/time.h"
 #include "rcsw/al/clock.h"
+#include "rcsw/utils/time.h"
 
 /*******************************************************************************
  * Test Helper Functions
@@ -132,7 +133,7 @@ static void ts_make_abs_test() {
 
   /* The result must be in the future relative to now */
   struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
+  (void)clock_gettime(CLOCK_REALTIME, &now);
   CATCH_REQUIRE(utils_ts_cmp(&abs_out, &now) > 0);
 }
 
@@ -146,7 +147,7 @@ static void ts_make_rel_test() {
 
   /* A deadline 60 s in the future must return OK and a positive remainder. */
   struct timespec future = {};
-  clock_gettime(CLOCK_REALTIME, &future);
+  (void)clock_gettime(CLOCK_REALTIME, &future);
   future.tv_sec += 60;
   struct timespec rem = {};
   CATCH_REQUIRE(utils_ts_make_rel(&future, &rem) == OK);
@@ -160,7 +161,8 @@ static void ts_make_rel_test() {
 static void monotonic_advance_test() {
   /* A real sleep must move the monotonic clock forward. */
   struct timespec before = clock_monotime();
-  sleep(1);
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(1s);
   struct timespec after = clock_monotime();
   CATCH_REQUIRE(utils_ts2mono(&after) > utils_ts2mono(&before));
 }

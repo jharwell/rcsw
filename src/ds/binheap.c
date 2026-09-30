@@ -12,7 +12,7 @@
 #include "rcsw/ds/binheap.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.binheap"
-#define RCSW_ER_MODID ekLOG4CL_DS_BINHEAP
+#define RCSW_ER_MODID LOG4CL_DS_BINHEAP
 #include <string.h>
 
 #include "rcsw/core/alloc.h"

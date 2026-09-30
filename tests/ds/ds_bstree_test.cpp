@@ -29,7 +29,6 @@ namespace th::bst {
  ******************************************************************************/
 int verify_nodes_int(const struct bstree* const tree,
                         struct inttree_node * const node) {
-  const uint8_t * node_key = node->key;
   uint8_t* left_key;
   uint8_t* right_key;
   struct bstree_node* nil = tree->nil;

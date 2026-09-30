@@ -191,7 +191,7 @@ CATCH_TEST_CASE("Binary Search - First and Last Element", "[alg][search]") {
   qsort_rec(data.elts.data(), 0, n - 1, sizeof(element4), th::cmpe<element4>);
 
   /* first element */
-  CATCH_REQUIRE(0 == bsearch_iter(data.elts.data(), &data.elts[0],
+  CATCH_REQUIRE(0 == bsearch_iter(data.elts.data(), data.elts.data(),
                                   th::cmpe<element4>, sizeof(element4), 0, n - 1));
   /* last element */
   int idx = bsearch_iter(data.elts.data(), &data.elts[n - 1],

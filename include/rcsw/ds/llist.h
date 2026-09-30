@@ -570,7 +570,7 @@ extern const struct ds_ops llist_iter_ops;
  *
  * \param iter     Caller-allocated iterator storage.
  * \param list     The list to iterate over.
- * \param type     \ref ekITER_FORWARD or \ref ekITER_BACKWARD.
+ * \param type     \ref ITER_FORWARD or \ref ITER_BACKWARD.
  * \param classify Optional filter predicate; pass NULL for no filtering.
  *
  * \return \p iter on success, or NULL on error.

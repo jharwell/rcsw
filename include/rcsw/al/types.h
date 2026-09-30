@@ -91,11 +91,6 @@ typedef enum { false = 0, true = 1 } bool_t;
 #define NULL ((void*)0)
 #endif /* NULL */
 
-#if defined(true) || defined(false)
-#undef true
-#undef false
-#endif
-
 #define bool_t bool
 
 #else /* we can use stdlib */
@@ -112,6 +107,11 @@ typedef enum { false = 0, true = 1 } bool_t;
 #error Bad AL target: {RCSW_PLATFORM_BAREMETAL, RCSW_PLATFORM_POSIX} supported
 #endif
 
+#ifdef __cplusplus
+static_assert(sizeof(bool_t) == sizeof(uint8_t), "bool_t size must match C");
+#else
+_Static_assert(sizeof(bool_t) == sizeof(uint8_t), "bool_t size must match C++");
+#endif
 /*******************************************************************************
  * Custom Type Definitions
  ******************************************************************************/

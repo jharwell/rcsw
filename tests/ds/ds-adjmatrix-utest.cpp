@@ -94,9 +94,10 @@ static void edge_add_test(struct adjmatrix_config *config) {
   /* Initially no edges */
   CATCH_REQUIRE(adjmatrix_isempty(matrix));
 
+  auto dist = std::uniform_int_distribution<size_t>(0, 10);
   for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
-      double val = rand() % 10 + 1;
+      double val = double(dist(th::make_rng()));
       CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
       CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
@@ -122,9 +123,10 @@ static void edge_remove_test(struct adjmatrix_config *config) {
   CATCH_REQUIRE(nullptr != matrix);
 
   /* Build a chain of edges */
+  auto dist = std::uniform_int_distribution<size_t>(0, 10);
   for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
-      double val = rand() % 10 + 1;
+      double val = double(dist(th::make_rng()));
       CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
       CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
@@ -132,10 +134,10 @@ static void edge_remove_test(struct adjmatrix_config *config) {
   }
 
   /* Remove edges randomly until the matrix is empty */
-  size_t max = config->n_vertices;
+  dist = std::uniform_int_distribution<size_t>(0, config->n_vertices);
   while (!adjmatrix_isempty(matrix)) {
-    size_t u = rand() % max;
-    size_t v = rand() % max;
+    size_t u = dist(th::make_rng());
+    size_t v = dist(th::make_rng());
     if (adjmatrix_edge_query(matrix, u, v)) {
       CATCH_REQUIRE(adjmatrix_edge_remove(matrix, u, v) == OK);
       CATCH_REQUIRE(adjmatrix_edge_query(matrix, u, v) == false);
@@ -157,9 +159,10 @@ static void transpose_test(struct adjmatrix_config *config) {
   CATCH_REQUIRE(nullptr != matrix);
 
   /* Build a chain */
+  auto dist = std::uniform_int_distribution<size_t>(0, 10);
   for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
-      double val = rand() % 10 + 1;
+      double val = double(dist(th::make_rng()));
       CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
       CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);
@@ -189,9 +192,10 @@ static void print_test(struct adjmatrix_config *config) {
 
   adjmatrix_print(matrix); /* empty */
 
+  auto dist = std::uniform_int_distribution<size_t>(0, 10);
   for (size_t i = 1; i < config->n_vertices; ++i) {
     if (matrix->is_directed) {
-      double val = rand() % 10 + 1;
+      double val = double(dist(th::make_rng()));
       CATCH_REQUIRE(adjmatrix_edge_addd(matrix, i - 1, i, &val) == OK);
     } else {
       CATCH_REQUIRE(adjmatrix_edge_addu(matrix, i - 1, i) == OK);

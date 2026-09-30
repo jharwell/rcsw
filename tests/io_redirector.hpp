@@ -38,11 +38,11 @@ class io_redirector {
 
 class cstdout_redirector : public io_redirector {
  public:
-  enum PIPES { ekREAD, ekWRITE };
+  enum PIPES { READ, WRITE };
 
   cstdout_redirector(void) {
-    m_pipe[ekREAD] = 0;
-    m_pipe[ekWRITE] = 0;
+    m_pipe[READ] = 0;
+    m_pipe[WRITE] = 0;
 
     if (pipe(m_pipe) != -1) {
       m_stdout_old = dup(fileno(stdout));
@@ -65,11 +65,11 @@ class cstdout_redirector : public io_redirector {
       close(m_stderr_old);
     }
 
-    if (m_pipe[ekREAD] > 0) {
-      close(m_pipe[ekREAD]);
+    if (m_pipe[READ] > 0) {
+      close(m_pipe[READ]);
     }
-    if (m_pipe[ekWRITE] > 0) {
-      close(m_pipe[ekWRITE]);
+    if (m_pipe[WRITE] > 0) {
+      close(m_pipe[WRITE]);
     }
   }
 
@@ -77,8 +77,8 @@ class cstdout_redirector : public io_redirector {
     if (m_redirecting) {
       return;
     }
-    dup2(m_pipe[ekWRITE], fileno(stdout));
-    dup2(m_pipe[ekWRITE], fileno(stderr));
+    dup2(m_pipe[WRITE], fileno(stdout));
+    dup2(m_pipe[WRITE], fileno(stderr));
     m_redirecting = true;
   }
 
@@ -94,16 +94,16 @@ class cstdout_redirector : public io_redirector {
   }
 
   std::string get_output(void) override {
-    fcntl(m_pipe[ekREAD], F_SETFL, O_NONBLOCK);
+    fcntl(m_pipe[READ], F_SETFL, O_NONBLOCK);
     memset(m_output_buf, 0, sizeof(m_output_buf));
-    ssize_t n_bytes = read(m_pipe[ekREAD],
+    ssize_t n_bytes = read(m_pipe[READ],
                            m_output_buf,
                            sizeof(m_output_buf) - 1);
 
     while (n_bytes > 0) {
       m_output_buf[n_bytes] = 0;
       m_redirected_output += m_output_buf;
-      n_bytes = read(m_pipe[ekREAD], m_output_buf, sizeof(m_output_buf));
+      n_bytes = read(m_pipe[READ], m_output_buf, sizeof(m_output_buf));
     }
 
     return m_redirected_output;

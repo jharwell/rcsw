@@ -14,9 +14,9 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
+#include "rcsw/core/core.h"
 #include "rcsw/stdio/stdio.h"
 #include "rcsw/stdio/string.h"
-#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Helper Functions
@@ -26,12 +26,13 @@
  * .so; having this in the C test harness didn't work.
  */
 int th_putchar(int c) {
-  putchar(c);
+  (void)putchar(c);
   return c;
 }
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
+// NOLINTNEXTLINE(readability-function-size)o
 CATCH_TEST_CASE("Char Test", "[stdio]") {
   CATCH_REQUIRE(RCSW_STDIO_ISUPPER('A') == 1);
   CATCH_REQUIRE(RCSW_STDIO_ISUPPER('Z') == 1);
@@ -92,6 +93,7 @@ CATCH_TEST_CASE("Memory Test", "[stdio]") {
   CATCH_REQUIRE(memcmp(data, dest, sizeof(data)) == 0);
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 CATCH_TEST_CASE("Convert Test", "[stdio]") {
   CATCH_REQUIRE(stdio_atoi("0", 10) == 0);
   CATCH_REQUIRE(stdio_atoi("0x0", 16) == 0);

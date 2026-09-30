@@ -10,15 +10,17 @@
  * Includes
  ******************************************************************************/
 #include <mutex>
+#include <random>
 #include <thread>
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/mpool.h"
+
+#include "rcsw/er/client.h"
 #include "tests/element.hpp"
 #include "tests/test.h"
-#include "rcsw/er/client.h"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -33,10 +35,10 @@ using mpool_test = void (*)(const struct mpool_config* const config,
 template <typename T>
 static void run_test(mpool_test test, size_t n_threads = 1) {
   RCSW_ER_INIT(TH_ZLOG_CONF);
-  RCSW_ER_INSMOD(ekLOG4CL_MT_MPOOL, "rcsw.mt.mpool");
-  RCSW_ER_INSMOD(ekLOG4CL_DS_LLIST, "rcsw.ds.llist");
-  /* log4cl_mod_lvl_set(ekLOG4CL_MT_MPOOL, RCSW_ERL_ALL); */
-  /* log4cl_mod_lvl_set(ekLOG4CL_DS_LLIST, RCSW_ERL_ALL); */
+  RCSW_ER_INSMOD(LOG4CL_MT_MPOOL, "rcsw.mt.mpool");
+  RCSW_ER_INSMOD(LOG4CL_DS_LLIST, "rcsw.ds.llist");
+  /* log4cl_mod_lvl_set(LOG4CL_MT_MPOOL, RCSW_ERL_ALL); */
+  /* log4cl_mod_lvl_set(LOG4CL_DS_LLIST, RCSW_ERL_ALL); */
 
   struct mpool_config config;
   config.flags    = 0;
@@ -98,6 +100,7 @@ static void simple_test(const struct mpool_config* const config, size_t) {
   mpool_destroy(pool);
 }
 template <typename T>
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void concurrency_test(const struct mpool_config* const config,
                              size_t                           n_threads) {
   struct mpool  pool_in;
@@ -118,7 +121,7 @@ static void concurrency_test(const struct mpool_config* const config,
   std::mutex        mtx;
   auto              cb = [&](auto* const p, size_t id) {
     std::vector<T*>          vals;
-    th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+    th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
     struct timespec          to = {.tv_sec = 0, .tv_nsec = 1000};
 
     while (vals.size() < TH_NUM_MT_ITEMS) {
@@ -142,12 +145,7 @@ static void concurrency_test(const struct mpool_config* const config,
         }
       } /* for(j..) */
 
-      /*
-       * Release a random # of chunks and verify that everything else
-       * is OK.
-       */
-      size_t idx = vals.size() % (rand() + 1);
-      for (size_t i = 0; i < idx; ++i) {
+      for (size_t i = 0; i < vals.size(); ++i) {
         if (nullptr != vals[i]) {
           mpool_ref_add(pool, (uint8_t*)vals[i]);
           mpool_ref_add(pool, (uint8_t*)vals[i]);
@@ -179,8 +177,9 @@ static void concurrency_test(const struct mpool_config* const config,
   };
 
   std::vector<std::thread> threads;
+  threads.reserve(n_threads);
   for (size_t i = 0; i < n_threads; ++i) {
-    threads.push_back(std::thread(cb, pool, i * 10));
+    threads.emplace_back(std::thread(cb, pool, i * 10));
   } /* for(i..) */
 
   for (size_t i = 0; i < n_threads; ++i) {

@@ -23,8 +23,8 @@
 #define RCSW_CONFIG_ER_PLUGIN 1
 
 #include "rcsw/er/er.h"
-#include "rcsw/er/plugin/simple.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
@@ -34,11 +34,13 @@
 /*******************************************************************************
  * Compile-time Invariants
  ******************************************************************************/
+// NOLINTBEGIN(misc-redundant-expression)
 static_assert(RCSW_ERL == 2 /* RCSW_ERL_ERROR */,
               "LIBRA_ERL_INHERIT must forward LIBRA_ERL=2 to RCSW_ERL");
 static_assert(RCSW_ERL >= RCSW_ERL_FATAL, "inherited ERROR includes FATAL");
 static_assert(RCSW_ERL >= RCSW_ERL_ERROR, "inherited ERROR includes ERROR");
 static_assert(RCSW_ERL <  RCSW_ERL_WARN,  "inherited ERROR excludes WARN+");
+// NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
  * Test Helper Functions

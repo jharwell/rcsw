@@ -28,7 +28,7 @@
  *   "baab": no bracketing yields 'a'              -> not parenthesizable to 'a'
  */
 static char multiply_ab(char x, char y) {
-    if (x == 'a' && y == 'b') return 'a';
+  if (x == 'a' && y == 'b') {return 'a'; }
     return 'b';
 }
 

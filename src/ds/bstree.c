@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "bstree")
-#define RCSW_ER_MODID ekLOG4CL_DS_BSTREE
+#define RCSW_ER_MODID LOG4CL_DS_BSTREE
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
@@ -150,7 +150,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
     if (tree->flags & RCSW_DS_BSTREE_INT) {
       inttree_high_fixup(tree, (struct inttree_node*)node);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)node, ekOSTREE_FIXUP_INSERT);
+      ostree_count_fixup(tree, (struct ostree_node*)node, OSTREE_FIXUP_INSERT);
     }
 
     node->red = true;
@@ -231,11 +231,11 @@ int bstree_traverse(struct bstree* const tree,
                     enum bstree_traversal_type type) {
   RCSW_FPC_NV(ERROR, tree != NULL, cb != NULL);
 
-  if (ekTRAVERSE_PREORDER == type) {
+  if (TRAVERSE_PREORDER == type) {
     return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
-  } else if (ekTRAVERSE_INORDER == type) {
+  } else if (TRAVERSE_INORDER == type) {
     return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
-  } else if (ekTRAVERSE_POSTORDER == type) {
+  } else if (TRAVERSE_POSTORDER == type) {
     return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
   }
   return -1;
@@ -310,11 +310,11 @@ status_t bstree_map(struct bstree* const tree,
                     enum bstree_traversal_type type) {
   RCSW_FPC_NV(ERROR, tree != NULL, f != NULL);
   struct bstree_node* root = tree->root->left;
-  if (type == ekTRAVERSE_PREORDER) {
+  if (type == TRAVERSE_PREORDER) {
     bstree_map_preorder(tree, root, f);
-  } else if (type == ekTRAVERSE_INORDER) {
+  } else if (type == TRAVERSE_INORDER) {
     bstree_map_inorder(tree, root, f);
-  } else if (type == ekTRAVERSE_POSTORDER) {
+  } else if (type == TRAVERSE_POSTORDER) {
     bstree_map_postorder(tree, root, f);
   } else {
     return ERROR;
@@ -328,11 +328,11 @@ status_t bstree_inject(struct bstree* const tree,
                        enum bstree_traversal_type type) {
   RCSW_FPC_NV(ERROR, tree != NULL, f != NULL, result != NULL);
   struct bstree_node* root = tree->root->left;
-  if (type == ekTRAVERSE_PREORDER) {
+  if (type == TRAVERSE_PREORDER) {
     bstree_inject_preorder(tree, root, f, result);
-  } else if (type == ekTRAVERSE_INORDER) {
+  } else if (type == TRAVERSE_INORDER) {
     bstree_inject_inorder(tree, root, f, result);
-  } else if (type == ekTRAVERSE_POSTORDER) {
+  } else if (type == TRAVERSE_POSTORDER) {
     bstree_inject_postorder(tree, root, f, result);
   } else {
     return ERROR;
@@ -396,7 +396,7 @@ status_t bstree_delete(struct bstree* const tree,
     if (tree->flags & RCSW_DS_BSTREE_INT) {
       inttree_high_fixup(tree, (struct inttree_node*)x);
     } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)x, ekOSTREE_FIXUP_DELETE);
+      ostree_count_fixup(tree, (struct ostree_node*)x, OSTREE_FIXUP_DELETE);
     }
 
     rbtree_delete_fixup(tree, x);

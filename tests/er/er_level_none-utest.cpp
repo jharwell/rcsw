@@ -17,8 +17,8 @@
 #define RCSW_CONFIG_ER_PLUGIN 1
 
 #include "rcsw/er/er.h"
-#include "rcsw/er/plugin/simple.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
@@ -28,7 +28,9 @@
 /*******************************************************************************
  * Compile-time Invariants
  ******************************************************************************/
+// NOLINTBEGIN(misc-redundant-expression)
 static_assert(RCSW_ERL == RCSW_ERL_NONE, "ERL must be NONE in this TU");
+// NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
  * Test Helper Functions
@@ -36,7 +38,7 @@ static_assert(RCSW_ERL == RCSW_ERL_NONE, "ERL must be NONE in this TU");
 
 static void silence_test() {
   /* Every ER level macro must produce no output whatsoever at ERL_NONE. */
-  for (auto& out : {
+  for (const auto& out : {
          capture_stdout([] { ER_FATAL("must not appear"); }),
          capture_stdout([] { ER_ERR  ("must not appear"); }),
          capture_stdout([] { ER_WARN ("must not appear"); }),
@@ -83,9 +85,11 @@ static void syntax_test() {
 
 static void er_assert_still_guards_test() {
   /* ER_ASSERT is always present regardless of level; must not abort on true. */
+  // NOLINTNEXTLINE(cert-dcl03-c,misc-static-assert)
   ER_ASSERT(true, "must not abort");
 
   bool reached = false;
+  // NOLINTNEXTLINE(cert-dcl03-c,misc-static-assert,bugprone-sizeof-expression)
   ER_ASSERT(1 == 1, "must not abort");
   reached = true;
   CATCH_REQUIRE(reached);

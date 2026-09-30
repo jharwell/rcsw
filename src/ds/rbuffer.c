@@ -13,7 +13,7 @@
 
 #include <string.h>
 
-#define RCSW_ER_MODID ekLOG4CL_DS_RBUFFER
+#define RCSW_ER_MODID LOG4CL_DS_RBUFFER
 #define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/ds.h"
@@ -239,7 +239,7 @@ struct ds_iterator* rbuffer_iter_init(struct ds_iterator* iter,
   RCSW_FPC_NV(NULL, iter != NULL, rb != NULL);
 
   iter->cursor = (void*)(size_t)0; /* start at logical offset 0 */
-  return ds_iter_init(iter, rb, ekITER_FORWARD, &rbuffer_iter_ops, classify);
+  return ds_iter_init(iter, rb, ITER_FORWARD, &rbuffer_iter_ops, classify);
 } /* rbuffer_iter_init() */
 
 END_C_DECLS

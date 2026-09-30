@@ -15,6 +15,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <stdint.h>
+
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/variadics.h"
 
@@ -52,13 +54,22 @@
 #undef OK
 #undef ERROR
 #endif
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+typedef enum : int8_t {
+  /** Return this on function success. */
+  OK = 0,
+  /** Return this when a function fails. */
+  ERROR = -1,
+} status_t;
+#else
+// NOLINTNEXTLINE(performance-enum-size)
 typedef enum {
   /** Return this on function success. */
   OK = 0,
   /** Return this when a function fails. */
   ERROR = -1,
 } status_t;
-
+#endif
 /*******************************************************************************
  * String Macros
  ******************************************************************************/

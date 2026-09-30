@@ -26,7 +26,7 @@ struct ds_iterator* ds_iter_init(struct ds_iterator*  iter,
   RCSW_FPC_NV(NULL, iter != NULL, ds != NULL, ops != NULL, ops->next != NULL);
 
   /* Backward iteration requires a prev callback. */
-  if (type == ekITER_BACKWARD) {
+  if (type == ITER_BACKWARD) {
     RCSW_FPC_NV(NULL, ops->prev != NULL);
   }
 
@@ -45,7 +45,7 @@ void* ds_iter_next(struct ds_iterator* const iter) {
   RCSW_FPC_NV(NULL, iter != NULL);
 
   void* (*advance)(struct ds_iterator*) =
-    (iter->type == ekITER_FORWARD) ? iter->ops->next : iter->ops->prev;
+    (iter->type == ITER_FORWARD) ? iter->ops->next : iter->ops->prev;
 
   void* e;
   while ((e = advance(iter)) != NULL) {

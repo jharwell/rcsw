@@ -137,7 +137,7 @@ static inline void* dynmatrix_access(const struct dynmatrix* const matrix,
 static inline size_t dynmatrix_space(size_t n_rows,
                                      size_t n_cols,
                                      size_t elt_size) {
-  return darray_element_space(n_cols, elt_size) * n_rows +
+  return (darray_element_space(n_cols, elt_size) * n_rows) +
          darray_element_space(n_rows, sizeof(struct darray));
 }
 

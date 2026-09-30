@@ -60,6 +60,19 @@ struct fifo {
    * Underlying ringbuffer the FIFO is built on top of.
    */
   struct rbuffer rb;
+
+  /**
+   * \brief Run-time configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************

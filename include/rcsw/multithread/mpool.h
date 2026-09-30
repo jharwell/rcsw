@@ -119,7 +119,7 @@ BEGIN_C_DECLS
  */
 static inline size_t mpool_meta_space(size_t max_elts) {
   /* x2 for free and alloc lists, plus space for the reference counts */
-  return 2 * llist_meta_space(max_elts) + max_elts * sizeof(int);
+  return (2 * llist_meta_space(max_elts)) + (max_elts * sizeof(int));
 }
 
 /**

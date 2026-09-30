@@ -144,7 +144,7 @@ enum grind_mode {
    * All timing related flags are ignored in this mode. All stats must be
    * reported/cleared manually for each grindee.
    */
-  ekRCSW_GRIND_COUNT,
+  RCSW_GRIND_COUNT,
 
   /**
    * Enable usage of \ref grind_capture_start() / \ref grind_capture_end() to
@@ -154,7 +154,7 @@ enum grind_mode {
    * section between \ref grind_capture_start() and \ref grind_capture_end() are
    * also captured.
    */
-  ekRCSW_GRIND_DURATION,
+  RCSW_GRIND_DURATION,
 
   /**
    * Enable usage of \ref grind_capture_tick() to capture ticks.
@@ -163,7 +163,7 @@ enum grind_mode {
    * the period of the thing that is ticking.  Execution counts of \ref
    * grind_capture_tick() are also captured.
    */
-  ekRCSW_GRIND_PERIOD,
+  RCSW_GRIND_PERIOD,
 };
 
 /*******************************************************************************
@@ -274,7 +274,7 @@ struct grind_config {
 
   /**
    * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref ekRCSW_GRIND_COUNT mode.
+   * \ref RCSW_GRIND_COUNT mode.
    */
   struct timespec (*gettime)(void);
 };
@@ -332,7 +332,7 @@ struct grinder {
 
   /**
    * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref ekRCSW_GRIND_COUNT mode.
+   * \ref RCSW_GRIND_COUNT mode.
    */
   struct timespec (*gettime)(void);
 };
@@ -366,7 +366,7 @@ RCSW_API void grind_destroy(struct grinder* const the_grinder);
 /**
  * \brief Mark the start of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref ekRCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_DURATION.
  *
  * \return \ref status_t
  *
@@ -377,7 +377,7 @@ RCSW_API status_t grind_capture_start(struct grinder* const the_grinder,
 /**
  * \brief Mark the end of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref ekRCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_DURATION.
  *
  * \return \ref status_t
  */
@@ -387,7 +387,7 @@ RCSW_API status_t grind_capture_end(struct grinder* const the_grinder,
 /**
  * \brief Increment the execution count for the \ref grindee.
  *
- * Only valid with \ref ekRCSW_GRIND_COUNT.
+ * Only valid with \ref RCSW_GRIND_COUNT.
  *
  * \return \ref status_t
  */
@@ -397,7 +397,7 @@ RCSW_API status_t grind_capture_count(struct grinder* const the_grinder,
 /**
  * \brief Capture the current time/tick for the \ref grindee.
  *
- * Only valid with \ref ekRCSW_GRIND_PERIOD.
+ * Only valid with \ref RCSW_GRIND_PERIOD.
  *
  * \return \ref status_t
  */

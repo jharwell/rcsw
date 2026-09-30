@@ -185,8 +185,8 @@ RCSW_API status_t inttree_insert(struct bstree*        tree,
 /**
  * \brief \see bstree_init_internal()
  */
-RCSW_API struct bstree* inttree_init(struct bstree* const        tree_in,
-                                     struct bstree_config* const params);
+RCSW_API struct bstree* inttree_init(struct bstree*        tree_in,
+                                     struct bstree_config* params);
 
 /**
  * \brief Determine if the given interval overlaps any in the \ref inttree.

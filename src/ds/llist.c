@@ -12,7 +12,7 @@
 #include "rcsw/ds/llist.h"
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "list")
-#define RCSW_ER_MODID ekLOG4CL_DS_LLIST
+#define RCSW_ER_MODID LOG4CL_DS_LLIST
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/iter.h"
 #include "rcsw/ds/llist_node.h"
@@ -424,7 +424,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   list->current++;
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = false;
-    llist_sort(list, ekEXEC_REC);
+    llist_sort(list, EXEC_REC);
   }
   rval = OK;
 
@@ -460,7 +460,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
 
   if (list->flags & RCSW_DS_SORTED) {
     list->sorted = false;
-    llist_sort(list, ekEXEC_REC);
+    llist_sort(list, EXEC_REC);
   }
   rval = OK;
 
@@ -537,9 +537,9 @@ status_t llist_sort(struct llist* const list, enum exec_type type) {
   if (list->current <= 1 || list->sorted) {
     ER_DEBUG("Already sorted: nothing to do");
   } else {
-    if (type == ekEXEC_REC) {
+    if (type == EXEC_REC) {
       list->first = mergesort_rec(list->first, list->cmpe, true);
-    } else if (type == ekEXEC_ITER) {
+    } else if (type == EXEC_ITER) {
       list->first = mergesort_iter(list->first, list->cmpe, true);
     } else {
       ER_ERR("Bad exec_type for sort '%d'", type);
@@ -688,9 +688,9 @@ status_t llist_remove_if(struct llist* list,
    * Iterate through list, removing matching elements AFTER you have advanced
    * passed them in the iteration, using match, not curr.
    */
-  status_t           rval  = ERROR;
-  size_t             count = 0;
-  struct llist_node* match = NULL;
+  status_t                 rval  = ERROR;
+  size_t                   count = 0;
+  const struct llist_node* match = NULL;
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
       count++;
@@ -827,7 +827,7 @@ struct ds_iterator* llist_iter_init(struct ds_iterator* iter,
                                     bool_t (*classify)(void* e)) {
   RCSW_FPC_NV(NULL, iter != NULL, list != NULL);
 
-  iter->cursor = (type == ekITER_FORWARD) ? list->first : list->last;
+  iter->cursor = (type == ITER_FORWARD) ? list->first : list->last;
   return ds_iter_init(iter, list, type, &llist_iter_ops, classify);
 }
 

@@ -92,16 +92,16 @@ CATCH_TEST_CASE("rcsw_free - NOALLOC flags skip free", "[core][alloc]") {
 
 CATCH_TEST_CASE("rcsw_alloc - multiple independent allocations",
                 "[core][alloc]") {
-  const size_t N = 16;
-  void*        ptrs[N];
-  for (size_t i = 0; i < N; ++i) {
+  const size_t n = 16;
+  void*        ptrs[n];
+  for (size_t i = 0; i < n; ++i) {
     ptrs[i] = rcsw_alloc(nullptr, 128, RCSW_NONE);
     CATCH_REQUIRE(ptrs[i] != nullptr);
     for (size_t j = 0; j < i; ++j) {
       CATCH_REQUIRE(ptrs[i] != ptrs[j]);
     }
   }
-  for (size_t i = 0; i < N; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     rcsw_free(ptrs[i], RCSW_NONE);
   }
 }

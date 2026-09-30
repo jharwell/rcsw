@@ -250,9 +250,24 @@ jobs:
       - name: Memcheck
         shell: bash
         run: |
-          clibra build --preset ci-valgrind \
+          clibra test \
+            --reconfigure \
+            --preset ci-valgrind \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} -t all-tests
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+
+          # --test-dir is required because ctest + memcheck don't resolve the
+          # binary dir reliably as of CMake 3.31
+          ctest --preset ci-valgrind --test-dir build -T memcheck
+
+      - name: ASAN
+        shell: bash
+        run: |
+          clibra build \
+            --reconfigure \
+            --preset ci-asan \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
           # --test-dir is required because ctest + memcheck don't resolve the
           # binary dir reliably as of CMake 3.31
@@ -372,15 +387,19 @@ jobs:
           cmake --build /tmp/rcsw-consumer-mono/build
 
 # ---------------------------------------------------------------------------
-# Job 6: Static analysis
+# Static analysis
 #
-# Purpose: catch issues not caught by the compiler warning flags. Runs
-# independently of the build/test pipeline.
+# Purpose: catch issues not caught by testing.
 # ---------------------------------------------------------------------------
-  static-analysis:
+  analyze-code:
     runs-on: ubuntu-latest
     container:
       image: jharwell/ubuntu24.04-rcsw:20260929
+    strategy:
+      fail-fast: false
+      matrix:
+        TOOL:
+          - clang-tidy
 
     steps:
       - uses: actions/checkout@v4
@@ -394,7 +413,7 @@ jobs:
       - name: Analyze
         shell: bash
         run: |
-          clibra analyze \
+          clibra build \
             --preset analyze \
             --reconfigure \
             -DRCSW_BUILD_FOR=POSIX \
@@ -402,6 +421,56 @@ jobs:
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4
+
+          clibra analyze \
+            --preset analyze ${{ matrix.TOOL }}
+
+  analyze-formatting:
+    runs-on: ubuntu-latest
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20260929
+    strategy:
+      fail-fast: false
+      matrix:
+        TYPE:
+          - clang
+          - cmake
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Analyze
+        shell: bash
+        run: |
+          clibra format --keep-going --reconfigure --check ${{ matrix.TYPE }} --preset analyze
+
+  analyze-docs:
+    runs-on: ubuntu-latest
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20260929
+    strategy:
+      fail-fast: false
+      matrix:
+        TOOL:
+          - clang
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Analyze
+        shell: bash
+        run: |
+          clibra docs check --kind ${{ matrix.TOOL }} --preset docs --reconfigure --keep-going
 
 # ---------------------------------------------------------------------------
 # Job 7: Docs
@@ -411,7 +480,9 @@ jobs:
     needs:
       - test-posix
       - test-install
-      - static-analysis
+      - analyze-code
+      - analyze-formatting
+      - analyze-docs
     secrets: inherit
 
 # ---------------------------------------------------------------------------
@@ -430,7 +501,9 @@ jobs:
     needs:
       - test-posix
       - test-install
-      - static-analysis
+      - analyze-code
+      - analyze-formatting
+      - analyze-docs
     permissions:
       contents: write
     container:
@@ -480,7 +553,9 @@ jobs:
     needs:
       - test-posix
       - test-install
-      - static-analysis
+      - analyze-code
+      - analyze-formatting
+      - analyze-docs
     permissions:
       contents: write
     container:

@@ -123,7 +123,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
     .help   = "Print help for all cmds or a specific cmd",
     .hook   = mini_cmd_help_all,
     .config = {{.name       = "CMD",
-                .type       = ekMINIMON_PARAM_STR,
+                .type       = MINIMON_PARAM_STR,
                 .short_help = NULL,
                 .long_help  = "The specific cmd to see detailed help for",
                 .required   = false,
@@ -135,14 +135,14 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .hook   = mini_cmd_read,
    .config = {{
                 .name       = "ADDR",
-                .type       = ekMINIMON_PARAM_UINT32,
+                .type       = MINIMON_PARAM_UINT32,
                 .short_help = NULL,
                 .long_help =
                   "The 32-bit address in memory (alignment not checked)",
                 .required = true,
               },
               {.name       = "SIZE",
-               .type       = ekMINIMON_PARAM_UINT32,
+               .type       = MINIMON_PARAM_UINT32,
                .short_help = NULL,
                .long_help  = "The number of 32-bit words to read",
                .required   = false,
@@ -153,7 +153,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .hook   = mini_cmd_load,
    .config = {{
                 .name       = "ADDR",
-                .type       = ekMINIMON_PARAM_UINT32,
+                .type       = MINIMON_PARAM_UINT32,
                 .short_help = NULL,
                 .long_help =
                   "The 32-bit dest address in memory (alignment not checked)",
@@ -161,7 +161,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
               },
               {
                 .name       = "SIZE",
-                .type       = ekMINIMON_PARAM_UINT32,
+                .type       = MINIMON_PARAM_UINT32,
                 .short_help = NULL,
                 .long_help  = "The number of bytes to receive",
                 .required   = true,
@@ -173,7 +173,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .config =
      {{
         .name       = "ADDR",
-        .type       = ekMINIMON_PARAM_UINT32,
+        .type       = MINIMON_PARAM_UINT32,
         .short_help = NULL,
         .long_help =
           "The 32-bite source address in memory (alignment not checked)",
@@ -181,14 +181,14 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
       },
       {
         .name       = "SIZE",
-        .type       = ekMINIMON_PARAM_UINT32,
+        .type       = MINIMON_PARAM_UINT32,
         .short_help = NULL,
         .long_help  = "The number of bytes to send",
         .required   = true,
       },
       {
         .name       = "PROTOCOL",
-        .type       = ekMINIMON_PARAM_STR,
+        .type       = MINIMON_PARAM_STR,
         .short_help = "The protocol to use [raw, NMEA]",
         .long_help =
           "The protocol to use. Options are:\r\n\r\n"
@@ -219,7 +219,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
    .hook   = mini_cmd_write,
    .config = {{
                 .name       = "ADDR",
-                .type       = ekMINIMON_PARAM_UINT32,
+                .type       = MINIMON_PARAM_UINT32,
                 .short_help = NULL,
                 .long_help =
                   "The 32-bit address in memory (alignment not checked)",
@@ -227,13 +227,13 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
               },
               {
                 .name       = "VALUE",
-                .type       = ekMINIMON_PARAM_UINT32,
+                .type       = MINIMON_PARAM_UINT32,
                 .short_help = NULL,
                 .long_help  = "The 32-bit value to write",
                 .required   = true,
               },
               {.name       = "SIZE",
-               .type       = ekMINIMON_PARAM_UINT32,
+               .type       = MINIMON_PARAM_UINT32,
                .short_help = NULL,
                .long_help  = "The number of 32-bit values to write",
                .required   = false,
@@ -247,7 +247,7 @@ static struct minimon_cmd g_minimon_builtin_cmds[] = {
      {
        {
          .name       = "ADDR",
-         .type       = ekMINIMON_PARAM_UINT32,
+         .type       = MINIMON_PARAM_UINT32,
          .short_help = NULL,
          .long_help  = "The address in memory (validity not checked)",
          .required   = true,
@@ -354,10 +354,10 @@ static status_t mini_validate_args(uint32_t                  argc,
   for (uint32_t i = 0; i < argc - 1; i++) {
     /* validate numerics */
     switch (config[i].type) {
-      case ekMINIMON_PARAM_UINT32:
+      case MINIMON_PARAM_UINT32:
         rstat |= mini_validate_int(argv[i + 1], &args[i].num);
         break;
-      case ekMINIMON_PARAM_STR:
+      case MINIMON_PARAM_STR:
         args[i].s = argv[i + 1];
         break;
       default:
@@ -521,7 +521,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
                  param->required ? '>' : ']');
   } /* for(j..) */
   stdio_printf("\r\n");
-  if (ekMINIMON_HELP_SHORT == type) {
+  if (MINIMON_HELP_SHORT == type) {
     return;
   }
 
@@ -552,7 +552,7 @@ static void mini_cmd_help_all(RCSW_UNUSED const char* cmdname, ...) {
     for (size_t i = 0; i < MINIMON_MAX_CMDS; ++i) {
       /* print the help for one cmd */
       struct minimon_cmd* cmd = &g_minimon.cmds[i];
-      mini_cmd_help(cmd, ekMINIMON_HELP_SHORT);
+      mini_cmd_help(cmd, MINIMON_HELP_SHORT);
     } /* for(i..) */
 
     stdio_printf(
@@ -569,7 +569,7 @@ static void mini_cmd_help_all(RCSW_UNUSED const char* cmdname, ...) {
       struct minimon_cmd* cmd = &g_minimon.cmds[i];
       if (stdio_strlen(cmd->name) > 0 &&
           0 == stdio_strncmp(cmd->name, target, MINIMON_CMD_MAX_NAMELEN)) {
-        mini_cmd_help(cmd, ekMINIMON_HELP_LONG);
+        mini_cmd_help(cmd, MINIMON_HELP_LONG);
       }
     } /* for(i..) */
   }

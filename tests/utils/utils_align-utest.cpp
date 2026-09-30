@@ -18,8 +18,8 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 #include "rcsw/utils/align.h"
 #include "rcsw/utils/endian.h"

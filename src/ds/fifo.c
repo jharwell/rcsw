@@ -12,7 +12,9 @@
 #include "rcsw/ds/fifo.h"
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "fifo")
-#define RCSW_ER_MODID ekLOG4CL_DS_FIFO
+#define RCSW_ER_MODID LOG4CL_DS_FIFO
+#include <string.h>
+
 #include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
 
@@ -30,6 +32,9 @@ struct fifo* fifo_init(struct fifo*                    fifo_in,
     rcsw_alloc(fifo_in, sizeof(struct fifo), params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(fifo);
+  memset(fifo, 0, sizeof(*fifo));
+  fifo->flags = params->flags;
+
   struct rbuffer_config rb_params = {.printe   = params->printe,
                                      .cmpe     = NULL,
                                      .elt_size = params->elt_size,
@@ -51,7 +56,7 @@ void fifo_destroy(struct fifo* const fifo) {
 
   rbuffer_destroy(&fifo->rb);
 
-  rcsw_free(fifo, fifo->rb.flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(fifo, fifo->flags & RCSW_NOALLOC_HANDLE);
 } /* fifo_destroy() */
 
 status_t fifo_add(struct fifo* const fifo, const void* const e) {

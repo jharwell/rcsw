@@ -35,8 +35,8 @@ BEGIN_C_DECLS
  */
 RCSW_LOCAL struct bstree_node* bstree_node_create(const struct bstree* tree,
                                                   struct bstree_node*  parent,
-                                                  void*                key_in,
-                                                  void*                data_in,
+                                                  const void*          key_in,
+                                                  const void*          data_in,
                                                   size_t               node_size);
 
 /**

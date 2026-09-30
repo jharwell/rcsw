@@ -17,8 +17,8 @@
 #define RCSW_CONFIG_ER_PLUGIN 1
 
 #include "rcsw/er/er.h"
-#include "rcsw/er/plugin/simple.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
@@ -28,6 +28,7 @@
 /*******************************************************************************
  * Compile-time Invariants
  ******************************************************************************/
+// NOLINTBEGIN(misc-redundant-expression)
 static_assert(RCSW_ERL == RCSW_ERL_WARN,  "ERL must be WARN in this TU");
 static_assert(RCSW_ERL >= RCSW_ERL_FATAL, "WARN includes FATAL");
 static_assert(RCSW_ERL >= RCSW_ERL_ERROR, "WARN includes ERROR");
@@ -35,6 +36,7 @@ static_assert(RCSW_ERL >= RCSW_ERL_WARN,  "WARN includes WARN");
 static_assert(RCSW_ERL <  RCSW_ERL_INFO,  "WARN excludes INFO");
 static_assert(RCSW_ERL <  RCSW_ERL_DEBUG, "WARN excludes DEBUG");
 static_assert(RCSW_ERL <  RCSW_ERL_TRACE, "WARN excludes TRACE");
+// NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
  * Test Helper Functions
@@ -69,6 +71,7 @@ static void suppressed_syntax_test() {
   ER_TRACE("trace nop");
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 static void cond_macros_test() {
   /*
    * ER_CONDW calls ER_WARN (active at ERL_WARN) → must emit on true.

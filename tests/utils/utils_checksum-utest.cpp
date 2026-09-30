@@ -26,19 +26,20 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
+#include "rcsw/utils/byteops.h"
 #include "rcsw/utils/checksum.h"
 #include "rcsw/utils/hash.h"
-#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * Namespaces/Decls
  ******************************************************************************/
 
 /* Canonical 8-byte frame used in the original CRC tests */
-static const uint8_t kCrcFrame[] = {0x4d, 0x54, 0x30, 0x30,
+static const uint8_t crcframe[] = {0x4d, 0x54, 0x30, 0x30,
                                      0x01, 0x02, 0x03, 0x04};
 
 /*******************************************************************************
@@ -97,13 +98,14 @@ static void achks_test() {
   CATCH_REQUIRE(utils_achks8(buf8, 100, 0u) == utils_achks8(buf8, 100, 0u));
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 static void crc32_eth_test() {
   /* Known CRC32 value for the canonical 8-byte Ethernet frame */
-  uint32_t crc = utils_crc32_eth(kCrcFrame, sizeof(kCrcFrame));
+  uint32_t crc = utils_crc32_eth(crcframe, sizeof(crcframe));
   CATCH_REQUIRE(RCSW_BSWAP32(crc) == 0x0b5e0332u);
 
   /* Deterministic: computing twice gives the same result */
-  CATCH_REQUIRE(utils_crc32_eth(kCrcFrame, sizeof(kCrcFrame)) == crc);
+  CATCH_REQUIRE(utils_crc32_eth(crcframe, sizeof(crcframe)) == crc);
 
   /* Different data must produce a different CRC */
   uint8_t alt[] = {0x4d, 0x54, 0x30, 0x30, 0x01, 0x02, 0x03, 0x05};
@@ -113,8 +115,8 @@ static void crc32_eth_test() {
 static void crc32_ethl_test() {
   /* Table variant must agree with the direct variant on the same frame */
   utils_crc32_ethl_init();
-  uint32_t crc_direct = utils_crc32_eth (kCrcFrame, sizeof(kCrcFrame));
-  uint32_t crc_table  = utils_crc32_ethl(kCrcFrame, sizeof(kCrcFrame));
+  uint32_t crc_direct = utils_crc32_eth (crcframe, sizeof(crcframe));
+  uint32_t crc_table  = utils_crc32_ethl(crcframe, sizeof(crcframe));
   CATCH_REQUIRE(crc_direct == crc_table);
 
   /* Known value check (same expected result as the direct version) */
@@ -215,7 +217,9 @@ static void hash_distinct_test() {
     data[i] = (uint8_t)(i + 1);
   }
 
-  uint32_t djb = 0, fnv = 0, def = 0;
+  uint32_t djb = 0;
+  uint32_t  fnv = 0;
+  uint32_t def = 0;
   CATCH_REQUIRE(utils_hash_djb    (data, sizeof(data), &djb) == OK);
   CATCH_REQUIRE(utils_hash_fnv1a  (data, sizeof(data), &fnv) == OK);
   CATCH_REQUIRE(utils_hash_default(data, sizeof(data), &def) == OK);

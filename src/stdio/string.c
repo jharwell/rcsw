@@ -57,7 +57,7 @@ char* stdio_strrep(const char* const __restrict__ original,
   /* copy the rest of the string */
   stdio_strcpy(retptr, oriptr);
   return new_str;
-} /* stdio_strrep() */
+}
 
 void stdio_strrev(char* const s, size_t len) {
   int i = 0, j = (int)(len - 1); /* account for null byte */
@@ -68,7 +68,7 @@ void stdio_strrev(char* const s, size_t len) {
     s[j] ^= s[i];
     s[i] ^= s[j];
   }
-} /* stdio_strrev() */
+}
 
 size_t stdio_strlen(const char* const s) {
   RCSW_FPC_NV(0, NULL != s);
@@ -78,7 +78,7 @@ size_t stdio_strlen(const char* const s) {
   }
 
   return (size_t)(p - s);
-} /* stdio_strlen() */
+}
 
 size_t stdio_strnlen(const char* const s, size_t maxsize) {
   RCSW_FPC_NV(0, NULL != s);
@@ -88,7 +88,7 @@ size_t stdio_strnlen(const char* const s, size_t maxsize) {
   }
 
   return (size_t)(p - s);
-} /* stdio_strlen() */
+}
 
 const char* stdio_strchr(const char* haystack, char needle) {
   while (haystack != NULL && *haystack) {
@@ -98,7 +98,7 @@ const char* stdio_strchr(const char* haystack, char needle) {
     haystack++;
   }
   return NULL;
-} /* stdio_strchr() */
+}
 
 const char* stdio_strstr(const char* const __restrict__ haystack,
                          const char* const __restrict__ needle) {
@@ -122,7 +122,7 @@ const char* stdio_strstr(const char* const __restrict__ haystack,
     p1 = p1_curr + 1; /* move starting position forward */
   }
   return NULL;
-} /* stdio_strstr() */
+}
 
 char* stdio_strncpy(char* const __restrict__ dest,
                     const char* const __restrict__ src,
@@ -138,7 +138,7 @@ char* stdio_strncpy(char* const __restrict__ dest,
     dest[i] = '\0';
   }
   return dest;
-} /* stdio_strncpy() */
+}
 
 char* stdio_strcpy(char* __restrict__ dest, const char* const __restrict__ src) {
   RCSW_FPC_NV(dest, NULL != dest, NULL != src);
@@ -163,10 +163,8 @@ int stdio_strcmp(const char* const s1, const char* const s2) {
     t1++;
     t2++;
   }
-  return (*s1 - *s2);
-} /* stdio_strcmp() */
-
-#include "rcsw/er/client.h"
+  return (*t1 - *t2);
+}
 
 int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
   size_t i = 0;
@@ -197,21 +195,21 @@ int stdio_strncmp(const char* const s1, const char* const s2, size_t len) {
    * equal and we will return something other than 0.
    */
   return (*t1 - *t2);
-} /* stdio_strncmp() */
+}
 
 int stdio_tolower(int c) {
   if (c >= 'A' && c <= 'Z') {
     c += ('a' - 'A');
   }
   return c;
-} /* stdio_tolower() */
+}
 
 int stdio_toupper(int c) {
   if (c >= 'a' && c <= 'z') {
     c += ('A' - 'a');
   }
   return c;
-} /* stdio_toupper() */
+}
 
 void* stdio_memcpy(void* const __restrict__ dest,
                    const void* const __restrict__ src,
@@ -222,7 +220,7 @@ void* stdio_memcpy(void* const __restrict__ dest,
     d[i] = s[i];
   }
   return dest;
-} /* stdio_memcpy() */
+}
 
 void* stdio_memset(void* const __restrict__ dest, int c, size_t n) {
   char* d = dest;
@@ -230,6 +228,6 @@ void* stdio_memset(void* const __restrict__ dest, int c, size_t n) {
     d[i] = (char)c;
   }
   return dest;
-} /* stdio_memset() */
+}
 
 END_C_DECLS

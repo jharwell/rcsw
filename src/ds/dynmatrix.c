@@ -12,7 +12,7 @@
 #include "rcsw/ds/dynmatrix.h"
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "dynmatrix")
-#define RCSW_ER_MODID ekLOG4CL_DS_DYNMATRIX
+#define RCSW_ER_MODID LOG4CL_DS_DYNMATRIX
 #include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
 

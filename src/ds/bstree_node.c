@@ -28,8 +28,8 @@ BEGIN_C_DECLS
  ******************************************************************************/
 struct bstree_node* bstree_node_create(const struct bstree* const tree,
                                        struct bstree_node* const  parent,
-                                       void* const                key_in,
-                                       void* const                data_in,
+                                       const void* const          key_in,
+                                       const void* const          data_in,
                                        size_t                     node_size) {
   /* get space for the node */
   struct bstree_node* node = bstree_node_alloc(tree, node_size);

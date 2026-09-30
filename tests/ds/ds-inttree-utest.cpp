@@ -23,7 +23,7 @@
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
-int n_elements; /* required by verify callbacks */
+static int g_n_elements; /* required by verify callbacks */
 
 /*******************************************************************************
  * Test Helper Functions
@@ -140,13 +140,13 @@ static void remove_test(int len, struct bstree_config *config) {
     CATCH_REQUIRE(bstree_data_query(tree, &arr[i].low) == nullptr);
     CATCH_REQUIRE(tree->current == old_count - 1);
 
-    n_elements = tree->current;
+    g_n_elements = (int)tree->current;
     if (tree->current > 0) {
       CATCH_REQUIRE(
         bstree_traverse(tree,
                         reinterpret_cast<th::bst::bst_verify_cb>(
                           th::bst::verify_nodes_int),
-                        ekTRAVERSE_INORDER) == OK);
+                        TRAVERSE_INORDER) == OK);
     }
   }
 
@@ -185,9 +185,12 @@ static void overlap_test(int len, struct bstree_config *config) {
   }
 
   /* Build query intervals and pre-compute expected overlaps */
+  auto dist = std::uniform_int_distribution<int>(0, 3);
+  auto dist2 = std::uniform_int_distribution<int>(0, 4);
+
   for (int i = 0; i < len; ++i) {
-    search_arr[i].low  = rand() % 4;
-    search_arr[i].high = search_arr[i].low + rand() % 5;
+    search_arr[i].low  = dist(th::make_rng());
+    search_arr[i].high = search_arr[i].low + dist2(th::make_rng());
     overlap_arr[i]     = false;
     for (int j = 0; j < len; ++j) {
       if (search_arr[i].low < insert_arr[j].low &&

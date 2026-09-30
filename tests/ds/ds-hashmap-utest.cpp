@@ -129,7 +129,8 @@ static void remove_test(struct hashmap_config* config) {
 
   for (size_t i = 0; i < len; i++) {
     utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
-    data[i].value1 = rand() % ((int)i + 1);
+    auto dist = std::uniform_int_distribution<size_t>(0, i);
+    data[i].value1 = dist(th::make_rng());
     if (hashmap_add(map, nodes[i].key, &data[i]) == OK) {
       n_inserted++;
     } else if (++failed_count > 10) {

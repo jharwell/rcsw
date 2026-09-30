@@ -9,16 +9,18 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <algorithm>
 #include <atomic>
 #include <mutex>
+#include <random>
 #include <thread>
 
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
+#include "rcsw/core/flags.h"
 #include "rcsw/multithread/rdwrlock.h"
 #include "tests/element.hpp"
-#include "rcsw/core/flags.h"
 
 /*******************************************************************************
  * Namespaces/Decls
@@ -55,29 +57,30 @@ static void simple_test(uint32_t flags, size_t) {
   }
   CATCH_REQUIRE(nullptr != lock);
 
-  rdwrl_req(lock, ekSCOPE_RD);
+  rdwrl_req(lock, SCOPE_RD);
   CATCH_REQUIRE(lock->n_readers == 1);
-  rdwrl_exit(lock, ekSCOPE_RD);
+  rdwrl_exit(lock, SCOPE_RD);
 
-  rdwrl_req(lock, ekSCOPE_WR);
-  rdwrl_exit(lock, ekSCOPE_WR);
+  rdwrl_req(lock, SCOPE_WR);
+  rdwrl_exit(lock, SCOPE_WR);
 
-  rdwrl_req(lock, ekSCOPE_RD);
-  rdwrl_req(lock, ekSCOPE_RD);
-  rdwrl_req(lock, ekSCOPE_RD);
+  rdwrl_req(lock, SCOPE_RD);
+  rdwrl_req(lock, SCOPE_RD);
+  rdwrl_req(lock, SCOPE_RD);
   CATCH_REQUIRE(lock->n_readers == 3);
 
-  rdwrl_exit(lock, ekSCOPE_RD);
-  rdwrl_exit(lock, ekSCOPE_RD);
+  rdwrl_exit(lock, SCOPE_RD);
+  rdwrl_exit(lock, SCOPE_RD);
   CATCH_REQUIRE(lock->n_readers == 1);
-  rdwrl_exit(lock, ekSCOPE_RD);
+  rdwrl_exit(lock, SCOPE_RD);
 
-  rdwrl_req(lock, ekSCOPE_WR);
-  rdwrl_exit(lock, ekSCOPE_WR);
+  rdwrl_req(lock, SCOPE_WR);
+  rdwrl_exit(lock, SCOPE_WR);
 
   rdwrl_destroy(lock);
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void concurrency_test(uint32_t flags, size_t n_threads) {
   struct rdwrlock  lock_in;
   struct rdwrlock *lock;
@@ -91,23 +94,25 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
 
   std::atomic_size_t n_readers = 0;
   std::atomic_size_t n_writers = 0;
+  auto dist = std::bernoulli_distribution{};
 
+  // NOLINTNEXTLINE(readability-function-cognitive-complexity)
   auto cb = [&](size_t id) {
     struct timespec to = {.tv_sec = 0, .tv_nsec = 1000000};
     while (n_readers < 1000 || n_writers < 1000) {
       /* randomly choose to be a reader/writer */
-      bool is_writer = rand() % 2;
+      bool is_writer = dist(th::make_rng());
 
       /* randomly choose to use a timeout or not */
-      bool use_to = rand() % 2;
+      bool use_to = dist(th::make_rng());
 
       if (is_writer) {
         if (use_to) {
-          if (OK != rdwrl_timedreq(lock, ekSCOPE_WR, &to)) {
+          if (OK != rdwrl_timedreq(lock, SCOPE_WR, &to)) {
             continue;
           }
         } else {
-          rdwrl_req(lock, ekSCOPE_WR);
+          rdwrl_req(lock, SCOPE_WR);
         }
 
         /*
@@ -124,32 +129,32 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
           } /* for(j..) */
         } /* for(i..) */
 
-        rdwrl_exit(lock, ekSCOPE_WR);
+        rdwrl_exit(lock, SCOPE_WR);
         ++n_writers;
       } else {
         if (use_to) {
-          if (OK != rdwrl_timedreq(lock, ekSCOPE_RD, &to)) {
+          if (OK != rdwrl_timedreq(lock, SCOPE_RD, &to)) {
             continue;
           }
         } else {
-          rdwrl_req(lock, ekSCOPE_RD);
+          rdwrl_req(lock, SCOPE_RD);
         }
 
         mtx.lock();
         /* if a reader, check that all values are the same */
-        checks.push_back(std::all_of(std::begin(vals),
-                                     std::end(vals),
+        checks.push_back(std::ranges::all_of(vals,
                                      [&](auto &var) { return var == vals[0]; }));
         mtx.unlock();
-        rdwrl_exit(lock, ekSCOPE_RD);
+        rdwrl_exit(lock, SCOPE_RD);
         ++n_readers;
       }
     } /* while() */
   };
 
   std::vector<std::thread> threads;
+  threads.reserve(n_threads);
   for (size_t i = 0; i < n_threads; ++i) {
-    threads.push_back(std::thread(cb, i));
+    threads.emplace_back(std::thread(cb, i));
   } /* for(i..) */
 
   for (size_t i = 0; i < n_threads; ++i) {
@@ -160,7 +165,7 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
          n_readers.load());
 
   CATCH_REQUIRE(
-    std::all_of(checks.begin(), checks.end(), [](bool b) { return b; }));
+                std::ranges::all_of(checks, [](bool b) { return b; }));
   rdwrl_destroy(lock);
 }
 

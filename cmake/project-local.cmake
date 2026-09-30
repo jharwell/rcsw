@@ -1,4 +1,51 @@
 # ##############################################################################
+# Configuration
+# ##############################################################################
+set(LIBRA_CPPCHECK_EXTRA_ARGS "-D__GNUC__")
+# LIBRA's default .clang-tidy is written for C++ (naming, header extensions), so
+# use rcsw's own C config instead.
+set(LIBRA_CLANG_TIDY_FILEPATH "${CMAKE_CURRENT_LIST_DIR}/../.clang-tidy")
+
+# Checks to disable. LIBRA runs clang-tidy with --checks='*<this list>' (or
+# '-*,<category>*<this list>' per category), and setting this REPLACES LIBRA's
+# default list rather than adding to it, so the C-relevant parts of that default
+# are repeated here. The leading comma is required.
+#
+# Checks that only apply to C++ never run on C files and don't need listing.
+set(_RCSW_CLANG_TIDY_DISABLED
+    # From LIBRA's defaults
+    -clang-diagnostic-* # compiler warnings are the compiler's job
+    -readability-magic-numbers
+    -readability-implicit-bool-conversion # if (ptr) / if (count) is idiomatic C
+    -readability-named-parameter
+    -readability-uppercase-literal-suffix
+    -portability-avoid-pragma-once # rcsw uses #pragma once
+    # Whole families that don't fit C
+    -fuchsia-*
+    -altera-* # OpenCL FPGA kernels
+    -android-* # O_CLOEXEC etc. for Android
+    -llvmlibc-* # LLVM libc's own conventions
+    -cppcoreguidelines-* # C++ guidelines; the C-applicable ones are aliases
+    -modernize-* # in C: C-style cast, nullptr, and macro-to-enum suggestions
+    -hicpp-* # mostly aliases; signed-bitwise/no-assembler too noisy for C
+    -google-readability-* # aliases of readability-* checks
+    -abseil-*
+    # Aliases of disabled/duplicate checks, which would otherwise still fire
+    -cert-dcl16-c # = readability-uppercase-literal-suffix
+    -cert-dcl51-cpp # = bugprone-reserved-identifier (cert-dcl37-c)
+    -cert-err58-cpp
+    -cert-dcl50-cpp
+    -misc-const-correctness
+    -misc-use-anonymous-namespace
+    -performance-enum-size
+    # Conflicts with rcsw's conventions
+    -llvm-header-guard # flags every #pragma once header
+    -readability-use-concise-preprocessor-directives # #if defined() -> #ifdef
+                                                     # churn
+)
+list(JOIN _RCSW_CLANG_TIDY_DISABLED "," _RCSW_CLANG_TIDY_DISABLED)
+set(LIBRA_CLANG_TIDY_CHECKS_CONFIG ",${_RCSW_CLANG_TIDY_DISABLED}")
+# ##############################################################################
 # Packages
 # ##############################################################################
 cpmaddpackage(
@@ -96,7 +143,7 @@ option(RCSW_CONFIG_AL "Build abstraction layer component" YES)
 option(RCSW_CONFIG_ALGORITHM "Build the algorithm component" ON)
 option(RCSW_CONFIG_DS "Build the data structures component" ON)
 option(RCSW_CONFIG_ER "Build the event reporting component" ON)
-option(RCSW_CONFIG_MULTIPROCESS "Build the multiprocess component " YES)
+option(RCSW_CONFIG_MULTIPROCESS "Build the multiprocess component " ON)
 option(RCSW_CONFIG_MULTITHREAD "Build the multithread component" ON)
 option(RCSW_CONFIG_STDIO "Build the STDIO component" ON)
 option(RCSW_CONFIG_SWBUS "Build the swbus component" ON)

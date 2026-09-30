@@ -25,7 +25,7 @@
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
-int n_elements; /* global var required by verify callbacks */
+static int g_n_elements; /* global var required by verify callbacks */
 
 /*******************************************************************************
  * Test Helper Functions
@@ -146,7 +146,7 @@ static void insert_test(int                    len,
   /* Empty-state invariants */
   CATCH_REQUIRE(bstree_size(tree) == 0);
 
-                          th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+                          th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -174,9 +174,9 @@ static void insert_test(int                    len,
   }
 
   /* Structural verification via traversals */
-  n_elements = tree->current;
-  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, ekTRAVERSE_PREORDER) == OK);
-  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, ekTRAVERSE_POSTORDER) == OK);
+  g_n_elements = (int)tree->current;
+  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, TRAVERSE_PREORDER) == OK);
+  CATCH_REQUIRE(bstree_traverse(tree, verify_cb, TRAVERSE_POSTORDER) == OK);
 
   bstree_destroy(tree);
 
@@ -198,7 +198,7 @@ static void remove_test(int                    len,
   tree = bstree_init(&mytree, config);
   CATCH_REQUIRE(nullptr != tree);
 
-                          th::element_generator<T> g(th::gen_elt_type::ekRAND_VALS, config->max_elts);
+                          th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -221,10 +221,10 @@ static void remove_test(int                    len,
 
     /* Verify ordering after each removal (skip the last step: traversing a
      * 0-element tree is a no-op but harmless) */
-    n_elements = tree->current;
+    g_n_elements = (int)tree->current;
     if (tree->current > 0) {
       CATCH_REQUIRE(
-        bstree_traverse(tree, verify_cb, ekTRAVERSE_INORDER) == OK);
+        bstree_traverse(tree, verify_cb, TRAVERSE_INORDER) == OK);
     }
   }
 
@@ -251,7 +251,7 @@ static void print_test(int                    len,
 
   bstree_print(tree); /* empty */
 
-  th::element_generator<T> g(th::gen_elt_type::ekINC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
   for (int i = 0; i < len; ++i) {
     int rand_key;
     utils_string_gen((char *)&rand_key, RCSW_BSTREE_NODE_KEYSIZE);

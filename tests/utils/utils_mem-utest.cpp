@@ -17,9 +17,9 @@
 
 #include <cstring>
 
-#include "rcsw/utils/mem.h"
-#include "rcsw/utils/byteops.h"
 #include "rcsw/utils/align.h"
+#include "rcsw/utils/byteops.h"
+#include "rcsw/utils/mem.h"
 
 #include "tests/test_utils.hpp"
 

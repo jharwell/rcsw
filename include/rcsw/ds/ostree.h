@@ -121,9 +121,7 @@ static inline status_t ostree_remove(struct bstree* tree, const void* key) {
 /**
  * \brief \see bstree_destroy()
  */
-static inline void ostree_destroy(struct bstree* tree) {
-  return bstree_destroy(tree);
-}
+static inline void ostree_destroy(struct bstree* tree) { bstree_destroy(tree); }
 
 /**
  * \brief \see bstree_node_query()
@@ -173,8 +171,6 @@ RCSW_API struct bstree* ostree_init(struct bstree*              tree_in,
 /**
  * \brief \see bstree_insert_internal()
  */
-RCSW_API status_t ostree_insert(struct bstree* tree,
-                                void* const    key,
-                                void* const    data);
+RCSW_API status_t ostree_insert(struct bstree* tree, void* key, void* data);
 
 END_C_DECLS
