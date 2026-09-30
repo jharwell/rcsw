@@ -12,9 +12,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cerrno>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/core/fpc.h"
 
@@ -53,16 +53,14 @@ CATCH_TEST_CASE("RCSW_FPC_NV - condition passes", "[core][fpc]") {
   CATCH_REQUIRE(fpc_nv_pass(5) == 5);
 }
 
-CATCH_TEST_CASE("RCSW_FPC_NV - condition fails returns sentinel",
-                "[core][fpc]") {
-  errno     = 0;
+CATCH_TEST_CASE("RCSW_FPC_NV - condition fails returns sentinel", "[core][fpc]") {
+  errno      = 0;
   int result = fpc_nv_pass(-1);
   CATCH_REQUIRE(result == -1);
   CATCH_REQUIRE(errno == EINVAL);
 }
 
-CATCH_TEST_CASE("RCSW_FPC_NV - short-circuits on first failure",
-                "[core][fpc]") {
+CATCH_TEST_CASE("RCSW_FPC_NV - short-circuits on first failure", "[core][fpc]") {
   /*
    * y=0 would also fail, but x=-1 is checked first. errno == EINVAL proves
    * the macro fired and returned early without checking y.
@@ -82,7 +80,7 @@ CATCH_TEST_CASE("RCSW_FPC_NV - second condition fails", "[core][fpc]") {
 
 CATCH_TEST_CASE("RCSW_FPC_NV - third condition fails", "[core][fpc]") {
   errno      = 0;
-  int result = fpc_nv_multi(3, 3);  /* x == y fails */
+  int result = fpc_nv_multi(3, 3); /* x == y fails */
   CATCH_REQUIRE(result == -1);
   CATCH_REQUIRE(errno == EINVAL);
 }
@@ -95,14 +93,14 @@ CATCH_TEST_CASE("RCSW_FPC_NV - all conditions pass", "[core][fpc]") {
  * RCSW_FPC_V
  ******************************************************************************/
 CATCH_TEST_CASE("RCSW_FPC_V - condition passes", "[core][fpc]") {
-  int  out    = 0;
+  int out = 0;
   fpc_v_pass(&out, 42);
   CATCH_REQUIRE(out == 42);
 }
 
 CATCH_TEST_CASE("RCSW_FPC_V - null pointer fails early", "[core][fpc]") {
   /* if fpc_v_pass proceeds with nullptr it would crash */
-  fpc_v_pass(nullptr, 42);  /* must not crash */
+  fpc_v_pass(nullptr, 42); /* must not crash */
 }
 
 CATCH_TEST_CASE("RCSW_FPC_V - second condition fails", "[core][fpc]") {

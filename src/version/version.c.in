@@ -23,7 +23,7 @@
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
-struct meta_info rcsw_metadata = {
+struct meta_info g_rcsw_metadata = {
   .version =
     {
       .version = "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@"

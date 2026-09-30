@@ -16,9 +16,8 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
-#include "rcsw/multithread/mpool.h"
-
 #include "rcsw/er/client.h"
+#include "rcsw/multithread/mpool.h"
 #include "tests/element.hpp"
 #include "tests/test.h"
 

@@ -24,12 +24,12 @@
 
 static void rev_shift_test() {
   /* Single-bit values: MSB ↔ LSB */
-  CATCH_REQUIRE(RCSW_REV8(0x01u)  == 0x80u);
+  CATCH_REQUIRE(RCSW_REV8(0x01u) == 0x80u);
   CATCH_REQUIRE(RCSW_REV16(0x0001u) == 0x8000u);
   CATCH_REQUIRE(RCSW_REV32(0x00000001u) == 0x80000000u);
 
   /* Inverse direction */
-  CATCH_REQUIRE(RCSW_REV8(0x80u)  == 0x01u);
+  CATCH_REQUIRE(RCSW_REV8(0x80u) == 0x01u);
   CATCH_REQUIRE(RCSW_REV16(0x8000u) == 0x0001u);
   CATCH_REQUIRE(RCSW_REV32(0x80000000u) == 0x00000001u);
 
@@ -42,17 +42,21 @@ static void rev_shift_test() {
 
 static void rev_table_test() {
   /* Table variant must produce identical results to the shift variant. */
-  CATCH_REQUIRE(RCSW_REVTBL8(0x01u)  == 0x80u);
+  CATCH_REQUIRE(RCSW_REVTBL8(0x01u) == 0x80u);
   CATCH_REQUIRE(RCSW_REVTBL16(0x0001u) == 0x8000u);
   CATCH_REQUIRE(RCSW_REVTBL32(0x00000001u) == 0x80000000u);
 
-  CATCH_REQUIRE(RCSW_REVTBL8(0x80u)  == 0x01u);
+  CATCH_REQUIRE(RCSW_REVTBL8(0x80u) == 0x01u);
   CATCH_REQUIRE(RCSW_REVTBL16(0x8000u) == 0x0001u);
   CATCH_REQUIRE(RCSW_REVTBL32(0x80000000u) == 0x00000001u);
 
   /* Spot-check agreement with the shift variant for additional patterns. */
-  for (uint8_t v : {uint8_t(0x00), uint8_t(0xAA), uint8_t(0x55),
-                    uint8_t(0x0F), uint8_t(0xF0), uint8_t(0xFF)}) {
+  for (uint8_t v : {uint8_t(0x00),
+                    uint8_t(0xAA),
+                    uint8_t(0x55),
+                    uint8_t(0x0F),
+                    uint8_t(0xF0),
+                    uint8_t(0xFF)}) {
     CATCH_REQUIRE(RCSW_REVTBL8(v) == RCSW_REV8(v));
   }
 }
@@ -85,12 +89,13 @@ static void bin_literal_test() {
 
   /* RCSW_BIN16 / RCSW_BIN32 compose from byte pieces */
   CATCH_REQUIRE(RCSW_BIN16(00000001, 00000000) == 0x0100u);
-  CATCH_REQUIRE(RCSW_BIN32(00000001, 00000000, 00000000, 00000000) == 0x01000000u);
+  CATCH_REQUIRE(RCSW_BIN32(00000001, 00000000, 00000000, 00000000) ==
+                0x01000000u);
 }
 
 static void topbit_test() {
   /* RCSW_TOPBIT isolates the MSB of each type */
-  CATCH_REQUIRE(RCSW_TOPBIT(uint8_t)  == 0x80u);
+  CATCH_REQUIRE(RCSW_TOPBIT(uint8_t) == 0x80u);
   CATCH_REQUIRE(RCSW_TOPBIT(uint16_t) == 0x8000u);
   CATCH_REQUIRE(RCSW_TOPBIT(uint32_t) == 0x80000000u);
 }
@@ -107,7 +112,7 @@ static void reflect32_test() {
   CATCH_REQUIRE(utils_reflect32(utils_reflect32(orig, 32), 32) == orig);
 
   /* Single bit: bit 0 → bit n_bits-1 */
-  CATCH_REQUIRE(utils_reflect32(1u, 8)  == 0x80u);
+  CATCH_REQUIRE(utils_reflect32(1u, 8) == 0x80u);
   CATCH_REQUIRE(utils_reflect32(1u, 16) == 0x8000u);
   CATCH_REQUIRE(utils_reflect32(1u, 32) == 0x80000000u);
 }
@@ -115,21 +120,9 @@ static void reflect32_test() {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Bit Reverse Shift Test", "[utils][bit]") {
-  rev_shift_test();
-}
-CATCH_TEST_CASE("Bit Reverse Table Test", "[utils][bit]") {
-  rev_table_test();
-}
-CATCH_TEST_CASE("Bit Bitmask Test", "[utils][bit]") {
-  bitmask_test();
-}
-CATCH_TEST_CASE("Bit Binary Literal Test", "[utils][bit]") {
-  bin_literal_test();
-}
-CATCH_TEST_CASE("Bit TOPBIT Test", "[utils][bit]") {
-  topbit_test();
-}
-CATCH_TEST_CASE("Bit Reflect32 Test", "[utils][bit]") {
-  reflect32_test();
-}
+CATCH_TEST_CASE("Bit Reverse Shift Test", "[utils][bit]") { rev_shift_test(); }
+CATCH_TEST_CASE("Bit Reverse Table Test", "[utils][bit]") { rev_table_test(); }
+CATCH_TEST_CASE("Bit Bitmask Test", "[utils][bit]") { bitmask_test(); }
+CATCH_TEST_CASE("Bit Binary Literal Test", "[utils][bit]") { bin_literal_test(); }
+CATCH_TEST_CASE("Bit TOPBIT Test", "[utils][bit]") { topbit_test(); }
+CATCH_TEST_CASE("Bit Reflect32 Test", "[utils][bit]") { reflect32_test(); }

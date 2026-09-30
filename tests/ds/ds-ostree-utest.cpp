@@ -99,28 +99,26 @@ static void select_test(int len, struct bstree_config *config) {
 
     /* After each insert, all previously inserted elements must be selectable */
     for (int j = 0; j <= i; ++j) {
-      struct ostree_node *node =
-        ostree_select(tree, RCSW_OSTREE_ROOT(tree), j);
+      struct ostree_node *node = ostree_select(tree, RCSW_OSTREE_ROOT(tree), j);
       CATCH_REQUIRE(nullptr != node);
-      CATCH_REQUIRE(
-        ((struct element8 *)node->data)->value1 == insert_arr[j].value1);
+      CATCH_REQUIRE(((struct element8 *)node->data)->value1 ==
+                    insert_arr[j].value1);
     }
   }
 
   /* Delete in insertion order, verifying statistics shrink correctly */
   for (int i = 0; i < len; ++i) {
     CATCH_REQUIRE(ostree_remove(tree, &insert_arr[i].value1) == OK);
-    CATCH_REQUIRE(
-      bstree_data_query(tree, &insert_arr[i].value1) == nullptr);
+    CATCH_REQUIRE(bstree_data_query(tree, &insert_arr[i].value1) == nullptr);
 
     /* Remaining elements must still be selectable at adjusted ranks */
     for (int j = i + 1; j < len; ++j) {
-      int rank = j - i - 1;
+      int                 rank = j - i - 1;
       struct ostree_node *node =
         ostree_select(tree, RCSW_OSTREE_ROOT(tree), rank);
       CATCH_REQUIRE(nullptr != node);
-      CATCH_REQUIRE(
-        ((struct element8 *)node->data)->value1 == insert_arr[j].value1);
+      CATCH_REQUIRE(((struct element8 *)node->data)->value1 ==
+                    insert_arr[j].value1);
     }
   }
 
@@ -151,8 +149,8 @@ static void rank_test(int len, struct bstree_config *config) {
 
     /* Verify rank of every inserted element after each insertion */
     for (int j = 0; j <= i; ++j) {
-      struct ostree_node *node = ostree_node_query(
-        tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j]);
+      struct ostree_node *node =
+        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j]);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(ostree_rank(tree, node) == j);
     }
@@ -161,12 +159,11 @@ static void rank_test(int len, struct bstree_config *config) {
   /* Delete in insertion order; remaining ranks must shift down by 1 each time */
   for (int i = 0; i < len; ++i) {
     CATCH_REQUIRE(ostree_remove(tree, &insert_arr[i].value1) == OK);
-    CATCH_REQUIRE(
-      bstree_data_query(tree, &insert_arr[i].value1) == nullptr);
+    CATCH_REQUIRE(bstree_data_query(tree, &insert_arr[i].value1) == nullptr);
 
     for (int j = i + 1; j < len; ++j) {
-      struct ostree_node *node = ostree_node_query(
-        tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j].value1);
+      struct ostree_node *node =
+        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j].value1);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(ostree_rank(tree, node) == j - i - 1);
     }
@@ -181,10 +178,6 @@ static void rank_test(int len, struct bstree_config *config) {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("ostree Select Test", "[ds][ostree]") {
-  run_test(select_test);
-}
+CATCH_TEST_CASE("ostree Select Test", "[ds][ostree]") { run_test(select_test); }
 
-CATCH_TEST_CASE("ostree Rank Test", "[ds][ostree]") {
-  run_test(rank_test);
-}
+CATCH_TEST_CASE("ostree Rank Test", "[ds][ostree]") { run_test(rank_test); }

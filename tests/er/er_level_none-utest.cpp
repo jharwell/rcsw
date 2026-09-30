@@ -12,7 +12,7 @@
 #define LIBRA_ERL 0 /* RCSW_ERL_NONE */
 
 #define RCSW_ER_MODNAME "test.er.none"
-#define RCSW_ER_MODID   (0x0002)
+#define RCSW_ER_MODID (0x0002)
 
 #define RCSW_CONFIG_ER_PLUGIN 1
 
@@ -40,9 +40,9 @@ static void silence_test() {
   /* Every ER level macro must produce no output whatsoever at ERL_NONE. */
   for (const auto& out : {
          capture_stdout([] { ER_FATAL("must not appear"); }),
-         capture_stdout([] { ER_ERR  ("must not appear"); }),
-         capture_stdout([] { ER_WARN ("must not appear"); }),
-         capture_stdout([] { ER_INFO ("must not appear"); }),
+         capture_stdout([] { ER_ERR("must not appear"); }),
+         capture_stdout([] { ER_WARN("must not appear"); }),
+         capture_stdout([] { ER_INFO("must not appear"); }),
          capture_stdout([] { ER_DEBUG("must not appear"); }),
          capture_stdout([] { ER_TRACE("must not appear"); }),
        }) {
@@ -55,7 +55,7 @@ static void dprintf_silence_test() {
    * DPRINTF and DPRINT_TOK* are gated by ERL >= FATAL; at ERL_NONE they
    * must expand to nothing.
    */
-  int x = 42;
+  int         x   = 42;
   std::string out = capture_stdout([&] {
     DPRINTF("must not appear\n");
     DPRINT_TOKD(x);
@@ -72,10 +72,18 @@ static void syntax_test() {
    * so that user code needs no #ifdefs around individual log calls.
    * Reaching this point without a compile error proves the contract.
    */
-  ER_FATAL("f"); ER_ERR("e"); ER_WARN("w");
-  ER_INFO("i");  ER_DEBUG("d"); ER_TRACE("t");
+  ER_FATAL("f");
+  ER_ERR("e");
+  ER_WARN("w");
+  ER_INFO("i");
+  ER_DEBUG("d");
+  ER_TRACE("t");
   int x = 1;
-  DPRINTF("dp\n"); DPRINT_TOKD(x); DPRINT_TOKX(x); DPRINT_TOKF(x); DPRINT_TOK(x);
+  DPRINTF("dp\n");
+  DPRINT_TOKD(x);
+  DPRINT_TOKX(x);
+  DPRINT_TOKF(x);
+  DPRINT_TOK(x);
 
   RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
@@ -110,15 +118,11 @@ done:
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("ER None Silence Test", "[er][level_none]") {
-  silence_test();
-}
+CATCH_TEST_CASE("ER None Silence Test", "[er][level_none]") { silence_test(); }
 CATCH_TEST_CASE("ER None DPRINTF Silence Test", "[er][level_none]") {
   dprintf_silence_test();
 }
-CATCH_TEST_CASE("ER None Syntax Test", "[er][level_none]") {
-  syntax_test();
-}
+CATCH_TEST_CASE("ER None Syntax Test", "[er][level_none]") { syntax_test(); }
 CATCH_TEST_CASE("ER None Assert Test", "[er][level_none]") {
   er_assert_still_guards_test();
 }

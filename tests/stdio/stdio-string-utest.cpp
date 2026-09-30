@@ -83,7 +83,7 @@ static void strrev_test(void) {
 static void strchr_test(void) {
   char        s1[MAX_STRING_SIZE];
   int         i;
-  int  j;
+  int         j;
   char*       rval1;
   const char* rval2;
 
@@ -117,7 +117,7 @@ static void strncpy_test(void) {
   char s1[MAX_STRING_SIZE];
   char s2[MAX_STRING_SIZE];
   int  i;
-  int j;
+  int  j;
 
   for (i = 1; i < MAX_STRING_SIZE; i++) {
     utils_string_gen(s1, i);
@@ -134,7 +134,7 @@ static void strcmp_test(void) {
   char s2[MAX_STRING_SIZE];
   int  i;
   int  rval1;
-  int rval2;
+  int  rval2;
 
   /* test on random strings */
   for (i = 1; i < MAX_STRING_SIZE; i++) {
@@ -161,7 +161,7 @@ static void strncmp_test(void) {
   int  i;
   int  j;
   int  rval1;
-  int rval2;
+  int  rval2;
 
   /* test on random strings */
   for (i = 1; i < MAX_STRING_SIZE; i++) {
@@ -192,8 +192,8 @@ static void strrep_test(void) {
   char  replacement[MAX_STRING_SIZE];
   char  new_str[MAX_STRING_SIZE * MAX_STRING_SIZE];
   int   i;
-  int  j;
-  int  k;
+  int   j;
+  int   k;
   char* tmp;
   int   pat_count = 0;
   int   pat_len   = 2;
@@ -234,7 +234,7 @@ static void strrep_test(void) {
       /* replace the all occurrences of pattern in original with replacement */
       stdio_strrep(original, pattern, replacement, new_str);
       CATCH_REQUIRE(strlen(original) + (pat_count * strlen(replacement)) -
-                    (pat_count * strlen(pattern)) ==
+                      (pat_count * strlen(pattern)) ==
                     strlen(new_str));
       rep_len++;
     } /* for (j...) */

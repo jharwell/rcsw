@@ -91,10 +91,10 @@ CATCH_TEST_CASE("RCSW_CLAMP - at boundaries", "[core][utils]") {
 }
 
 CATCH_TEST_CASE("RCSW_CLAMP - no double evaluation", "[core][utils]") {
-  int v = 15;
+  int v  = 15;
   int lo = 0;
   int hi = 10;
-  int r = RCSW_CLAMP(v++, lo++, hi++);
+  int r  = RCSW_CLAMP(v++, lo++, hi++);
   CATCH_REQUIRE(r == 10);
   CATCH_REQUIRE(v == 16);
   CATCH_REQUIRE(lo == 1);
@@ -107,7 +107,7 @@ CATCH_TEST_CASE("RCSW_CLAMP - no double evaluation", "[core][utils]") {
 CATCH_TEST_CASE("RCSW_IS_ODD / RCSW_IS_EVEN", "[core][utils]") {
   CATCH_REQUIRE(RCSW_IS_ODD(1UL));
   CATCH_REQUIRE(RCSW_IS_ODD(3UL));
-  CATCH_REQUIRE(RCSW_IS_ODD(INT_MAX));   /* INT_MAX is odd */
+  CATCH_REQUIRE(RCSW_IS_ODD(INT_MAX)); /* INT_MAX is odd */
   CATCH_REQUIRE(!RCSW_IS_ODD(0UL));
   CATCH_REQUIRE(!RCSW_IS_ODD(4UL));
 
@@ -119,27 +119,25 @@ CATCH_TEST_CASE("RCSW_IS_ODD / RCSW_IS_EVEN", "[core][utils]") {
 /*******************************************************************************
  * RCSW_IS_BETWEENC / O / HO
  ******************************************************************************/
-CATCH_TEST_CASE("RCSW_IS_BETWEENC - closed interval [lo, hi]",
-                "[core][utils]") {
+CATCH_TEST_CASE("RCSW_IS_BETWEENC - closed interval [lo, hi]", "[core][utils]") {
   CATCH_REQUIRE(RCSW_IS_BETWEENC(5, 0, 10));
-  CATCH_REQUIRE(RCSW_IS_BETWEENC(0, 0, 10));   /* at lower bound */
-  CATCH_REQUIRE(RCSW_IS_BETWEENC(10, 0, 10));  /* at upper bound */
+  CATCH_REQUIRE(RCSW_IS_BETWEENC(0, 0, 10));  /* at lower bound */
+  CATCH_REQUIRE(RCSW_IS_BETWEENC(10, 0, 10)); /* at upper bound */
   CATCH_REQUIRE(!RCSW_IS_BETWEENC(-1, 0, 10));
   CATCH_REQUIRE(!RCSW_IS_BETWEENC(11, 0, 10));
 }
 
-CATCH_TEST_CASE("RCSW_IS_BETWEENO - open interval (lo, hi)",
-                "[core][utils]") {
+CATCH_TEST_CASE("RCSW_IS_BETWEENO - open interval (lo, hi)", "[core][utils]") {
   CATCH_REQUIRE(RCSW_IS_BETWEENO(5, 0, 10));
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(0, 0, 10));   /* lower bound excluded */
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(10, 0, 10));  /* upper bound excluded */
+  CATCH_REQUIRE(!RCSW_IS_BETWEENO(0, 0, 10));  /* lower bound excluded */
+  CATCH_REQUIRE(!RCSW_IS_BETWEENO(10, 0, 10)); /* upper bound excluded */
   CATCH_REQUIRE(!RCSW_IS_BETWEENO(-1, 0, 10));
   CATCH_REQUIRE(!RCSW_IS_BETWEENO(11, 0, 10));
 }
 
 CATCH_TEST_CASE("RCSW_IS_BETWEENHO - half-open interval [lo, hi)",
                 "[core][utils]") {
-  CATCH_REQUIRE(RCSW_IS_BETWEENHO(0, 0, 10));   /* lower bound included */
+  CATCH_REQUIRE(RCSW_IS_BETWEENHO(0, 0, 10)); /* lower bound included */
   CATCH_REQUIRE(RCSW_IS_BETWEENHO(5, 0, 10));
   CATCH_REQUIRE(!RCSW_IS_BETWEENHO(10, 0, 10)); /* upper bound excluded */
   CATCH_REQUIRE(!RCSW_IS_BETWEENHO(-1, 0, 10));
@@ -245,7 +243,7 @@ CATCH_TEST_CASE("RCSW_XSTR stringification", "[core][utils]") {
 CATCH_TEST_CASE("RCSW_JOIN token pasting", "[core][utils]") {
   /* verify the pasted token names a valid identifier */
 #define MY_PREFIX_ hello
-#define MY_SUFFIX  world
+#define MY_SUFFIX world
   /* if pasting failed this would be a compile error */
   int RCSW_JOIN(MY_PREFIX_, MY_SUFFIX) = 99;
   CATCH_REQUIRE(RCSW_JOIN(MY_PREFIX_, MY_SUFFIX) == 99);

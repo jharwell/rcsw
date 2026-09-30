@@ -9,10 +9,10 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/rbuffer.h"
 #include "tests/ds/ds_test.hpp"
@@ -59,7 +59,7 @@ static void run_test(void (*test)(int len, struct rbuffer_config* config)) {
  ******************************************************************************/
 template <typename T>
 static void rdwr_test(int len, struct rbuffer_config* config) {
-  struct rbuffer  myrb;
+  struct rbuffer myrb;
   config->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   struct rbuffer* rb = rbuffer_init(&myrb, config);
   CATCH_REQUIRE(rb != nullptr);
@@ -93,7 +93,7 @@ static void rdwr_test(int len, struct rbuffer_config* config) {
 
 template <typename T>
 static void overwrite_test(int len, struct rbuffer_config* config) {
-  struct rbuffer  myrb;
+  struct rbuffer myrb;
   config->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   struct rbuffer* rb = rbuffer_init(&myrb, config);
   CATCH_REQUIRE(rb != nullptr);
@@ -159,7 +159,7 @@ static void inject_test(int len, struct rbuffer_config* config) {
   CATCH_REQUIRE(ERROR == rbuffer_inject(rb, nullptr, &dummy));
 
   th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
-  int expected_sum = 0;
+  int                      expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
     expected_sum += i;
@@ -208,7 +208,7 @@ static void fifo_test(int len, struct rbuffer_config* config) {
 template <typename T>
 // NOLINTNEXTLINE(readability-function-size)
 static void iter_test(int len, struct rbuffer_config* config) {
-  struct rbuffer  myrb;
+  struct rbuffer myrb;
   config->flags &= ~RCSW_DS_RBUFFER_AS_FIFO;
   struct rbuffer* rb = rbuffer_init(&myrb, config);
   CATCH_REQUIRE(rb != nullptr);
@@ -239,7 +239,7 @@ static void iter_test(int len, struct rbuffer_config* config) {
 
   /* two independent iterators */
   struct ds_iterator iter2;
-  CATCH_REQUIRE(nullptr != rbuffer_iter_init(&iter,  rb, th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr != rbuffer_iter_init(&iter, rb, th::iter_func_all<T>));
   CATCH_REQUIRE(nullptr != rbuffer_iter_init(&iter2, rb, th::iter_func_all<T>));
   T* a = (T*)ds_iter_next(&iter);
   T* b = (T*)ds_iter_next(&iter2);

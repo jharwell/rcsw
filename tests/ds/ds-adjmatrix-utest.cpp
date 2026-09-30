@@ -29,8 +29,8 @@ template <typename T>
 static void run_test(void (*test)(struct adjmatrix_config *)) {
   struct adjmatrix_config config;
   memset(&config, 0, sizeof(adjmatrix_config));
-  config.elt_size    = sizeof(T);
-  config.n_vertices  = TH_NUM_ITEMS;
+  config.elt_size   = sizeof(T);
+  config.n_vertices = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {
@@ -45,10 +45,13 @@ static void run_test(void (*test)(struct adjmatrix_config *)) {
    *   (directed=true,  weighted=false) → directed unweighted
    *   (directed=true,  weighted=true)  → directed weighted
    * (directed=false, weighted=true) is illegal and skipped. */
-  struct { bool_t directed; bool_t weighted; } graph_types[] = {
-    { false, false },
-    { true,  false },
-    { true,  true  },
+  struct {
+    bool_t directed;
+    bool_t weighted;
+  } graph_types[] = {
+    {false, false},
+    {true, false},
+    {true, true},
   };
 
   /* Each allocation flag in isolation, all graph types */

@@ -56,8 +56,8 @@ static void run_test(inttree_test_t test) {
   /* Pairwise combinations */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
-      uint32_t applied = flags[i] | flags[j] | RCSW_DS_BSTREE_RB |
-                         RCSW_DS_BSTREE_INT;
+      uint32_t applied =
+        flags[i] | flags[j] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
       for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
         config.flags = applied;
         test(m, &config);
@@ -142,11 +142,10 @@ static void remove_test(int len, struct bstree_config *config) {
 
     g_n_elements = (int)tree->current;
     if (tree->current > 0) {
-      CATCH_REQUIRE(
-        bstree_traverse(tree,
-                        reinterpret_cast<th::bst::bst_verify_cb>(
-                          th::bst::verify_nodes_int),
-                        TRAVERSE_INORDER) == OK);
+      CATCH_REQUIRE(bstree_traverse(tree,
+                                    reinterpret_cast<th::bst::bst_verify_cb>(
+                                      th::bst::verify_nodes_int),
+                                    TRAVERSE_INORDER) == OK);
     }
   }
 
@@ -185,7 +184,7 @@ static void overlap_test(int len, struct bstree_config *config) {
   }
 
   /* Build query intervals and pre-compute expected overlaps */
-  auto dist = std::uniform_int_distribution<int>(0, 3);
+  auto dist  = std::uniform_int_distribution<int>(0, 3);
   auto dist2 = std::uniform_int_distribution<int>(0, 4);
 
   for (int i = 0; i < len; ++i) {
@@ -206,8 +205,10 @@ static void overlap_test(int len, struct bstree_config *config) {
 
   /* Verify overlap search matches pre-computed expectation */
   for (int i = 0; i < len; ++i) {
-    struct interval_data *result = (interval_data *)inttree_overlap_search(
-      tree, RCSW_INTTREE_ROOT(tree), &search_arr[i]);
+    struct interval_data *result =
+      (interval_data *)inttree_overlap_search(tree,
+                                              RCSW_INTTREE_ROOT(tree),
+                                              &search_arr[i]);
 
     if (overlap_arr[i]) {
       CATCH_REQUIRE(result != nullptr);
@@ -222,13 +223,9 @@ static void overlap_test(int len, struct bstree_config *config) {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("inttree Insert Test", "[ds][inttree]") {
-  run_test(insert_test);
-}
+CATCH_TEST_CASE("inttree Insert Test", "[ds][inttree]") { run_test(insert_test); }
 
-CATCH_TEST_CASE("inttree Remove Test", "[ds][inttree]") {
-  run_test(remove_test);
-}
+CATCH_TEST_CASE("inttree Remove Test", "[ds][inttree]") { run_test(remove_test); }
 
 CATCH_TEST_CASE("inttree Overlap Test", "[ds][inttree]") {
   run_test(overlap_test);

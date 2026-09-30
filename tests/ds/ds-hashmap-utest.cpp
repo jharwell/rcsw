@@ -10,9 +10,9 @@
  ******************************************************************************/
 #include "rcsw/er/plugin/log4cl.h"
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/hashmap.h"
 #include "rcsw/utils/byteops.h"
@@ -73,9 +73,9 @@ static void run_test(void (*test)(struct hashmap_config* config)) {
  ******************************************************************************/
 template <typename T>
 static void build_test(struct hashmap_config* config) {
-  struct hashmap  mymap;
-  size_t          attempts     = config->n_buckets * config->bsize;
-  int             failed_count = 0;
+  struct hashmap mymap;
+  size_t         attempts     = config->n_buckets * config->bsize;
+  int            failed_count = 0;
 
   if (config->flags & RCSW_DS_SORTED) {
     config->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
@@ -93,7 +93,7 @@ static void build_test(struct hashmap_config* config) {
   for (size_t i = 0; i < attempts; i++) {
     utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
     data[i].value1 = (int)i;
-    
+
     int rval = hashmap_add(map, nodes[i].key, &data[i]);
     if (rval == OK) {
       T* el = (T*)hashmap_data_get(map, nodes[i].key);
@@ -117,9 +117,9 @@ static void build_test(struct hashmap_config* config) {
 
 template <typename T>
 static void remove_test(struct hashmap_config* config) {
-  struct hashmap  mymap;
-  size_t          len          = config->n_buckets * config->bsize;
-  int             failed_count = 0;
+  struct hashmap mymap;
+  size_t         len          = config->n_buckets * config->bsize;
+  int            failed_count = 0;
 
   struct hashmap* map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(map != nullptr);
@@ -129,7 +129,7 @@ static void remove_test(struct hashmap_config* config) {
 
   for (size_t i = 0; i < len; i++) {
     utils_string_gen((char*)nodes[i].key, RCSW_HASHMAP_KEYSIZE);
-    auto dist = std::uniform_int_distribution<size_t>(0, i);
+    auto dist      = std::uniform_int_distribution<size_t>(0, i);
     data[i].value1 = dist(th::make_rng());
     if (hashmap_add(map, nodes[i].key, &data[i]) == OK) {
       n_inserted++;

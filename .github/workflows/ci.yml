@@ -413,17 +413,16 @@ jobs:
       - name: Analyze
         shell: bash
         run: |
-          clibra build \
+          clibra analyze \
             --preset analyze \
             --reconfigure \
+            --keep-going \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4
-
-          clibra analyze \
-            --preset analyze ${{ matrix.TOOL }}
+            -DRCSW_CONFIG_PTR_ALIGN=4 \
+            ${{ matrix.TOOL }}
 
   analyze-formatting:
     runs-on: ubuntu-latest
@@ -447,7 +446,7 @@ jobs:
       - name: Analyze
         shell: bash
         run: |
-          clibra format --keep-going --reconfigure --check ${{ matrix.TYPE }} --preset analyze
+          clibra format --keep-going --reconfigure --check ${{ matrix.TYPE }} --preset format
 
   analyze-docs:
     runs-on: ubuntu-latest

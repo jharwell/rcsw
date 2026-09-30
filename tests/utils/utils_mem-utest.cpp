@@ -13,14 +13,13 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/utils/align.h"
 #include "rcsw/utils/byteops.h"
 #include "rcsw/utils/mem.h"
-
 #include "tests/test_utils.hpp"
 
 /*******************************************************************************
@@ -91,16 +90,21 @@ static void mem_dump_coverage_test() {
   }
 
   /* Non-verbose variants: must produce output */
-  CATCH_REQUIRE(!capture_stdout([&] { utils_mem_dump8(buf, sizeof(buf)); }).empty());
-  CATCH_REQUIRE(!capture_stdout([&] { utils_mem_dump16(buf, sizeof(buf) / 2); }).empty());
-  CATCH_REQUIRE(!capture_stdout([&] { utils_mem_dump32(buf, sizeof(buf) / 4); }).empty());
+  CATCH_REQUIRE(
+    !capture_stdout([&] { utils_mem_dump8(buf, sizeof(buf)); }).empty());
+  CATCH_REQUIRE(
+    !capture_stdout([&] { utils_mem_dump16(buf, sizeof(buf) / 2); }).empty());
+  CATCH_REQUIRE(
+    !capture_stdout([&] { utils_mem_dump32(buf, sizeof(buf) / 4); }).empty());
 
   /* Verbose variants: must contain "Offset:" header */
-  std::string out8v  = capture_stdout([&] { utils_mem_dump8v(buf, sizeof(buf)); });
-  std::string out16v = capture_stdout([&] { utils_mem_dump16v(buf, sizeof(buf) / 2); });
-  std::string out32v = capture_stdout([&] { utils_mem_dump32v(buf, sizeof(buf) / 4); });
+  std::string out8v = capture_stdout([&] { utils_mem_dump8v(buf, sizeof(buf)); });
+  std::string out16v =
+    capture_stdout([&] { utils_mem_dump16v(buf, sizeof(buf) / 2); });
+  std::string out32v =
+    capture_stdout([&] { utils_mem_dump32v(buf, sizeof(buf) / 4); });
 
-  CATCH_REQUIRE(out8v.find("Offset:")  != std::string::npos);
+  CATCH_REQUIRE(out8v.find("Offset:") != std::string::npos);
   CATCH_REQUIRE(out16v.find("Offset:") != std::string::npos);
   CATCH_REQUIRE(out32v.find("Offset:") != std::string::npos);
 }
@@ -108,18 +112,12 @@ static void mem_dump_coverage_test() {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("mem_cpy32 Test", "[utils][mem]") {
-  mem_cpy32_test();
-}
+CATCH_TEST_CASE("mem_cpy32 Test", "[utils][mem]") { mem_cpy32_test(); }
 CATCH_TEST_CASE("mem_cpy32 Alignment Test", "[utils][mem]") {
   mem_cpy32_alignment_test();
 }
-CATCH_TEST_CASE("mem_bswap16 Test", "[utils][mem]") {
-  mem_bswap16_test();
-}
-CATCH_TEST_CASE("mem_bswap32 Test", "[utils][mem]") {
-  mem_bswap32_test();
-}
+CATCH_TEST_CASE("mem_bswap16 Test", "[utils][mem]") { mem_bswap16_test(); }
+CATCH_TEST_CASE("mem_bswap32 Test", "[utils][mem]") { mem_bswap32_test(); }
 CATCH_TEST_CASE("mem_dump Coverage Test", "[utils][mem]") {
   mem_dump_coverage_test();
 }

@@ -78,9 +78,6 @@ cpmaddpackage(
 
 # Override the printf target's include path to avoid collision with rcsw/include
 # and system headers
-set_target_properties(printf PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                        "${printf_SOURCE_DIR}/src")
-
 file(WRITE "${CMAKE_BINARY_DIR}/include/eyalroz/printf.h"
      "#include \"${printf_SOURCE_DIR}/src/printf/printf.h\"\n")
 
@@ -443,8 +440,10 @@ _rcsw_apply_compile_defs(${PROJECT_NAME})
 # ##############################################################################
 function(_rcsw_apply_includes target)
   target_include_directories(
-    ${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                     $<INSTALL_INTERFACE:include>)
+    ${target}
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+           $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+           $<INSTALL_INTERFACE:include>)
 endfunction()
 
 foreach(_lib IN LISTS _COMPONENT_LIBS)
@@ -452,10 +451,6 @@ foreach(_lib IN LISTS _COMPONENT_LIBS)
 endforeach()
 # Same reasoning as compile defs: the parent target always needs includes.
 _rcsw_apply_includes(${PROJECT_NAME})
-
-# Some components need the generated eyalroz/printf.h wrapper
-target_include_directories(
-  printf INTERFACE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
 
 foreach(_lib IN LISTS _COMPONENT_LIBS)
   target_link_libraries(${_lib} PUBLIC printf)
@@ -503,6 +498,8 @@ if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
                          include/${PROJECT_NAME}/${_component})
   endforeach()
 
+  libra_install_files(DESTINATION include/eyalroz FILES
+                      ${CMAKE_BINARY_DIR}/include/eyalroz/printf.h)
   # Install monolithic library only if built
   if(RCSW_CONFIG_BUILD_MONOLITHIC)
     libra_install_target(${PROJECT_NAME} INCLUDE_DIR include/${PROJECT_NAME})

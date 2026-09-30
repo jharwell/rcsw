@@ -19,7 +19,7 @@
  ******************************************************************************/
 /*
  * Multiplication table for {a, b}:
- * 
+ *
  *   a * b = a  (only way to produce 'a')
  *   everything else = b
  *
@@ -28,8 +28,10 @@
  *   "baab": no bracketing yields 'a'              -> not parenthesizable to 'a'
  */
 static char multiply_ab(char x, char y) {
-  if (x == 'a' && y == 'b') {return 'a'; }
-    return 'b';
+  if (x == 'a' && y == 'b') {
+    return 'a';
+  }
+  return 'b';
 }
 
 /*******************************************************************************
@@ -70,22 +72,22 @@ CATCH_TEST_CASE("Parenthesization - Single Character", "[alg][paren]") {
   /* single character x: result is x[0] itself, no multiplication */
   char xa[] = "a";
   char xb[] = "b";
-  CATCH_REQUIRE(true  == str_is_parenthesizable(xa, r, 'a', multiply_ab));
+  CATCH_REQUIRE(true == str_is_parenthesizable(xa, r, 'a', multiply_ab));
   CATCH_REQUIRE(false == str_is_parenthesizable(xa, r, 'b', multiply_ab));
   CATCH_REQUIRE(false == str_is_parenthesizable(xb, r, 'a', multiply_ab));
-  CATCH_REQUIRE(true  == str_is_parenthesizable(xb, r, 'b', multiply_ab));
+  CATCH_REQUIRE(true == str_is_parenthesizable(xb, r, 'b', multiply_ab));
 }
 
 CATCH_TEST_CASE("Parenthesization - All Same Characters", "[alg][paren]") {
   char r[32];
- char x_aaa[] = "aaa";
-CATCH_REQUIRE(true == str_is_parenthesizable(x_aaa, r, 'a', multiply_ab));
-CATCH_REQUIRE(true == str_is_parenthesizable(x_aaa, r, 'b', multiply_ab));
+  char x_aaa[] = "aaa";
+  CATCH_REQUIRE(true == str_is_parenthesizable(x_aaa, r, 'a', multiply_ab));
+  CATCH_REQUIRE(true == str_is_parenthesizable(x_aaa, r, 'b', multiply_ab));
 
   /* bbb: b*b=b always → only parenthesizable to 'b' */
   char x_bbb[] = "bbb";
   CATCH_REQUIRE(false == str_is_parenthesizable(x_bbb, r, 'a', multiply_ab));
-  CATCH_REQUIRE(true  == str_is_parenthesizable(x_bbb, r, 'b', multiply_ab));
+  CATCH_REQUIRE(true == str_is_parenthesizable(x_bbb, r, 'b', multiply_ab));
 }
 
 CATCH_TEST_CASE("Parenthesization - Longer Sequence", "[alg][paren]") {

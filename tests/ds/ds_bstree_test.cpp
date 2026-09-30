@@ -10,13 +10,13 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
+#include "tests/ds/ds_bstree_test.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree_node.h"
 #include "rcsw/ds/ostree_node.h"
-
-#include "tests/ds/ds_bstree_test.hpp"
 #include "tests/ds/ds_test.hpp"
 
 /*******************************************************************************
@@ -28,9 +28,9 @@ namespace th::bst {
  * API Functions
  ******************************************************************************/
 int verify_nodes_int(const struct bstree* const tree,
-                        struct inttree_node * const node) {
-  uint8_t* left_key;
-  uint8_t* right_key;
+                     struct inttree_node* const node) {
+  uint8_t*            left_key;
+  uint8_t*            right_key;
   struct bstree_node* nil = tree->nil;
 
   /*
@@ -44,25 +44,26 @@ int verify_nodes_int(const struct bstree* const tree,
     if (node->right != reinterpret_cast<inttree_node*>(nil)) {
       CATCH_REQUIRE(node->max_high <= node->right->max_high);
     }
-    CATCH_REQUIRE(node->max_high >= reinterpret_cast<interval_data*>(node->data)->high);
+    CATCH_REQUIRE(node->max_high >=
+                  reinterpret_cast<interval_data*>(node->data)->high);
   }
   return 0;
 } /* th_verify_nodes_int() */
 
 int verify_nodes_rb(const struct bstree* const tree,
-                       struct bstree_node * const node) {
-  const uint8_t * node_key = node->key;
-  uint8_t *left_key;
-  uint8_t *right_key;
+                    struct bstree_node* const  node) {
+  const uint8_t* node_key = node->key;
+  uint8_t*       left_key;
+  uint8_t*       right_key;
 
   /*
    * Verify root and nil nodes are black (RBTree property #1)
    */
   struct bstree_node* nil = tree->nil;
-  int height;
+  int                 height;
   CATCH_REQUIRE(tree->root->red == 0);
   CATCH_REQUIRE(tree->nil->red == 0);
-                         struct bstree_node* parent = tree->root->parent;
+  struct bstree_node* parent = tree->root->parent;
   CATCH_REQUIRE(parent == nil);
 
   /*
@@ -70,7 +71,7 @@ int verify_nodes_rb(const struct bstree* const tree,
    * if a right child
    */
   if (node->left != nil && node->right != nil) {
-    left_key = node->left->key;
+    left_key  = node->left->key;
     right_key = node->right->key;
     CATCH_REQUIRE(th_key_cmp(left_key, node_key) <= 0);
     CATCH_REQUIRE(th_key_cmp(right_key, node_key) > 0);
@@ -96,10 +97,10 @@ int verify_nodes_rb(const struct bstree* const tree,
 } /* th_verify_nodes_rb() */
 
 int verify_nodes_bst(const struct bstree* const tree,
-                        struct bstree_node * const node) {
-  const uint8_t * node_key = node->key;
-  uint8_t* left_key;
-  uint8_t* right_key;
+                     struct bstree_node* const  node) {
+  const uint8_t*      node_key = node->key;
+  uint8_t*            left_key;
+  uint8_t*            right_key;
   struct bstree_node* nil = tree->nil;
 
   /*
@@ -107,7 +108,7 @@ int verify_nodes_bst(const struct bstree* const tree,
    * if a right child (BSTree property #1)
    */
   if (node->left != nil && node->right != nil) {
-    left_key = node->left->key;
+    left_key  = node->left->key;
     right_key = node->right->key;
     CATCH_REQUIRE(th_key_cmp(left_key, node_key) <= 0);
     CATCH_REQUIRE(th_key_cmp(right_key, node_key) > 0);
@@ -122,7 +123,7 @@ int verify_nodes_bst(const struct bstree* const tree,
   /*
    * Verify height of tree is O(# nodes) (BSTree property #2)
    */
-  CATCH_REQUIRE(bstree_node_height(tree, node) <= 10* bstree_size(tree));
+  CATCH_REQUIRE(bstree_node_height(tree, node) <= 10 * bstree_size(tree));
 
   return 0;
 } /* th_verify_nodes_bst() */

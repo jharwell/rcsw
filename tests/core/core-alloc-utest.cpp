@@ -12,9 +12,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/flags.h"

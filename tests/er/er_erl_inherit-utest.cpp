@@ -14,11 +14,11 @@
  * Simulate a build system that globally defines LIBRA_ERL, then a per-file
  * header that opts in to inheriting the outer level rather than hardcoding one.
  */
-#define LIBRA_ERL         2 /* RCSW_ERL_ERROR */
+#define LIBRA_ERL 2 /* RCSW_ERL_ERROR */
 #define LIBRA_ERL_INHERIT
 
 #define RCSW_ER_MODNAME "test.er.inherit"
-#define RCSW_ER_MODID   (0x0020)
+#define RCSW_ER_MODID (0x0020)
 
 #define RCSW_CONFIG_ER_PLUGIN 1
 
@@ -39,7 +39,7 @@ static_assert(RCSW_ERL == 2 /* RCSW_ERL_ERROR */,
               "LIBRA_ERL_INHERIT must forward LIBRA_ERL=2 to RCSW_ERL");
 static_assert(RCSW_ERL >= RCSW_ERL_FATAL, "inherited ERROR includes FATAL");
 static_assert(RCSW_ERL >= RCSW_ERL_ERROR, "inherited ERROR includes ERROR");
-static_assert(RCSW_ERL <  RCSW_ERL_WARN,  "inherited ERROR excludes WARN+");
+static_assert(RCSW_ERL < RCSW_ERL_WARN, "inherited ERROR excludes WARN+");
 // NOLINTEND(misc-redundant-expression)
 
 /*******************************************************************************
@@ -48,18 +48,23 @@ static_assert(RCSW_ERL <  RCSW_ERL_WARN,  "inherited ERROR excludes WARN+");
 
 static void inherit_level_test() {
   /* With the inherited ERL_ERROR level, FATAL and ERROR must emit. */
-  CATCH_REQUIRE(capture_stdout([] { ER_FATAL("fatal at inherited"); }).find("[FATAL]") != std::string::npos);
-  CATCH_REQUIRE(capture_stdout([] { ER_ERR  ("error at inherited"); }).find("[ERROR]") != std::string::npos);
+  CATCH_REQUIRE(capture_stdout([] {
+                  ER_FATAL("fatal at inherited");
+                }).find("[FATAL]") != std::string::npos);
+  CATCH_REQUIRE(capture_stdout([] {
+                  ER_ERR("error at inherited");
+                }).find("[ERROR]") != std::string::npos);
 
   /* WARN and above are suppressed. */
-  CATCH_REQUIRE(capture_stdout([] { ER_WARN ("warn suppressed");  }).empty());
-  CATCH_REQUIRE(capture_stdout([] { ER_INFO ("info suppressed");  }).empty());
+  CATCH_REQUIRE(capture_stdout([] { ER_WARN("warn suppressed"); }).empty());
+  CATCH_REQUIRE(capture_stdout([] { ER_INFO("info suppressed"); }).empty());
   CATCH_REQUIRE(capture_stdout([] { ER_DEBUG("debug suppressed"); }).empty());
   CATCH_REQUIRE(capture_stdout([] { ER_TRACE("trace suppressed"); }).empty());
 }
 
 static void inherit_dprintf_test() {
-  /* DPRINTF is available at any level > NONE; must emit at inherited ERL_ERROR. */
+  /* DPRINTF is available at any level > NONE; must emit at inherited ERL_ERROR.
+   */
   CATCH_REQUIRE(capture_stdout([] { DPRINTF("visible\n"); }) == "visible\n");
 }
 

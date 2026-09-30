@@ -16,6 +16,7 @@
                 "LIBRA_DOCS": "OFF",
                 "LIBRA_ANALYSIS": "OFF",
                 "LIBRA_SUMMARY": "OFF",
+                "LIBRA_FORMAT": "OFF",
                 "LIBRA_SAN": "NONE",
                 "LIBRA_FORTIFY": "NONE",
                 "LIBRA_FPC": "INHERIT",
@@ -68,7 +69,7 @@
             "description": "Shared CI settings — not used directly",
             "inherits": "release",
             "cacheVariables": {
-                "LIBRA_ERL": "NONE",
+                "LIBRA_ERL": "ERROR",
                 "RCSW_CONFIG_LIBTYPE": "STATIC",
                 "RCSW_BUILD_FOR": "POSIX",
                 "RCSW_CONFIG_STDIO_PUTCHAR": "th_putchar"
@@ -218,10 +219,21 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "LIBRA_DOCS": "ON"
             }
+        },
+      {
+        "name": "format",
+        "displayName": "Formatting",
+        "description": "Configure with only the formatting target enabled",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "LIBRA_FORMAT": "ON"
         }
+      }
+
     ],
 
-    "buildPresets": [
+   "buildPresets": [
         { "name": "debug",       "configurePreset": "debug",
           "environment": { "CTEST_OUTPUT_ON_FAILURE": "1" }},
         { "name": "release",     "configurePreset": "release",
@@ -241,7 +253,8 @@
         { "name": "valgrind",    "configurePreset": "valgrind" },
         { "name": "pgo-gen",     "configurePreset": "pgo-gen" },
         { "name": "pgo-use",     "configurePreset": "pgo-use" },
-        { "name": "docs",        "configurePreset": "docs",     "targets": ["docs"] }
+     { "name": "docs",        "configurePreset": "docs",     "targets": ["docs"] },
+     { "name": "format",        "configurePreset": "format",     "targets": ["format"] }
     ],
 
     "testPresets": [

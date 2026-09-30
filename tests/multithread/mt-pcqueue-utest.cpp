@@ -161,9 +161,9 @@ static void concurrent_test(const struct pcqueue_config* const config,
   };
 
   std::vector<std::thread> producers;
-                              producers.reserve(n_prod);
+  producers.reserve(n_prod);
   std::vector<std::thread> consumers;
-                              consumers.reserve(n_cons);
+  consumers.reserve(n_cons);
 
   for (size_t i = 0; i < n_prod; ++i) {
     producers.push_back(std::thread(prod_cb, queue));
@@ -208,8 +208,8 @@ static void concurrent_test(const struct pcqueue_config* const config,
 
 template <typename T>
 static void timeout_test(const struct pcqueue_config* const config,
-                  size_t                             n_prod,
-                  size_t                             n_cons) {
+                         size_t                             n_prod,
+                         size_t                             n_cons) {
   struct pcqueue  queue_in;
   struct pcqueue* queue = pcqueue_init(&queue_in, config);
   CATCH_REQUIRE(nullptr != queue);
@@ -252,9 +252,9 @@ static void timeout_test(const struct pcqueue_config* const config,
   };
 
   std::vector<std::thread> producers;
-                    producers.reserve(n_prod);
+  producers.reserve(n_prod);
   std::vector<std::thread> consumers;
-                    consumers.reserve(n_cons);
+  consumers.reserve(n_cons);
 
   for (size_t i = 0; i < n_prod; ++i) {
     producers.push_back(std::thread(prod_cb, queue));

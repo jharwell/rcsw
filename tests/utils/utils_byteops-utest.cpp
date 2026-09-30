@@ -13,9 +13,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/utils/byteops.h"
 
@@ -27,16 +27,19 @@ static void bswap_macros_test() {
   /* Single active byte migrates to the opposite end */
   CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0001)) == 0x0100u);
   CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x00000001)) == 0x01000000u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0000000000000001)) == UINT64_C(0x0100000000000000));
+  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0000000000000001)) ==
+                UINT64_C(0x0100000000000000));
 
   CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x8000)) == 0x0080u);
   CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x80000000)) == 0x00000080u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x8000000000000000)) == UINT64_C(0x0000000000000080));
+  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x8000000000000000)) ==
+                UINT64_C(0x0000000000000080));
 
   /* Known byte-reversal patterns */
   CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0123)) == 0x2301u);
   CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x01234567)) == 0x67452301u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0123456789ABCDEFull)) == UINT64_C(0xEFCDAB8967452301));
+  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0123456789ABCDEFull)) ==
+                UINT64_C(0xEFCDAB8967452301));
 
   /* Applying BSWAP twice restores the original value */
   uint16_t v16 = 0xABCDu;
@@ -60,13 +63,13 @@ static void wswap32_test() {
 
 static void arr8_reverse_test() {
   /* Odd-length array: centre element stays, rest swap pairwise */
-  uint8_t arr[5]    = {0x5, 0x1, 0x2, 0x3, 0x4};
+  uint8_t arr[5]      = {0x5, 0x1, 0x2, 0x3, 0x4};
   uint8_t expected[5] = {0x4, 0x3, 0x2, 0x1, 0x5};
   utils_arr8_reverse(arr, RCSW_ARRAY_ELTS(arr));
   CATCH_REQUIRE(std::memcmp(arr, expected, sizeof(arr)) == 0);
 
   /* Even-length array */
-  uint8_t even[4]    = {0x1, 0x2, 0x3, 0x4};
+  uint8_t even[4]     = {0x1, 0x2, 0x3, 0x4};
   uint8_t even_exp[4] = {0x4, 0x3, 0x2, 0x1};
   utils_arr8_reverse(even, RCSW_ARRAY_ELTS(even));
   CATCH_REQUIRE(std::memcmp(even, even_exp, sizeof(even)) == 0);
@@ -87,7 +90,7 @@ static void arr8_reverse_test() {
 
 static void elt_swap_test() {
   /* Swap adjacent elements in a uint32_t array */
-  uint32_t arr[4]    = {0x4, 0x1, 0x2, 0x3};
+  uint32_t arr[4]      = {0x4, 0x1, 0x2, 0x3};
   uint32_t expected[4] = {0x1, 0x4, 0x3, 0x2};
   utils_elt_swap(arr, sizeof(uint32_t), 0, 1);
   utils_elt_swap(arr, sizeof(uint32_t), 2, 3);
@@ -100,7 +103,7 @@ static void elt_swap_test() {
   CATCH_REQUIRE(same[1] == 0xBEEFu);
 
   /* Swap on a byte array */
-  uint8_t bytes[4]    = {0xAA, 0xBB, 0xCC, 0xDD};
+  uint8_t bytes[4]     = {0xAA, 0xBB, 0xCC, 0xDD};
   uint8_t bytes_exp[4] = {0xDD, 0xBB, 0xCC, 0xAA};
   utils_elt_swap(bytes, sizeof(uint8_t), 0, 3);
   CATCH_REQUIRE(std::memcmp(bytes, bytes_exp, sizeof(bytes)) == 0);
@@ -134,15 +137,11 @@ static void string_gen_test() {
 CATCH_TEST_CASE("Byteops BSWAP Macros Test", "[utils][byteops]") {
   bswap_macros_test();
 }
-CATCH_TEST_CASE("Byteops WSWAP32 Test", "[utils][byteops]") {
-  wswap32_test();
-}
+CATCH_TEST_CASE("Byteops WSWAP32 Test", "[utils][byteops]") { wswap32_test(); }
 CATCH_TEST_CASE("Byteops arr8_reverse Test", "[utils][byteops]") {
   arr8_reverse_test();
 }
-CATCH_TEST_CASE("Byteops elt_swap Test", "[utils][byteops]") {
-  elt_swap_test();
-}
+CATCH_TEST_CASE("Byteops elt_swap Test", "[utils][byteops]") { elt_swap_test(); }
 CATCH_TEST_CASE("Byteops string_gen Test", "[utils][byteops]") {
   string_gen_test();
 }

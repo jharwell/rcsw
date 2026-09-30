@@ -32,8 +32,8 @@ static void run_test(void (*test)(struct matrix_config *)) {
   /* ds_init allocates the elements buffer at n_rows * n_cols * elt_size; set
    * the maximum dimensions used by the loops below so the buffer is large
    * enough for every (r, c) combination. */
-  config.n_rows   = TH_NUM_ITEMS;
-  config.n_cols   = TH_NUM_ITEMS;
+  config.n_rows = TH_NUM_ITEMS;
+  config.n_cols = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
   uint32_t flags[] = {
@@ -89,15 +89,14 @@ static void addremove_test(struct matrix_config *config) {
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
 
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
 
       CATCH_REQUIRE(matrix_set(matrix, i, j, &val) == OK);
-      CATCH_REQUIRE(
-        memcmp(&val, matrix_access(matrix, i, j), sizeof(T)) == 0);
+      CATCH_REQUIRE(memcmp(&val, matrix_access(matrix, i, j), sizeof(T)) == 0);
 
       CATCH_REQUIRE(matrix_elt_clear(matrix, i, j) == OK);
       CATCH_REQUIRE(utils_zchk(matrix_access(matrix, i, j), sizeof(T)));
@@ -116,7 +115,7 @@ static void transpose_test(struct matrix_config *config) {
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
 
   /* Snapshot the values before transposing */
   std::vector<T> snapshot(config->n_rows * config->n_cols);
@@ -166,7 +165,7 @@ static void print_test(struct matrix_config *config) {
   matrix_print(matrix); /* empty */
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();

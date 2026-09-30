@@ -94,7 +94,7 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
 
   std::atomic_size_t n_readers = 0;
   std::atomic_size_t n_writers = 0;
-  auto dist = std::bernoulli_distribution{};
+  auto               dist      = std::bernoulli_distribution{};
 
   // NOLINTNEXTLINE(readability-function-cognitive-complexity)
   auto cb = [&](size_t id) {
@@ -142,8 +142,8 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
 
         mtx.lock();
         /* if a reader, check that all values are the same */
-        checks.push_back(std::ranges::all_of(vals,
-                                     [&](auto &var) { return var == vals[0]; }));
+        checks.push_back(
+          std::ranges::all_of(vals, [&](auto &var) { return var == vals[0]; }));
         mtx.unlock();
         rdwrl_exit(lock, SCOPE_RD);
         ++n_readers;
@@ -164,8 +164,7 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
          n_writers.load(),
          n_readers.load());
 
-  CATCH_REQUIRE(
-                std::ranges::all_of(checks, [](bool b) { return b; }));
+  CATCH_REQUIRE(std::ranges::all_of(checks, [](bool b) { return b; }));
   rdwrl_destroy(lock);
 }
 

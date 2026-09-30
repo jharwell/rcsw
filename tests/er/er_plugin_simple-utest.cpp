@@ -12,7 +12,7 @@
 #include <string>
 
 #define RCSW_ER_MODNAME "test.er.simple"
-#define RCSW_ER_MODID   (0x0010)
+#define RCSW_ER_MODID (0x0010)
 
 #define RCSW_CONFIG_ER_PLUGIN 1 /* RCSW_ER_PLUGIN_SIMPLE */
 
@@ -42,8 +42,10 @@ static_assert(RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR[0] == '.',
               "SIMPLE plugin must use '.' as component separator");
 
 /* LVL_CHECK is a pure constant expression for SIMPLE. */
-static_assert(RCSW_ER_PLUGIN_LVL_CHECK(nullptr, FATAL), "FATAL enabled at ERL_ALL");
-static_assert(RCSW_ER_PLUGIN_LVL_CHECK(nullptr, TRACE), "TRACE enabled at ERL_ALL");
+static_assert(RCSW_ER_PLUGIN_LVL_CHECK(nullptr, FATAL),
+              "FATAL enabled at ERL_ALL");
+static_assert(RCSW_ER_PLUGIN_LVL_CHECK(nullptr, TRACE),
+              "TRACE enabled at ERL_ALL");
 
 /*******************************************************************************
  * Test Helper Functions
@@ -80,18 +82,48 @@ static void report_format_test() {
     bool        has_ansi;
     std::string out;
   } cases[] = {
-    { "[FATAL]", true,  capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(FATAL, nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "fp\r\n"); }) },
-    { "[ERROR]", true,  capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(ERROR, nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "ep\r\n"); }) },
-    { "[WARN ]", false, capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(WARN,  nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "wp\r\n"); }) },
-    { "[INFO ]", false, capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(INFO,  nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "ip\r\n"); }) },
-    { "[DEBUG]", false, capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(DEBUG, nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "dp\r\n"); }) },
-    { "[TRACE]", false, capture_stdout([] {
-        RCSW_ER_PLUGIN_REPORT(TRACE, nullptr, RCSW_ER_MODID, RCSW_ER_MODNAME, "tp\r\n"); }) },
+    {"[FATAL]", true, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(FATAL,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "fp\r\n");
+     })},
+    {"[ERROR]", true, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(ERROR,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "ep\r\n");
+     })},
+    {"[WARN ]", false, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(WARN,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "wp\r\n");
+     })},
+    {"[INFO ]", false, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(INFO,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "ip\r\n");
+     })},
+    {"[DEBUG]", false, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(DEBUG,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "dp\r\n");
+     })},
+    {"[TRACE]", false, capture_stdout([] {
+       RCSW_ER_PLUGIN_REPORT(TRACE,
+                             nullptr,
+                             RCSW_ER_MODID,
+                             RCSW_ER_MODNAME,
+                             "tp\r\n");
+     })},
   };
 
   for (auto& c : cases) {

@@ -1,21 +1,40 @@
 @PACKAGE_INIT@
 
+# Every rcsw library links printf::printf (eyalroz/printf), which is installed
+# alongside rcsw by printf's own install rules. It must be found before the
+# exports files are loaded, since they reference it.
+include(CMakeFindDependencyMacro)
+find_dependency(printf)
+
 # Monolithic library (installed only with RCSW_CONFIG_BUILD_MONOLITHIC=ON).
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-exports.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-exports.cmake")
 endif()
 
 # Component libraries: each has its own exports file under
-# lib/cmake/@PROJECT_NAME@_<component>/. Listed in dependency order, because an
-# exports file errors out if a target it links to hasn't been loaded yet.
+# lib/cmake/@PROJECT_NAME@_<component>/. Loaded in dependency order (al and
+# core first), because an exports file errors out if a target it links to
+# hasn't been loaded yet.
 set(_@PROJECT_NAME@_components "@_CONFIGURED_COMPONENTS@")
 foreach(_comp IN LISTS _@PROJECT_NAME@_components)
   set(_exports
       "${CMAKE_CURRENT_LIST_DIR}/../@PROJECT_NAME@_${_comp}/@PROJECT_NAME@_${_comp}-exports.cmake"
   )
-  if(EXISTS "${_exports}")
-    include("${_exports}")
-    set(@PROJECT_NAME@_${_comp}_FOUND TRUE)
+  if(NOT EXISTS "${_exports}")
+    continue()
+  endif()
+  include("${_exports}")
+  set(@PROJECT_NAME@_${_comp}_FOUND TRUE)
+
+  # Same name as in the build tree: rcsw::<component>. An INTERFACE IMPORTED
+  # wrapper works on any CMake version; ALIAS of a non-global imported target
+  # needs 3.18+.
+  if(NOT TARGET @PROJECT_NAME@::${_comp})
+    add_library(@PROJECT_NAME@::${_comp} INTERFACE IMPORTED)
+    set_target_properties(
+      @PROJECT_NAME@::${_comp}
+      PROPERTIES INTERFACE_LINK_LIBRARIES
+                 @PROJECT_NAME@_${_comp}::@PROJECT_NAME@_${_comp})
   endif()
 endforeach()
 

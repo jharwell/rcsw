@@ -18,10 +18,11 @@
 #include "rcsw/er/plugin/simple.h"
 
 #define CATCH_CONFIG_PREFIX_ALL
+#include <string>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "tests/test_utils.hpp"
-#include <string>
 
 /*******************************************************************************
  * Compile-time Invariants
@@ -50,9 +51,9 @@ static void default_modname_prefix_test() {
 
   for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
-         capture_stdout([] { ER_ERR  ("e"); }),
-         capture_stdout([] { ER_WARN ("w"); }),
-         capture_stdout([] { ER_INFO ("i"); }),
+         capture_stdout([] { ER_ERR("e"); }),
+         capture_stdout([] { ER_WARN("w"); }),
+         capture_stdout([] { ER_INFO("i"); }),
          capture_stdout([] { ER_DEBUG("d"); }),
          capture_stdout([] { ER_TRACE("t"); }),
        }) {
@@ -69,9 +70,9 @@ static void default_functionality_test() {
   /* All macros must compile and behave correctly with the default modname/id. */
   for (const auto& out : {
          capture_stdout([] { ER_FATAL("f"); }),
-         capture_stdout([] { ER_ERR  ("e"); }),
-         capture_stdout([] { ER_WARN ("w"); }),
-         capture_stdout([] { ER_INFO ("i"); }),
+         capture_stdout([] { ER_ERR("e"); }),
+         capture_stdout([] { ER_WARN("w"); }),
+         capture_stdout([] { ER_INFO("i"); }),
          capture_stdout([] { ER_DEBUG("d"); }),
          capture_stdout([] { ER_TRACE("t"); }),
        }) {
@@ -106,7 +107,8 @@ CATCH_TEST_CASE("ER Modname Default Prefix Test", "[er][modname_defaults]") {
 CATCH_TEST_CASE("ER Modname Default ID Test", "[er][modname_defaults]") {
   default_modid_test();
 }
-CATCH_TEST_CASE("ER Modname Default Functionality Test", "[er][modname_defaults]") {
+CATCH_TEST_CASE("ER Modname Default Functionality Test",
+                "[er][modname_defaults]") {
   default_functionality_test();
 }
 CATCH_TEST_CASE("ER Modname Default Check Flow Test", "[er][modname_defaults]") {

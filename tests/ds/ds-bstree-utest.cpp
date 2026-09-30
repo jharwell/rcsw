@@ -146,7 +146,7 @@ static void insert_test(int                    len,
   /* Empty-state invariants */
   CATCH_REQUIRE(bstree_size(tree) == 0);
 
-                          th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -198,7 +198,7 @@ static void remove_test(int                    len,
   tree = bstree_init(&mytree, config);
   CATCH_REQUIRE(nullptr != tree);
 
-                          th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
+  th::element_generator<T> g(th::gen_elt_type::RAND_VALS, config->max_elts);
 
   for (int i = 0; i < len; ++i) {
     int rand_key;
@@ -223,8 +223,7 @@ static void remove_test(int                    len,
      * 0-element tree is a no-op but harmless) */
     g_n_elements = (int)tree->current;
     if (tree->current > 0) {
-      CATCH_REQUIRE(
-        bstree_traverse(tree, verify_cb, TRAVERSE_INORDER) == OK);
+      CATCH_REQUIRE(bstree_traverse(tree, verify_cb, TRAVERSE_INORDER) == OK);
     }
   }
 
@@ -236,8 +235,8 @@ static void remove_test(int                    len,
 }
 
 template <typename T>
-static void print_test(int                    len,
-                       struct bstree_config  *config,
+static void print_test(int                   len,
+                       struct bstree_config *config,
                        th::bst::bst_verify_cb) {
   int key_arr[TH_NUM_ITEMS];
 
@@ -287,15 +286,31 @@ CATCH_TEST_CASE("bstree Print Test", "[ds][bstree]") {
 
 /* Red-Black Tree tests */
 CATCH_TEST_CASE("rbtree Insert Test", "[ds][rbtree]") {
-  run_test<element1>(RCSW_DS_BSTREE_RB, insert_test<element1>, th::bst::verify_nodes_rb);
-  run_test<element2>(RCSW_DS_BSTREE_RB, insert_test<element2>, th::bst::verify_nodes_rb);
-  run_test<element4>(RCSW_DS_BSTREE_RB, insert_test<element4>, th::bst::verify_nodes_rb);
-  run_test<element8>(RCSW_DS_BSTREE_RB, insert_test<element8>, th::bst::verify_nodes_rb);
+  run_test<element1>(RCSW_DS_BSTREE_RB,
+                     insert_test<element1>,
+                     th::bst::verify_nodes_rb);
+  run_test<element2>(RCSW_DS_BSTREE_RB,
+                     insert_test<element2>,
+                     th::bst::verify_nodes_rb);
+  run_test<element4>(RCSW_DS_BSTREE_RB,
+                     insert_test<element4>,
+                     th::bst::verify_nodes_rb);
+  run_test<element8>(RCSW_DS_BSTREE_RB,
+                     insert_test<element8>,
+                     th::bst::verify_nodes_rb);
 }
 
 CATCH_TEST_CASE("rbtree Remove Test", "[ds][rbtree]") {
-  run_test_remove<element1>(RCSW_DS_BSTREE_RB, remove_test<element1>, th::bst::verify_nodes_rb);
-  run_test_remove<element2>(RCSW_DS_BSTREE_RB, remove_test<element2>, th::bst::verify_nodes_rb);
-  run_test_remove<element4>(RCSW_DS_BSTREE_RB, remove_test<element4>, th::bst::verify_nodes_rb);
-  run_test_remove<element8>(RCSW_DS_BSTREE_RB, remove_test<element8>, th::bst::verify_nodes_rb);
+  run_test_remove<element1>(RCSW_DS_BSTREE_RB,
+                            remove_test<element1>,
+                            th::bst::verify_nodes_rb);
+  run_test_remove<element2>(RCSW_DS_BSTREE_RB,
+                            remove_test<element2>,
+                            th::bst::verify_nodes_rb);
+  run_test_remove<element4>(RCSW_DS_BSTREE_RB,
+                            remove_test<element4>,
+                            th::bst::verify_nodes_rb);
+  run_test_remove<element8>(RCSW_DS_BSTREE_RB,
+                            remove_test<element8>,
+                            th::bst::verify_nodes_rb);
 }

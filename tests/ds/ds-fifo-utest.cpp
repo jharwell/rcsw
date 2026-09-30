@@ -122,7 +122,7 @@ static void rdwr_test(int len, struct fifo_config *config) {
 
 template <typename T>
 static void map_test(int, struct fifo_config *config) {
-  struct fifo myfifo;
+  struct fifo  myfifo;
   struct fifo *fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 
@@ -137,7 +137,7 @@ static void map_test(int, struct fifo_config *config) {
 
 template <typename T>
 static void inject_test(int, struct fifo_config *config) {
-  struct fifo myfifo;
+  struct fifo  myfifo;
   struct fifo *fifo = fifo_init(&myfifo, config);
   CATCH_REQUIRE(nullptr != fifo);
 

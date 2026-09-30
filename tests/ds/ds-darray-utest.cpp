@@ -9,10 +9,10 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/darray.h"
 #include "tests/ds/ds_test.hpp"
@@ -220,7 +220,7 @@ static void inject_test(int len, struct darray_config* config) {
   CATCH_REQUIRE(ERROR == darray_inject(arr, nullptr, &dummy));
 
   th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
-  int expected_sum = 0;
+  int                      expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
     expected_sum += i;
@@ -253,19 +253,19 @@ static void iter_test(int len, struct darray_config* config) {
     CATCH_REQUIRE(darray_insert(arr, &e, arr->current) == OK);
   }
 
-  T* e;
+  T*                 e;
   struct ds_iterator iter;
 
   /* filtered forward: only even values */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_FORWARD,
-                                            th::iter_func_even<T>));
+  CATCH_REQUIRE(
+    nullptr != darray_iter_init(&iter, arr, ITER_FORWARD, th::iter_func_even<T>));
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
   /* unfiltered forward: all values in order */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_FORWARD,
-                                            th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr !=
+                darray_iter_init(&iter, arr, ITER_FORWARD, th::iter_func_all<T>));
   size_t count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == (decltype(T::value1))count);
@@ -274,8 +274,8 @@ static void iter_test(int len, struct darray_config* config) {
   CATCH_REQUIRE(count == darray_size(arr));
 
   /* unfiltered backward: values in reverse order */
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter, arr, ITER_BACKWARD,
-                                            th::iter_func_all<T>));
+  CATCH_REQUIRE(
+    nullptr != darray_iter_init(&iter, arr, ITER_BACKWARD, th::iter_func_all<T>));
   count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 == len - (decltype(T::value1))count - 1);
@@ -285,10 +285,10 @@ static void iter_test(int len, struct darray_config* config) {
 
   /* two independent iterators over the same array */
   struct ds_iterator iter2;
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter,  arr, ITER_FORWARD,
-                                            th::iter_func_all<T>));
-  CATCH_REQUIRE(nullptr != darray_iter_init(&iter2, arr, ITER_FORWARD,
-                                            th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr !=
+                darray_iter_init(&iter, arr, ITER_FORWARD, th::iter_func_all<T>));
+  CATCH_REQUIRE(
+    nullptr != darray_iter_init(&iter2, arr, ITER_FORWARD, th::iter_func_all<T>));
   T* e1 = (T*)ds_iter_next(&iter);
   T* e2 = (T*)ds_iter_next(&iter2);
   CATCH_REQUIRE(e1 != nullptr);
@@ -429,12 +429,12 @@ CATCH_TEST_CASE("darray Print Test", "[ds][darray]") {
   CATCH_REQUIRE(th::ds_init(&config) == OK);
   struct darray* arr = darray_init(nullptr, &config);
   CATCH_REQUIRE(arr != nullptr);
-  darray_print(nullptr);  /* must not crash */
-  darray_print(arr);      /* empty */
+  darray_print(nullptr); /* must not crash */
+  darray_print(arr);     /* empty */
   element4 e{};
   e.value1 = 1;
   darray_insert(arr, &e, 0);
-  darray_print(arr);      /* one element */
+  darray_print(arr); /* one element */
   darray_destroy(arr);
   th::ds_shutdown(&config);
 }

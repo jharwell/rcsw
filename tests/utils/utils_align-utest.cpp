@@ -16,10 +16,10 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstddef>
 #include <cstdint>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/utils/align.h"
 #include "rcsw/utils/endian.h"
@@ -42,7 +42,8 @@ static void is_mem_aligned_test() {
   CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(misaligned, 2));
   CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(misaligned, 4));
 
-  /* uintptr_t arithmetic: offset by 3 from a 4-aligned address is not 4-aligned */
+  /* uintptr_t arithmetic: offset by 3 from a 4-aligned address is not 4-aligned
+   */
   uint8_t* off3 = buf + 3;
   CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(off3, 4));
 
@@ -52,34 +53,34 @@ static void is_mem_aligned_test() {
 
 static void is_size_aligned_test() {
   /* Exact multiples are aligned */
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(0,   4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(4,   4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(8,   4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(16,  4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(64,  8));
+  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(0, 4));
+  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(4, 4));
+  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(8, 4));
+  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(16, 4));
+  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(64, 8));
   CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(128, 16));
 
   /* Non-multiples are not aligned */
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(1,  4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(3,  4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(5,  4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(7,  8));
+  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(1, 4));
+  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(3, 4));
+  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(5, 4));
+  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(7, 8));
   CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(15, 16));
 }
 
 static void align_size_test() {
   /* Values already aligned are unchanged */
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(0,  4) == 0u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(4,  4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(8,  4) == 8u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(0, 4) == 0u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(4, 4) == 4u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(8, 4) == 8u);
   CATCH_REQUIRE(RCSW_ALIGN_SIZE(16, 8) == 16u);
 
   /* Unaligned values round up to the next multiple */
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(1,  4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(3,  4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(5,  4) == 8u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(7,  8) == 8u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(9,  8) == 16u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(1, 4) == 4u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(3, 4) == 4u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(5, 4) == 8u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(7, 8) == 8u);
+  CATCH_REQUIRE(RCSW_ALIGN_SIZE(9, 8) == 16u);
   CATCH_REQUIRE(RCSW_ALIGN_SIZE(15, 16) == 16u);
   CATCH_REQUIRE(RCSW_ALIGN_SIZE(17, 16) == 32u);
 
@@ -120,9 +121,5 @@ CATCH_TEST_CASE("Align IS_MEM_ALIGNED Test", "[utils][align]") {
 CATCH_TEST_CASE("Align IS_SIZE_ALIGNED Test", "[utils][align]") {
   is_size_aligned_test();
 }
-CATCH_TEST_CASE("Align ALIGN_SIZE Test", "[utils][align]") {
-  align_size_test();
-}
-CATCH_TEST_CASE("Endian Detection Test", "[utils][endian]") {
-  endian_test();
-}
+CATCH_TEST_CASE("Align ALIGN_SIZE Test", "[utils][align]") { align_size_test(); }
+CATCH_TEST_CASE("Endian Detection Test", "[utils][endian]") { endian_test(); }

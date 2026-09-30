@@ -81,19 +81,18 @@ static void addremove_test(struct dynmatrix_config *config) {
   CATCH_REQUIRE(nullptr != matrix);
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
 
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();
 
       CATCH_REQUIRE(dynmatrix_set(matrix, i, j, &val) == OK);
-      CATCH_REQUIRE(
-        memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)) == 0);
+      CATCH_REQUIRE(memcmp(&val, dynmatrix_access(matrix, i, j), sizeof(T)) == 0);
 
       CATCH_REQUIRE(dynmatrix_clear(matrix, i, j) == OK);
-      CATCH_REQUIRE(
-        utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)) == true);
+      CATCH_REQUIRE(utils_zchk(dynmatrix_access(matrix, i, j), sizeof(T)) ==
+                    true);
     }
   }
 
@@ -119,7 +118,7 @@ static void transpose_test(struct dynmatrix_config *config) {
   }
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
 
   /* Snapshot values before transposing */
   std::vector<T> snapshot(config->n_rows * config->n_cols);
@@ -162,7 +161,7 @@ static void print_test(struct dynmatrix_config *config) {
   dynmatrix_print(matrix); /* empty */
 
   th::element_generator<T> g(th::gen_elt_type::RAND_VALS,
-                              config->n_rows * config->n_cols);
+                             config->n_rows * config->n_cols);
   for (size_t i = 0; i < config->n_rows; ++i) {
     for (size_t j = 0; j < config->n_cols; ++j) {
       T val = g.next();

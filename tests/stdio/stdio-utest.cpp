@@ -25,6 +25,7 @@
  * Needed to get things to link with RCSW hidden visibility when built as an
  * .so; having this in the C test harness didn't work.
  */
+// NOLINTNEXTLINE(misc-use-internal-linkage)
 int th_putchar(int c) {
   (void)putchar(c);
   return c;

@@ -24,11 +24,11 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <cstring>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/utils/byteops.h"
 #include "rcsw/utils/checksum.h"
@@ -39,8 +39,8 @@
  ******************************************************************************/
 
 /* Canonical 8-byte frame used in the original CRC tests */
-static const uint8_t crcframe[] = {0x4d, 0x54, 0x30, 0x30,
-                                     0x01, 0x02, 0x03, 0x04};
+static const uint8_t crcframe[] = {
+  0x4d, 0x54, 0x30, 0x30, 0x01, 0x02, 0x03, 0x04};
 
 /*******************************************************************************
  * Test Helper Functions
@@ -58,15 +58,15 @@ static void xchks_test() {
     buf32[i] = (uint32_t)(i + 1);
   }
 
-  CATCH_REQUIRE(utils_xchks8(buf8,   100,    0) != 0u);
+  CATCH_REQUIRE(utils_xchks8(buf8, 100, 0) != 0u);
   CATCH_REQUIRE(utils_xchks16(buf16, 100, 0u) != 0u);
   CATCH_REQUIRE(utils_xchks32(buf32, 100, 0u) != 0u);
 
   /* A buffer of all-zero bytes with seed 0 must produce 0 */
-  uint8_t zeros8[16]   = {};
+  uint8_t  zeros8[16]  = {};
   uint16_t zeros16[16] = {};
   uint32_t zeros32[16] = {};
-  CATCH_REQUIRE(utils_xchks8(zeros8,   16,    0) == 0u);
+  CATCH_REQUIRE(utils_xchks8(zeros8, 16, 0) == 0u);
   CATCH_REQUIRE(utils_xchks16(zeros16, 16, 0u) == 0u);
   CATCH_REQUIRE(utils_xchks32(zeros32, 16, 0u) == 0u);
 
@@ -86,10 +86,9 @@ static void achks_test() {
     buf32[i] = (uint32_t)(i + 1);
   }
 
-  CATCH_REQUIRE(utils_achks8(buf8,   100,    0) != 0u);
+  CATCH_REQUIRE(utils_achks8(buf8, 100, 0) != 0u);
   CATCH_REQUIRE(utils_achks16(buf16, 100, 0u) != 0u);
   CATCH_REQUIRE(utils_achks32(buf32, 100, 0u) != 0u);
-
 
   /* Seed propagation: different seeds must produce different sums */
   CATCH_REQUIRE(utils_achks8(buf8, 100, 0u) != utils_achks8(buf8, 100, 0xFFu));
@@ -115,7 +114,7 @@ static void crc32_eth_test() {
 static void crc32_ethl_test() {
   /* Table variant must agree with the direct variant on the same frame */
   utils_crc32_ethl_init();
-  uint32_t crc_direct = utils_crc32_eth (crcframe, sizeof(crcframe));
+  uint32_t crc_direct = utils_crc32_eth(crcframe, sizeof(crcframe));
   uint32_t crc_table  = utils_crc32_ethl(crcframe, sizeof(crcframe));
   CATCH_REQUIRE(crc_direct == crc_table);
 
@@ -165,7 +164,7 @@ static void hash_djb_test() {
 
   /* NULL pointer must return ERROR */
   CATCH_REQUIRE(utils_hash_djb(nullptr, 10, &hash) == ERROR);
-  CATCH_REQUIRE(utils_hash_djb(data, 0, &hash)    == ERROR);
+  CATCH_REQUIRE(utils_hash_djb(data, 0, &hash) == ERROR);
 }
 
 static void hash_fnv1a_test() {
@@ -218,10 +217,10 @@ static void hash_distinct_test() {
   }
 
   uint32_t djb = 0;
-  uint32_t  fnv = 0;
+  uint32_t fnv = 0;
   uint32_t def = 0;
-  CATCH_REQUIRE(utils_hash_djb    (data, sizeof(data), &djb) == OK);
-  CATCH_REQUIRE(utils_hash_fnv1a  (data, sizeof(data), &fnv) == OK);
+  CATCH_REQUIRE(utils_hash_djb(data, sizeof(data), &djb) == OK);
+  CATCH_REQUIRE(utils_hash_fnv1a(data, sizeof(data), &fnv) == OK);
   CATCH_REQUIRE(utils_hash_default(data, sizeof(data), &def) == OK);
 
   CATCH_REQUIRE(djb != fnv);
@@ -232,30 +231,23 @@ static void hash_distinct_test() {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Checksum XOR-Rotate Test", "[utils][checksum]") {
-  xchks_test();
-}
+CATCH_TEST_CASE("Checksum XOR-Rotate Test", "[utils][checksum]") { xchks_test(); }
 CATCH_TEST_CASE("Checksum Add-Ignore-Carry Test", "[utils][checksum]") {
   achks_test();
 }
 CATCH_TEST_CASE("Checksum CRC32 Ethernet Test", "[utils][checksum]") {
   crc32_eth_test();
 }
-CATCH_TEST_CASE("Checksum CRC32 Ethernet Lookup-Table Test", "[utils][checksum]") {
+CATCH_TEST_CASE("Checksum CRC32 Ethernet Lookup-Table Test",
+                "[utils][checksum]") {
   crc32_ethl_test();
 }
 CATCH_TEST_CASE("Checksum CRC32 Brown Test", "[utils][checksum]") {
   crc32_brown_test();
 }
-CATCH_TEST_CASE("Hash DJB2 Test", "[utils][hash]") {
-  hash_djb_test();
-}
-CATCH_TEST_CASE("Hash FNV-1a Test", "[utils][hash]") {
-  hash_fnv1a_test();
-}
-CATCH_TEST_CASE("Hash Default Test", "[utils][hash]") {
-  hash_default_test();
-}
+CATCH_TEST_CASE("Hash DJB2 Test", "[utils][hash]") { hash_djb_test(); }
+CATCH_TEST_CASE("Hash FNV-1a Test", "[utils][hash]") { hash_fnv1a_test(); }
+CATCH_TEST_CASE("Hash Default Test", "[utils][hash]") { hash_default_test(); }
 CATCH_TEST_CASE("Hash Distinct Algorithms Test", "[utils][hash]") {
   hash_distinct_test();
 }

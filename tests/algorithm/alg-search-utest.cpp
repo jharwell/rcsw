@@ -10,10 +10,10 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/algorithm/search.h"
 #include "rcsw/algorithm/sort.h"
@@ -43,8 +43,7 @@ static void test_bsearch_present(size_t n_elts) {
                                 0,
                                 (int)n_elts - 1);
     CATCH_REQUIRE(idx_iter != -1);
-    CATCH_REQUIRE(th::cmpe<T>(data.elts.data() + idx_iter, &data.elts[i]) ==
-                  0);
+    CATCH_REQUIRE(th::cmpe<T>(data.elts.data() + idx_iter, &data.elts[i]) == 0);
 
     /* recursive */
     int idx_rec = bsearch_rec(data.elts.data(),
@@ -122,10 +121,10 @@ CATCH_TEST_CASE("Binary Search - Element Absent", "[alg][search]") {
 CATCH_TEST_CASE("Binary Search - Single Element Found", "[alg][search]") {
   element4 arr[1]{};
   arr[0].value1 = 7;
-  CATCH_REQUIRE(0 == bsearch_iter(arr, arr, th::cmpe<element4>,
-                                  sizeof(element4), 0, 0));
-  CATCH_REQUIRE(0 == bsearch_rec(arr, arr, th::cmpe<element4>,
-                                 sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    0 == bsearch_iter(arr, arr, th::cmpe<element4>, sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    0 == bsearch_rec(arr, arr, th::cmpe<element4>, sizeof(element4), 0, 0));
 }
 
 CATCH_TEST_CASE("Binary Search - Single Element Not Found", "[alg][search]") {
@@ -133,10 +132,10 @@ CATCH_TEST_CASE("Binary Search - Single Element Not Found", "[alg][search]") {
   arr[0].value1 = 7;
   element4 target{};
   target.value1 = 99;
-  CATCH_REQUIRE(-1 == bsearch_iter(arr, &target, th::cmpe<element4>,
-                                   sizeof(element4), 0, 0));
-  CATCH_REQUIRE(-1 == bsearch_rec(arr, &target, th::cmpe<element4>,
-                                  sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    -1 == bsearch_iter(arr, &target, th::cmpe<element4>, sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    -1 == bsearch_rec(arr, &target, th::cmpe<element4>, sizeof(element4), 0, 0));
 }
 
 CATCH_TEST_CASE("Binary Search - Empty Array", "[alg][search]") {
@@ -144,20 +143,21 @@ CATCH_TEST_CASE("Binary Search - Empty Array", "[alg][search]") {
   element4 target{};
   target.value1 = 1;
   /* high < low: nothing to search */
-  CATCH_REQUIRE(-1 == bsearch_iter(arr, &target, th::cmpe<element4>,
-                                   sizeof(element4), 0, -1));
-  CATCH_REQUIRE(-1 == bsearch_rec(arr, &target, th::cmpe<element4>,
-                                  sizeof(element4), 0, -1));
+  CATCH_REQUIRE(
+    -1 ==
+    bsearch_iter(arr, &target, th::cmpe<element4>, sizeof(element4), 0, -1));
+  CATCH_REQUIRE(
+    -1 == bsearch_rec(arr, &target, th::cmpe<element4>, sizeof(element4), 0, -1));
 }
 
 CATCH_TEST_CASE("Binary Search - NULL Input", "[alg][search]") {
   element4 e{};
-  CATCH_REQUIRE(-1 == bsearch_iter(nullptr, &e, th::cmpe<element4>,
-                                   sizeof(element4), 0, 0));
-  CATCH_REQUIRE(-1 == bsearch_rec(nullptr, &e, th::cmpe<element4>,
-                                  sizeof(element4), 0, 0));
-  CATCH_REQUIRE(-1 == bsearch_iter(&e, nullptr, th::cmpe<element4>,
-                                   sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    -1 == bsearch_iter(nullptr, &e, th::cmpe<element4>, sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    -1 == bsearch_rec(nullptr, &e, th::cmpe<element4>, sizeof(element4), 0, 0));
+  CATCH_REQUIRE(
+    -1 == bsearch_iter(&e, nullptr, th::cmpe<element4>, sizeof(element4), 0, 0));
 }
 
 CATCH_TEST_CASE("Binary Search - All Equal Elements", "[alg][search]") {
@@ -185,18 +185,26 @@ CATCH_TEST_CASE("Binary Search - All Equal Elements", "[alg][search]") {
 }
 
 CATCH_TEST_CASE("Binary Search - First and Last Element", "[alg][search]") {
-  const size_t       n = 16;
+  const size_t              n = 16;
   th::element_set<element4> data(n);
   data.data_gen();
   qsort_rec(data.elts.data(), 0, n - 1, sizeof(element4), th::cmpe<element4>);
 
   /* first element */
-  CATCH_REQUIRE(0 == bsearch_iter(data.elts.data(), data.elts.data(),
-                                  th::cmpe<element4>, sizeof(element4), 0, n - 1));
+  CATCH_REQUIRE(0 == bsearch_iter(data.elts.data(),
+                                  data.elts.data(),
+                                  th::cmpe<element4>,
+                                  sizeof(element4),
+                                  0,
+                                  n - 1));
   /* last element */
-  int idx = bsearch_iter(data.elts.data(), &data.elts[n - 1],
-                         th::cmpe<element4>, sizeof(element4), 0, n - 1);
+  int idx = bsearch_iter(data.elts.data(),
+                         &data.elts[n - 1],
+                         th::cmpe<element4>,
+                         sizeof(element4),
+                         0,
+                         n - 1);
   CATCH_REQUIRE(idx != -1);
-  CATCH_REQUIRE(th::cmpe<element4>(data.elts.data() + idx,
-                                   &data.elts[n - 1]) == 0);
+  CATCH_REQUIRE(th::cmpe<element4>(data.elts.data() + idx, &data.elts[n - 1]) ==
+                0);
 }

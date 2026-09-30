@@ -250,24 +250,23 @@ static void concurrent_stress_test(const struct swbus_config* config,
   std::vector<bool> checks;
   std::mutex        mtx;
 
-                                     auto dist = std::uniform_int_distribution<size_t>(0, config->max_pools -1);
+  auto dist   = std::uniform_int_distribution<size_t>(0, config->max_pools - 1);
   auto pub_cb = [&]() {
     for (size_t i = 0; i < TH_RXQ_SIZE * 2 / n_threads; ++i) {
-      status_t rval =
-        swbus_publish(swbus,
-                      i % TH_MAX_PID,
-                      config->pools[dist(th::make_rng())].elt_size,
-                      buf);
+      status_t rval = swbus_publish(swbus,
+                                    i % TH_MAX_PID,
+                                    config->pools[dist(th::make_rng())].elt_size,
+                                    buf);
       mtx.lock();
       checks.push_back(rval == OK);
       mtx.unlock();
     } /* for(i..) */
   };
-auto dist2 = std::uniform_int_distribution<size_t>(0, 1000);
+  auto dist2  = std::uniform_int_distribution<size_t>(0, 1000);
   auto sub_cb = [&](size_t id) {
     size_t          count = 0;
     status_t        rval;
-    struct timespec to   = {.tv_sec = 0, .tv_nsec = (int64_t)dist2(th::make_rng())};
+    struct timespec to = {.tv_sec = 0, .tv_nsec = (int64_t)dist2(th::make_rng())};
     auto&           subs = subscriptions[id];
     while (count < 100) {
       struct swbus_rxq_ent* ent = swbus_rxq_timedwait(swbus, rxqs[id], &to);
@@ -276,8 +275,7 @@ auto dist2 = std::uniform_int_distribution<size_t>(0, 1000);
       }
       ++count;
       mtx.lock();
-      checks.push_back(std::ranges::find(subs, ent->pid) !=
-                       subs.end());
+      checks.push_back(std::ranges::find(subs, ent->pid) != subs.end());
 
       mtx.unlock();
 
@@ -288,14 +286,12 @@ auto dist2 = std::uniform_int_distribution<size_t>(0, 1000);
     }
   };
 
-  CATCH_REQUIRE(std::ranges::all_of(checks, [&](bool val) {
-    return val;
-  }));
+  CATCH_REQUIRE(std::ranges::all_of(checks, [&](bool val) { return val; }));
 
   std::vector<std::thread> consumers;
   std::vector<std::thread> publishers;
-                                     consumers.reserve(n_consumers);
-                                     publishers.reserve(n_publishers);
+  consumers.reserve(n_consumers);
+  publishers.reserve(n_publishers);
   for (size_t i = 0; i < n_consumers; ++i) {
     consumers.push_back(std::thread(sub_cb, i));
   } /* for(i..) */

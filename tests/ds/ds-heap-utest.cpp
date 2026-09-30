@@ -175,7 +175,8 @@ static void delete_test(th::gen_elt_type type, struct binheap_config *config) {
   size_t old_elts = binheap_size(heap);
   while (!binheap_isempty(heap)) {
     size_t upper = std::max<size_t>(old_elts - 1, 1);
-    size_t index = std::uniform_int_distribution<size_t>(1, upper)(th::make_rng());
+    size_t index =
+      std::uniform_int_distribution<size_t>(1, upper)(th::make_rng());
 
     CATCH_REQUIRE(binheap_delete_key(heap, index, &minmax) == OK);
     CATCH_REQUIRE(binheap_delete_key(nullptr, index, &minmax) == ERROR);
@@ -199,7 +200,7 @@ static void make_test(th::gen_elt_type type, struct binheap_config *config) {
   }
   CATCH_REQUIRE(nullptr != heap);
 
-  T arr[TH_NUM_ITEMS];
+  T                        arr[TH_NUM_ITEMS];
   th::element_generator<T> g(type, config->max_elts);
   for (size_t i = 0; i < config->max_elts; ++i) {
     arr[i] = g.next();
@@ -227,7 +228,7 @@ static void structure_test(th::gen_elt_type type, struct binheap_config *config)
   }
   CATCH_REQUIRE(nullptr != heap);
 
-  T arr[TH_NUM_ITEMS];
+  T                        arr[TH_NUM_ITEMS];
   th::element_generator<T> g(type, config->max_elts);
   for (size_t i = 0; i < config->max_elts; ++i) {
     arr[i] = g.next();
@@ -241,13 +242,17 @@ static void structure_test(th::gen_elt_type type, struct binheap_config *config)
     CATCH_REQUIRE(binheap_extract(heap, &e) == OK);
 
     /* For INC_VALS min-heap or DEC_VALS max-heap: extract in original order */
-    if (((type == th::gen_elt_type::INC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
-        ((type == th::gen_elt_type::DEC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
+    if (((type == th::gen_elt_type::INC_VALS) &&
+         (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
+        ((type == th::gen_elt_type::DEC_VALS) &&
+         !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
       CATCH_REQUIRE(e.value1 == arr[i].value1);
     }
     /* For DEC_VALS min-heap or INC_VALS max-heap: extract in reverse order */
-    else if (((type == th::gen_elt_type::DEC_VALS) && (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
-             ((type == th::gen_elt_type::INC_VALS) && !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
+    else if (((type == th::gen_elt_type::DEC_VALS) &&
+              (heap->flags & RCSW_DS_BINHEAP_MIN)) ||
+             ((type == th::gen_elt_type::INC_VALS) &&
+              !(heap->flags & RCSW_DS_BINHEAP_MIN))) {
       CATCH_REQUIRE(e.value1 == arr[config->max_elts - i - 1].value1);
     }
   }
@@ -267,7 +272,7 @@ static void print_test(th::gen_elt_type type, struct binheap_config *config) {
 
   binheap_print(heap); /* empty */
 
-  T arr[TH_NUM_ITEMS];
+  T                        arr[TH_NUM_ITEMS];
   th::element_generator<T> g(type, config->max_elts);
   for (size_t i = 0; i < config->max_elts; ++i) {
     arr[i] = g.next();

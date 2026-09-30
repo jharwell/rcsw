@@ -9,10 +9,10 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/llist.h"
 #include "tests/ds/ds_test.hpp"
@@ -78,7 +78,7 @@ static void insert_test(int len, struct llist_config* config) {
 
   /* full: append/prepend nullptr rejected */
   if (len == config->max_elts) {
-  CATCH_REQUIRE(llist_isfull(list));
+    CATCH_REQUIRE(llist_isfull(list));
   }
   CATCH_REQUIRE(llist_append(list, nullptr) == ERROR);
   CATCH_REQUIRE(llist_prepend(list, nullptr) == ERROR);
@@ -185,9 +185,9 @@ static void sort_test(int len, struct llist_config* config) {
   CATCH_REQUIRE(nullptr != list);
 
   for (int i = 0; i < len; i++) {
-    T   e;
+    T    e;
     auto dist = std::uniform_int_distribution<size_t>(0, i);
-    e.value1 = dist(th::make_rng()) + i;
+    e.value1  = dist(th::make_rng()) + i;
     CATCH_REQUIRE(llist_append(list, &e) == OK);
   }
 
@@ -224,7 +224,7 @@ static void inject_test(int len, struct llist_config* config) {
   CATCH_REQUIRE(ERROR == llist_inject(list, nullptr, &dummy));
 
   th::element_generator<T> g(th::gen_elt_type::INC_VALS, config->max_elts);
-  int expected_sum = 0;
+  int                      expected_sum = 0;
   for (int i = 0; i < len; i++) {
     T e = g.next();
     expected_sum += i;
@@ -257,19 +257,19 @@ static void iter_test(int len, struct llist_config* config) {
     CATCH_REQUIRE(llist_append(list, &e) == OK);
   }
 
-  T* e;
+  T*                 e;
   struct ds_iterator iter;
 
   /* filtered forward */
-  CATCH_REQUIRE(nullptr != llist_iter_init(&iter, list, ITER_FORWARD,
-                                           th::iter_func_even<T>));
+  CATCH_REQUIRE(
+    nullptr != llist_iter_init(&iter, list, ITER_FORWARD, th::iter_func_even<T>));
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE(e->value1 % 2 == 0);
   }
 
   /* unfiltered forward */
-  CATCH_REQUIRE(nullptr != llist_iter_init(&iter, list, ITER_FORWARD,
-                                           th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr !=
+                llist_iter_init(&iter, list, ITER_FORWARD, th::iter_func_all<T>));
   size_t count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE((size_t)e->value1 == count);
@@ -278,8 +278,8 @@ static void iter_test(int len, struct llist_config* config) {
   CATCH_REQUIRE(count == list->current);
 
   /* unfiltered backward: values in reverse order */
-  CATCH_REQUIRE(nullptr != llist_iter_init(&iter, list, ITER_BACKWARD,
-                                           th::iter_func_all<T>));
+  CATCH_REQUIRE(
+    nullptr != llist_iter_init(&iter, list, ITER_BACKWARD, th::iter_func_all<T>));
   count = 0;
   while ((e = (T*)ds_iter_next(&iter)) != nullptr) {
     CATCH_REQUIRE((size_t)e->value1 == (size_t)len - count - 1);
@@ -289,10 +289,10 @@ static void iter_test(int len, struct llist_config* config) {
 
   /* two independent iterators */
   struct ds_iterator iter2;
-  CATCH_REQUIRE(nullptr != llist_iter_init(&iter,  list, ITER_FORWARD,
-                                           th::iter_func_all<T>));
-  CATCH_REQUIRE(nullptr != llist_iter_init(&iter2, list, ITER_FORWARD,
-                                           th::iter_func_all<T>));
+  CATCH_REQUIRE(nullptr !=
+                llist_iter_init(&iter, list, ITER_FORWARD, th::iter_func_all<T>));
+  CATCH_REQUIRE(
+    nullptr != llist_iter_init(&iter2, list, ITER_FORWARD, th::iter_func_all<T>));
   T* a = (T*)ds_iter_next(&iter);
   T* b = (T*)ds_iter_next(&iter2);
   if (len > 0) {

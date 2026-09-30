@@ -10,9 +10,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/algorithm/lcs.h"
 
@@ -53,13 +53,13 @@ static void check_lcs(const char* x,
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("LCS - NULL Input Rejected", "[alg][lcs]") {
-  char x[] = "ABC";
-  char y[] = "AC";
+  char                  x[] = "ABC";
+  char                  y[] = "AC";
   struct lcs_calculator lcs;
   CATCH_REQUIRE(ERROR == lcs_init(nullptr, x, y));
   CATCH_REQUIRE(ERROR == lcs_init(&lcs, nullptr, y));
   CATCH_REQUIRE(ERROR == lcs_init(&lcs, x, nullptr));
-  lcs_destroy(nullptr);  /* must not crash */
+  lcs_destroy(nullptr); /* must not crash */
 }
 
 CATCH_TEST_CASE("LCS - Known Cases", "[alg][lcs]") {
@@ -68,9 +68,7 @@ CATCH_TEST_CASE("LCS - Known Cases", "[alg][lcs]") {
     /* length-5 original test from the old test file */
     check_lcs("ABCRCQ7Xz", "o15RCQ0Xz", 5, "RCQXz");
   }
-  CATCH_SECTION("ABCDGH vs AEDFHR") {
-    check_lcs("ABCDGH", "AEDFHR", 3, "ADH");
-  }
+  CATCH_SECTION("ABCDGH vs AEDFHR") { check_lcs("ABCDGH", "AEDFHR", 3, "ADH"); }
   CATCH_SECTION("AGGTAB vs GXTXAYB") {
     check_lcs("AGGTAB", "GXTXAYB", 4, nullptr);
   }

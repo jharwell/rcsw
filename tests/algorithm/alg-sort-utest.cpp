@@ -10,11 +10,11 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <algorithm>
 #include <numeric>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/algorithm/sort.h"
 #include "tests/element.hpp"
@@ -38,16 +38,12 @@ static void verify_sort(const std::vector<T>& original,
   /* same multiset as original */
   std::vector<T> orig_copy = original;
   std::vector<T> sort_copy(sorted, sorted + n_elts);
-  std::sort(orig_copy.begin(),
-            orig_copy.end(),
-            [](const T& a, const T& b) {
-              return th::cmpe<T>(&a, &b) < 0;
-            });
-  std::sort(sort_copy.begin(),
-            sort_copy.end(),
-            [](const T& a, const T& b) {
-              return th::cmpe<T>(&a, &b) < 0;
-            });
+  std::sort(orig_copy.begin(), orig_copy.end(), [](const T& a, const T& b) {
+    return th::cmpe<T>(&a, &b) < 0;
+  });
+  std::sort(sort_copy.begin(), sort_copy.end(), [](const T& a, const T& b) {
+    return th::cmpe<T>(&a, &b) < 0;
+  });
   CATCH_REQUIRE(orig_copy == sort_copy);
 }
 
@@ -91,7 +87,7 @@ static void test_insertion_sort(size_t n_elts) {
 
 template <typename T>
 static void test_insertion_sort_already_sorted(size_t n_elts) {
-  auto v = make_sorted<T>(n_elts);
+  auto           v        = make_sorted<T>(n_elts);
   std::vector<T> original = v;
   insertion_sort(v.data(), n_elts, sizeof(T), th::cmpe<T>);
   verify_sort(original, v.data(), n_elts);
@@ -99,7 +95,7 @@ static void test_insertion_sort_already_sorted(size_t n_elts) {
 
 template <typename T>
 static void test_insertion_sort_reverse_sorted(size_t n_elts) {
-  auto v = make_reverse_sorted<T>(n_elts);
+  auto           v        = make_reverse_sorted<T>(n_elts);
   std::vector<T> original = v;
   insertion_sort(v.data(), n_elts, sizeof(T), th::cmpe<T>);
   verify_sort(original, v.data(), n_elts);
@@ -107,7 +103,7 @@ static void test_insertion_sort_reverse_sorted(size_t n_elts) {
 
 template <typename T>
 static void test_insertion_sort_all_equal(size_t n_elts) {
-  auto v = make_all_equal<T>(n_elts);
+  auto           v        = make_all_equal<T>(n_elts);
   std::vector<T> original = v;
   insertion_sort(v.data(), n_elts, sizeof(T), th::cmpe<T>);
   verify_sort(original, v.data(), n_elts);
@@ -162,8 +158,8 @@ static void test_radix_sort_base(size_t base, size_t n_elts) {
   std::vector<size_t> arr(n_elts);
   /* fill with pseudo-random values */
   for (size_t i = 0; i < n_elts; ++i) {
-    arr[i] = (size_t)((i * 6364136223846793005ULL + 1442695040888963407ULL) &
-                      0xFFFF);
+    arr[i] =
+      (size_t)((i * 6364136223846793005ULL + 1442695040888963407ULL) & 0xFFFF);
   }
   std::vector<size_t> original = arr;
   std::vector<size_t> tmp(n_elts);

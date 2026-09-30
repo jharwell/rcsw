@@ -12,9 +12,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstring>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/algorithm/edit_dist.h"
 
@@ -29,9 +29,7 @@ static bool_t char_cmpe(const void* const e1, const void* const e2) {
  * Run both iterative and recursive edit_dist_find on fresh finders, verify
  * they agree and match the expected distance.
  */
-static void check_edit_dist(const char* a,
-                             const char* b,
-                             int         expected) {
+static void check_edit_dist(const char* a, const char* b, int expected) {
   /* iterative */
   struct edit_dist_finder fi;
   CATCH_REQUIRE(OK == edit_dist_init(&fi,
@@ -39,7 +37,7 @@ static void check_edit_dist(const char* a,
                                      b,
                                      sizeof(char),
                                      char_cmpe,
-                                     (size_t(*)(const void*))strlen));
+                                     (size_t (*)(const void*))strlen));
   int dist_iter = edit_dist_find(&fi, EXEC_ITER);
   CATCH_REQUIRE(dist_iter == expected);
   edit_dist_destroy(&fi);
@@ -51,7 +49,7 @@ static void check_edit_dist(const char* a,
                                      b,
                                      sizeof(char),
                                      char_cmpe,
-                                     (size_t(*)(const void*))strlen));
+                                     (size_t (*)(const void*))strlen));
   int dist_rec = edit_dist_find(&fr, EXEC_REC);
   CATCH_REQUIRE(dist_rec == expected);
   edit_dist_destroy(&fr);
@@ -64,19 +62,28 @@ static void check_edit_dist(const char* a,
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("Edit Distance - NULL Input Rejected", "[alg][edit_dist]") {
-  char a[] = "ABC";
-  char b[] = "AC";
+  char                    a[] = "ABC";
+  char                    b[] = "AC";
   struct edit_dist_finder f;
-  CATCH_REQUIRE(ERROR == edit_dist_init(nullptr, a, b, sizeof(char),
+  CATCH_REQUIRE(ERROR == edit_dist_init(nullptr,
+                                        a,
+                                        b,
+                                        sizeof(char),
                                         char_cmpe,
-                                        (size_t(*)(const void*))strlen));
-  CATCH_REQUIRE(ERROR == edit_dist_init(&f, nullptr, b, sizeof(char),
+                                        (size_t (*)(const void*))strlen));
+  CATCH_REQUIRE(ERROR == edit_dist_init(&f,
+                                        nullptr,
+                                        b,
+                                        sizeof(char),
                                         char_cmpe,
-                                        (size_t(*)(const void*))strlen));
-  CATCH_REQUIRE(ERROR == edit_dist_init(&f, a, nullptr, sizeof(char),
+                                        (size_t (*)(const void*))strlen));
+  CATCH_REQUIRE(ERROR == edit_dist_init(&f,
+                                        a,
+                                        nullptr,
+                                        sizeof(char),
                                         char_cmpe,
-                                        (size_t(*)(const void*))strlen));
-  edit_dist_destroy(nullptr);  /* must not crash */
+                                        (size_t (*)(const void*))strlen));
+  edit_dist_destroy(nullptr); /* must not crash */
 }
 
 CATCH_TEST_CASE("Edit Distance - Equal Strings", "[alg][edit_dist]") {
