@@ -452,11 +452,6 @@ endforeach()
 # Same reasoning as compile defs: the parent target always needs includes.
 _rcsw_apply_includes(${PROJECT_NAME})
 
-foreach(_lib IN LISTS _COMPONENT_LIBS)
-  target_link_libraries(${_lib} PUBLIC printf)
-endforeach()
-target_link_libraries(${PROJECT_NAME} PUBLIC printf)
-
 # ##############################################################################
 # Link libraries
 # ##############################################################################
@@ -478,11 +473,10 @@ if("${RCSW_CONFIG_ER_PLUGIN}" STREQUAL "ZLOG")
   endif()
 endif()
 if(RCSW_CONFIG_STDIO)
-  if(RCSW_CONFIG_BUILD_MONOLITHIC)
-    target_link_libraries(${PROJECT_NAME} PRIVATE printf)
-  else()
-    target_link_libraries(${PROJECT_NAME}_stdio PUBLIC printf)
-  endif()
+  foreach(_lib IN LISTS _COMPONENT_LIBS)
+    target_link_libraries(${_lib} PUBLIC printf)
+  endforeach()
+  target_link_libraries(${PROJECT_NAME} PUBLIC printf)
 endif()
 
 # ##############################################################################

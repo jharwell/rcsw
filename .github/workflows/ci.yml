@@ -247,7 +247,7 @@ jobs:
           git submodule update --init --remote --recursive
           cargo install clibra
 
-      - name: Memcheck
+      - name: Test
         shell: bash
         run: |
           clibra test \
@@ -256,11 +256,7 @@ jobs:
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          # --test-dir is required because ctest + memcheck don't resolve the
-          # binary dir reliably as of CMake 3.31
-          ctest --preset ci-valgrind --test-dir build -T memcheck
-
-      - name: ASAN
+      - name: Test under Memcheck
         shell: bash
         run: |
           clibra build \
@@ -272,6 +268,15 @@ jobs:
           # --test-dir is required because ctest + memcheck don't resolve the
           # binary dir reliably as of CMake 3.31
           ctest --preset ci-valgrind --test-dir build -T memcheck
+
+      - name: Test under ASAN
+        shell: bash
+        run: |
+          clibra test \
+            --reconfigure \
+            --preset ci-asan \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
       - name: Generate coverage
         shell: bash

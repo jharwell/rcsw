@@ -11,6 +11,8 @@
  ******************************************************************************/
 #include "rcsw/multithread/pcqueue.h"
 
+#include <string.h>
+
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
@@ -29,6 +31,8 @@ struct pcqueue* pcqueue_init(struct pcqueue*                    queue_in,
                                      params->flags & RCSW_NOALLOC_HANDLE);
 
   RCSW_CHECK_PTR(queue);
+  memset(queue, 0, sizeof(*queue));
+  queue->flags = params->flags;
 
   /* create FIFO */
   struct fifo_config impl_params = {.max_elts = params->max_elts,
@@ -62,7 +66,7 @@ void pcqueue_destroy(struct pcqueue* const queue) {
   csem_destroy(&queue->slots_avail);
   csem_destroy(&queue->slots_inuse);
 
-  rcsw_free(queue, queue->fifo.rb.flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(queue, queue->flags & RCSW_NOALLOC_HANDLE);
 } /* pcqueue_destroy() */
 
 status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {

@@ -50,6 +50,19 @@ struct pcqueue {
    * Semaphore counting occupied/allocated slots in FIFO.
    */
   struct csem slots_inuse;
+
+  /**
+   * \brief Run-time configuration flags.
+   *
+   * Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags are ignored.
+   */
+  uint32_t flags;
 };
 
 /*******************************************************************************
