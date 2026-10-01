@@ -30,8 +30,8 @@ struct meta_info g_rcsw_metadata = {
                  ".@PROJECT_VERSION_PATCH@",
       .license =
         {
-          .abbrev    = RCSW_LICENSE_SHORT(MIT),
-          .full      = RCSW_LICENSE_FULL(MIT),
+          .abbrev    = RCSW_LICENSE_SHORT(mit),
+          .full      = RCSW_LICENSE_FULL(mit),
           .copyright = RCSW_COPYRIGHT(2023, "John Harwell"),
         },
     },

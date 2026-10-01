@@ -20,6 +20,10 @@ on:
     paths:
       - "src/**"
       - "include/**"
+      - "cmake/**"
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
       - ".github/**"
       - "docs/**"
 
@@ -64,17 +68,21 @@ jobs:
           - SIMPLE
           - ZLOG
 
+        ptr_align:
+          - 4
+
+        # Spot-check the other ptr_align values, with the other axes pinned to
+        # keep the count low. ptr_align has to be a matrix axis for these to be
+        # added as new jobs: otherwise each include matches the same existing
+        # job, and each overwrites the previous one's ptr_align.
         include:
-          # Spot-check each ptr_align value; pin other axes to keep count low
-          - { build_type: Release, libtype: STATIC, build_mode: components,
+          - { build_type: release, libtype: STATIC, build_mode: components,
               er_plugin: LOG4CL, ptr_align: 1 }
-          - { build_type: Release, libtype: STATIC, build_mode: components,
+          - { build_type: release, libtype: STATIC, build_mode: components,
               er_plugin: LOG4CL, ptr_align: 2 }
-          - { build_type: Release, libtype: STATIC, build_mode: components,
-              er_plugin: LOG4CL, ptr_align: 4 }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -90,21 +98,20 @@ jobs:
             MONOLITHIC=ON
           fi
 
-          PTR_ALIGN=${{ matrix.ptr_align || 4 }}
-
           clibra build --preset ${{ matrix.build_type }} \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
             -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
-            -DRCSW_CONFIG_PTR_ALIGN=${PTR_ALIGN} \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_STDIO_PUTCHAR=putchar
 
 # ---------------------------------------------------------------------------
 # Job 2: POSIX component-exclusion build
 #
-# Purpose: verify each optional component can be cleanly disabled, and that
-# the all-disabled configuration (core + al only) also builds cleanly.
+# Purpose: verify each optional component can be cleanly disabled (which also
+# disables the components that need it), and that the all-disabled
+# configuration (core only) also builds cleanly.
 # ---------------------------------------------------------------------------
   build-posix-components:
     runs-on: ubuntu-latest
@@ -114,19 +121,15 @@ jobs:
       fail-fast: false
       matrix:
         disabled_component:
-          - algorithm
-          - ds
-          - er
           - multiprocess
           - multithread
           - stdio
-          - tool
-          - utils
           - swbus
-          - ALL   # all optional components disabled; only core + al remain
+          - tool
+          - ALL   # all optional components disabled; only core remains
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -140,14 +143,11 @@ jobs:
           EXTRA_FLAGS=""
           if [ "${{ matrix.disabled_component }}" = "ALL" ]; then
             EXTRA_FLAGS="\
-              -DRCSW_CONFIG_ALGORITHM=OFF \
-              -DRCSW_CONFIG_DS=OFF \
-              -DRCSW_CONFIG_ER=OFF \
               -DRCSW_CONFIG_MULTIPROCESS=OFF \
               -DRCSW_CONFIG_MULTITHREAD=OFF \
               -DRCSW_CONFIG_STDIO=OFF \
-              -DRCSW_CONFIG_TOOL=OFF \
-              -DRCSW_CONFIG_UTILS=OFF"
+              -DRCSW_CONFIG_SWBUS=OFF \
+              -DRCSW_CONFIG_TOOL=OFF"
           else
             COMPONENT=$(echo "${{ matrix.disabled_component }}" | tr '[:lower:]' '[:upper:]')
             EXTRA_FLAGS="-DRCSW_CONFIG_${COMPONENT}=OFF"
@@ -188,7 +188,7 @@ jobs:
           - NONE
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -240,7 +240,7 @@ jobs:
           - NO
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -262,7 +262,7 @@ jobs:
         run: |
           clibra build \
             --reconfigure \
-            --preset ci-asan \
+            --preset ci-valgrindn \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
@@ -302,19 +302,18 @@ jobs:
 # Purpose: end-to-end validation of the installed package, one install per
 # matrix entry:
 #
-# - core: no optional components (only al + core).
-# - <component>: exactly one optional component enabled, so its install must
-#   stand on its own: its headers must only need what is installed with it.
+# - core: no optional components.
+# - <component>: one optional component, plus the ones it needs, so its install
+#   must stand on its own.
 # - monolithic: everything, plus the monolithic rcsw::rcsw library.
 #
-# Each entry checks that:
+# Each is installed as both static and shared libraries; shared builds also
+# catch functions missing RCSW_API, which are hidden.
 #
-# 1. The install contains headers for exactly the libraries it installed
-#    (no headers from components that weren't built, and none missing).
-# 2. A consumer can find_package() the requested components, link them, and
-#    compile every top-level header of each one. Including each header on its
-#    own in a fresh project catches headers that depend on something that
-#    wasn't installed.
+# The checks themselves are the BATS suite in tests/integration/: install
+# layout, find_package(), per-header compilation, and per-component link
+# tests. Run it locally against any install the same way; see
+# tests/integration/helpers.bash.
 #
 # Runs after build-posix since it depends on install correctness, not tests.
 # ---------------------------------------------------------------------------
@@ -329,24 +328,22 @@ jobs:
       matrix:
         target:
           - core
-          - algorithm
-          - ds
-          - swbus
-          - er
           - multiprocess
           - multithread
           - stdio
           - swbus
           - tool
-          - utils
           - monolithic
+        libtype:
+          - STATIC
+          - SHARED
     env:
-      PREFIX: /tmp/rcsw-install
-      CONSUMER: /tmp/rcsw-consumer
-      OPTIONAL_COMPONENTS: algorithm ds er multiprocess multithread stdio swbus tool utils
+      RCSW_PREFIX: /tmp/rcsw-install
+      RCSW_ER_PLUGIN: LOG4CL
+      OPTIONAL_COMPONENTS: multiprocess multithread stdio swbus tool
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -357,119 +354,53 @@ jobs:
       - name: Select components
         shell: bash
         run: |
-          # COMPONENTS: what the consumer asks find_package() for and whose
-          # headers it compiles. CONFIG_FLAGS: one RCSW_CONFIG_<X> per
-          # optional component, ON only for the ones under test.
+          # ENABLE: the optional components under test, plus the ones they
+          # need (see the cmake_dependent_option() calls in
+          # cmake/components.cmake). A component whose dependencies are off is
+          # forced off, so they must be listed here.
+          # RCSW_COMPONENTS: what the tests expect to be installed.
+          # CONFIG_FLAGS: one RCSW_CONFIG_<X> per optional component, ON only
+          # for the ones in ENABLE.
           TARGET="${{ matrix.target }}"
+          MONOLITHIC=OFF
+          case "${TARGET}" in
+            monolithic) ENABLE="${OPTIONAL_COMPONENTS}"; MONOLITHIC=ON ;;
+            core)       ENABLE="" ;;
+            swbus)      ENABLE="multithread swbus" ;;
+            *)          ENABLE="${TARGET}" ;;
+          esac
+
           FLAGS=""
           for c in ${OPTIONAL_COMPONENTS}; do
-            if [ "${TARGET}" = "monolithic" ] || [ "${TARGET}" = "${c}" ]; then
+            if [[ " ${ENABLE} " == *" ${c} "* ]]; then
               VALUE=ON
             else
               VALUE=OFF
             fi
             FLAGS="${FLAGS} -DRCSW_CONFIG_${c^^}=${VALUE}"
           done
-
-          case "${TARGET}" in
-            monolithic) COMPONENTS="al core ${OPTIONAL_COMPONENTS}"; MONOLITHIC=ON ;;
-            core)       COMPONENTS="al core";                        MONOLITHIC=OFF ;;
-            *)          COMPONENTS="${TARGET}";                      MONOLITHIC=OFF ;;
-          esac
+          COMPONENTS="core ${ENABLE}"
 
           echo "CONFIG_FLAGS=${FLAGS}" >> $GITHUB_ENV
-          echo "COMPONENTS=${COMPONENTS}" >> $GITHUB_ENV
-          echo "MONOLITHIC=${MONOLITHIC}" >> $GITHUB_ENV
+          echo "RCSW_COMPONENTS=${COMPONENTS}" >> $GITHUB_ENV
+          echo "RCSW_MONOLITHIC=${MONOLITHIC}" >> $GITHUB_ENV
+          echo "RCSW_SOURCE_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
 
       - name: Build and install
         shell: bash
         run: |
           clibra install --preset debug \
             -DRCSW_BUILD_FOR=POSIX \
-            -DRCSW_CONFIG_LIBTYPE=STATIC \
-            -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
-            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=${RCSW_MONOLITHIC} \
+            -DRCSW_CONFIG_ER_PLUGIN=${RCSW_ER_PLUGIN} \
             -DRCSW_CONFIG_PTR_ALIGN=4 \
-            -DCMAKE_INSTALL_PREFIX=${PREFIX} \
+            -DCMAKE_INSTALL_PREFIX=${RCSW_PREFIX} \
             ${CONFIG_FLAGS}
 
-      - name: Check installed headers match installed libraries
+      - name: Integration tests
         shell: bash
-        run: |
-          cd ${PREFIX}
-          FAILED=0
-
-          # Every requested component was installed.
-          for c in ${COMPONENTS}; do
-            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
-              echo "::error::component ${c} was not installed (no lib/cmake/rcsw_${c})"
-              FAILED=1
-            fi
-          done
-
-          # Header directories and component libraries correspond one-to-one.
-          for d in include/rcsw/*/; do
-            c=$(basename "${d}")
-            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
-              echo "::error::headers for ${c} installed, but its library was not"
-              FAILED=1
-            fi
-          done
-          for d in lib/cmake/rcsw_*/; do
-            c=$(basename "${d}")
-            c=${c#rcsw_}
-            if [ ! -d "include/rcsw/${c}" ]; then
-              echo "::error::library rcsw_${c} installed without its headers"
-              FAILED=1
-            fi
-          done
-
-          echo "Installed components:"
-          ls lib/cmake | sed -n 's/^rcsw_/  /p'
-          exit ${FAILED}
-
-      - name: Build consumer
-        shell: bash
-        run: |
-          mkdir -p ${CONSUMER}
-
-          if [ "${MONOLITHIC}" = "ON" ]; then
-            FIND="find_package(rcsw REQUIRED)"
-            LIBS="rcsw::rcsw"
-          else
-            FIND="find_package(rcsw REQUIRED COMPONENTS ${COMPONENTS})"
-            LIBS=""
-            for c in ${COMPONENTS}; do
-              LIBS="${LIBS} rcsw::${c}"
-            done
-          fi
-
-          {
-            echo "cmake_minimum_required(VERSION 3.20)"
-            echo "project(rcsw_consumer C)"
-            echo "${FIND}"
-            echo "add_executable(consumer main.c)"
-            echo "target_link_libraries(consumer PRIVATE ${LIBS})"
-          } > ${CONSUMER}/CMakeLists.txt
-
-          # Every top-level header of each component under test. Subdirectories
-          # (er/plugin/, al/posix/, al/baremetal/) are platform- or
-          # plugin-specific and are reached through the top-level headers.
-          {
-            for c in ${COMPONENTS}; do
-              for h in ${PREFIX}/include/rcsw/${c}/*.h; do
-                echo "#include \"rcsw/${c}/$(basename "${h}")\""
-              done
-            done
-            echo "int main(void) { return 0; }"
-          } > ${CONSUMER}/main.c
-
-          echo "--- CMakeLists.txt"; cat ${CONSUMER}/CMakeLists.txt
-          echo "--- main.c";         cat ${CONSUMER}/main.c
-
-          cmake -S ${CONSUMER} -B ${CONSUMER}/build \
-            -DCMAKE_PREFIX_PATH=${PREFIX}
-          cmake --build ${CONSUMER}/build --verbose
+        run: bats --print-output-on-failure tests/integration
 
 # ---------------------------------------------------------------------------
 # Static analysis
@@ -487,7 +418,7 @@ jobs:
           - clang-tidy
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -520,7 +451,7 @@ jobs:
           - clang
           - cmake
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -543,7 +474,7 @@ jobs:
         TOOL:
           - clang
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -594,7 +525,7 @@ jobs:
       image: jharwell/ubuntu24.04-rcsw:20260929
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # version resolution needs full history + tags
 
@@ -619,8 +550,7 @@ jobs:
 
           # clibra reads the version from the configured build dir, so
           # configure first.
-          cmake --preset release
-          NEXT_VERSION=$(clibra version --preset release --bump)
+          NEXT_VERSION=$(clibra version --preset release --bump --reconfigure)
 
           git tag "v${NEXT_VERSION}" -m "Development release ${NEXT_VERSION}"
           git push origin "v${NEXT_VERSION}"
@@ -646,7 +576,7 @@ jobs:
       image: jharwell/ubuntu24.04-rcsw:20260929
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # version resolution needs full history + tags
 
@@ -690,14 +620,6 @@ jobs:
       - name: Lint packages
         shell: bash
         run: lintian build/*.deb
-
-      # Tag only after everything above has succeeded, so a failed run
-      # doesn't leave a release tag behind.
-      - name: Tag release
-        shell: bash
-        run: |
-          git tag "${RELEASE_TAG}" -m "Release ${RELEASE_VERSION}"
-          git push origin "${RELEASE_TAG}"
 
       - name: Generate changelog
         shell: bash

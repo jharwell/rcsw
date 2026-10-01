@@ -20,7 +20,7 @@
 /*******************************************************************************
  * License Text Constants
  ******************************************************************************/
-const char RCSW_LICENSE_FULL_GPLV3_TEXT[] =
+const char rcsw_license_full_gplv3_text[] =
   "This program is free software: you can redistribute it and/or modify it\n"
   "under the terms of the GNU General Public License as published by the Free\n"
   "Software Foundation, either version 3 of the License, or (at your option)\n"
@@ -34,13 +34,13 @@ const char RCSW_LICENSE_FULL_GPLV3_TEXT[] =
   "You should have received a copy of the GNU General Public License along\n"
   "with this program. If not, see <https://www.gnu.org/licenses/>.\n";
 
-const char RCSW_LICENSE_SHORT_GPLV3_TEXT[] =
+const char rcsw_license_short_gplv3_text[] =
   "License: GPLv3+: GNU GPL version 3 or later"
   " <https://gnu.org/licenses/gpl.html>\n"
   "This is free software: you are free to change and redistribute it.\n"
   "This program comes with NO WARRANTY.\n";
 
-const char RCSW_LICENSE_FULL_LGPLV3_TEXT[] =
+const char rcsw_license_full_lgplv3_text[] =
   "This library is free software: you can redistribute it and/or modify it\n"
   "under the terms of the GNU Lesser General Public License as published by\n"
   "the Free Software Foundation, either version 3 of the License, or (at your\n"
@@ -54,13 +54,13 @@ const char RCSW_LICENSE_FULL_LGPLV3_TEXT[] =
   "You should have received a copy of the GNU Lesser General Public License\n"
   "along with this library. If not, see <https://www.gnu.org/licenses/>.\n";
 
-const char RCSW_LICENSE_SHORT_LGPLV3_TEXT[] =
+const char rcsw_license_short_lgplv3_text[] =
   "License: LGPLv3+: GNU Lesser GPL version 3 or later"
   " <https://gnu.org/licenses/lgpl.html>\n"
   "This is free software: you are free to change and redistribute it.\n"
   "This library comes with NO WARRANTY.\n";
 
-const char RCSW_LICENSE_FULL_MIT_TEXT[] =
+const char rcsw_license_full_mit_text[] =
   "Permission is hereby granted, free of charge, to any person obtaining a\n"
   "copy of this software and associated documentation files (the \"Software\"),\n"
   "to deal in the Software without restriction, including without limitation\n"
@@ -79,7 +79,7 @@ const char RCSW_LICENSE_FULL_MIT_TEXT[] =
   "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE\n"
   "USE OR OTHER DEALINGS IN THE SOFTWARE.\n";
 
-const char RCSW_LICENSE_SHORT_MIT_TEXT[] =
+const char rcsw_license_short_mit_text[] =
   "License: MIT <https://opensource.org/licenses/MIT>\n"
   "This is free software: you are free to change and redistribute it.\n"
   "This software comes with NO WARRANTY.\n";
