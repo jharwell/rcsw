@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup core
+ *
+ * \brief The single point of memory allocation in RCSW.
  */
 
 #pragma once
@@ -26,7 +30,7 @@ BEGIN_C_DECLS
  * This function is the one place in RCSW where memory allocation is done,
  * making it easy and clean for RCSW to be built to:
  *
- * - Never use malloc() for anything (i.e., set \ref RCSW_NOALLOC for all
+ * - Never use malloc() for anything (i.e., pass \ref RCSW_NOALLOC_ALL for all
  *   modules). Useful in applications where malloc() is disallowed/not
  *   available, such as space and bootstraps without stdlib.
  *
@@ -46,11 +50,18 @@ BEGIN_C_DECLS
  * - \ref RCSW_ZALLOC
  *
  */
-RCSW_LOCAL void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);
+RCSW_API void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags);
 
 /**
  * \brief Free memory previously allocated with \ref rcsw_alloc().
+ *
+ * Nothing is freed if \p flags contains the \c RCSW_NOALLOC_* flag for the
+ * region \p ptr belongs to, since that memory is the caller's; callers pass
+ * the module's flags masked to that one flag.
+ *
+ * \param ptr The memory to free.
+ * \param flags Non-zero if \p ptr is caller-provided and must not be freed.
  */
-RCSW_LOCAL void rcsw_free(void* ptr, uint32_t flags);
+RCSW_API void rcsw_free(void* ptr, uint32_t flags);
 
 END_C_DECLS

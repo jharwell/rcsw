@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "rcsw/al/types.h"
 #include "rcsw/core/core.h"
 #include "rcsw/core/flags.h"
 
@@ -21,6 +22,10 @@
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
+
+/* dptr_t must actually provide the configured alignment on this ABI */
+_Static_assert(_Alignof(dptr_t) == RCSW_CONFIG_PTR_ALIGN,
+               "RCSW_CONFIG_PTR_ALIGN is not supported by this target's ABI");
 
 void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   void* ret = NULL;
@@ -33,13 +38,15 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   ret = ptr;
 
 #if defined(RCSW_CONFIG_ZALLOC)
-  memset(ret, 0, n_bytes);
+  if (NULL != ret) {
+    memset(ret, 0, n_bytes);
+  }
 #else
   /*
    * Allow per-call override to get zeroed memory, as some modules rely on
    * that unconditionally (e.g., mpool).
    */
-  if (flags & RCSW_ZALLOC) {
+  if ((flags & RCSW_ZALLOC) && (NULL != ret)) {
     memset(ret, 0, n_bytes);
   }
 #endif /* RCSW_CONFIG_ZALLOC */
@@ -60,7 +67,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
      * Allow per-call override to get zeroed memory, as some modules rely on
      * that unconditionally (e.g., mpool).
      */
-    if (flags & RCSW_ZALLOC) {
+    if ((flags & RCSW_ZALLOC) && (NULL != ret)) {
       memset(ret, 0, n_bytes);
     }
   } else {
@@ -75,7 +82,7 @@ void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
      * Allow per-call override to get zeroed memory, as some modules rely on
      * that unconditionally (e.g., mpool).
      */
-    if (flags & RCSW_ZALLOC) {
+    if ((flags & RCSW_ZALLOC) && (NULL != ret)) {
       memset(ret, 0, n_bytes);
     }
 
@@ -105,9 +112,8 @@ void rcsw_free(void* ptr, uint32_t flags) {
   if ((flags & RCSW_NOALLOC_HANDLE) || (flags & RCSW_NOALLOC_DATA) ||
       (flags & RCSW_NOALLOC_META)) {
     return;
-  } else {
-    free(ptr);
   }
+  free(ptr);
 #endif
 
 error:

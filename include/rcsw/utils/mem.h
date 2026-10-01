@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -36,24 +36,18 @@ BEGIN_C_DECLS
  * \param addr The address of register/memory location to write
  * \param wval The value to write
  *
- * Use size_t for the addr so that it compiles correctly for both Linux and
- * embedded systems.
- *
  * \return \ref status_t
  */
-RCSW_API status_t utils_mem_write32(size_t addr, uint32_t wval);
+RCSW_API status_t utils_mem_write32(uintptr_t addr, uint32_t wval);
 
 /**
  * \brief Read a 32-bit register/memory location
  *
  * \param addr The address of register/memory location to read from
  *
- * Uses size_t for the addr so that it compiles correctly for both Linux and
- * embedded systems.
- *
- * \return: The value of the register, or 0xFFFFFFFF if non word-aligned.
+ * \return The value of the register, or 0xFFFFFFFF if non word-aligned.
  */
-RCSW_API uint32_t utils_mem_read32(size_t addr);
+RCSW_API uint32_t utils_mem_read32(uintptr_t addr);
 
 /**
  * \brief Read, modify, write, and readback a memory value.
@@ -69,9 +63,7 @@ RCSW_API uint32_t utils_mem_read32(size_t addr);
  *
  * \return \ref status_t
  */
-RCSW_API static inline status_t utils_mem_rmwr32(uint32_t addr,
-                                                 uint32_t wval,
-                                                 uint32_t mask);
+RCSW_API status_t utils_mem_rmwr32(uintptr_t addr, uint32_t wval, uint32_t mask);
 
 /**
  * \brief Copy memory from source to dest in 32 bit chunks

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -9,9 +9,10 @@
  *
  * \brief A simple C debugging/logging framework which only uses RCSW internals.
  *
- * Comprises debug printing on a module basis, with the capability to set the
- * level for each module independently (if you really want to). Mainly intended
- * for environments with no stdlib, such as bootstraps.
+ * Prints every compiled-in report, prefixed with its module name; there is one
+ * compile-time level for the whole build and no per-module control. Mainly
+ * intended for environments with no stdlib, such as bootstraps. Requires the
+ * stdio component.
  */
 
 #pragma once
@@ -19,8 +20,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/core.h"
 #include "rcsw/er/er.h"
-#include "rcsw/stdio/printf.h"
+#include "rcsw/stdio/printf.h"  // IWYU pragma: export
 
 /*******************************************************************************
  * RCSW ER Plugin Definitions

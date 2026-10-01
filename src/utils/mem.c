@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -21,19 +21,22 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-status_t utils_mem_write32(size_t addr, uint32_t wval) {
-  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
-  *((volatile uint32_t*)addr) = wval;
+status_t utils_mem_write32(uintptr_t addr, uint32_t wval) {
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t)));
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  *((volatile uintptr_t*)addr) = wval;
   return OK;
 }
 
-uint32_t utils_mem_read32(size_t addr) {
-  RCSW_FPC_NV(0, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t))));
-  return *((volatile uint32_t*)addr);
+uint32_t utils_mem_read32(uintptr_t addr) {
+  /* 0xFFFFFFFF on misalignment, as documented */
+  RCSW_FPC_NV(0xFFFFFFFF, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t))));
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  return *((volatile uintptr_t*)addr);
 }
 
-status_t utils_mem_rmwr32(uint32_t addr, uint32_t wval, uint32_t mask) {
-  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
+status_t utils_mem_rmwr32(uintptr_t addr, uint32_t wval, uint32_t mask) {
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t)));
 
   volatile uint32_t curr_val = 0;
 

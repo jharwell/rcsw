@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Binary semaphore.
  */
 
 #pragma once
@@ -17,6 +19,7 @@
 
 #include "rcsw/al/types.h"
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/multithread/condv.h"
 #include "rcsw/multithread/mutex.h"
 
@@ -34,6 +37,12 @@ struct bsem {
   struct mutex mtx;
   struct condv cv;
   bool_t       val;
+
+  /**
+   * \brief Incremented by \ref bsem_flush(); waiters that see it change are
+   * released without taking the semaphore.
+   */
+  uint32_t flush_gen;
 
   /**
    * \brief Configuration flags.
@@ -54,8 +63,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a binary semaphore.
  *
- * \param sem_in The semaphore to initialize. Can be NULL if \ref
- *               RCSW_NOALLOC_HANDLE is not passed.
+ * \param sem_in Caller storage for the handle, used only if \ref
+ *               RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *               otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param flags Configuration flags. See \ref bsem.flags for valid flags.
  *
@@ -95,9 +105,8 @@ RCSW_API status_t bsem_flush(struct bsem* sem);
  *
  * \param sem The semaphore handle.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *           specifies. This function converts the relative timeout to absolute
- *           timeout required.
+ * \param to A relative timeout. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t.
  */

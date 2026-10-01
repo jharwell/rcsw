@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -15,7 +15,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <pthread.h>
+#include <pthread.h>  // NOLINT(misc-include-cleaner)
 #include <stddef.h>
 
 #include "rcsw/core/compilers.h"
@@ -33,8 +33,11 @@ BEGIN_C_DECLS
  *
  * \param core The core to lock to, 0-indexed.
  *
- * \return \ref status_t.
+ * \return \ref status_t. ERROR with errno=EINVAL if \p core >= CPU_SETSIZE or
+ * is not a core the thread may run on; otherwise errno is the error code from
+ * pthread_setaffinity_np().
  */
+/* NOLINTNEXTLINE(misc-include-cleaner) */
 RCSW_API status_t threadm_core_lock(pthread_t thread, size_t core);
 
 END_C_DECLS

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -22,13 +22,13 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 status_t utils_string_gen(char* const buf, size_t len) {
-  RCSW_FPC_NV(ERROR, buf != NULL);
+  RCSW_FPC_NV(ERROR, buf != NULL, len > 0);
 
   /* ASCII characters 33 to 126 */
   size_t n_chars = len - 1;
   size_t i;
   for (i = 0; i < n_chars; ++i) {
-    buf[i] = (char)(rand() % (126 - 33 + 1) + 33);
+    buf[i] = (char)((random() % (126 - 33 + 1)) + 33);
   }
   buf[n_chars] = '\0';
 
@@ -36,6 +36,9 @@ status_t utils_string_gen(char* const buf, size_t len) {
 }
 
 void utils_arr8_reverse(void* const arr, size_t size) {
+  if (size < 2) {
+    return;
+  }
   for (size_t i = 0, j = size - 1; i < j; i++, j--) {
     uint8_t tmp        = ((uint8_t*)arr)[i];
     ((uint8_t*)arr)[i] = ((uint8_t*)arr)[j];
@@ -49,9 +52,9 @@ void utils_elt_swap(void* arr, size_t elt_size, size_t i, size_t j) {
   }
   uint8_t  tmp[elt_size];
   uint8_t* base = arr;
-  memcpy(tmp, base + i * elt_size, elt_size);
-  memcpy(base + i * elt_size, base + j * elt_size, elt_size);
-  memcpy(base + j * elt_size, tmp, elt_size);
+  memcpy(tmp, base + (i * elt_size), elt_size);
+  memcpy(base + (i * elt_size), base + (j * elt_size), elt_size);
+  memcpy(base + (j * elt_size), tmp, elt_size);
 }
 
 END_C_DECLS

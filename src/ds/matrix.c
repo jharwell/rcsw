@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -23,12 +23,17 @@ BEGIN_C_DECLS
 
 struct matrix* matrix_init(struct matrix* const              matrix_in,
                            const struct matrix_config* const params) {
-  RCSW_FPC_NV(NULL, NULL != params, params->n_rows > 0, params->n_cols > 0)
+  RCSW_FPC_NV(NULL,
+              NULL != params,
+              params->n_rows > 0,
+              params->n_cols > 0,
+              params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct matrix* matrix = rcsw_alloc(matrix_in,
-                                     sizeof(struct matrix),
-                                     params->flags & RCSW_NOALLOC_HANDLE);
+  struct matrix* matrix =
+    rcsw_alloc(matrix_in,
+               sizeof(struct matrix),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(matrix);
   matrix->flags    = params->flags;
   matrix->elt_size = params->elt_size;
@@ -75,7 +80,8 @@ status_t matrix_transpose(struct matrix* const matrix) {
 } /* matrix_transpose() */
 
 void matrix_print(const struct matrix* const matrix) {
-  RCSW_FPC_V(NULL != matrix, NULL != matrix->printe);
+  RCSW_FPC_V(NULL != matrix);
+  ER_ASSERT(NULL != matrix->printe, "matrix_print() requires printe()");
 
   DPRINTF("{");
   for (size_t i = 0; i < matrix->n_rows; ++i) {

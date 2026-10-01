@@ -1,0 +1,40 @@
+# Stage 1 additions for the RCSW Doxyfile. Merge into the existing file;
+# append to PREDEFINED/ALIASES rather than replacing them if they already
+# have values.
+
+# Link from a doc comment to an RST page by its label:
+#   See \rcswdoc{memory-model}.
+# Rendered by Breathe as an inline :ref:. Plain Doxygen HTML shows the
+# verbatim text instead of a link.
+ALIASES += "rcswdoc{1}=\verbatim embed:rst:inline :ref:`\1` \endverbatim"
+
+# Make attributed declarations parse. Without these, Doxygen drops packed
+# structs (llist_node, bstree_node, hashnode, ...) and refs to them fail.
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES
+EXPAND_ONLY_PREDEF   = YES
+PREDEFINED += DOXYGEN_DOCUMENTATION_BUILD \
+              "RCSW_ATTR(...)=" \
+              "RCSW_ATTR_PRINTF(...)=" \
+              "RCSW_API=" \
+              "RCSW_LOCAL=" \
+              "RCSW_WUR=" \
+              "RCSW_PURE=" \
+              "RCSW_CONST=" \
+              "RCSW_NORETURN=" \
+              "BEGIN_C_DECLS=" \
+              "END_C_DECLS="
+
+# Configuration macros normally set by the build. Values only select which
+# #if branch Doxygen documents.
+PREDEFINED += RCSW_CONFIG_PLATFORM=0 \
+              RCSW_PLATFORM_POSIX \
+              RCSW_CONFIG_PTR_ALIGN=8 \
+              RCSW_CONFIG_ER_PLUGIN=0
+
+# Warnings. Leave WARN_IF_UNDOCUMENTED and WARN_NO_PARAMDOC off: they demand
+# docs on every member and every \return. Turn on WARN_AS_ERROR in stage 7.
+WARN_IF_UNDOCUMENTED   = NO
+WARN_NO_PARAMDOC       = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES

@@ -1,12 +1,14 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \brief Algorithm for finding the edit distance between two sequences of
  * objects.
+ *
+ * \ingroup algorithm
  */
 #pragma once
 

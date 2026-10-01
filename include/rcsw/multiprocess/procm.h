@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -22,7 +22,7 @@
 #include "rcsw/core/core.h"
 
 /*******************************************************************************
- * Function Prototypes
+ * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -33,7 +33,7 @@ BEGIN_C_DECLS
  *
  * \return OK if the lock with successful, ERROR otherwise.
  */
-status_t procm_socket_lock(int socket);
+RCSW_API status_t procm_socket_lock(int socket);
 
 /**
  * \brief Wrapper for fork()/exec() functonality.
@@ -49,9 +49,9 @@ status_t procm_socket_lock(int socket);
  * \param pipefd If not NULL, the child will read data from the parent's stdin.
  * \return The pid of the child in the parent, nothing in the child.
  */
-pid_t procm_fork_exec(char**      cmd,
-                      const char* new_wd,
-                      bool_t      stdout_sup,
-                      int*        pipefd);
+RCSW_API pid_t procm_fork_exec(char**      cmd,
+                               const char* new_wd,
+                               bool_t      stdout_sup,
+                               int*        pipefd);
 
 END_C_DECLS

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,6 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/iter.h"
 
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 
 /*******************************************************************************

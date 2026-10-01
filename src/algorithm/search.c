@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,7 +11,8 @@
  ******************************************************************************/
 #include "rcsw/algorithm/search.h"
 
-#include <math.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
@@ -31,26 +32,29 @@ int bsearch_iter(const void* const a,
 
   const uint8_t* const arr = a;
   while (low <= high) {
-    int index = (low + high) / 2;
-    if (cmpe(arr + (index * (int)elt_size), e) == 0) { /* found a match */
-      return (int)index;
-    } else if (cmpe(e, arr + (index * (int)elt_size)) < 0) { /* left half */
+    int            index = low + ((high - low) / 2);
+    const uint8_t* elt   = arr + ((size_t)index * elt_size);
+    int            cmp   = cmpe(e, elt);
+    if (0 == cmp) { /* found a match */
+      return index;
+    }
+    if (cmp < 0) { /* left half */
       high = index - 1;
     } else { /* right half */
       low = index + 1;
     }
   } /* while() */
-  errno = EAGAIN;
+  /* Not found is not an error: the -1 return is the answer, errno untouched */
   return -1;
 } /* bsearch_iter() */
 
 int bsearch_rec(const void* const in,
-                const void* const elt,
+                const void* const e,
                 int (*cmpe)(const void* const e1, const void* const e2),
                 size_t elt_size,
                 int    low,
                 int    high) {
-  RCSW_FPC_NV(-1, NULL != in, NULL != elt, NULL != cmpe);
+  RCSW_FPC_NV(-1, NULL != in, NULL != e, NULL != cmpe);
   /*
    * We want indices, BUT if we get handed an array with 0 elements, then low
    * will be 0 and high will probably be n_elts - 1, and since n_elts=0, this
@@ -59,16 +63,18 @@ int bsearch_rec(const void* const in,
   if (low > high) {
     return -1;
   }
-  int                  mid  = (high + low) / 2;
+  int                  mid  = low + ((high - low) / 2);
   const uint8_t* const arr  = in;
-  int                  rval = cmpe(elt, arr + ((int)elt_size * mid));
+  int                  rval = cmpe(e, arr + (elt_size * mid));
   if (0 == rval) { /* found a match */
     return mid;
-  } else if (rval < 0) { /* lower half */
-    return bsearch_rec(arr, elt, cmpe, elt_size, low, mid - 1);
-  } else { /* upper half */
-    return bsearch_rec(arr, elt, cmpe, elt_size, mid + 1, high);
   }
+  if (rval < 0) { /* lower half */
+    return bsearch_rec(arr, e, cmpe, elt_size, low, mid - 1);
+  }
+  /* upper half */
+  return bsearch_rec(arr, e, cmpe, elt_size, mid + 1, high);
+
 } /* bsearch_rec() */
 
 END_C_DECLS

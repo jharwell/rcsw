@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Dynamically sized matrix.
  */
 
 #pragma once
@@ -13,8 +15,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/ds/llist.h"
+#include "rcsw/ds/ds.h"
 
 /*******************************************************************************
  * Types
@@ -38,9 +44,9 @@ struct dynmatrix_config {
    */
   uint32_t flags;
 
-  size_t  n_rows;  /// # rows in matrix.
-  size_t  n_cols;  /// # columns in matrix.
-  dptr_t* rows;    /// Ptr to space for vector-of-row-vectors.
+  size_t  n_rows;  ///< # rows in matrix.
+  size_t  n_cols;  ///< # columns in matrix.
+  dptr_t* rows;    ///< Ptr to space for vector-of-row-vectors.
 };
 
 /**
@@ -60,7 +66,8 @@ struct dynmatrix_config {
  * only be used if you can guarantee that resizing the matrix happens
  * infrequently.
  *
- * The matrix is never resized autonomously.
+ * Besides \ref dynmatrix_resize(), the matrix grows when \ref dynmatrix_set()
+ * is given an out-of-bounds index; no other function resizes it.
  */
 struct dynmatrix {
   /**
@@ -170,8 +177,9 @@ static inline bool_t dynmatrix_issquare(const struct dynmatrix* const matrix) {
 /**
  * \brief Initialize a dynamic matrix.
  *
- * \param matrix_in An application allocated handle for the dynamic matrix. Can
- *                  be NULL if \ref RCSW_NOALLOC_HANDLE is passed as a flag.
+ * \param matrix_in Caller storage for the handle, used only if \ref
+ *                  RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                  otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *

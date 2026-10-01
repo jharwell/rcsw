@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Red-black rebalancing for \ref bstree.
  */
 
 #pragma once
@@ -11,6 +15,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/core/compilers.h"
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
@@ -28,7 +33,8 @@ BEGIN_C_DECLS
  * \param node The parent (or successor) of the node that was deleted.
  *
  */
-RCSW_API void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node);
+RCSW_LOCAL void rbtree_delete_fixup(struct bstree*      tree,
+                                    struct bstree_node* node);
 
 /**
  * \brief  Fix up tree structure after an insertion
@@ -36,7 +42,8 @@ RCSW_API void rbtree_delete_fixup(struct bstree* tree, struct bstree_node* node)
  * \param tree The rbtree handle.
  * \param node The parent the node that was inserted.
  */
-RCSW_API void rbtree_insert_fixup(struct bstree* tree, struct bstree_node* node);
+RCSW_LOCAL void rbtree_insert_fixup(struct bstree*      tree,
+                                    struct bstree_node* node);
 
 /*******************************************************************************
  * Public API
@@ -47,8 +54,7 @@ RCSW_API void rbtree_insert_fixup(struct bstree* tree, struct bstree_node* node)
  * \param node The root of the tree to get the height of.
  *
  * \return The height or 0 if the node is NULL.
- *
- **/
+ */
 RCSW_API int rbtree_node_black_height(const struct bstree_node* node) RCSW_PURE;
 
 END_C_DECLS

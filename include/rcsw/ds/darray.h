@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Dynamic array.
  */
 
 #pragma once
@@ -11,7 +15,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/algorithm/sort.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/iter.h"
@@ -88,7 +97,7 @@ struct darray {
 
   /**
    * Size in bytes of an element.
-   **/
+   */
   size_t elt_size;
 
   /**
@@ -134,8 +143,6 @@ BEGIN_C_DECLS
  * \brief Determine if the dynamic array is currently full
  *
  * \param arr The dynamic array handle
- *
- * \return \ref bool_t
  */
 static inline bool_t darray_isfull(const struct darray* const arr) {
   RCSW_FPC_NV(false, NULL != arr);
@@ -146,8 +153,6 @@ static inline bool_t darray_isfull(const struct darray* const arr) {
  * \brief Determine if the dynamic arrayis currently empty
  *
  * \param arr The dynamic array handle
- *
- * \return \ref bool_t
  */
 static inline bool_t darray_isempty(const struct darray* const arr) {
   RCSW_FPC_NV(false, NULL != arr);
@@ -171,7 +176,7 @@ static inline size_t darray_size(const struct darray* const arr) {
  *
  * \param arr The dynamic array handle.
  *
- * \return # elements in arr, or 0 on ERROR.
+ * \return # slots currently allocated, or 0 on ERROR.
  */
 static inline size_t darray_capacity(const struct darray* const arr) {
   RCSW_FPC_NV(0, NULL != arr);
@@ -213,8 +218,9 @@ static inline size_t darray_element_space(size_t max_elts, size_t elt_size) {
  *
  * It is valid to initialize the darray with an initial size of 0.
  *
- * \param arr_in The handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \ref darray_config.flags.
+ * \param arr_in Caller storage for the handle, used only if \ref
+ *               RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *               otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params Initialization parameters.
  *
@@ -313,13 +319,13 @@ RCSW_API status_t darray_idx_serve(const struct darray* arr,
 /**
  * \brief Find the index of an element
  *
- * Find the first occurence of the element in the darray which is is equal to
+ * Find the first occurrence of the element in the darray which is is equal to
  * e. A recursive implementation of binary search will be used if the darray is
  * sorted, linear scan otherwise. This function can only be called if \ref
  * darray.cmpe was non-NULL during initialization.
  *
  * \param arr The darray handle
- * \param e To be filled with the served element
+ * \param e The element to search for.
  *
  * \return The index, or -1 if not found
  */
@@ -335,25 +341,26 @@ RCSW_API int darray_idx_query(const struct darray* arr, const void* e);
 
  * \param index The index to get the data for.
  *
- * \return: The element, or NULL if an error occurred
+ * \return The element, or NULL if an error occurred
  */
 RCSW_API void* darray_data_get(const struct darray* arr, size_t index);
 
 /**
  * \brief Set an item in a darray
  *
- * Sets the item at the specified index to the passed in value. There is NO
- * upper bounds checking to  make sure that index < \ref darray_size().
+ * Sets the item at the specified index to the passed in value. Because this
+ * can break a sorted order, the array is no longer considered sorted
+ * afterwards.
  *
  * \param arr The darray handle
- * \param index The index of the item to set
+ * \param index The index of the item to set. Must be < \ref darray_size().
  * \param e The new value
  *
  * \return \ref status_t
  */
-RCSW_API status_t darray_data_set(const struct darray* arr,
-                                  size_t               index,
-                                  const void*          e);
+RCSW_API status_t darray_data_set(struct darray* arr,
+                                  size_t         index,
+                                  const void*    e);
 
 /**
  * \brief Resize a darray
@@ -409,7 +416,8 @@ RCSW_API status_t darray_sort(struct darray* arr, enum exec_type type);
 RCSW_API status_t darray_map(struct darray* arr, void (*f)(void* e));
 
 /**
- * \brief Compute a cumulative SOMETHING using all elements in the darray
+ * \brief Compute a cumulative result (sum, count, ...) over all elements in the
+ * darray.
  *
  * \param arr The darray handle
  * \param f The callback for each element (can modify elements). It is passed
@@ -438,7 +446,7 @@ RCSW_API status_t darray_inject(const struct darray* arr,
  *
  * \param elements Space for the elements of the new \ref darray. Can be NULL.
  *
- * \return The filtered array, or NULL if an error occured.
+ * \return The filtered array, or NULL if an error occurred.
  */
 RCSW_API struct darray* darray_filter(struct darray* arr,
                                       bool_t (*pred)(const void* e),
@@ -471,11 +479,11 @@ RCSW_API struct darray* darray_copy(const struct darray* arr,
 RCSW_API void darray_print(const struct darray* arr);
 
 /**
- * \brief Initialise an iterator over a \ref darray.
+ * \brief Initialize an iterator over a \ref darray.
  *
  * \param iter Caller-allocated iterator storage.
  *
- * \param darray  The darray to iterate over.
+ * \param arr  The darray to iterate over.
  *
  * \param classify Optional filter predicate; pass NULL for no filtering.
  *

@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2022 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup version
+ *
+ * \brief License record.
  */
 
 #pragma once

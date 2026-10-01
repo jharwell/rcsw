@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Condition variable and mutex pair.
  */
 
 #pragma once
@@ -13,9 +15,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <pthread.h>
+#include <time.h>
 
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/multithread/condv.h"
 #include "rcsw/multithread/mutex.h"
 
@@ -53,8 +56,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize the signal condition (variable and mutex).
  *
- * \param cvm_in CVM to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
- *               passed.
+ * \param cvm_in Caller storage for the handle, used only if \ref
+ *               RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *               otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param flags Configuration flags. see \ref cvm.flags for valid flags.
  *
@@ -105,9 +109,8 @@ RCSW_API status_t cvm_wait(struct cvm* cvm);
  *
  * \param cvm The CVM handle.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *            specifies. This function converts the relative timeout to absolute
- *            timeout required.
+ * \param to A relative timeout. See
+ *            \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t
  */

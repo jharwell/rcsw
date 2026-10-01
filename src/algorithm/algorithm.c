@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -20,18 +20,6 @@
 /*******************************************************************************
  * Public API
  ******************************************************************************/
-size_t alg_arr_largest_num(const size_t* const array, size_t n_elts) {
-  RCSW_FPC_NV(0, NULL != array);
-  size_t largest = 0;
-
-  for (size_t i = 0; i < n_elts; i++) {
-    if (array[i] > largest) {
-      largest = array[i];
-    }
-  } /* for(i..) */
-  return largest;
-} /* largest_num() */
-
 bool_t str_is_parenthesizable(const char* const x,
                               char* const       r,
                               char              el,
@@ -47,7 +35,7 @@ bool_t str_is_parenthesizable(const char* const x,
    * will be built.
    */
   for (size_t i = 0; i < len; i++) {
-    r[len * i + i] = x[i];
+    r[(len * i) + i] = x[i];
   } /* for(i..) */
 
   for (size_t i = 1; i <= len; i++) {       /* starting subsequence index */
@@ -55,15 +43,15 @@ bool_t str_is_parenthesizable(const char* const x,
       size_t k = j + i - 1;
       for (int q = (int)j; q <= (int)k - 1; q++) {
         char prod =
-          multiply_cb(r[j + (size_t)q * len], r[(size_t)q + 1 + len * k]);
+          multiply_cb(r[j + ((size_t)q * len)], r[(size_t)q + 1 + (len * k)]);
         /* 'a' (el) takes priority; only write non-el if cell not already set */
         if (prod == el) {
-          r[j + len * k] = el;
-        } else if (r[j + len * k] == '\0') {
-          r[j + len * k] = prod;
+          r[j + (len * k)] = el;
+        } else if (r[j + (len * k)] == '\0') {
+          r[j + (len * k)] = prod;
         }
       }
     } /* for(j=1)... */
   } /* for(i=1)... */
-  return (bool_t)(r[0 + len * (len - 1)] == el);
+  return (bool_t)(r[0 + (len * (len - 1))] == el);
 } /* str_is_parenthesizable() */

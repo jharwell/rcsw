@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,6 +10,8 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/utils/bit.h"
+
+#include <stdint.h>
 
 /*******************************************************************************
  * Global Variables
@@ -39,14 +41,14 @@ const uint8_t rcsw_util_revtable[] = {
 /******************************************************************************
  * Public API
  ******************************************************************************/
-uint32_t utils_reflect32(uint32_t data, size_t n_bits) {
+uint32_t utils_reflect32(uint32_t data, uint8_t n_bits) {
   uint32_t reflection = 0x00000000;
 
   /* reflect the data about the center bit */
   for (uint8_t bit = 0; bit < n_bits; ++bit) {
     /* if the LSB bit is set, set the reflection of it */
     if (data & 0x01) {
-      reflection |= (1 << ((n_bits - 1) - bit));
+      reflection |= (UINT32_C(1) << ((n_bits - 1) - bit));
     }
     data = (data >> 1);
   }

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,15 +11,18 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree.h"
 
+#include <errno.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "bstree")
 #define RCSW_ER_MODID LOG4CL_DS_BSTREE
+#include "ds/inttree_node.h"
+#include "ds/ostree_node.h"
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/bstree_node.h"
 #include "rcsw/ds/inttree.h"
-#include "rcsw/ds/ostree_node.h"
 #include "rcsw/ds/rbtree.h"
 #include "rcsw/er/client.h"
 
@@ -34,9 +37,10 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
   RCSW_FPC_NV(NULL, params != NULL, params->cmpkey != NULL, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct bstree* tree = rcsw_alloc(tree_in,
-                                   sizeof(struct bstree),
-                                   params->flags & RCSW_NOALLOC_HANDLE);
+  struct bstree* tree =
+    rcsw_alloc(tree_in,
+               sizeof(struct bstree),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(tree);
 
   tree->flags = params->flags;
@@ -54,9 +58,10 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
      * nodes for root and nil, hence the +2.
      */
     tree->space.node_map = (struct allocm_entry*)params->meta;
-    allocm_init(tree->space.node_map, (size_t)(params->max_elts + 2));
+    allocm_init(tree->space.node_map, (size_t)(params->max_elts + 2UL));
     tree->space.nodes =
-      (struct bstree_node*)(tree->space.node_map + params->max_elts + 2);
+      (struct bstree_node*)((uint8_t*)tree->space.node_map +
+                            allocm_map_bytes((size_t)params->max_elts + 2));
   }
 
   if (params->flags & RCSW_NOALLOC_DATA) {
@@ -70,8 +75,10 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
      * nodes for root and nil, hence the +2.
      */
     tree->space.db_map = (struct allocm_entry*)params->elements;
-    allocm_init(tree->space.db_map, (size_t)(params->max_elts + 2));
-    tree->space.datablocks = (dptr_t*)(tree->space.db_map + params->max_elts + 2);
+    allocm_init(tree->space.db_map, (size_t)(params->max_elts + 2UL));
+    tree->space.datablocks =
+      (dptr_t*)((uint8_t*)tree->space.db_map +
+                allocm_map_bytes((size_t)params->max_elts + 2));
   }
 
   tree->cmpkey   = params->cmpkey;
@@ -107,22 +114,52 @@ error:
   return NULL;
 } /* bstree_init_internal() */
 
+/**
+ * \brief Recompute the augmented field (interval max_high or order-statistic
+ * count) of \p node and each of its ancestors, from their children.
+ *
+ * Each field is rebuilt from its children, so the result is correct however
+ * the tree was restructured.
+ */
+static void bstree_aux_update_path(const struct bstree* const tree,
+                                   struct bstree_node*        node) {
+  if (!(tree->flags & (RCSW_DS_BSTREE_INT | RCSW_DS_BSTREE_OS))) {
+    return;
+  }
+  while (node != tree->root && node != tree->nil) {
+    if (tree->flags & RCSW_DS_BSTREE_INT) {
+      inttree_node_update_max((struct inttree_node*)node);
+    } else {
+      ostree_node_update_count((struct ostree_node*)node);
+    }
+    node = node->parent;
+  } /* while() */
+} /* bstree_aux_update_path() */
+
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t bstree_insert_internal(struct bstree* const tree,
                                 void* const          key,
                                 void* const          data,
                                 size_t               node_size) {
   RCSW_FPC_NV(ERROR, tree != NULL, key != NULL, data != NULL);
 
+  if (bstree_isfull(tree)) {
+    ER_ERR("Cannot insert: tree is full");
+    errno = ENOSPC;
+    return ERROR;
+  }
+
   struct bstree_node* node   = tree->root->left;
   struct bstree_node* parent = tree->root;
-  int                 res;
 
   /* Find correct insertion point */
   while (node != tree->nil) {
     parent = node;
 
     /* no duplicates allowed */
-    if ((res = tree->cmpkey(key, node->key)) == 0) {
+    int res = tree->cmpkey(key, node->key);
+    if (0 == res) {
+      errno = EEXIST;
       return ERROR;
     }
     node = res < 0 ? node->left : node->right;
@@ -139,20 +176,14 @@ status_t bstree_insert_internal(struct bstree* const tree,
     parent->right = node;
   }
 
-  if (tree->flags & RCSW_DS_BSTREE_RB) {
-    /*
-     * Fixup interval tree/OS-Tree auxiliary field. Must be done BEFORE
-     * fixing up tree red-black tree structure, to update the fields of
-     * nodes from the inserted position up to the root. Because the
-     * red-black fixup process will cause at most 3 rotations, simply fixing
-     * up the auxiliary field during rotations is not enough.
-     */
-    if (tree->flags & RCSW_DS_BSTREE_INT) {
-      inttree_high_fixup(tree, (struct inttree_node*)node);
-    } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)node, OSTREE_FIXUP_INSERT);
-    }
+  /*
+   * Fixup interval tree/OS-Tree auxiliary field along the insertion path.
+   * Must be done BEFORE the red-black fixup: rotations only recompute the two
+   * nodes they move, which assumes everything below them is already correct.
+   */
+  bstree_aux_update_path(tree, node);
 
+  if (tree->flags & RCSW_DS_BSTREE_RB) {
     node->red = true;
 
     /*
@@ -162,12 +193,12 @@ status_t bstree_insert_internal(struct bstree* const tree,
 
     tree->root->left->red = false; /* first node is always black */
 
-    /* Verify properties of RB Tree still hold */
-    RCSW_FPC_NV(ERROR, !tree->root->red);
-    RCSW_FPC_NV(ERROR, !tree->nil->red);
-    RCSW_FPC_NV(ERROR,
-                rbtree_node_black_height(tree->root->left->left) ==
-                  rbtree_node_black_height(tree->root->left->right));
+    /* Verify properties of RB Tree still hold (debug builds) */
+    ER_ASSERT(!tree->root->red, "Sentinel root is red");
+    ER_ASSERT(!tree->nil->red, "Sentinel nil is red");
+    ER_ASSERT(rbtree_node_black_height(tree->root->left->left) ==
+                rbtree_node_black_height(tree->root->left->right),
+              "Black heights differ");
   }
   tree->current++;
 
@@ -216,8 +247,8 @@ struct bstree_node* bstree_node_query(const struct bstree* const tree,
                                       const void* const          key) {
   struct bstree_node* x = search_root;
   while (x != tree->nil) {
-    int res;
-    if ((res = tree->cmpkey(key, x->key)) == 0) {
+    int res = tree->cmpkey(key, x->key);
+    if (0 == res) {
       return x;
     }
     x = res < 0 ? x->left : x->right;
@@ -233,9 +264,11 @@ int bstree_traverse(struct bstree* const tree,
 
   if (TRAVERSE_PREORDER == type) {
     return bstree_traverse_nodes_preorder(tree, tree->root->left, cb);
-  } else if (TRAVERSE_INORDER == type) {
+  }
+  if (TRAVERSE_INORDER == type) {
     return bstree_traverse_nodes_inorder(tree, tree->root->left, cb);
-  } else if (TRAVERSE_POSTORDER == type) {
+  }
+  if (TRAVERSE_POSTORDER == type) {
     return bstree_traverse_nodes_postorder(tree, tree->root->left, cb);
   }
   return -1;
@@ -351,6 +384,7 @@ error:
   return ERROR;
 } /* bstree_remove() */
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t bstree_delete(struct bstree* const tree,
                        struct bstree_node*  victim,
                        void* const          elt) {
@@ -360,7 +394,7 @@ status_t bstree_delete(struct bstree* const tree,
   struct bstree_node* y;
 
   /*
-   * Locate the parent or succesor of the node to delete
+   * Locate the parent or successor of the node to delete
    */
   if (victim->left == tree->nil || victim->right == tree->nil) {
     y = victim;
@@ -372,7 +406,8 @@ status_t bstree_delete(struct bstree* const tree,
   /*
    * Unlink the victim node
    */
-  if ((x->parent = y->parent) == tree->root) {
+  x->parent = y->parent;
+  if (x->parent == tree->root) {
     tree->root->left = x;
   } else {
     if (y == y->parent->left) {
@@ -383,22 +418,17 @@ status_t bstree_delete(struct bstree* const tree,
   }
 
   /*
+   * y is no longer in the tree: recompute the auxiliary field from where it
+   * was spliced out up to the root, BEFORE any red-black rotations (which
+   * assume the subtrees they move are already correct). This must happen
+   * whatever color y was.
+   */
+  bstree_aux_update_path(tree, x->parent);
+
+  /*
    * Fix up RBTree structure if required
    */
-  if (tree->flags & RCSW_DS_BSTREE_RB && y->red == false) {
-    /*
-     * Fixup interval tree/OS-Tree auxiliary field. Must be done BEFORE
-     * fixing up tree red-black tree structure, to update the fields of
-     * nodes from the inserted position up to the root. Because the
-     * red-black fixup process will cause at most 3 rotations, simply fixing
-     * up the auxiliary field during rotations is not enough.
-     */
-    if (tree->flags & RCSW_DS_BSTREE_INT) {
-      inttree_high_fixup(tree, (struct inttree_node*)x);
-    } else if (tree->flags & RCSW_DS_BSTREE_OS) {
-      ostree_count_fixup(tree, (struct ostree_node*)x, OSTREE_FIXUP_DELETE);
-    }
-
+  if (tree->flags & RCSW_DS_BSTREE_RB && !y->red) {
     rbtree_delete_fixup(tree, x);
   }
 
@@ -413,15 +443,17 @@ status_t bstree_delete(struct bstree* const tree,
     } else {
       victim->parent->right = y;
     }
+    /* y now roots victim's old subtree, and victim's key is gone */
+    bstree_aux_update_path(tree, y);
   }
 
   if (tree->flags & RCSW_DS_BSTREE_RB) {
-    /* Verify properties of RB Tree still hold */
-    RCSW_FPC_NV(ERROR, !tree->root->red);
-    RCSW_FPC_NV(ERROR, !tree->nil->red);
-    RCSW_FPC_NV(ERROR,
-                rbtree_node_black_height(tree->root->left->left) ==
-                  rbtree_node_black_height(tree->root->left->right));
+    /* Verify properties of RB Tree still hold (debug builds) */
+    ER_ASSERT(!tree->root->red, "Sentinel root is red");
+    ER_ASSERT(!tree->nil->red, "Sentinel nil is red");
+    ER_ASSERT(rbtree_node_black_height(tree->root->left->left) ==
+                rbtree_node_black_height(tree->root->left->right),
+              "Black heights differ");
   }
   if (NULL != elt) {
     ds_elt_copy(elt, victim->data, tree->elt_size);
@@ -435,10 +467,12 @@ void bstree_print(struct bstree* const tree) {
   if (NULL == tree) {
     DPRINTF(RCSW_ER_MODNAME " :  < NULL >\n");
     return;
-  } else if (bstree_isempty(tree)) {
+  }
+  if (bstree_isempty(tree)) {
     DPRINTF(RCSW_ER_MODNAME " :  < Empty >\n");
     return;
-  } else if (tree->printe == NULL) {
+  }
+  if (tree->printe == NULL) {
     DPRINTF(RCSW_ER_MODNAME " :  < No print function >\n");
     return;
   }

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,7 +11,10 @@
  ******************************************************************************/
 #include "rcsw/multithread/cvm.h"
 
+#include <errno.h>
+
 #include "rcsw/core/alloc.h"
+#include "rcsw/core/flags.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/time.h"
@@ -22,18 +25,29 @@
 BEGIN_C_DECLS
 
 struct cvm* cvm_init(struct cvm* const cvm_in, uint32_t flags) {
-  struct cvm* cvm =
-    rcsw_alloc(cvm_in, sizeof(struct cvm), flags & RCSW_NOALLOC_HANDLE);
-
-  RCSW_CHECK_PTR(cvm);
+  struct cvm* cvm = rcsw_alloc(cvm_in,
+                               sizeof(struct cvm),
+                               flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == cvm) {
+    errno = ENOMEM;
+    return NULL;
+  }
   cvm->flags = flags;
 
-  RCSW_CHECK(OK == condv_init(&cvm->cv, cvm->flags));
-  RCSW_CHECK(OK == mutex_init(&cvm->mtx, cvm->flags));
+  /* The condv and mutex are embedded in the cvm: never separately allocated */
+  if (NULL == condv_init(&cvm->cv, RCSW_NOALLOC_HANDLE)) {
+    goto free_handle;
+  }
+  if (NULL == mutex_init(&cvm->mtx, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_cv;
+  }
   return cvm;
 
-error:
-  cvm_destroy(cvm);
+  /* Undo only what was initialized; errno is already set */
+destroy_cv:
+  condv_destroy(&cvm->cv);
+free_handle:
+  rcsw_free(cvm, flags & RCSW_NOALLOC_HANDLE);
   return NULL;
 }
 
@@ -65,10 +79,8 @@ error:
 
 status_t cvm_timedwait(struct cvm* const cvm, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != cvm, NULL != to);
-  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
 
-  RCSW_CHECK(OK == utils_ts_make_abs(to, &ts));
-  RCSW_CHECK(OK == condv_timedwait(&cvm->cv, &cvm->mtx, &ts));
+  RCSW_CHECK(OK == condv_timedwait(&cvm->cv, &cvm->mtx, to));
   return OK;
 
 error:

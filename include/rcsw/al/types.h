@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -15,6 +15,17 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+/*
+ * These are OK to include because unconditionally because they are header-only,
+ * and don't rely on stdlib. -nostdinc would make including these an error, but
+ * I don't think that makes sense, as they provide much better/more accurate
+ * typedefs across ANY bootstrap platform.
+ */
+#include <limits.h>   // IWYU pragma: export, keep
+#include <stdbool.h>  // IWYU pragma: export, keep
+#include <stddef.h>   // IWYU pragma: export, keep
+#include <stdint.h>   // IWYU pragma: export, keep
+
 #include "rcsw/al/al.h"
 
 /*******************************************************************************
@@ -32,11 +43,6 @@
  * For Linux applications.
  */
 #if defined(RCSW_PLATFORM_POSIX)
-
-#include <errno.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #if defined(DOXYGEN_DOCUMENTATION_BUILD)
 
@@ -59,25 +65,7 @@ typedef enum { false = 0, true = 1 } bool_t;
  */
 #elif defined(RCSW_PLATFORM_BAREMETAL)
 
-/*
- * For stdlib-less bare-metal applications.
- */
-#if defined(LIBRA_NOSTDLIB)
-#define RCSW_NOSTDLIB LIBRA_NOSTDLIB
-#endif
-
 #if defined(RCSW_NOSTDLIB)
-
-/*
- * These are OK to include because they are header-only, and don't rely on
- * stdlib. -nostdinc would make including these an error, but I don't think that
- * makes sense, as they provide much better/more accurate typedefs across ANY
- * bootstrap platform.
- */
-#include <limits.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 /*
  * The OS preprocessor macros are defined automatically by the compiler. To see
@@ -91,27 +79,12 @@ typedef enum { false = 0, true = 1 } bool_t;
 #define NULL ((void*)0)
 #endif /* NULL */
 
-#define bool_t bool
-
-#else /* we can use stdlib */
+#endif /* RCSW_NO_STDLIB */
 
 #define bool_t bool
 
-#include <errno.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #endif
 
-#else
-#error Bad AL target: {RCSW_PLATFORM_BAREMETAL, RCSW_PLATFORM_POSIX} supported
-#endif
-
-#ifdef __cplusplus
-static_assert(sizeof(bool_t) == sizeof(uint8_t), "bool_t size must match C");
-#else
-_Static_assert(sizeof(bool_t) == sizeof(uint8_t), "bool_t size must match C++");
-#endif
 /*******************************************************************************
  * Custom Type Definitions
  ******************************************************************************/
@@ -130,31 +103,38 @@ _Static_assert(sizeof(bool_t) == sizeof(uint8_t), "bool_t size must match C++");
  * struct with alignment > 1 can cause a hardware trap because the compiler
  * generates load/store instructions that assume the required alignment.
  *
+ * \par Choosing a value
+ * Use the alignment of the most strictly aligned type stored in RCSW-managed
+ * memory. On 64-bit targets which store pointers (or structs containing them)
+ * in caller-provided data structure memory, that is 8.
+ *
  * \par Implementation
  * Alignment is enforced by choosing an integer typedef whose natural alignment
- * matches \c RCSW_CONFIG_PTR_ALIGN. The compiler guarantees that an array
- * element of this type is aligned to at least \c sizeof(the type), which
- * satisfies the safe-cast requirement.
+ * matches \c RCSW_CONFIG_PTR_ALIGN, so that array elements of that type are
+ * aligned to it. This is checked when the library is built: some ABIs (e.g.,
+ * 32-bit x86) align \c uint64_t to 4 bytes, and 8 is rejected there.
  *
  * \note A C11 \c _Alignas approach was considered but rejected: \c _Alignas
  * is not permitted on a \c typedef (C11 §6.7.5), and placing it on a
  * single-member struct wrapper breaks call-site transparency between the C11
  * and pre-C11 paths. The integer-width trick is already sufficient — \c
- * sizeof(uint32_t)==4 guarantees 4-byte-aligned array elements just as
+ * _Alignof(uint32_t)==4 guarantees 4-byte-aligned array elements just as
  * reliably as \c _Alignas(4) would.
  *
  */
 #if !defined(RCSW_CONFIG_PTR_ALIGN)
-#error No pointer alignment defined on non-baremetal target. \
-  Define RCSW_CONFIG_PTR_ALIGN to 1, 2, or 4.
+#error RCSW_CONFIG_PTR_ALIGN is not defined. \
+  Define it to 1, 2, 4, or 8.
 #endif
 
 #if (RCSW_CONFIG_PTR_ALIGN != 1) && (RCSW_CONFIG_PTR_ALIGN != 2) && \
-  (RCSW_CONFIG_PTR_ALIGN != 4)
-#error RCSW_CONFIG_PTR_ALIGN must be 1, 2, or 4.
+  (RCSW_CONFIG_PTR_ALIGN != 4) && (RCSW_CONFIG_PTR_ALIGN != 8)
+#error RCSW_CONFIG_PTR_ALIGN must be 1, 2, 4, or 8.
 #endif
 
-#if (RCSW_CONFIG_PTR_ALIGN == 4)
+#if (RCSW_CONFIG_PTR_ALIGN == 8)
+typedef uint64_t dptr_t;
+#elif (RCSW_CONFIG_PTR_ALIGN == 4)
 typedef uint32_t dptr_t;
 #elif (RCSW_CONFIG_PTR_ALIGN == 2)
 typedef uint16_t dptr_t;

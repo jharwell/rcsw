@@ -1,19 +1,21 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/multithread:
 
 ===========
 Multithread
 ===========
 
-A collection of modules for multithreaded programming. All primitives in this
-module are thread-safe by design. Where applicable, POSIX primitives are
-wrapped to provide a small Platform Abstraction Layer (PAL) so that
-application code compiles unmodified on Linux, RTEMS, and similar targets.
+Thin wrappers around the POSIX threading primitives, plus a memory pool and a
+producer-consumer queue built on them. Every module here is thread-safe by
+design, and POSIX-only: none of it is available in bare-metal builds.
 
 .. NOTE::
 
-   All primitives are initialized to use caller-supplied storage when
-   ``RCSW_NOALLOC_HANDLE`` is passed; pass ``NULL`` as the handle argument
-   to have the library allocate.
+   To use caller-supplied storage for a primitive's handle, pass it with
+   :c:macro:`RCSW_NOALLOC_HANDLE`. Without that flag the handle argument is
+   ignored (``NULL`` is fine) and the library allocates one. See
+   :ref:`concepts/memory-model`.
 
 Primitives
 ==========
@@ -36,12 +38,14 @@ Primitives
 
    * - Condition variable / mutex pair
      - Convenience wrapper combining :c:struct:`condv` and :c:struct:`mutex` into
-       a single handle, since they are almost always used together.
+       a single handle, since they are almost always used together. As with a
+       plain condition variable, the caller holds the mutex
+       (:c:member:`cvm.mtx`) around waits.
      - :c:struct:`cvm`
 
    * - Binary semaphore
-     - Built on :c:struct:`mutex` + :c:struct:`condv` on Linux. Provides
-       signal/wait semantics with an initial value of 0 or 1.
+     - Built on :c:struct:`mutex` + :c:struct:`condv`. Provides post, wait,
+       timed wait, and flush (release every waiter).
      - :c:struct:`bsem`
 
    * - Counting semaphore
@@ -79,30 +83,14 @@ Higher-Level Constructs
        Internally synchronized; callers do not need additional locking.
      - :c:struct:`pcqueue`
 
-Parallel Algorithms
-===================
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 55 15
-
-   * - Module
-     - Notes
-     - Link
-
-   * - OpenMP 2D kernel convolution
-     - Parallelizes 2D convolution of an image/signal with a kernel using
-       OpenMP. Requires an OpenMP-capable compiler.
-     - :c:func:`omp_kernel2d_convolve1`
-
-   * - OpenMP radix sort
-     - Parallel radix sort using OpenMP. Requires an OpenMP-capable
-       compiler.
-     - :c:struct:`omp_radix_sorter`
-
 Thread Management
 =================
 
-Utilities for thread lifecycle management, including pinning threads to
-specific CPU cores (affinity). These utilities are POSIX-only and are not
-available in baremetal builds.
+``#include "rcsw/multithread/threadm.h"``
+
+:c:func:`threadm_core_lock` pins a thread to a CPU core. Like the rest of this
+module it is POSIX-only; it uses ``pthread_setaffinity_np()``, so it needs
+Linux or another platform that provides it.
+
+For timeouts and what is safe to call concurrently, see
+:ref:`concepts/concurrency`.

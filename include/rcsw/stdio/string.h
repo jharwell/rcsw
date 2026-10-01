@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -15,25 +15,40 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/al/types.h"
+#include <stddef.h>
+
 #include "rcsw/core/compilers.h"
 
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-/* these macros operate on single characters */
+/**
+ * \name Character classification
+ *
+ * ASCII-only, locale-independent tests on a single character. Each evaluates to
+ * 1 or 0. \p c may be evaluated more than once.
+ * @{
+ */
+/** \brief Printable character (space through tilde). */
 #define RCSW_STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
+/** \brief A space. Tabs and newlines do not count. */
 #define RCSW_STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
+/** \brief Lowercase letter. */
 #define RCSW_STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
+/** \brief Uppercase letter. */
 #define RCSW_STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
+/** \brief Decimal digit. */
 #define RCSW_STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
+/** \brief Hexadecimal digit, either case. */
 #define RCSW_STDIO_ISHEX(c)                               \
   (RCSW_STDIO_ISDIGIT(c) || ((c) >= 'a' && (c) <= 'f') || \
        ((c) >= 'A' && (c) <= 'F')                         \
      ? 1                                                  \
      : 0)
+/** \brief Letter, either case. */
 #define RCSW_STDIO_ISALPHA(c) \
   ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
+/** @} */
 
 /*******************************************************************************
  * PUBLIC API
@@ -62,9 +77,9 @@ RCSW_API void* stdio_memcpy(void* __restrict__ dest,
  * Fills the first \p n bytes of the memory area pointed to by \p dest with the
  * constant byte \p c.
  *
- * \param dest Destination of copy.
+ * \param dest Memory to fill.
  * \param c The byte to use.
- * \param n # of bytes to copy.
+ * \param n # of bytes to fill.
  *
  * \return Memory pointed to by dest.
  */
@@ -124,17 +139,15 @@ RCSW_API void stdio_strrev(char* s, size_t len);
 /**
  * \brief Search a string for another string.
  *
- * This routine searches the haystack for the first occurence of the needle.
- * All bytes of needle must be found contiguously, including the null byte; that
- * is, the needle string MUST be null terminated. If it is not null terminated
- * then this routine will not be able to figure out where the needle string
- * ends. If more than one occurence of needle is found in haystack, the pointer
- * to the first one encountered will be returned.
+ * This routine searches the haystack for the first occurrence of the needle.
+ * Both strings must be NUL-terminated; the needle's terminating NUL is not
+ * part of the match. If needle occurs more than once, the first occurrence is
+ * returned.
  *
  * \param haystack The string to search IN.
  * \param needle The string to search for.
  *
- * \return: The first occurence of the needle, or NULL if the substring was not
+ * \return The first occurrence of the needle, or NULL if the substring was not
  *          found.
  */
 RCSW_API const char* stdio_strstr(const char* haystack,
@@ -143,16 +156,16 @@ RCSW_API const char* stdio_strstr(const char* haystack,
 /**
  * \brief Search a string for a character.
  *
- * This routine searches the haystack for the first occurence of the needle.
+ * This routine searches the haystack for the first occurrence of the needle.
  * The character must be a byte; that is, multi-byte characters are not
- * supported.  The haystack must be null terminated. If more than one occurence
+ * supported.  The haystack must be null terminated. If more than one occurrence
  * of needle is found in the haystack, a pointer to the first one will be
  * returned.
  *
  * \param haystack The string to search IN.
  * \param needle The char to search for.
  *
- * \return Pointer to the first occurence of the needle, or NULL if the
+ * \return Pointer to the first occurrence of the needle, or NULL if the
  *         char was not found.
  */
 RCSW_API const char* stdio_strchr(const char* haystack, char needle) RCSW_PURE;

@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2022 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup version
+ *
+ * \brief License notice strings and selection macros.
  */
 
 #pragma once
@@ -13,39 +17,6 @@
  ******************************************************************************/
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
-
-/*******************************************************************************
- * License String Constants
- ******************************************************************************/
-/**
- * \brief Full GPLv3+ license notice, suitable for printing at program start.
- */
-RCSW_API extern const char RCSW_LICENSE_FULL_GPLV3_TEXT[];
-
-/**
- * \brief Short GPLv3+ license notice.
- */
-RCSW_API extern const char RCSW_LICENSE_SHORT_GPLV3_TEXT[];
-
-/**
- * \brief Full LGPLv3+ license notice, suitable for printing at program start.
- */
-RCSW_API extern const char RCSW_LICENSE_FULL_LGPLV3_TEXT[];
-
-/**
- * \brief Short LGPLv3+ license notice.
- */
-RCSW_API extern const char RCSW_LICENSE_SHORT_LGPLV3_TEXT[];
-
-/**
- * \brief Full MIT license notice, suitable for printing at program start.
- */
-RCSW_API extern const char RCSW_LICENSE_FULL_MIT_TEXT[];
-
-/**
- * \brief Short MIT license notice.
- */
-RCSW_API extern const char RCSW_LICENSE_SHORT_MIT_TEXT[];
 
 /*******************************************************************************
  * Macros
@@ -69,24 +40,60 @@ RCSW_API extern const char RCSW_LICENSE_SHORT_MIT_TEXT[];
  *
  * \brief Select the short-form license notice for \a license.
  *
- * Expands to the corresponding \c RCSW_LICENSE_SHORT_<license>_TEXT pointer,
+ * Expands to the corresponding \c rcsw_license_short_<license>_text array,
  * suitable for assigning to the \c abbrev field of \ref license_info.
  *
- * \param license License identifier token. Must be one of: \c GPLV3,
- *                \c LGPLV3, \c MIT.
+ * \param license License identifier token. Must be one of: \c gplv3,
+ *                \c lgplv3, \c mit.
  */
 #define RCSW_LICENSE_SHORT(license) \
-  RCSW_JOIN3(RCSW_LICENSE_SHORT_, license, _TEXT)
+  RCSW_JOIN3(rcsw_license_short_, license, _text)
 
 /**
  * \def RCSW_LICENSE_FULL(license)
  *
  * \brief Select the full license notice for \a license.
  *
- * Expands to the corresponding \c RCSW_LICENSE_FULL_<license>_TEXT pointer,
+ * Expands to the corresponding \c rcsw_license_full_<license>_text array,
  * suitable for assigning to the \c full field of \ref license_info.
  *
- * \param license License identifier token. Must be one of: \c GPLV3,
- *                \c LGPLV3, \c MIT.
+ * \param license License identifier token. Must be one of: \c gplv3,
+ *                \c lgplv3, \c mit.
  */
-#define RCSW_LICENSE_FULL(license) RCSW_JOIN3(RCSW_LICENSE_FULL_, license, _TEXT)
+#define RCSW_LICENSE_FULL(license) RCSW_JOIN3(rcsw_license_full_, license, _text)
+
+/*******************************************************************************
+ * License String Constants
+ ******************************************************************************/
+BEGIN_C_DECLS
+/**
+ * \brief Full GPLv3+ license notice, suitable for printing at program start.
+ */
+RCSW_API extern const char rcsw_license_full_gplv3_text[];
+
+/**
+ * \brief Short GPLv3+ license notice.
+ */
+RCSW_API extern const char rcsw_license_short_gplv3_text[];
+
+/**
+ * \brief Full LGPLv3+ license notice, suitable for printing at program start.
+ */
+RCSW_API extern const char rcsw_license_full_lgplv3_text[];
+
+/**
+ * \brief Short LGPLv3+ license notice.
+ */
+RCSW_API extern const char rcsw_license_short_lgplv3_text[];
+
+/**
+ * \brief Full MIT license notice, suitable for printing at program start.
+ */
+RCSW_API extern const char rcsw_license_full_mit_text[];
+
+/**
+ * \brief Short MIT license notice.
+ */
+RCSW_API extern const char rcsw_license_short_mit_text[];
+
+END_C_DECLS

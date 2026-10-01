@@ -1,17 +1,18 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup er
+ *
+ * \brief Event reporting levels, plugin IDs, and module name construction.
  */
 
 #pragma once
 
-/*******************************************************************************
- * Includes
- ******************************************************************************/
-#include "rcsw/core/core.h"
+#include "rcsw/core/variadics.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -25,16 +26,27 @@
 #define LIBRA_ERL_DEBUG 5 /* Fatal, error, warn, info, debug events only */
 #define LIBRA_ERL_TRACE 6 /* All events */
 #define LIBRA_ERL_ALL LIBRA_ERL_TRACE
+/* \endcond */
 
-#define RCSW_ERL_NONE LIBRA_ERL_NONE
-#define RCSW_ERL_FATAL LIBRA_ERL_FATAL
-#define RCSW_ERL_ERROR LIBRA_ERL_ERROR
-#define RCSW_ERL_WARN LIBRA_ERL_WARN
-#define RCSW_ERL_INFO LIBRA_ERL_INFO
-#define RCSW_ERL_DEBUG LIBRA_ERL_DEBUG
-#define RCSW_ERL_TRACE LIBRA_ERL_TRACE
-#define RCSW_ERL_ALL LIBRA_ERL_ALL
+/**
+ * \name Event reporting levels
+ *
+ * Values for \ref RCSW_ERL and for run-time module levels (e.g.
+ * \ref log4cl_mod_lvl_set()). See
+ * \rcswdoc{concepts/event-reporting/levels}.
+ * @{
+ */
+#define RCSW_ERL_NONE LIBRA_ERL_NONE   /**< No event reporting. */
+#define RCSW_ERL_FATAL LIBRA_ERL_FATAL /**< FATAL only. */
+#define RCSW_ERL_ERROR LIBRA_ERL_ERROR /**< FATAL and ERROR. */
+#define RCSW_ERL_WARN LIBRA_ERL_WARN   /**< FATAL through WARN. */
+#define RCSW_ERL_INFO LIBRA_ERL_INFO   /**< FATAL through INFO. */
+#define RCSW_ERL_DEBUG LIBRA_ERL_DEBUG /**< FATAL through DEBUG. */
+#define RCSW_ERL_TRACE LIBRA_ERL_TRACE /**< Everything. */
+#define RCSW_ERL_ALL LIBRA_ERL_ALL     /**< Same as \ref RCSW_ERL_TRACE. */
+/** @} */
 
+/* \cond INTERNAL */
 #if defined(LIBRA_ERL_INHERIT) && !defined(LIBRA_ERL)
 #error LIBRA_ERL_INHERIT defined but LIBRA_ERL not defined!
 #endif
@@ -54,41 +66,47 @@
 #define RCSW_ERL LIBRA_ERL
 
 /**
- * \brief Debug color codes (for producing colored terminal output)
+ * \name Terminal color codes
+ *
+ * ANSI escape sequences for colored terminal output.
+ * @{
  */
-#define RCSW_ER_HEADC "\033[36m" /* blue */
-#define RCSW_ER_OKC "\033[32m"   /* green */
-#define RCSW_ER_WARNC "\033[33m" /* yellow */
-#define RCSW_ER_FAILC "\033[31m" /* red */
-#define RCSW_ER_ENDC "\033[0m"   /* reset to default terminal text color */
+#define RCSW_ER_HEADC "\033[36m" /**< Cyan. */
+#define RCSW_ER_OKC "\033[32m"   /**< Green. */
+#define RCSW_ER_WARNC "\033[33m" /**< Yellow. */
+#define RCSW_ER_FAILC "\033[31m" /**< Red. */
+#define RCSW_ER_ENDC "\033[0m"   /**< Reset to the default text color. */
+/** @} */
 
 /**
- * A lighter/simpler version of log4c. See docs for a detailed description.
+ * \name ER plugin IDs
+ *
+ * Values for \c RCSW_CONFIG_ER_PLUGIN. Any other value selects a custom plugin.
+ * See \rcswdoc{library/er}.
+ * @{
  */
+
+/** \brief LOG4CL: a lighter, simpler log4c with per-module levels. */
 #define RCSW_ER_PLUGIN_LOG4CL 0
 
-/**
- * The simple bare-bones logger. See docs for a detailed description.
- */
+/** \brief The simple plugin: one build-wide level, no per-module control. */
 #define RCSW_ER_PLUGIN_SIMPLE 1
 
 /**
- * Specify that all logging go to the zlog framework.
- *
- * This is the most full-featured of RCSW's built-in logging schemes, supporting
- * everything zlog does.
- *
- * This is useful in:
- *
- * - Linux targets and targets with a full-featured OS.
+ * \brief zlog: the most full-featured built-in plugin. For Linux and other
+ * targets with a full-featured OS.
  */
 #define RCSW_ER_PLUGIN_ZLOG 2
+
+/** @} */
 
 /*******************************************************************************
  * Macros
  ******************************************************************************/
+/* \cond INTERNAL */
 #define RCSW_ER_MODNAME_BUILDER_IMPL(X) \
   X RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR
+/* \endcond */
 
 /**
  * \def RCSW_ER_MODNAME_BUILDER(...) Define the name of a logging module
@@ -105,7 +123,7 @@
  * which would be expanded as appropriate ("myproject.mymodule",
  * "myproject_mymodule", etc.) depending on the plugin you build RCSW with.
  *
- * This macro ensures that you can use the same code with multple ER plugins.
+ * This macro ensures that you can use the same code with multiple ER plugins.
  */
 #define RCSW_ER_MODNAME_BUILDER(...) \
   RCSW_XFOR_EACH1_NOTAIL(RCSW_ER_MODNAME_BUILDER_IMPL, __VA_ARGS__)

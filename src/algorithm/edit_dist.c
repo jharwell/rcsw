@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -28,12 +28,13 @@ BEGIN_C_DECLS
  * \param a String # 1
  * \param b String # 2
  * \param c The memoization table [strlen(a) x strlen(b)]
- * \param seq_len A callback to determine the length of a sequence.
+ * \param length A callback to determine the length of a sequence.
  * \param cmpe Callback for comparing two elements for equality
  * \param elt_size Size of elements in bytes
  *
  * \return minimum # operations, or -1 if an error occurred
  */
+// NOLINTNEXTLINE(readability-function-size)
 static int edit_dist_rec_sub(const char* a,
                              const char* b,
                              int*        c,
@@ -43,8 +44,8 @@ static int edit_dist_rec_sub(const char* a,
                              bool_t (*cmpe)(const void* e1, const void* e2),
                              size_t elt_size) {
   /* If we have memoized solution, return it */
-  if (c[i * length + j] >= 0) {
-    return c[i * length + j];
+  if (c[(i * length) + j] >= 0) {
+    return c[(i * length) + j];
   }
   /*
    * If i or j is 0, then we have no choice but to insert all the characters
@@ -52,7 +53,8 @@ static int edit_dist_rec_sub(const char* a,
    */
   if (0 == i) {
     return (int)j;
-  } else if (0 == j) {
+  }
+  if (0 == j) {
     return (int)i;
   }
   /*
@@ -61,30 +63,29 @@ static int edit_dist_rec_sub(const char* a,
    * chars in a and are not the same, then return the minimum of what happens
    * if you substitute, delete, or insert chars from a to transform it into b.
    */
-  if (true ==
-      cmpe(((const uint8_t*)a) + (i - 1), ((const uint8_t*)b) + (j - 1))) {
-    c[i * length + j] =
+  if (cmpe(((const uint8_t*)a) + ((i - 1) * elt_size),
+           ((const uint8_t*)b) + ((j - 1) * elt_size))) {
+    c[(i * length) + j] =
       edit_dist_rec_sub(a, b, c, i - 1, j - 1, length, cmpe, elt_size);
-    return c[i * length + j];
-  } else {
-    c[i * length + j] =
-      1 +
-      RCSW_MIN3(
-        edit_dist_rec_sub(a,
-                          b,
-                          c,
-                          i - 1,
-                          j - 1,
-                          length,
-                          cmpe,
-                          elt_size), /* substitute
-                                      */
-        edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, elt_size),  /* delete
-                                                                        */
-        edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, elt_size)); /* insert
-                                                                        */
-    return c[i * length + j];
+    return c[(i * length) + j];
   }
+  c[(i * length) + j] =
+    1 + RCSW_MIN3(
+          edit_dist_rec_sub(a,
+                            b,
+                            c,
+                            i - 1,
+                            j - 1,
+                            length,
+                            cmpe,
+                            elt_size), /* substitute
+                                        */
+          edit_dist_rec_sub(a, b, c, i - 1, j, length, cmpe, elt_size),  /* delete
+                                                                          */
+          edit_dist_rec_sub(a, b, c, i, j - 1, length, cmpe, elt_size)); /* insert
+                                                                          */
+  return c[(i * length) + j];
+
 } /* edit_dist_rec_sub() */
 
 /**
@@ -93,12 +94,8 @@ static int edit_dist_rec_sub(const char* a,
  * \param a The first string
  * \param b The string to transform a into
  * \param c The memoization table
- * \param i Current index in a
- * \param j Current index in b
- *
- * \param length String length of a, so it does not have to be computed each
- *               recursive step.
- *
+ * \param seq_len String length of a, so it does not have to be computed each
+ *                recursive step.
  * \param cmpe Callback for comparing two elements for equality
  * \param elt_size Size of elements in bytes
  *
@@ -146,22 +143,22 @@ static int edit_dist_iter(const void* a,
   for (size_t i = 0; i <= m; ++i) {
     for (size_t j = 0; j <= n; ++j) {
       if (0 == i) {
-        c[i * (n + 1) + j] = (int)j;
+        c[(i * (n + 1)) + j] = (int)j;
       } else if (0 == j) {
-        c[i * (n + 1) + j] = (int)i;
-      } else if (true == cmpe(((const uint8_t*)a) + (i - 1) * elt_size,
-                              ((const uint8_t*)b) + (j - 1) * elt_size)) {
-        c[i * (n + 1) + j] = c[(i - 1) * (n + 1) + (j - 1)];
+        c[(i * (n + 1)) + j] = (int)i;
+      } else if (cmpe(((const uint8_t*)a) + ((i - 1) * elt_size),
+                      ((const uint8_t*)b) + ((j - 1) * elt_size))) {
+        c[(i * (n + 1)) + j] = c[((i - 1) * (n + 1)) + (j - 1)];
       } else {
-        c[i * (n + 1) + j] =
-          1 + RCSW_MIN3(c[(i - 1) * (n + 1) + (j - 1)], /* substitute */
-                        c[(i - 1) * (n + 1) + j],       /* delete */
-                        c[i * (n + 1) + (j - 1)]);      /* insert */
+        c[(i * (n + 1)) + j] =
+          1 + RCSW_MIN3(c[((i - 1) * (n + 1)) + (j - 1)], /* substitute */
+                        c[((i - 1) * (n + 1)) + j],       /* delete */
+                        c[(i * (n + 1)) + (j - 1)]);      /* insert */
       }
     }
   }
 
-  return c[m * (n + 1) + n];
+  return c[(m * (n + 1)) + n];
 }
 
 /*******************************************************************************

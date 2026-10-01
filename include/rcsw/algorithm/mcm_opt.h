@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -16,6 +16,7 @@
  * Includes
  ******************************************************************************/
 #include <stddef.h>
+#include <stdint.h>
 
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
@@ -27,19 +28,19 @@
  * \brief Matrix chain multiplication optimizer.
  */
 struct mcm_optimizer {
-  size_t min_mults;  /// Minimum # of scalar multiplications need for the
-                     /// chain.
+  /** Minimum # of scalar multiplications needed for the chain. */
+  uint64_t min_mults;
   /**
    * Input matrices, specified as an array of the outer dimensions.
    */
-  const size_t* matrices;
-  size_t        size;     /// # of input matrices.
-  size_t*       results;  /// N x N  array of optimil multiplication costs.
-  size_t*       route;    /// N x N  array storing the optimal results route.
+  const uint64_t* matrices;
+  size_t          size;     ///< # of input matrices.
+  uint64_t*       results;  ///< N x N  array of optimil multiplication costs.
+  uint64_t*       route;    ///< N x N  array storing the optimal results route.
   /**
    * Optimal multiplicative ordering, specified as 0-indexed matrix IDs.
    */
-  size_t* ordering;
+  uint64_t* ordering;
 };
 
 BEGIN_C_DECLS
@@ -57,8 +58,8 @@ BEGIN_C_DECLS
  * \return \ref status_t
  */
 RCSW_API status_t mcm_opt_init(struct mcm_optimizer* mcm,
-                               const size_t*         matrices,
-                               size_t                size);
+                               const uint64_t*       matrices,
+                               uint64_t              size);
 
 /**
  * \brief Destroy an initialized optimizer
@@ -99,6 +100,6 @@ RCSW_API status_t mcm_opt_print(const struct mcm_optimizer* mcm);
  * \return \ref status_t
  */
 RCSW_API status_t mcm_opt_report(const struct mcm_optimizer* mcm,
-                                 size_t*                     ordering);
+                                 uint64_t*                   ordering);
 
 END_C_DECLS

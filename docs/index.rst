@@ -1,13 +1,15 @@
 .. _main:
 
-================================
-Welcome to RCSW's documentation!
-================================
+.. _index:
+
+==================================
+Reusable C Software (RCSW) Library
+==================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
 
    src/startup.rst
+   src/concepts/index.rst
    src/library/index.rst
-   _api/api.rst
+   src/api/index.rst

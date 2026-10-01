@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -40,34 +40,17 @@ void utils_permute(void*  arr,
 
 bool_t utils_zchk(void* const elt, size_t elt_size) {
   RCSW_FPC_NV(false, NULL != elt, elt_size > 0);
-  bool_t res = 0;
 
-  switch (elt_size) {
-    case sizeof(uint8_t):
-      return *((uint8_t*)(elt)) == 0;
-    case sizeof(uint16_t):
-      return *((uint16_t*)(elt)) == 0;
-    case sizeof(uint32_t):
-      return *((uint32_t*)(elt)) == 0;
-
-      /*
-       * sizeof(float) is the same as sizeof(uint32_t) on most platforms, but
-       * not all.
-       */
-#if __SIZEOF_FLOAT__ != 4
-    case sizeof(float):
-      return fabs(*((float*)(elt))) <= RCSW_FLOAT_TOL;
-      break;
-#endif
-    case sizeof(double):
-      return fabs(*((double*)(elt))) <= RCSW_DOUBLE_TOL;
-      break;
-    default:
-      for (size_t i = 0; i < elt_size; ++i) {
-        res |= ((uint8_t*)elt)[i];
-      } /* for(i..) */
-      return res == 0;
-  } /* switch() */
+  /*
+   * A byte-wise check: elements are opaque (an 8-byte element is not
+   * necessarily a double), and need not be aligned for a typed load.
+   */
+  const uint8_t* bytes = elt;
+  uint8_t        acc   = 0;
+  for (size_t i = 0; i < elt_size; ++i) {
+    acc |= bytes[i];
+  } /* for(i..) */
+  return 0 == acc;
 }
 
 END_C_DECLS

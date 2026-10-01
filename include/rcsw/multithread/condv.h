@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Condition variable.
  */
 
 #pragma once
@@ -13,10 +15,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <pthread.h>
+#include <pthread.h>  // NOLINT(misc-include-cleaner)
+#include <time.h>
 
 #include "rcsw/core/compilers.h"
-#include "rcsw/core/flags.h"
+#include "rcsw/core/core.h"
 #include "rcsw/multithread/mutex.h"
 
 /*******************************************************************************
@@ -30,7 +33,7 @@
  * - POSIX condition variables
  */
 struct condv {
-  pthread_cond_t impl;
+  pthread_cond_t impl;  // NOLINT(misc-include-cleaner)
 
   /**
    * Valid flags are:
@@ -51,8 +54,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize the signal condition.
  *
- * \param cv_in cv to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
- *              passed.
+ * \param cv_in Caller storage for the handle, used only if \ref
+ *              RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *              otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param flags Configuration flags. See \ref condv.flags for valid flags.
  *
@@ -107,14 +111,30 @@ RCSW_API status_t condv_wait(struct condv* cv, struct mutex* mtx);
  * \param cv The cv handle.
  * \param mtx The mutex the wait pairs with.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *           specifies. This function converts the relative timeout to absolute
- *           timeout required.
+ * \param to A relative timeout. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t.
  */
 RCSW_API status_t condv_timedwait(struct condv*          cv,
                                   struct mutex*          mtx,
                                   const struct timespec* to);
+
+/**
+ * \brief Timed wait on a condition variable, with an absolute deadline.
+ *
+ * For callers that wait in a loop (to handle spurious wakeups): a relative
+ * timeout restarted on every iteration would never expire.
+ *
+ * \param cv The cv handle.
+ * \param mtx The mutex the wait pairs with.
+ * \param deadline An absolute \c CLOCK_REALTIME deadline. See
+ *                 \rcswdoc{concepts/concurrency/timeouts}.
+ *
+ * \return \ref status_t. On timeout, errno is ETIMEDOUT.
+ */
+RCSW_API status_t condv_timedwait_abs(struct condv*          cv,
+                                      struct mutex*          mtx,
+                                      const struct timespec* deadline);
 
 END_C_DECLS

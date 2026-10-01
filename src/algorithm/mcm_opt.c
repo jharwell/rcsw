@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,7 +11,10 @@
  ******************************************************************************/
 #include "rcsw/algorithm/mcm_opt.h"
 
+#include <inttypes.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/flags.h"
@@ -33,15 +36,15 @@ BEGIN_C_DECLS
  * \param length The length of the matrix chain
  *
  */
-static void mcm_opt_print_parens(const size_t* arr,
-                                 size_t        i,
-                                 size_t        j,
-                                 size_t        length) {
+static void mcm_opt_print_parens(const uint64_t* arr,
+                                 uint64_t        i,
+                                 uint64_t        j,
+                                 uint64_t        length) {
   if (i == j) {
-    DPRINTF("A%zu", i);
+    DPRINTF("A%" PRIu64, i);
   } else {
     DPRINTF("(");
-    size_t k = arr[i + length * j];
+    uint64_t k = arr[i + (length * j)];
     mcm_opt_print_parens(arr, i, k, length);
     mcm_opt_print_parens(arr, k + 1, j, length);
     DPRINTF(")");
@@ -63,15 +66,15 @@ static void mcm_opt_print_parens(const size_t* arr,
  * far. Pass this as 0.
  *
  */
-static void mcm_opt_report_parens(const size_t* arr,
-                                  size_t        i,
-                                  size_t        j,
-                                  size_t        length,
-                                  size_t*       ordering,
-                                  size_t*       count) {
+static void mcm_opt_report_parens(const uint64_t* arr,
+                                  uint64_t        i,
+                                  uint64_t        j,
+                                  uint64_t        length,
+                                  uint64_t*       ordering,
+                                  uint64_t*       count) {
   if (i == j) {
   } else {
-    size_t k = arr[i + length * j];
+    uint64_t k = arr[i + (length * j)];
     mcm_opt_report_parens(arr, i, k, length, ordering, count);
     mcm_opt_report_parens(arr, k + 1, j, length, ordering, count);
     if (i == k) {
@@ -89,16 +92,16 @@ static void mcm_opt_report_parens(const size_t* arr,
  * Public API
  ******************************************************************************/
 status_t mcm_opt_init(struct mcm_optimizer* mcm,
-                      const size_t*         matrices,
-                      size_t                size) {
+                      const uint64_t*       matrices,
+                      uint64_t              size) {
   RCSW_FPC_NV(ERROR, NULL != mcm, NULL != matrices, size >= 2);
   mcm->matrices = matrices;
   mcm->size     = size;
 
-  mcm->results = rcsw_alloc(NULL, size * size * sizeof(size_t), RCSW_ZALLOC);
+  mcm->results = rcsw_alloc(NULL, size * size * sizeof(uint64_t), RCSW_ZALLOC);
   RCSW_CHECK_PTR(mcm->results);
 
-  mcm->route = rcsw_alloc(NULL, size * size * sizeof(size_t), RCSW_ZALLOC);
+  mcm->route = rcsw_alloc(NULL, size * size * sizeof(uint64_t), RCSW_ZALLOC);
   RCSW_CHECK_PTR(mcm->route);
   return OK;
 
@@ -117,15 +120,19 @@ void mcm_opt_destroy(struct mcm_optimizer* mcm) {
 status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
   RCSW_FPC_NV(ERROR, NULL != mcm);
 
-  size_t n = mcm->size - 1;
-  size_t i, j, k, q, num = 0;
+  uint64_t n   = mcm->size - 1;
+  uint64_t i   = 0;
+  uint64_t j   = 0;
+  uint64_t k   = 0;
+  uint64_t q   = 0;
+  uint64_t num = 0;
 
   /*
    * A[i][i]Only one matrix multiplication, so the number 0, M[i][i]=0; These
    * are the entries in the main diagonal of m.
    */
   for (i = 1; i < mcm->size; i++) {
-    mcm->results[i + mcm->size * i] = 0;
+    mcm->results[i + (mcm->size * i)] = 0;
   }
   /*
    * i represents the matrix chain length we are currently optimizing over. We
@@ -142,7 +149,7 @@ status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
        * m[j][k] is the optimal results from j to k using the
        * optimal partitioning. Initialize to a very large #.
        */
-      mcm->results[j + k * mcm->size] = INT_MAX;
+      mcm->results[j + (k * mcm->size)] = UINT64_MAX;
       /*
        * Compute the cost of splitting the current problem at point
        * k. Cost is cost of sub-chain to left of k + cost of sub-chain to
@@ -153,23 +160,23 @@ status_t mcm_opt_optimize(struct mcm_optimizer* mcm) {
        * m[i][j] accordingly.
        */
       for (q = j; q <= k - 1; q++) {
-        num = mcm->results[j + q * mcm->size] +
-              mcm->results[q + 1 + mcm->size * k] +
+        num = mcm->results[j + (q * mcm->size)] +
+              mcm->results[q + 1 + (mcm->size * k)] +
               mcm->matrices[j - 1] * mcm->matrices[q] * mcm->matrices[k];
-        if (num < mcm->results[j + mcm->size * k]) {
-          mcm->results[j + mcm->size * k] = num;
-          mcm->route[j + mcm->size * k]   = q;
+        if (num < mcm->results[j + (mcm->size * k)]) {
+          mcm->results[j + (mcm->size * k)] = num;
+          mcm->route[j + (mcm->size * k)]   = q;
         }
       } /* for(q=j)... */
     } /* for(j=1)... */
   } /* for(i=2)... */
-  mcm->min_mults = mcm->results[1 + mcm->size * (mcm->size - 1)];
+  mcm->min_mults = mcm->results[1 + (mcm->size * (mcm->size - 1))];
   return OK;
 } /* mcm_opt_optimize() */
 
-status_t mcm_opt_report(const struct mcm_optimizer* mcm, size_t* ordering) {
+status_t mcm_opt_report(const struct mcm_optimizer* mcm, uint64_t* ordering) {
   RCSW_FPC_NV(ERROR, NULL != mcm, NULL != ordering);
-  size_t count = 0;
+  uint64_t count = 0;
   mcm_opt_report_parens(mcm->route,
                         1,
                         mcm->size - 1,
@@ -181,7 +188,7 @@ status_t mcm_opt_report(const struct mcm_optimizer* mcm, size_t* ordering) {
 
 status_t mcm_opt_print(const struct mcm_optimizer* mcm) {
   RCSW_FPC_NV(ERROR, NULL != mcm);
-  DPRINTF("Minimum scalar multiplications: %zu\n", mcm->min_mults);
+  DPRINTF("Minimum scalar multiplications: %" PRIu64 "\n", mcm->min_mults);
   DPRINTF("Parenthesization:\n");
   mcm_opt_print_parens(mcm->route, 1, mcm->size - 1, mcm->size);
   DPRINTF("\n");

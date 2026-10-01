@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 The `zlog <https://github.com/HardySimpson/zlog/tree/master>`_ plugin.
 
 In this plugin, each source file can define one logging module; modules are
@@ -27,8 +29,10 @@ Notes:
   misrouted.
 
 - Module names **must not contain dots** (``.``). Use underscores (``_``)
-  instead, as zlog expects. Use :c:macro:`RCSW_ER_MODNAME_BUILDER` to
-  construct names portably; it handles the substitution automatically.
+  instead, as zlog expects. :c:macro:`RCSW_ER_MODNAME_BUILDER` joins name
+  components with ``_`` under this plugin (and ``.`` under LOG4CL), so names
+  built with it work under either; it doesn't rewrite dots inside a
+  component.
 
 This plugin is useful for:
 
@@ -36,7 +40,7 @@ This plugin is useful for:
 - Systems requiring hierarchical logging or flexible output routing
   (files, syslog, etc.).
 
-Plugin Configuration Details
+.. rubric:: Plugin configuration
 
 .. list-table::
    :header-rows: 1
@@ -45,25 +49,27 @@ Plugin Configuration Details
    * - Configuration Item
      - Notes
 
-   * - :c:macro:`RCSW_ER_PLUGIN_PRINTF`
+   * - ``RCSW_ER_PLUGIN_PRINTF``
      - Defined as ``printf()``.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_INIT()`
+   * - ``RCSW_ER_PLUGIN_INIT()``
      - Defined as ``zlog_init()``. Takes the path to the ``.conf`` file as
        its argument. Idempotency is not guaranteed by zlog; avoid calling
        more than once.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_DEINIT()`
+   * - ``RCSW_ER_PLUGIN_DEINIT()``
      - Defined as ``zlog_fini()``. Takes no arguments. Idempotency is not
        guaranteed by zlog.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_REPORT()`
+   * - ``RCSW_ER_PLUGIN_REPORT()``
      - Handled internally by zlog.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_INSMOD`
-     - Not used by this plugin (zlog manages categories via ``.conf``).
+   * - ``RCSW_ER_PLUGIN_INSMOD``
+     - Not used by this plugin: the zlog category for a module is created on
+       first use (``zlog_get_category()``), and its rules come from the
+       ``.conf`` file.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_LVL_CHECK`
+   * - ``RCSW_ER_PLUGIN_LVL_CHECK``
      - Handled internally by zlog; thread safety is zlog's responsibility.
 
    * - :c:macro:`RCSW_ER_MODNAME`

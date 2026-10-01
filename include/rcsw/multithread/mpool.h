@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Thread-safe, reference-counted pool of fixed-size memory chunks.
  */
 
 #pragma once
@@ -13,6 +15,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <time.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/multithread/csem.h"
@@ -33,8 +41,8 @@ struct mpool_config {
   dptr_t* meta;
 
   /**
-   * Pointer to application-allocated space for the pool.Ignored unless \ref
-   * RCSW_NOALLOC_META is passed.
+   * Pointer to application-allocated space for the pool. Ignored unless \ref
+   * RCSW_NOALLOC_DATA is passed.
    */
   dptr_t* elements;
 
@@ -141,8 +149,6 @@ static inline size_t mpool_element_space(size_t max_elts, size_t elt_size) {
  * additional synchronization.
  *
  * \param pool The pool handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t mpool_isfull(const struct mpool* const pool) {
   RCSW_FPC_NV(false, NULL != pool);
@@ -156,8 +162,6 @@ static inline bool_t mpool_isfull(const struct mpool* const pool) {
  * additional synchronization.
  *
  * \param pool The pool handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t mpool_isempty(const struct mpool* const pool) {
   RCSW_FPC_NV(false, NULL != pool);
@@ -194,9 +198,9 @@ static inline size_t mpool_capacity(const struct mpool* const pool) {
 /**
  * \brief Initialize a \ref mpool.
  *
- * \param pool_in An application allocated handle for the memory pool. Can be
- *                NULL, depending on if \ref RCSW_NOALLOC_HANDLE is passed or
- *                not.
+ * \param pool_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
@@ -234,7 +238,8 @@ RCSW_API void* mpool_req(struct mpool* the_pool);
  *
  * \param chunk The pointer to fill. Can be NULL.
  *
- * \return The allocated chunk, or NULL if an error occurred.
+ * \return \ref OK with the chunk in \p *chunk, or \ref ERROR on timeout or
+ * error.
  */
 RCSW_API status_t mpool_timedreq(struct mpool*          the_pool,
                                  const struct timespec* to,

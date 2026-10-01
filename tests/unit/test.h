@@ -1,0 +1,25 @@
+/**
+ * \file
+ *
+ * \copyright 2023 John Harwell
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#pragma once
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include "rcsw/er/er.h"
+
+/*******************************************************************************
+ * Constants
+ ******************************************************************************/
+#define TH_NUM_ITEMS 16UL
+
+#if RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_ZLOG
+#define TH_ZLOG_CONF "./test.conf"
+#else
+#define TH_ZLOG_CONF
+#endif

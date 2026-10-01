@@ -1,11 +1,14 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
- * \cond INTERNAL
+ * \ingroup ds
+ *
+ * \brief Binary search tree node operations. Only \ref bstree_node_height() is
+ * public; the rest is internal to the tree implementations.
  */
 
 #pragma once
@@ -13,6 +16,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <stddef.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
@@ -20,6 +27,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/** \cond INTERNAL */
 /**
  * \brief Create a node in a BST variant
  *
@@ -89,7 +97,7 @@ RCSW_LOCAL void* bstree_node_datablock_alloc(const struct bstree* tree);
 
 /**
  * \brief Deallocate a datablock
- **/
+ */
 RCSW_LOCAL void bstree_node_datablock_dealloc(const struct bstree* tree,
                                               dptr_t*              datablock);
 
@@ -161,7 +169,7 @@ RCSW_LOCAL void bstree_node_rotate_left(struct bstree*      tree,
                                         struct bstree_node* node);
 
 /**
- * \brief Rotate the subtree anchored at a bstree node to the left
+ * \brief Rotate the subtree anchored at a bstree node to the right
  *
  * Note that no special case for the root is necessary because of the use of
  * tree->nil sentinel
@@ -186,18 +194,20 @@ RCSW_LOCAL int bstree_node_print(const struct bstree*      tree,
                                  const struct bstree_node* node);
 
 /**
- * \brief Get the successor of x (smallest node larger than x)
+ * \brief Get the successor of \p node (the smallest node larger than it).
  *
  * Uses the algorithm in _Introduction_To_Algorithms_
  *
  * \param tree The BST handle
- * \param node The node to print
+ * \param node The node to get the successor of
  *
- * \return The successor, or NULL if none was found (i.e. x is d the largest
- * node in the tree)
+ * \return The successor, or NULL if none was found (i.e. \p node is the
+ * largest node in the tree)
  */
 RCSW_LOCAL struct bstree_node* bstree_node_successor(
   const struct bstree* tree, const struct bstree_node* node) RCSW_PURE;
+
+/** \endcond */
 
 /*******************************************************************************
  * Public API
@@ -214,5 +224,3 @@ RCSW_API size_t bstree_node_height(const struct bstree*      tree,
                                    const struct bstree_node* node) RCSW_PURE;
 
 END_C_DECLS
-
-/* \endcond */

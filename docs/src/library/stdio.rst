@@ -1,8 +1,10 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/stdio:
 
-==============================
-Simple I/O Replacement Library
-==============================
+====================
+Standard I/O (STDIO)
+====================
 
 ``#include "rcsw/stdio/printf.h"``
 ``#include "rcsw/stdio/stdio.h"``
@@ -37,9 +39,10 @@ hooks:
 - :cmake:variable:`RCSW_CONFIG_STDIO_PUTCHAR`
 - :cmake:variable:`RCSW_CONFIG_STDIO_GETCHAR`
 
-These macros name functions that **you must provide** in your platform
-layer. RCSW declares them but does not implement them beyond routing
-through the configured name.
+They default to libc's ``putchar`` and ``getchar``. To route I/O elsewhere,
+such as a UART, set them to functions your platform layer provides. In a
+shared build those functions must be available when RCSW itself is linked;
+see :ref:`concepts/components`.
 
 printf Formatting
 =================
@@ -62,3 +65,7 @@ See the header for full signatures. Highlights:
 - :c:func:`stdio_atoi()` requires an explicit base argument and a ``0x``
   prefix for hex input.
 - :c:func:`stdio_itoad()` and :c:func:`stdio_itoax()` are 32-bit only.
+
+``#include "rcsw/stdio/string.h"`` has the string and memory routines
+(:c:func:`stdio_strlen`, :c:func:`stdio_strcmp`, :c:func:`stdio_memcpy`, ...)
+and character class macros (:c:macro:`RCSW_STDIO_ISDIGIT` and friends).

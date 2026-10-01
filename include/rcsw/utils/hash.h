@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -37,13 +37,13 @@ BEGIN_C_DECLS
  */
 RCSW_API status_t utils_hash_default(const void* data,
                                      size_t      len,
-                                     uint32_t*   hash) RCSW_PURE;
+                                     uint32_t*   hash);
 
 /**
  * \brief Compute a hash over \p data using FNV-1a (Fowler–Noll–Vo).
  *
- * Good general-purpose hash with low collision rates. This is the default
- * hash function used by \ref hashmap when no custom hash is supplied.
+ * Good general-purpose hash with low collision rates, and a sensible choice
+ * for \ref hashmap_config.hash.
  *
  * \param data Pointer to the data to hash.
  * \param len  Number of bytes to hash.
@@ -51,9 +51,7 @@ RCSW_API status_t utils_hash_default(const void* data,
  *
  * \return \ref status_t.
  */
-RCSW_API status_t utils_hash_fnv1a(const void* data,
-                                   size_t      len,
-                                   uint32_t*   hash) RCSW_PURE;
+RCSW_API status_t utils_hash_fnv1a(const void* data, size_t len, uint32_t* hash);
 
 /**
  * \brief Compute a hash over \p data using DJB2 (Dan J. Bernstein).
@@ -66,8 +64,6 @@ RCSW_API status_t utils_hash_fnv1a(const void* data,
  *
  * \return \ref status_t
  */
-RCSW_API status_t utils_hash_djb(const void* data,
-                                 size_t      len,
-                                 uint32_t*   hash) RCSW_PURE;
+RCSW_API status_t utils_hash_djb(const void* data, size_t len, uint32_t* hash);
 
 END_C_DECLS

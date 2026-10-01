@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Fixed-size matrix.
  */
 
 #pragma once
@@ -13,8 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <math.h>
-
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 
@@ -187,8 +190,9 @@ static inline bool_t matrix_issquare(const struct matrix* const matrix) {
 /**
  * \brief Initialize a static matrix.
  *
- * \param matrix_in An application allocated handle for the static matrix. Can
- *                  be NULL if \ref RCSW_NOALLOC_HANDLE is passed as a flag..
+ * \param matrix_in Caller storage for the handle, used only if \ref
+ *                  RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                  otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *

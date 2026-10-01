@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -30,20 +30,27 @@
  * Private API
  ******************************************************************************/
 /*
+ * The element in physical slot \p slot (0 <= slot < max_elts), regardless of
+ * whether it holds live data.
+ */
+static void* rbuffer_slot(const struct rbuffer* const rb, size_t slot) {
+  return (uint8_t*)rb->elements + (slot * rb->elt_size);
+}
+
+/*
  * cursor stores the logical offset from rb->start (i.e. how many elements have
  * been consumed), cast to void*. This avoids storing a signed index and keeps
  * the wrap-around arithmetic in one place.
  */
 static void* rbuffer_iter_next_impl(struct ds_iterator* iter) {
   struct rbuffer* rb  = iter->container;
-  size_t          off = (size_t)iter->cursor;
+  size_t          off = iter->cursor.idx;
 
   if (off >= rb->current) {
     return NULL;
   }
-  size_t idx   = (rb->start + off) % rb->max_elts;
-  iter->cursor = (void*)(off + 1);
-  return rbuffer_data_get(rb, idx);
+  iter->cursor.idx = off + 1;
+  return rbuffer_data_get(rb, off);
 } /* rbuffer_iter_next_impl() */
 
 const struct ds_ops rbuffer_iter_ops = {
@@ -61,15 +68,16 @@ struct rbuffer* rbuffer_init(struct rbuffer*                    rb_in,
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts > 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct rbuffer* rb = rcsw_alloc(rb_in,
-                                  sizeof(struct rbuffer),
-                                  params->flags & RCSW_NOALLOC_HANDLE);
+  struct rbuffer* rb =
+    rcsw_alloc(rb_in,
+               sizeof(struct rbuffer),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(rb);
   rb->flags = params->flags;
 
   rb->elements = rcsw_alloc(params->elements,
                             params->max_elts * params->elt_size,
-                            params->flags & RCSW_NOALLOC_DATA);
+                            params->flags & (RCSW_NOALLOC_DATA | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(rb->elements);
 
@@ -110,7 +118,7 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
   }
 
   /* add element */
-  ds_elt_copy(rbuffer_data_get(rb, (rb->start + rb->current) % rb->max_elts),
+  ds_elt_copy(rbuffer_slot(rb, (rb->start + rb->current) % rb->max_elts),
               e,
               rb->elt_size);
 
@@ -125,21 +133,21 @@ status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
 } /* rbuffer_add() */
 
 void* rbuffer_data_get(const struct rbuffer* const rb, size_t idx) {
-  RCSW_FPC_NV(NULL, rb != NULL);
+  RCSW_FPC_NV(NULL, rb != NULL, idx < rb->current);
 
-  idx = idx % rb->max_elts;
-  return (uint8_t*)rb->elements + (idx * rb->elt_size);
+  /* idx is logical: 0 is the front (oldest) element */
+  return rbuffer_slot(rb, (rb->start + idx) % rb->max_elts);
 } /* rbuffer_data_get() */
 
 status_t rbuffer_serve_front(const struct rbuffer* const rb, void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, e != NULL, !rbuffer_isempty(rb));
-  ds_elt_copy(e, rbuffer_data_get(rb, rb->start), rb->elt_size);
+  ds_elt_copy(e, rbuffer_slot(rb, rb->start), rb->elt_size);
   return OK;
 } /* rbuffer_serve_front() */
 
 void* rbuffer_front(const struct rbuffer* const rb) {
   RCSW_FPC_NV(NULL, rb != NULL, !rbuffer_isempty(rb));
-  return rbuffer_data_get(rb, rb->start);
+  return rbuffer_slot(rb, rb->start);
 } /* rbuffer_serve_front() */
 
 status_t rbuffer_remove(struct rbuffer* const rb, void* const e) {
@@ -156,33 +164,24 @@ status_t rbuffer_remove(struct rbuffer* const rb, void* const e) {
 } /* rbuffer_remove() */
 
 int rbuffer_index_query(struct rbuffer* const rb, const void* const e) {
-  RCSW_FPC_NV(ERROR, rb != NULL, rb->cmpe != NULL, e != NULL);
+  RCSW_FPC_NV(-1, rb != NULL, e != NULL);
+  ER_ASSERT(NULL != rb->cmpe, "rbuffer_index_query() requires cmpe()");
 
-  size_t wrap = 0;
-  size_t i    = rb->start;
-  int    rval = ERROR;
-
-  while (!wrap || (i != rb->start)) {
-    if (rb->cmpe(e, rbuffer_data_get(rb, i)) == 0) {
-      rval = (int)i;
-      break;
+  /* Search live elements from the front; the result is a logical index, as
+   * accepted by rbuffer_data_get(). */
+  for (size_t off = 0; off < rb->current; ++off) {
+    if (rb->cmpe(e, rbuffer_data_get(rb, off)) == 0) {
+      return (int)off;
     }
-    /* wrapped around to index 0 */
-    if (i + 1 == rb->max_elts) {
-      wrap = 1;
-      i    = 0;
-    } else {
-      i++;
-    }
-  } /* while() */
-
-  return rval;
+  } /* for(off..) */
+  return -1;
 } /* rbuffer_index_query() */
 
 status_t rbuffer_clear(struct rbuffer* const rb) {
   RCSW_FPC_NV(ERROR, rb != NULL);
 
-  memset(rb->elements, 0, rb->current * rb->elt_size);
+  /* Live elements may wrap around the end, so zero the whole buffer */
+  memset(rb->elements, 0, rb->max_elts * rb->elt_size);
   rb->current = 0;
   rb->start   = 0;
 
@@ -194,7 +193,7 @@ status_t rbuffer_map(struct rbuffer* const rb, void (*f)(void* e)) {
 
   size_t count = 0;
   while (count < rb->current) {
-    f(rbuffer_data_get(rb, (rb->start + count++) % rb->max_elts));
+    f(rbuffer_data_get(rb, count++));
   } /* for() */
 
   return OK;
@@ -207,7 +206,7 @@ status_t rbuffer_inject(struct rbuffer* const rb,
 
   size_t count = 0;
   while (count < rb->current) {
-    f(rbuffer_data_get(rb, (rb->start + count++) % rb->max_elts), result);
+    f(rbuffer_data_get(rb, count++), result);
   }
 
   return OK;
@@ -222,13 +221,10 @@ void rbuffer_print(struct rbuffer* const rb) {
     DPRINTF(RCSW_ER_MODNAME " : < Empty >\n");
     return;
   }
-  if (rb->printe == NULL) {
-    DPRINTF(RCSW_ER_MODNAME " : < No print function >\n");
-    return;
-  }
+  ER_ASSERT(NULL != rb->printe, "rbuffer_print() requires printe()");
 
   for (size_t i = 0; i < rb->current; ++i) {
-    rb->printe(rbuffer_data_get(rb, (rb->start + i) % rb->max_elts));
+    rb->printe(rbuffer_data_get(rb, i));
   } /* for() */
   DPRINTF("\n");
 } /* rbuffer_print() */
@@ -238,7 +234,7 @@ struct ds_iterator* rbuffer_iter_init(struct ds_iterator* iter,
                                       bool_t (*classify)(void* e)) {
   RCSW_FPC_NV(NULL, iter != NULL, rb != NULL);
 
-  iter->cursor = (void*)(size_t)0; /* start at logical offset 0 */
+  iter->cursor.idx = 0; /* start at logical offset 0 */
   return ds_iter_init(iter, rb, ITER_FORWARD, &rbuffer_iter_ops, classify);
 } /* rbuffer_iter_init() */
 

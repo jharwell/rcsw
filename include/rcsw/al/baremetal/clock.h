@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup al
+ *
+ * \brief Clock interface on bare-metal targets.
  */
 
 #pragma once

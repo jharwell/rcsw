@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -16,7 +16,8 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/al/types.h"
+#include <stddef.h>
+
 #include "rcsw/core/compilers.h"
 
 /*******************************************************************************
@@ -37,7 +38,7 @@ BEGIN_C_DECLS
  * \param e      The element to search for.
  * \param cmpe   Comparison callback. Must return <0, 0, or >0 per the
  *               standard comparator convention.
- * \param el_size Size of each element in bytes.
+ * \param elt_size Size of each element in bytes.
  * \param low    Lowest index to consider (typically 0).
  * \param high   Highest index to consider (typically max index of array).
  *
@@ -46,7 +47,7 @@ BEGIN_C_DECLS
 RCSW_API int bsearch_iter(const void* a,
                           const void* e,
                           int (*cmpe)(const void* e1, const void* e2),
-                          size_t el_size,
+                          size_t elt_size,
                           int    low,
                           int    high);
 
@@ -59,7 +60,7 @@ RCSW_API int bsearch_iter(const void* a,
  * \warning The array must be sorted in the order defined by \p cmpe.
  *          Passing an unsorted array produces undefined results.
  *
- * \param arr     The array to search.
+ * \param in     The array to search.
  * \param e       The element to search for.
  * \param cmpe    Comparison callback. Must return <0, 0, or >0 per the
  *                standard comparator convention.
@@ -69,7 +70,7 @@ RCSW_API int bsearch_iter(const void* a,
  *
  * \return Index of the matching element, or -1 if not found or on error.
  */
-RCSW_API int bsearch_rec(const void* arr,
+RCSW_API int bsearch_rec(const void* in,
                          const void* e,
                          int (*cmpe)(const void* e1, const void* e2),
                          size_t elt_size,

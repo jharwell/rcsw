@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup tool
+ *
+ * \brief Grind: execution timing and counting instrumentation.
  */
 
 #pragma once
@@ -57,7 +59,7 @@
 /**
  * \brief Compute all measurements within an absolute time interval.
  *
- * The grinder timeout will be used. \see RCSW_GRIND_AUTO_RESET for what
+ * The grinder timeout will be used. \see RCSW_GRIND_RESET_AUTO for what
  * happens on a timeout.
  *
  * This behavior is useful for gathering timing metrics on a small piece of a
@@ -134,6 +136,7 @@
 /*******************************************************************************
  * Type Definitions
  ******************************************************************************/
+BEGIN_C_DECLS
 /**
  * \brief The type of "grinding" to do; sets the domain for a \ref grinder.
  */
@@ -144,7 +147,7 @@ enum grind_mode {
    * All timing related flags are ignored in this mode. All stats must be
    * reported/cleared manually for each grindee.
    */
-  RCSW_GRIND_COUNT,
+  RCSW_GRIND_MODE_COUNT,
 
   /**
    * Enable usage of \ref grind_capture_start() / \ref grind_capture_end() to
@@ -154,16 +157,16 @@ enum grind_mode {
    * section between \ref grind_capture_start() and \ref grind_capture_end() are
    * also captured.
    */
-  RCSW_GRIND_DURATION,
+  RCSW_GRIND_MODE_DURATION,
 
   /**
    * Enable usage of \ref grind_capture_tick() to capture ticks.
    *
-   * Ticks are captured by tick= last tick - current time; this is the same as
+   * Ticks are captured by tick = current time - last tick; this is the same as
    * the period of the thing that is ticking.  Execution counts of \ref
    * grind_capture_tick() are also captured.
    */
-  RCSW_GRIND_PERIOD,
+  RCSW_GRIND_MODE_PERIOD,
 };
 
 /*******************************************************************************
@@ -192,9 +195,10 @@ struct grindee {
   bool_t full;
 
   /**
-   * Sample table for grindee; all data stored here.
+   * Sample table for grindee; all data stored here. Timing datapoints are in
+   * nanoseconds; 64 bits so that they do not wrap on 32-bit targets.
    */
-  size_t* table;
+  uint64_t* table;
 
   /** Size of sample table */
   size_t tsize;
@@ -208,9 +212,9 @@ struct grindee {
   union grind_mode_impl {
     struct {
       /**
-       * Temporary variable for holding accumulated execution time.
+       * Temporary variable for holding accumulated execution time (ns).
        */
-      size_t accum;
+      uint64_t accum;
 
       /** Duration start time. */
       struct timespec start;
@@ -233,9 +237,9 @@ struct grindee {
       bool_t first;
 
       /**
-       * Temporary variable for holding accumulated execution time.
+       * Temporary variable for holding accumulated execution time (ns).
        */
-      size_t accum;
+      uint64_t accum;
     } tick;
   } domain;
 };
@@ -346,14 +350,14 @@ struct grinder {
  * This function initializes the statistics global data structure to gather
  * statistics on all stat instances encountered during execution.
  *
- * \param rb_in An application allocated handle for the grinder. Can be NULL,
- *        depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *        grind_config.flags.
+ * \param grind_in Caller storage for the handle, used only if \ref
+ *                 RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                 otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \return The initialized grinder, or NULL if an error occurred.
  */
-RCSW_API struct grinder* grind_init(struct grinder*                  grind_in,
-                                    const struct grind_config* const params);
+RCSW_API struct grinder* grind_init(struct grinder*            grind_in,
+                                    const struct grind_config* config);
 
 /**
  * \brief Shutdown grinding.
@@ -361,7 +365,7 @@ RCSW_API struct grinder* grind_init(struct grinder*                  grind_in,
  * Any further use of the API is undefined until \ref grind_init() is called
  * again.
  */
-RCSW_API void grind_destroy(struct grinder* const the_grinder);
+RCSW_API void grind_destroy(struct grinder* the_grinder);
 
 /**
  * \brief Mark the start of a single [begin, end] datapoint for a \ref grindee.
@@ -371,8 +375,8 @@ RCSW_API void grind_destroy(struct grinder* const the_grinder);
  * \return \ref status_t
  *
  */
-RCSW_API status_t grind_capture_start(struct grinder* const the_grinder,
-                                      const char* const     name);
+RCSW_API status_t grind_capture_start(struct grinder* the_grinder,
+                                      const char*     name);
 
 /**
  * \brief Mark the end of a single [begin, end] datapoint for a \ref grindee.
@@ -381,8 +385,8 @@ RCSW_API status_t grind_capture_start(struct grinder* const the_grinder,
  *
  * \return \ref status_t
  */
-RCSW_API status_t grind_capture_end(struct grinder* const the_grinder,
-                                    const char* const     name);
+RCSW_API status_t grind_capture_end(struct grinder* the_grinder,
+                                    const char*     name);
 
 /**
  * \brief Increment the execution count for the \ref grindee.
@@ -391,8 +395,8 @@ RCSW_API status_t grind_capture_end(struct grinder* const the_grinder,
  *
  * \return \ref status_t
  */
-RCSW_API status_t grind_capture_count(struct grinder* const the_grinder,
-                                      const char* const     name);
+RCSW_API status_t grind_capture_count(struct grinder* the_grinder,
+                                      const char*     name);
 
 /**
  * \brief Capture the current time/tick for the \ref grindee.
@@ -401,8 +405,8 @@ RCSW_API status_t grind_capture_count(struct grinder* const the_grinder,
  *
  * \return \ref status_t
  */
-RCSW_API status_t grind_capture_tick(struct grinder* const the_grinder,
-                                     const char* const     name);
+RCSW_API status_t grind_capture_tick(struct grinder* the_grinder,
+                                     const char*     name);
 
 /**
  * \brief Report stats for all pending instances
@@ -410,7 +414,7 @@ RCSW_API status_t grind_capture_tick(struct grinder* const the_grinder,
  * \note Should only need to be called if \ref RCSW_GRIND_REPORT_AUTO was not
  * passed.
  */
-RCSW_API void grind_report_all(const struct grinder* const the_grinder);
+RCSW_API void grind_report_all(const struct grinder* the_grinder);
 
 /**
  * \brief Report statistics for a \ref grindee by name.
@@ -420,8 +424,8 @@ RCSW_API void grind_report_all(const struct grinder* const the_grinder);
  *
  * \return \ref status_t
  */
-RCSW_API status_t grind_report(const struct grinder* const the_grinder,
-                               struct grindee* const       fm);
+RCSW_API status_t grind_report(const struct grinder* the_grinder,
+                               struct grindee*       grindee);
 
 /**
  * \brief Report utilization results to stdout.
@@ -431,47 +435,53 @@ RCSW_API status_t grind_report(const struct grinder* const the_grinder,
  *
  * \return \ref status_t
  */
-RCSW_API status_t
-grind_report_utilization(const struct grinder* const the_grinder);
+RCSW_API status_t grind_report_utilization(const struct grinder* the_grinder);
 
 /**
  * \brief Report utilization results to a buffer.
  *
- * Utilization is reported in either in relative or absolute time, depending on
- * flags, and the result written to the buffer, which MUST have enough space.
+ * Same content as \ref grind_report_utilization(), written to \p buf with
+ * snprintf() semantics: at most \p len bytes (including the terminating NUL)
+ * are written, and the output is always NUL-terminated if \p len > 0.
  *
- * \return # bytes written to \p buf or -1 on ERROR.
+ * \param the_grinder The grinder to report on.
+ * \param buf The buffer to write to. Can be NULL if \p len is 0.
+ * \param len Size of \p buf in bytes.
+ *
+ * \return The number of characters the full report requires, excluding the
+ * terminating NUL. If this is >= \p len, the output was truncated; call again
+ * with a buffer of at least the returned value + 1. -1 on ERROR.
  */
-RCSW_API int grind_report_utilization_buf(const struct grinder* const the_grinder,
-                                          char* const                 buf);
+RCSW_API int grind_report_utilization_buf(const struct grinder* the_grinder,
+                                          char*                 buf,
+                                          size_t                len);
 
 /**
  * \brief Reset statistics for all grindees.
  */
-RCSW_API void grind_reset_all(struct grinder* const the_grinder);
+RCSW_API void grind_reset_all(struct grinder* the_grinder);
 
 /**
  * \brief Reset statistics for a single  \ref grindee.
  */
-RCSW_API void grind_reset(struct grinder* const the_grinder,
-                          struct grindee* const grindee);
+RCSW_API void grind_reset(struct grinder* the_grinder, struct grindee* grindee);
 
 /**
  * \brief Given the name of a grindee, get the index it maps to.
  *
  * \return The index the grindee module name maps to, or -1 on ERROR
  */
-RCSW_API int grind_lookup(const struct grinder* const the_grinder,
-                          const char* const           name) RCSW_PURE;
+RCSW_API int grind_lookup(const struct grinder* the_grinder,
+                          const char*           name) RCSW_PURE;
 
 /**
  * \brief Sum ALL \ref grindee datapoints
  *
  * Compute the sum of all datapoints for all grindees. It is only a true total
- * if the resolution for grindees is 1. Otherwis it is a sum of the averages
+ * if the resolution for grindees is 1. Otherwise it is a sum of the averages
  * according to the resolution parameter.
  */
-RCSW_API size_t grind_sum_all(const struct grinder* const the_grinder);
+RCSW_API uint64_t grind_sum_all(const struct grinder* the_grinder);
 
 /**
  * \brief Get utilization for a \ref grindee.
@@ -488,5 +498,7 @@ RCSW_API size_t grind_sum_all(const struct grinder* const the_grinder);
  *
  * \return The utilization, or -1 on ERROR.
  */
-RCSW_API double grind_get_utilization(struct grinder*   the_grinder,
-                                      const char* const name);
+RCSW_API double grind_get_utilization(struct grinder* the_grinder,
+                                      const char*     name);
+
+END_C_DECLS

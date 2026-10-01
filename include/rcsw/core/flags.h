@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup core
+ *
+ * \brief Flags shared by every RCSW module.
  */
 
 #pragma once
@@ -32,7 +36,7 @@
 #define RCSW_NOALLOC_HANDLE UINT32_C(0x1)
 
 /**
- * \brief Declare that the space for datablocks/data the THING will directly
+ * \brief Declare that the space for the data (elements) the module will directly
  * manage is provided by the application.
  *
  * If passed, you must provide a handle to the application-allocated space as a
@@ -44,7 +48,7 @@
 #define RCSW_NOALLOC_DATA UINT32_C(0x2)
 
 /**
- * \brief Declare that space for the metadata of the THING needed to manage the
+ * \brief Declare that space for the metadata the module needs to manage the
  * actual data is provided by the application.
  *
  * If passed, you must provide a handle to the application-allocated space as a

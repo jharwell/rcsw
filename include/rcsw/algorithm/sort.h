@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -28,51 +28,40 @@ BEGIN_C_DECLS
 /**
  * \brief Sort an array using recursive quicksort.
  *
- * Average case O(n log n); worst case O(n²). The pivot is always the
- * lowest-index element in the current partition, so already-sorted or
- * nearly-sorted input degrades to O(n²). If your data may be pre-sorted,
- * prefer \ref mergesort_rec() or \ref mergesort_iter(), which guarantee
- * O(n log n).
- *
- * \warning Passing already-sorted or nearly-sorted input will degrade
- *          performance to O(n²) due to the fixed first-element pivot
- *          strategy.
+ * Average case O(n log n). The pivot is the median of the first, middle, and
+ * last elements, and partitioning splits runs of equal keys evenly, so sorted,
+ * reverse-sorted, and all-equal input are all O(n log n); O(n²) is possible
+ * only for adversarially constructed input. Not stable. Recursion is only into
+ * the smaller partition, so recursion depth is at most log2(n).
  *
  * \param a         The input array.
  * \param min_index Starting index (inclusive).
  * \param max_index Ending index (inclusive).
- * \param el_size   Size of each element in bytes.
+ * \param elt_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
 RCSW_API status_t qsort_rec(void*  a,
                             int    min_index,
                             int    max_index,
-                            size_t el_size,
+                            size_t elt_size,
                             int (*cmpe)(const void* const e1,
                                         const void* const e2));
 
 /**
  * \brief Sort an array using iterative quicksort.
  *
- * Average case O(n log n); worst case O(n²). Uses a VLA-based auxiliary
- * stack sized to the input range (max_index elements); avoid very large
- * inputs on constrained stacks. The pivot is always the lowest-index
- * element, so already-sorted input degrades to O(n²) for the same reason
- * as \ref qsort_rec(). If your data may be pre-sorted, prefer \ref
- * mergesort_rec() or \ref mergesort_iter().
- *
- * \warning Passing already-sorted or nearly-sorted input will degrade
- *          performance to O(n²) due to the fixed first-element pivot
- *          strategy.
+ * Same pivot selection, partitioning, and complexity as \ref qsort_rec(), but
+ * uses a fixed-size explicit stack instead of recursion: the smaller partition
+ * is always processed first, so at most log2(n) partitions are pending.
  *
  * \param a         Array to sort.
  * \param max_index Maximum index to sort up to (i.e., sorts [0, max_index]).
- * \param el_size   Size of each element in bytes.
+ * \param elt_size   Size of each element in bytes.
  * \param cmpe      Comparison function for elements.
  */
 RCSW_API status_t qsort_iter(void*  a,
                              int    max_index,
-                             size_t el_size,
+                             size_t elt_size,
                              int (*cmpe)(const void* const e1,
                                          const void* const e2));
 
@@ -98,8 +87,7 @@ RCSW_API status_t radix_sort(size_t* arr,
  *
  * O(n²) average and worst case. Only appropriate for very small arrays or
  * arrays that are known to be nearly sorted. For general use prefer \ref
- * qsort_rec(), \ref qsort_iter(), \ref mergesort_rec(), or \ref
- * mergesort_iter().
+ * qsort_rec() or \ref qsort_iter().
  *
  * \param arr      The array to sort.
  * \param n_elts   Number of elements in the array.

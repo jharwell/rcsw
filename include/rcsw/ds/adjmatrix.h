@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Adjacency matrix representation of a graph.
  */
 
 #pragma once
@@ -12,9 +16,12 @@
  * Includes
  ******************************************************************************/
 #include <math.h>
+#include <string.h>
 
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
-#include "rcsw/ds/ds.h"
 #include "rcsw/ds/matrix.h"
 #include "rcsw/utils/numeric.h"
 
@@ -67,9 +74,9 @@ struct adjmatrix_config {
  * directed/undirected, per configuration. However, you can't have an undirected
  * graph that is weighted.
  *
- * Sentinel values in the matrix used for detecting if an edge exists are 0 for
- * undirected graphs, and NAN for directed graphs, so don't use those values for
- * valid edges (though why would you?).
+ * Sentinel values in the matrix used for detecting if an edge exists are NAN
+ * for weighted graphs and 0 for unweighted graphs, so don't use those values
+ * for valid edges.
  *
  * Pros: Removing edges takes O(1). Queries like "is there an edge from vertex u
  * to vertex v" are efficient and can be done in O(1).
@@ -139,11 +146,11 @@ static inline void* adjmatrix_access(const struct adjmatrix* const matrix,
 /**
  * \brief Get the # of bytes needed for an adjacency matrix.
  *
- * \param n_vertices # edges in the graph to be represented.
+ * \param n_vertices # vertices in the graph to be represented.
  * \param is_weighted Is the graph weighted or not? Weighted graphs use doubles
  * as the edge weights, and unweighted graphs use ints.
  *
- * \return
+ * \return # total bytes required.
  */
 static inline size_t adjmatrix_element_space(size_t n_vertices,
                                              bool_t is_weighted) {
@@ -158,8 +165,6 @@ static inline size_t adjmatrix_element_space(size_t n_vertices,
  * \param matrix The matrix handle.
  * \param u Vertex #1.
  * \param v Vertex #2.
- *
- * \return \ref bool_t.
  */
 static inline bool_t adjmatrix_edge_query(const struct adjmatrix* const matrix,
                                           size_t                        u,
@@ -169,7 +174,9 @@ static inline bool_t adjmatrix_edge_query(const struct adjmatrix* const matrix,
               u < matrix->n_vertices,
               v < matrix->n_vertices);
   if (matrix->is_weighted) {
-    return (!isnan(*(double*)adjmatrix_access(matrix, u, v)));
+    double w;
+    memcpy(&w, adjmatrix_access(matrix, u, v), sizeof(w)); /* may be unaligned */
+    return !isnan(w);
   }
   return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->elt_size);
 }
@@ -201,8 +208,6 @@ static inline void adjmatrix_print(const struct adjmatrix* const matrix) {
  * edges.
  *
  * \param matrix The matrix handle.
- *
- * \return \ref bool_t.
  */
 static inline bool_t adjmatrix_isempty(const struct adjmatrix* matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
@@ -224,9 +229,9 @@ static inline status_t adjmatrix_transpose(struct adjmatrix* const matrix) {
 /**
  * \brief Initialize an adjacency matrix.
  *
- * \param matrix_in An application allocated handle for the matrix. Can be NULL,
- *                  depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *                  adjmatrix_config.flags or not.
+ * \param matrix_in Caller storage for the handle, used only if \ref
+ *                  RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                  otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params Initialization parameters.
  *

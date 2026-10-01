@@ -34,9 +34,9 @@ cpmaddpackage(
   GIT_REPOSITORY
   https://github.com/jharwell/libra.git
   VERSION
-  0.13.13
+  0.13.16
   GIT_TAG
-  v0.13.13-dev.7
+  v0.13.16-dev.4
   DOWNLOAD_ONLY
   YES)
 
@@ -55,7 +55,7 @@ libra_extract_version()
 
 project(
   rcsw
-  LANGUAGES C CXX
+  LANGUAGES C
   VERSION ${LIBRA_PROJECT_VERSION_NUMERIC})
 
 message(

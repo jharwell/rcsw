@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Hashmap with fixed-size buckets.
  */
 
 #pragma once
@@ -11,6 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/ds/darray.h"
 #include "rcsw/ds/ds.h"
 
@@ -23,6 +30,8 @@
 /*******************************************************************************
  * Types
  ******************************************************************************/
+struct allocm_entry;
+
 /**
  * \brief Hashmap initialization parameters.
  */
@@ -77,16 +86,16 @@ struct hashmap_config {
  * Provides detailed info about how well the hashmap is working.
  */
 struct hashmap_stats {
-  size_t n_buckets;     /// Number of buckets in hashmap
-  size_t n_nodes;       /// Number of hashnodes in hashmap. Updated on add/remove.
-  size_t n_adds;        /// Number of adds to hashmap since last reset
-  size_t n_addfails;    /// Number of failures to add to hashmap since last reset
-  size_t n_collisions;  /// Number of collisions when adding since last reset
-  double collision_ratio;  /// Ratio of colliding/non-colliding adds
-  bool_t sorted;           /// Is the hashmap sorted?
-  double max_util;         /// Max bucket utilization
-  double min_util;         /// Min bucket utilization
-  double average_util;     /// Average bucket utilization
+  size_t n_buckets;   ///< Number of buckets in hashmap
+  size_t n_nodes;     ///< Number of hashnodes in hashmap. Updated on add/remove.
+  size_t n_adds;      ///< Number of adds to hashmap since last reset
+  size_t n_addfails;  ///< Number of failures to add to hashmap since last reset
+  size_t n_collisions;     ///< Number of collisions when adding since last reset
+  double collision_ratio;  ///< Ratio of colliding/non-colliding adds
+  bool_t sorted;           ///< Is the hashmap sorted?
+  double max_util;         ///< Max bucket utilization
+  double min_util;         ///< Min bucket utilization
+  double average_util;     ///< Average bucket utilization
 };
 
 /**
@@ -197,7 +206,7 @@ struct hashmap {
  * As you woulde xpect for an associative array element, this is a key-value
  * pair
  *
- * Must be packed and aligned to the same size as \ref ptr_t so that casts from
+ * Must be packed and aligned to the same size as \ref dptr_t so that casts from
  * \ref hashnode.data are safe on all targets.
  */
 struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) hashnode {
@@ -265,8 +274,9 @@ static inline size_t hashmap_meta_space(size_t n_buckets) {
 /**
  * \brief Initialize a hashmap.
  *
- * \param map_in The handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \ref hashmap_config.flags.
+ * \param map_in Caller storage for the handle, used only if \ref
+ *               RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *               otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params Initialization parameters
  *
@@ -309,7 +319,7 @@ RCSW_API status_t hashmap_clear(struct hashmap* map);
  * \param map The hashmap handle.
  * \param key Key to match with
  *
- * \return: The data, or NULL if an error occurred or the data was not found.
+ * \return The data, or NULL if an error occurred or the data was not found.
  */
 RCSW_API void* hashmap_data_get(struct hashmap* map, const void* key);
 

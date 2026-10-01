@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -13,14 +13,56 @@
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "list")
 #define RCSW_ER_MODID LOG4CL_DS_LLIST
+#include "ds/llist_node.h"
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/iter.h"
-#include "rcsw/ds/llist_node.h"
 #include "rcsw/er/client.h"
 
 /******************************************************************************
  * Private API
  ******************************************************************************/
+/*
+ * Merge sublists, taking the smaller item from each until you have finished
+ * iterating through p1 AND either you have finished iterating through p2, or p2
+ * has become NULL.
+ */
+/* NOLINTNEXTLINE(readability-function-size) */
+static void mergesort_rec_merge_sublists(struct llist_node*  p1,
+                                         int                 p1_size,
+                                         struct llist_node** p2,
+                                         int                 p2_size,
+                                         struct llist_node** head,
+                                         struct llist_node** tail,
+                                         int (*cmpe)(const void* const e1,
+                                                     const void* const e2),
+                                         bool_t isdouble) {
+  while (p1_size > 0 || (p2_size > 0 && *p2 != NULL)) {
+    struct llist_node* next_el = NULL;
+    bool_t             take_p1 = (p1_size > 0) && (p2_size == 0 || NULL == *p2 ||
+                                       cmpe(p1->data, (*p2)->data) <= 0);
+    if (take_p1) {
+      next_el = p1;
+      p1      = p1->next;
+      p1_size--;
+    } else {
+      next_el = *p2;
+      *p2     = (*p2)->next;
+      p2_size--;
+    }
+
+    /* add the next element to the merged list */
+    if (*tail) {
+      (*tail)->next = next_el;
+    } else { /* sorted list is currently empty */
+      *head = next_el;
+    }
+    if (isdouble) {
+      next_el->prev = *tail;
+    }
+    *tail = next_el; /* advance the tail to the inserted element */
+  } /* while() */
+}
+
 /**
  * \brief Sort a linked list using recursive mergesort.
  *
@@ -40,9 +82,6 @@ static struct llist_node* mergesort_rec(struct llist_node* list,
   struct llist_node* p1 = NULL;
   /* secondary pointer advanced along always in front of p1 */
   struct llist_node* p2 = NULL;
-
-  /* next element to be added to sorted list */
-  struct llist_node* next_el = NULL;
 
   /* the unsorted list */
   struct llist_node* head;
@@ -76,9 +115,10 @@ static struct llist_node* mergesort_rec(struct llist_node* list,
 
     int n_merges = 0; /* number of merges completed in a pass */
 
-    /* As long as p1 != NULL the end of the list has not yet been reached, so
-     * the
-     * pass continues. Threadfall is a terrible thing. */
+    /*
+     * As long as p1 != NULL the end of the list has not yet been reached, so
+     * the pass continues. Threadfall is a terrible thing.
+     */
     while (p1) {
       n_merges++;
       p2      = p1;
@@ -96,49 +136,21 @@ static struct llist_node* mergesort_rec(struct llist_node* list,
         }
       } /* for() */
 
-      /* This assignment is unconditional, though it only matters if p2 != NULL
+      /*
+       * This assignment is unconditional, though it only matters if p2 != NULL
        * (it didn't fall off the end of the list). p2 can be NULL if the list
-       * contained an odd number of items. */
+       * contained an odd number of items.
+       */
       p2_size = merge_size;
 
-      /* Merge sublists, taking the smaller item from each until you have
-       * finished
-       * iterating through p1 AND either you have finished iterating through p2,
-       * or
-       * p2 has become NULL. */
-      while (p1_size > 0 || (p2_size > 0 && p2 != NULL)) {
-        if (p1_size == 0) { /* p1 is empty; next_el comes from p2 */
-          next_el = p2;
-          p2      = p2->next;
-          p2_size--;
-        } else if (p2_size == 0 || !p2) {
-          /* p2 is empty; next_el comes from p1 */
-          next_el = p1;
-          p1      = p1->next;
-          p1_size--;
-        } else if (cmpe(p1->data, p2->data) <= 0) {
-          /* p1 <= p2, so next_el comes from p1 */
-          next_el = p1;
-          p1      = p1->next;
-          p1_size--;
-        } else {
-          /* p2 > p1; next_el comes from p2 */
-          next_el = p2;
-          p2      = p2->next;
-          p2_size--;
-        }
-
-        /* add the next element to the merged list */
-        if (tail) {
-          tail->next = next_el;
-        } else { /* sorted list is currently empty */
-          head = next_el;
-        }
-        if (isdouble) {
-          next_el->prev = tail;
-        }
-        tail = next_el; /* advance the tail to the inserted element */
-      } /* while() (end of merge iteration) */
+      mergesort_rec_merge_sublists(p1,
+                                   p1_size,
+                                   &p2,
+                                   p2_size,
+                                   &head,
+                                   &tail,
+                                   cmpe,
+                                   isdouble);
 
       p1 = p2;
     } /* while(p) (end of merge) */
@@ -205,13 +217,13 @@ static struct llist_node* mergesort_iter(struct llist_node* list,
 
   /* merge sublists */
   while (list || right) {
-    if (!right) { /* fell off 2nd sublist */
-      next = list;
-      list = list->next;
-    } else if (!list) { /* reached end of 1st sublist */
-      next  = right;
-      right = right->next;
-    } else if (cmpe(list->data, right->data) <= 0) {
+    /*
+     * Take from the 1st sublist unless it's exhausted; otherwise from it if the
+     * 2nd is exhausted or the 1st's element sorts first.
+     */
+    bool_t take_left =
+      (NULL != list) && (NULL == right || cmpe(list->data, right->data) <= 0);
+    if (take_left) {
       next = list;
       list = list->next;
     } else {
@@ -232,20 +244,20 @@ static struct llist_node* mergesort_iter(struct llist_node* list,
 }
 
 static void* llist_iter_next_impl(struct ds_iterator* iter) {
-  struct llist_node* node = iter->cursor;
+  struct llist_node* node = iter->cursor.node;
   if (node == NULL) {
     return NULL;
   }
-  iter->cursor = node->next;
+  iter->cursor.node = node->next;
   return node->data;
 } /* llist_iter_next_impl() */
 
 static void* llist_iter_prev_impl(struct ds_iterator* iter) {
-  struct llist_node* node = iter->cursor;
+  struct llist_node* node = iter->cursor.node;
   if (node == NULL) {
     return NULL;
   }
-  iter->cursor = node->prev;
+  iter->cursor.node = node->prev;
   return node->data;
 } /* llist_iter_prev_impl() */
 
@@ -264,9 +276,10 @@ struct llist* llist_init(struct llist*                    list_in,
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts != 0, params->elt_size > 0);
   RCSW_ER_MODULE_INIT();
 
-  struct llist* list = rcsw_alloc(list_in,
-                                  sizeof(struct llist),
-                                  params->flags & RCSW_NOALLOC_HANDLE);
+  struct llist* list =
+    rcsw_alloc(list_in,
+               sizeof(struct llist),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(list);
   list->current = 0;
   list->flags   = params->flags;
@@ -280,7 +293,8 @@ struct llist* llist_init(struct llist*                    list_in,
     /* initialize free list of llist_nodes */
     list->space.node_map = (struct allocm_entry*)params->meta;
     list->space.nodes =
-      (struct llist_node*)(list->space.node_map + params->max_elts);
+      (struct llist_node*)((uint8_t*)list->space.node_map +
+                           allocm_map_bytes((size_t)params->max_elts));
     allocm_init(list->space.node_map, (size_t)params->max_elts);
   }
 
@@ -290,8 +304,10 @@ struct llist* llist_init(struct llist*                    list_in,
              "Cannot have uncapped list length with RCSW_NOALLOC_DATA");
 
     /* initialize free list of data elements */
-    list->space.db_map     = (struct allocm_entry*)params->elements;
-    list->space.datablocks = (dptr_t*)(list->space.db_map + params->max_elts);
+    list->space.db_map = (struct allocm_entry*)params->elements;
+    list->space.datablocks =
+      (dptr_t*)((uint8_t*)list->space.db_map +
+                allocm_map_bytes((size_t)params->max_elts));
     allocm_init(list->space.db_map, (size_t)params->max_elts);
   }
 
@@ -357,16 +373,10 @@ status_t llist_clear(struct llist* const list) {
 status_t llist_remove(struct llist* const list, const void* const e) {
   RCSW_FPC_NV(ERROR, list != NULL, e != NULL);
 
-  /* can't remove from an empty list */
-  if (llist_isempty(list)) {
-    ER_ERR("list is empty: cannot remove element");
-    errno = EINVAL;
-    return ERROR;
-  }
-
   struct llist_node* node = llist_node_query(list, e);
-  if (node == NULL) { /* node not in list: nothing to do */
-    return OK;
+  if (node == NULL) { /* not in the list (or the list is empty) */
+    errno = ENOENT;
+    return ERROR;
   }
   return llist_delete(list, node, NULL);
 } /* llist_remove() */
@@ -397,10 +407,40 @@ status_t llist_delete(struct llist* const list,
   return OK;
 } /* llist_delete() */
 
+/**
+ * \brief Link \p node into a list kept sorted by cmpe(), after any equal
+ * elements, in O(n).
+ */
+static void llist_link_sorted(struct llist* const list, struct llist_node* node) {
+  struct llist_node* pos = list->first;
+  while (pos != NULL && list->cmpe(pos->data, node->data) <= 0) {
+    pos = pos->next;
+  }
+  if (pos == NULL) { /* goes at the end */
+    node->next = NULL;
+    node->prev = list->last;
+    if (list->last != NULL) {
+      list->last->next = node;
+    } else {
+      list->first = node;
+    }
+    list->last = node;
+  } else { /* goes before pos */
+    node->next = pos;
+    node->prev = pos->prev;
+    if (pos->prev != NULL) {
+      pos->prev->next = node;
+    } else {
+      list->first = node;
+    }
+    pos->prev = node;
+  }
+} /* llist_link_sorted() */
+
 status_t llist_append(struct llist* const list, void* const data) {
   RCSW_FPC_NV(ERROR, list != NULL, data != NULL);
 
-  if (llist_isfull(list) && list->max_elts != -1) {
+  if (llist_isfull(list)) {
     ER_ERR("Cannot insert element: no space");
     errno = ENOSPC;
     return ERROR;
@@ -409,6 +449,13 @@ status_t llist_append(struct llist* const list, void* const data) {
   struct llist_node* node = llist_node_create(list, data);
   status_t           rval = ERROR;
   RCSW_CHECK_PTR(node);
+
+  if ((list->flags & RCSW_DS_SORTED) && (list->sorted || list->current == 0)) {
+    llist_link_sorted(list, node);
+    list->current++;
+    list->sorted = true;
+    return OK;
+  }
 
   if (list->last == NULL) { /* empty list */
     list->last  = node;
@@ -422,9 +469,9 @@ status_t llist_append(struct llist* const list, void* const data) {
     list->last       = node;
   }
   list->current++;
-  if (list->flags & RCSW_DS_SORTED) {
-    list->sorted = false;
-    llist_sort(list, EXEC_REC);
+  list->sorted = false;
+  if (list->flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+    RCSW_CHECK(OK == llist_sort(list, EXEC_REC));
   }
   rval = OK;
 
@@ -435,7 +482,7 @@ error:
 status_t llist_prepend(struct llist* const list, void* const data) {
   RCSW_FPC_NV(ERROR, list != NULL, data != NULL);
 
-  if (llist_isfull(list) && list->max_elts != -1) {
+  if (llist_isfull(list)) {
     ER_ERR("Cannot insert element: no space");
     errno = ENOSPC;
     return ERROR;
@@ -444,6 +491,13 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   struct llist_node* node = llist_node_create(list, data);
   status_t           rval = ERROR;
   RCSW_CHECK_PTR(node);
+
+  if ((list->flags & RCSW_DS_SORTED) && (list->sorted || list->current == 0)) {
+    llist_link_sorted(list, node);
+    list->current++;
+    list->sorted = true;
+    return OK;
+  }
 
   if (list->first == NULL) { /* empty list */
     list->first = node;
@@ -458,9 +512,9 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   }
   list->current++;
 
-  if (list->flags & RCSW_DS_SORTED) {
-    list->sorted = false;
-    llist_sort(list, EXEC_REC);
+  list->sorted = false;
+  if (list->flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+    RCSW_CHECK(OK == llist_sort(list, EXEC_REC));
   }
   rval = OK;
 
@@ -526,44 +580,35 @@ struct llist_node* llist_node_query(struct llist* const list,
 } /* llist_node_query() */
 
 status_t llist_sort(struct llist* const list, enum exec_type type) {
-  RCSW_FPC_NV(ERROR, list != NULL, list->cmpe != NULL);
+  RCSW_FPC_NV(ERROR, list != NULL, EXEC_REC == type || EXEC_ITER == type);
+  ER_ASSERT(NULL != list->cmpe, "llist_sort() requires cmpe()");
 
-  status_t rval = OK;
-
-  /*
-   * 0 or 1 element lists already sorted, as are those that have the sorted
-   * flag set
-   */
+  /* 0 or 1 element lists are already sorted, as are those marked sorted */
   if (list->current <= 1 || list->sorted) {
     ER_DEBUG("Already sorted: nothing to do");
+    list->sorted = true;
+    return OK;
+  }
+  if (type == EXEC_REC) {
+    list->first = mergesort_rec(list->first, list->cmpe, true);
   } else {
-    if (type == EXEC_REC) {
-      list->first = mergesort_rec(list->first, list->cmpe, true);
-    } else if (type == EXEC_ITER) {
-      list->first = mergesort_iter(list->first, list->cmpe, true);
-    } else {
-      ER_ERR("Bad exec_type for sort '%d'", type);
-      return ERROR;
-    }
-
-    /* find new list->last */
-    list->sorted             = true;
-    struct llist_node* tmp   = list->first;
-    size_t             count = 1;
-    while (tmp->next != NULL) {
-      tmp = tmp->next;
-      count++;
-    }
-
-    if (count != list->current) {
-      ER_ERR("Sort truncated list to %zu elements", count);
-      errno = EAGAIN;
-      rval  = ERROR;
-    }
-    list->last = tmp;
+    list->first = mergesort_iter(list->first, list->cmpe, true);
   }
 
-  return rval;
+  /* find new list->last */
+  struct llist_node* tmp   = list->first;
+  size_t             count = 1;
+  while (tmp->next != NULL) {
+    tmp = tmp->next;
+    count++;
+  }
+  list->last = tmp;
+  ER_ASSERT(count == list->current,
+            "Sort truncated list to %zu elements (expected %zu)",
+            count,
+            list->current);
+  list->sorted = true;
+  return OK;
 } /* llist_sort() */
 
 struct llist* llist_copy(struct llist* const list,
@@ -639,23 +684,22 @@ struct llist* llist_filter(struct llist* list,
     .elt_size = list->elt_size,
     .max_elts = list->max_elts,
     .flags    = flags,
-    .elements = nodes,
-    .meta     = elements,
+    .elements = elements,
+    .meta     = nodes,
   };
 
   struct llist* flist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(flist);
 
   /*
-   * Iterate through list, removing matching elements AFTER you have advanced
-   * passed
-   * them in the iteration, using match, not curr.
+   * Iterate through list, removing matching NODES (not values: an earlier
+   * node may compare equal) AFTER advancing past them.
    */
   struct llist_node* match = NULL;
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
-      llist_append(flist, match->data);
-      RCSW_CHECK(llist_remove(list, match->data) == OK);
+      RCSW_CHECK(OK == llist_append(flist, match->data));
+      RCSW_CHECK(OK == llist_delete(list, match, NULL));
       match = NULL;
     }
     if (pred(curr->data)) {
@@ -664,8 +708,8 @@ struct llist* llist_filter(struct llist* list,
   }
   /* catch corner case where last item in list matched */
   if (match != NULL) {
-    llist_append(flist, match->data);
-    RCSW_CHECK(llist_remove(list, match->data) == OK);
+    RCSW_CHECK(OK == llist_append(flist, match->data));
+    RCSW_CHECK(OK == llist_delete(list, match, NULL));
     match = NULL;
   }
 
@@ -676,25 +720,28 @@ struct llist* llist_filter(struct llist* list,
     flist->elt_size,
     list->current);
 
-error:
   return flist;
+
+error:
+  llist_destroy(flist);
+  return NULL;
 } /* llist_filter() */
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t llist_remove_if(struct llist* list,
                          bool_t (*pred)(const void* const e)) {
   RCSW_FPC_NV(ERROR, list != NULL, pred != NULL);
 
   /*
-   * Iterate through list, removing matching elements AFTER you have advanced
-   * passed them in the iteration, using match, not curr.
+   * Iterate through list, removing matching NODES (not values: an earlier
+   * node may compare equal) AFTER advancing past them.
    */
-  status_t                 rval  = ERROR;
-  size_t                   count = 0;
-  const struct llist_node* match = NULL;
+  size_t             count = 0;
+  struct llist_node* match = NULL;
   LLIST_FOREACH(list, next, curr) {
     if (match != NULL) {
+      RCSW_CHECK(OK == llist_delete(list, match, NULL));
       count++;
-      ER_CHECK(llist_remove(list, match->data) == OK, "Llist_Node remove failed");
       match = NULL;
     }
     if (pred(curr->data)) {
@@ -704,20 +751,19 @@ status_t llist_remove_if(struct llist* list,
 
   /* catch corner case where last item in list matched */
   if (match != NULL) {
-    ER_CHECK(llist_remove(list, match->data) == OK, "Llist_Node remove failed");
+    RCSW_CHECK(OK == llist_delete(list, match, NULL));
+    count++;
   }
 
-  rval = OK;
-  ER_DEBUG(
-    "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
-    "remain.",
-    count,
-    list->elt_size,
-    list->current);
+  ER_DEBUG("%zu %zu-byte elements removed. %zu elements remain.",
+           count,
+           list->elt_size,
+           list->current);
+  return OK;
 
 error:
-  return rval;
-} /* llist_filter2() */
+  return ERROR;
+} /* llist_remove_if() */
 
 status_t llist_splice(struct llist*                  list1,
                       struct llist*                  list2,
@@ -732,8 +778,24 @@ status_t llist_splice(struct llist*                  list1,
            list1->max_elts);
     errno = ENOSPC;
     return ERROR;
-  } else if (list1->current == 0 || list2->current == 0) {
+  }
+  if (list1->current == 0 || list2->current == 0) {
     ER_ERR("Cannot splice an empty list");
+    errno = EINVAL;
+    return ERROR;
+  }
+  /*
+   * After splicing, list1 owns list2's nodes and datablocks, so both must come
+   * from the heap: nodes from list2's pools would later be returned to the
+   * wrong pool (or free()d).
+   */
+  if ((list1->flags | list2->flags) & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_META)) {
+    ER_ERR("Cannot splice lists using caller-provided node/data pools");
+    errno = EINVAL;
+    return ERROR;
+  }
+  if (list1->elt_size != list2->elt_size) {
+    ER_ERR("Cannot splice: element sizes differ");
     errno = EINVAL;
     return ERROR;
   }
@@ -771,13 +833,14 @@ status_t llist_splice(struct llist*                  list1,
       list1->current += list2->current;
     }
 
+    list1->sorted = false;
     rcsw_free(list2, list2->flags & RCSW_NOALLOC_HANDLE);
     break;
   }
 
   if (count == 0) {
     ER_ERR("Could not splice: splice node not found in list1");
-    errno = EAGAIN;
+    errno = ENOENT;
     goto error;
   }
 
@@ -790,7 +853,8 @@ status_t llist_map(struct llist* list, void (*f)(void* e)) {
   RCSW_FPC_NV(ERROR, list != NULL, f != NULL);
 
   LLIST_FOREACH(list, next, curr) { f(curr->data); }
-
+  /* f() may have modified elements */
+  list->sorted = false;
   return OK;
 } /* llist_map() */
 
@@ -807,17 +871,18 @@ status_t llist_inject(struct llist* const list,
 size_t llist_heap_footprint(const struct llist* const list) {
   RCSW_FPC_NV(0, NULL != list);
 
+  /* Count only what this list allocated from the heap */
   size_t size = 0;
-  if (list->flags & RCSW_NOALLOC_HANDLE) {
+  if (!(list->flags & RCSW_NOALLOC_HANDLE)) {
     size += sizeof(struct llist);
   }
-  if (list->flags & RCSW_NOALLOC_DATA) {
-    size += llist_element_space((size_t)list->max_elts, list->elt_size);
+  if (!(list->flags & RCSW_NOALLOC_META)) {
+    size += list->current * sizeof(struct llist_node);
   }
-  if (list->flags & RCSW_NOALLOC_META) {
-    size += llist_meta_space((size_t)list->max_elts);
+  if (!(list->flags &
+        (RCSW_NOALLOC_DATA | RCSW_DS_LLIST_DB_PTR | RCSW_DS_LLIST_DB_DISOWN))) {
+    size += list->current * list->elt_size;
   }
-
   return size;
 } /* llist_heap_footprint() */
 
@@ -827,7 +892,7 @@ struct ds_iterator* llist_iter_init(struct ds_iterator* iter,
                                     bool_t (*classify)(void* e)) {
   RCSW_FPC_NV(NULL, iter != NULL, list != NULL);
 
-  iter->cursor = (type == ITER_FORWARD) ? list->first : list->last;
+  iter->cursor.node = (type == ITER_FORWARD) ? list->first : list->last;
   return ds_iter_init(iter, list, type, &llist_iter_ops, classify);
 }
 

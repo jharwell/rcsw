@@ -1,11 +1,11 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
- * \ingroup common
+ * \ingroup core
  *
  * \brief Definitions, etc. common to all of RCSW.
  */
@@ -15,8 +15,6 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <stdint.h>
-
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/variadics.h"
 
@@ -54,22 +52,13 @@
 #undef OK
 #undef ERROR
 #endif
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
-typedef enum : int8_t {
-  /** Return this on function success. */
-  OK = 0,
-  /** Return this when a function fails. */
-  ERROR = -1,
-} status_t;
-#else
-// NOLINTNEXTLINE(performance-enum-size)
 typedef enum {
   /** Return this on function success. */
   OK = 0,
   /** Return this when a function fails. */
   ERROR = -1,
 } status_t;
-#endif
+
 /*******************************************************************************
  * String Macros
  ******************************************************************************/
@@ -93,7 +82,7 @@ typedef enum {
 #define RCSW_JOIN(x, y) RCSW_JOIN_(x, y)
 
 /**
- * \def RCSW_JOIN(x, y, z) Token pasting (3 tokens).
+ * \def RCSW_JOIN3(x, y, z) Token pasting (3 tokens).
  */
 #define RCSW_JOIN3(x, y, z) RCSW_JOIN(RCSW_JOIN(x, y), z)
 
@@ -107,14 +96,10 @@ typedef enum {
 /*******************************************************************************
  * Comparison Macros
  ******************************************************************************/
-/**
- * \def RCSW_MIN_(t1, t2, min1, min2, a, b)
- *
- * Gets the minimum of (\c a, \c b) while also performing a type comparison. If
- * the arguments do not have the same type, a compiler warning will be
- * issued. You have to EXPLICITLY cast, which is a good thing. Don't want to get
- * weird behavior when taking the max/min of different types.The type checking
- * will be compiled away at high optimization levels.
+/* \cond INTERNAL */
+/*
+ * Implementations of RCSW_MIN/RCSW_MAX. The pointer comparison makes the
+ * compiler warn if a and b have different types; it is compiled away.
  */
 #define RCSW_MIN_(t1, t2, min1, min2, a, b) \
   ({                                        \
@@ -124,15 +109,6 @@ typedef enum {
     (min1) < (min2) ? (min1) : (min2);      \
   })
 
-/**
- * \def RCSW_MAX_(t1, t2, min1, min2, a, b)
- *
- * Gets the maximum of (\c a, \c b) while also performing a type comparison. If
- * the arguments do not have the same type, a compiler warning will be
- * issued. You have to EXPLICITLY cast, which is a good thing. Don't want to get
- * weird behavior when taking the max/min of different types.The type checking
- * will be compiled away at high optimization levels.
- */
 #define RCSW_MAX_(t1, t2, max1, max2, a, b) \
   ({                                        \
     t1 max1 = (a);                          \
@@ -140,6 +116,7 @@ typedef enum {
     (void)(&(max1) == &(max2));             \
     (max1) > (max2) ? (max1) : (max2);      \
   })
+/* \endcond */
 
 /**
  * \def RCSW_MIN(a, b)
@@ -337,9 +314,6 @@ typedef enum {
  * must have a label called \c error in your function). Use this when the
  * function has cleanup work to do on failure (freeing memory, closing handles,
  * etc.).
- *
- * For functions that have no cleanup on failure, prefer \ref RCSW_REQUIRE,
- * which returns directly without requiring an \c error label.
  */
 #define RCSW_CHECK(cond)        \
   if (RCSW_UNLIKELY(!(cond))) { \
@@ -366,21 +340,11 @@ typedef enum {
 /*******************************************************************************
  * Table Generation Macros
  ******************************************************************************/
-/**
- * \brief RCSW_XGEN_STR(X)
- *
- * A string repr of a token passed to \ref RCSW_XFOR_EACH1(). Used by \ref
- * RCSW_XTABLE_STR(). Don't use this directly.
- */
-#define RCSW_XGEN_STR(X) STR(X),
-
-/**
- * \brief RCSW_XGEN_SEQ_ENUM(X)
- *
- * Passed to \ref RCSW_XFOR_EACH1() by \ref RCSW_XTABLE_SEQ_ENUM. Don't use this
- * directly.
- */
+/* \cond INTERNAL */
+/* Per-item expansions used by RCSW_XTABLE_STR() and RCSW_XTABLE_SEQ_ENUM(). */
+#define RCSW_XGEN_STR(X) RCSW_XSTR(X),
 #define RCSW_XGEN_SEQ_ENUM(X) X,
+/* \endcond */
 
 /**
  * \def RCSW_XTABLE_STR(...) Generate arrays of strings from tokens.

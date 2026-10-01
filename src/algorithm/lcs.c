@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,6 +11,7 @@
  ******************************************************************************/
 #include "rcsw/algorithm/lcs.h"
 
+#include <errno.h>
 #include <string.h>
 
 #include "rcsw/core/alloc.h"
@@ -49,7 +50,7 @@ static int lcs_rec_sub(
    * If we don't have a memoized solution, we need to run the recursive
    * solver.
    */
-  if (c[i * length + j] < 0) {
+  if (c[(i * length) + j] < 0) {
     /*
      * If x[i] and y[j] match, the LCS is the LCS of the i+1 and j+1 +
      * substrings, + 1 for the current char.
@@ -58,13 +59,13 @@ static int lcs_rec_sub(
      * and the j+1 substring of y and the LCS of y and the i+1 substring of x.
      */
     if (x[i] == y[j]) {
-      c[i * length + j] = lcs_rec_sub(x, y, c, i + 1, j + 1, length) + 1;
+      c[(i * length) + j] = lcs_rec_sub(x, y, c, i + 1, j + 1, length) + 1;
     } else {
-      c[i * length + j] = RCSW_MAX(lcs_rec_sub(x, y, c, i + 1, j, length),
-                                   lcs_rec_sub(x, y, c, i, j + 1, length));
+      c[(i * length) + j] = RCSW_MAX(lcs_rec_sub(x, y, c, i + 1, j, length),
+                                     lcs_rec_sub(x, y, c, i, j + 1, length));
     }
   }
-  return c[i * length + j];
+  return c[(i * length) + j];
 }
 
 /*******************************************************************************
@@ -99,9 +100,13 @@ void lcs_destroy(struct lcs_calculator* lcs) {
   rcsw_free(lcs->sequence, RCSW_NONE);
 } /* lcs_destroy() */
 
-int lcs_rec(const struct lcs_calculator* lcs) {
+int lcs_rec(struct lcs_calculator* lcs) {
   RCSW_CHECK_PTR(lcs);
-  return lcs_rec_sub(lcs->x, lcs->y, lcs->results, 0, 0, lcs->len_y + 1);
+  int len = lcs_rec_sub(lcs->x, lcs->y, lcs->results, 0, 0, lcs->len_y + 1);
+  if (len >= 0) {
+    lcs->size = (size_t)len;
+  }
+  return len;
 
 error:
   return -1;
@@ -113,20 +118,26 @@ int lcs_iter(struct lcs_calculator* lcs) {
   for (size_t i = 0; i <= lcs->len_x; ++i) {
     for (size_t j = 0; j <= lcs->len_y; ++j) {
       if (0 == i || 0 == j) {
-        lcs->results[i * (lcs->len_y + 1) + j] = 0;
+        lcs->results[(i * (lcs->len_y + 1)) + j] = 0;
       } else if (lcs->x[i - 1] == lcs->y[j - 1]) {
-        lcs->results[i * (lcs->len_y + 1) + j] =
-          lcs->results[(i - 1) * (lcs->len_y + 1) + (j - 1)] + 1;
+        lcs->results[(i * (lcs->len_y + 1)) + j] =
+          lcs->results[((i - 1) * (lcs->len_y + 1)) + (j - 1)] + 1;
       } else {
-        lcs->results[i * (lcs->len_y + 1) + j] =
-          RCSW_MAX(lcs->results[(i - 1) * (lcs->len_y + 1) + j],
-                   lcs->results[i * (lcs->len_y + 1) + (j - 1)]);
+        lcs->results[(i * (lcs->len_y + 1)) + j] =
+          RCSW_MAX(lcs->results[((i - 1) * (lcs->len_y + 1)) + j],
+                   lcs->results[(i * (lcs->len_y + 1)) + (j - 1)]);
       }
     }
   }
-  lcs->size = (size_t)lcs->results[lcs->len_x * (lcs->len_y + 1) + lcs->len_y];
+  lcs->size = (size_t)lcs->results[(lcs->len_x * (lcs->len_y + 1)) + lcs->len_y];
 
+  /* Recompute safely on repeated calls */
+  rcsw_free(lcs->sequence, RCSW_NONE);
   lcs->sequence = rcsw_alloc(NULL, (lcs->size + 1) * sizeof(char), RCSW_NONE);
+  if (NULL == lcs->sequence) {
+    errno = ENOMEM;
+    return ERROR;
+  }
   lcs->sequence[lcs->size] = '\0';
   size_t index             = lcs->size;
 
@@ -134,7 +145,8 @@ int lcs_iter(struct lcs_calculator* lcs) {
    * Start from the right-most-bottom-most corner and
    * one by one store characters in lcs[]
    */
-  size_t i = lcs->len_x, j = lcs->len_y;
+  size_t i = lcs->len_x;
+  size_t j = lcs->len_y;
   while (i > 0 && j > 0) {
     /*
      * If current character in X[] and Y are same, then current character is
@@ -150,8 +162,8 @@ int lcs_iter(struct lcs_calculator* lcs) {
      * If not same, then find the larger of two and go in the direction of
      * larger value
      */
-    else if (lcs->results[(i - 1) * (lcs->len_y + 1) + j] >
-             lcs->results[i * (lcs->len_y + 1) + j - 1]) {
+    else if (lcs->results[((i - 1) * (lcs->len_y + 1)) + j] >
+             lcs->results[(i * (lcs->len_y + 1)) + j - 1]) {
       i--;
     } else {
       j--;

@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief Iterators over data structures.
  */
 
 #pragma once
@@ -64,7 +68,7 @@ struct ds_ops {
  * \brief A position-independent iterator over a data structure.
  *
  * The iterator is a value type: the caller allocates it (on the stack or heap)
- * and initialises it with \ref ds_iter_init(). Multiple independent iterators
+ * and initializes it with \ref ds_iter_init(). Multiple independent iterators
  * over the same container can exist simultaneously because no state is stored
  * inside the container itself.
  *
@@ -72,8 +76,8 @@ struct ds_ops {
  *
  * \code
  * struct ds_iterator it;
- * ds_iter_init(&it, my_darray, ITER_FORWARD,
- *              &darray_iter_ops,   // defined in darray.c
+ * ds_iter_init(&it, my_list, ITER_FORWARD,
+ *              &llist_iter_ops,    // declared in llist.h
  *              NULL);              // no filter
  * void* e;
  * while ((e = ds_iter_next(&it)) != NULL) {
@@ -99,7 +103,10 @@ struct ds_iterator {
    * to a pointer; for pointer-chased structures (llist) it is the current node
    * pointer. Managed entirely by the ops callbacks.
    */
-  void* cursor;
+  union {
+    void*  node;
+    size_t idx;
+  } cursor;
 
   /** Direction of iteration; read by the ops callbacks. */
   enum ds_iter_type type;
@@ -118,18 +125,19 @@ struct ds_iterator {
 BEGIN_C_DECLS
 
 /**
- * \brief Initialise an iterator.
+ * \brief Initialize an iterator.
  *
  * The caller is responsible for the storage of \p iter (stack or heap). No
  * allocation is performed by this function.
  *
- * \param iter   The iterator to initialise. Must be non-NULL.
+ * \param iter   The iterator to initialize. Must be non-NULL.
  * \param ds     The data structure to iterate over. Must be non-NULL.
  * \param type   Direction of iteration.
  * \param ops    Vtable of traversal operations for this data structure type.
  *               Must be non-NULL. Each DS exposes its own \c ds_ops instance;
- *               see the individual DS headers (e.g. \ref darray_iter_ops,
- *               \ref llist_iter_ops, \ref rbuffer_iter_ops).
+ *               see the individual DS headers (e.g. \ref llist_iter_ops,
+ *               \ref rbuffer_iter_ops). For darrays, use \ref
+ *               darray_iter_init().
  * \param classify Optional filter predicate. Pass NULL for unfiltered
  *               iteration.
  *

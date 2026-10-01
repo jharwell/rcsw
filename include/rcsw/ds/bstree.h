@@ -1,11 +1,14 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Binary search tree, and the base of the red-black, order statistics,
+ * and interval trees.
  */
 
 #pragma once
@@ -13,6 +16,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <stddef.h>
+#include <stdint.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 
@@ -44,6 +53,8 @@ enum bstree_traversal_type {
 /*******************************************************************************
  * Types
  ******************************************************************************/
+struct allocm_entry;
+
 /**
  * \brief Parameters for \ref bstree.
  */
@@ -225,53 +236,10 @@ struct bstree {
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/*******************************************************************************
- * Private API
- ******************************************************************************/
-/**
- * \brief Insert a new data into a BST
- *
- * This should NEVER be called by an application--for internal use only.
- *
- * \param tree The BST handle
- * \param key The key of the data to insert
- * \param data The data to insert
- * \param node_size The size of the nodes in the tree, in bytes
- *
- * \return \ref status_t
- */
-RCSW_LOCAL status_t bstree_insert_internal(struct bstree* tree,
-                                           void*          key,
-                                           void*          data,
-                                           size_t         node_size);
-/**
- * \brief Initialize a binary search (or related) tree, which may have different
- * node sizes.
- *
- * This should NEVER be called by an application--for internal use only.
- *
- * \param tree_in The BST handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \ref bstree_config.flags.
- *
- * \param params Initialization parameters
- *
- * \param node_size The size of the nodes in the tree, in bytes
- *
- * \return The initialized tree, or NULL if an error occurred
- */
-RCSW_LOCAL struct bstree* bstree_init_internal(struct bstree* tree_in,
-                                               const struct bstree_config* params,
-                                               size_t node_size) RCSW_WUR;
-
-/*******************************************************************************
- * Public API
- ******************************************************************************/
 /**
  * \brief Determine if a \ref bstree is currently full.
  *
  * \param bst The BST handle
- *
- * \return \ref bool_t
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
@@ -282,8 +250,6 @@ static inline bool_t bstree_isfull(const struct bstree* const bst) {
  * \brief Determine if a \ref bstree is currently empty.
  *
  * \param bst The BST handle
- *
- * \return \ref bool_t
  */
 static inline bool_t bstree_isempty(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
@@ -348,7 +314,9 @@ RCSW_API status_t bstree_insert(struct bstree* tree, void* key, void* data);
 /**
  * \brief Initialize a \ref bstree.
  *
- * \param tree_in The BST handle
+ * \param tree_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params Initialization parameters
  */
@@ -483,5 +451,44 @@ RCSW_API status_t bstree_inject(struct bstree* tree,
  * \param tree The BST handle
  */
 RCSW_API void bstree_print(struct bstree* tree);
+
+/*******************************************************************************
+ * Private API
+ ******************************************************************************/
+/**
+ * \brief Insert a new data into a BST
+ *
+ * This should NEVER be called by an application--for internal use only.
+ *
+ * \param tree The BST handle
+ * \param key The key of the data to insert
+ * \param data The data to insert
+ * \param node_size The size of the nodes in the tree, in bytes
+ *
+ * \return \ref status_t
+ */
+RCSW_LOCAL status_t bstree_insert_internal(struct bstree* tree,
+                                           void*          key,
+                                           void*          data,
+                                           size_t         node_size);
+/**
+ * \brief Initialize a binary search (or related) tree, which may have different
+ * node sizes.
+ *
+ * This should NEVER be called by an application--for internal use only.
+ *
+ * \param tree_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
+ *
+ * \param params Initialization parameters
+ *
+ * \param node_size The size of the nodes in the tree, in bytes
+ *
+ * \return The initialized tree, or NULL if an error occurred
+ */
+RCSW_LOCAL struct bstree* bstree_init_internal(struct bstree* tree_in,
+                                               const struct bstree_config* params,
+                                               size_t node_size) RCSW_WUR;
 
 END_C_DECLS

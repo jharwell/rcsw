@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/algorithm:
 
 ==========
@@ -5,15 +7,14 @@ Algorithms
 ==========
 
 A general-purpose set of *serial* (single-threaded, not parallelized)
-algorithms. For parallel variants of sorting, see
-:ref:`library/multithread` (OpenMP) and :ref:`library/multiprocess` (MPI).
+algorithms.
 
 Dynamic Programming
 ===================
 
 All DP modules follow the same lifecycle: initialize a handle, call the compute
-function(s), then destroy. Handles can be stack-allocated with
-:c:macro`RCSW_NOALLOC_HANDLE`; internal scratch memory is always heap-allocated.
+function(s), then destroy. The caller provides the handle (on the stack is
+fine); internal scratch memory is always heap-allocated.
 
 **Edit Distance** (``rcsw/algorithm/edit_dist.h``) — Works on any element
 type, not just characters; the caller supplies comparator and length
@@ -23,8 +24,9 @@ callbacks. Initialize with :c:func:`edit_dist_init()`, compute with
 
 **Longest Common Subsequence** (``rcsw/algorithm/lcs.h``) — Character
 sequences only. Initialize with :c:func:`lcs_init()`, compute with
-:c:func:`lcs_rec()` (top-down) or :c:func:`lcs_iter()` (bottom-up;
-preferred for long sequences), then destroy with :c:func:`lcs_destroy()`.
+:c:func:`lcs_rec()` (top-down; returns the length) or :c:func:`lcs_iter()`
+(bottom-up; preferred for long sequences, and also fills in the subsequence
+itself), then destroy with :c:func:`lcs_destroy()`.
 
 **Matrix Chain Optimization** (``rcsw/algorithm/mcm_opt.h``) — Initialize
 with :c:func:`mcm_opt_init()`, run with :c:func:`mcm_opt_optimize()`,
@@ -66,23 +68,15 @@ Sorting
    * - :c:func:`qsort_rec()`
      - O(n log n)
      - O(n²)
-     - Recursive. See API docs for the sorted-input warning.
+     - Recursive; depth at most log2(n). Median-of-three pivot, so sorted,
+       reverse-sorted and all-equal input stay O(n log n); only adversarial
+       input reaches O(n²). Not stable.
 
    * - :c:func:`qsort_iter()`
      - O(n log n)
      - O(n²)
-     - Iterative. VLA auxiliary stack; see API docs for stack and
-       sorted-input warnings.
-
-   * - :c:func:`mergesort_rec()`
-     - O(n log n)
-     - O(n log n)
-     - Recursive. Stable. Preferred when input order is unknown.
-
-   * - :c:func:`mergesort_iter()`
-     - O(n log n)
-     - O(n log n)
-     - Iterative. Stable.
+     - Same as :c:func:`qsort_rec()`, with a fixed-size explicit stack
+       instead of recursion.
 
    * - :c:func:`insertion_sort()`
      - O(n²)
@@ -95,9 +89,10 @@ Sorting
      - Non-comparative. Integer keys only. ``k`` = number of digits in
        the maximum value for the chosen base.
 
-All sort functions take a void-pointer array, element count, element size,
-and a comparator ``int cmpe(const void* e1, const void* e2)``. None are
-thread-safe.
+The comparison sorts take a ``void*`` array, its bounds or element count, the
+element size, and a comparator ``int cmpe(const void* e1, const void* e2)``.
+:c:func:`radix_sort()` takes an array of ``size_t`` keys, a temporary array of
+the same size, and a base. None are thread-safe.
 
 Sorting Algorithms
 ==================
@@ -123,7 +118,7 @@ By separating memory-based and structure-based algorithms, the library achieves:
 - Minimal abstraction overhead
 - Clear and predictable APIs
 
-- Avoids Artificial Abstractions.A single “universal” sorting interface would
+- Avoids artificial abstractions. A single “universal” sorting interface would
   require:
 
   - Function pointers for access (``get``, ``set``, ``swap``)
@@ -135,9 +130,9 @@ By separating memory-based and structure-based algorithms, the library achieves:
 - Preserves Performance. Memory-based algorithms remain fully optimized, and
   structure-based algorithms exploit internal layout.
 
-- Maintains Clean Layering ``algorithm/`` depends only on core primitives for
+- Maintains clean layering. ``algorithm/`` depends only on core primitives for
   generic algorithms, and ``ds/`` modules own their data structures and
-  associated algorithms
+  associated algorithms.
 
 Memory-Based Sorting Algorithms
 -------------------------------
@@ -160,7 +155,7 @@ These algorithms operate on raw memory buffers and require:
 
 - Fully generic (independent of any data structure)
 - Reusable across all contiguous containers (e.g., dynamic arrays)
-- No dependency on `ds/` modules
+- No dependency on ``ds/`` modules
 - Minimal abstraction overhead
 
 .. rubric:: Usage
@@ -168,7 +163,7 @@ These algorithms operate on raw memory buffers and require:
 These algorithms are appropriate for:
 
 - Arrays
-- Dynamic arrays (`darray`)
+- Dynamic arrays (:c:struct:`darray`)
 - Any user-managed contiguous buffer
 
 
@@ -190,10 +185,11 @@ These algorithms operate on specific data structures and require:
 
 - Tightly coupled to the data structure
 - Optimized for that structure’s properties
-- Located within the corresponding `ds/` module
+- Located within the corresponding ``ds/`` module
 - Do not attempt to be generic across unrelated structures
 
-### Example: Linked List Sorting
+Example: linked list sorting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Linked lists cannot efficiently support array-based algorithms like quicksort
 due to:
@@ -201,8 +197,9 @@ due to:
 - Lack of random access
 - High cost of element swapping
 
-Instead, algorithms like **mergesort** are used because they:
+Instead, :c:func:`llist_sort()` uses **mergesort** (recursive or iterative),
+because it:
 
-- Operate via sequential traversal
-- Re-link nodes instead of copying memory
-- Maintain stable performance characteristics
+- Operates via sequential traversal
+- Re-links nodes instead of copying memory
+- Maintains stable performance characteristics

@@ -20,6 +20,10 @@ on:
     paths:
       - "src/**"
       - "include/**"
+      - "cmake/**"
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
       - ".github/**"
       - "docs/**"
 
@@ -43,7 +47,7 @@ jobs:
   build-posix:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
@@ -64,17 +68,23 @@ jobs:
           - SIMPLE
           - ZLOG
 
+        ptr_align:
+          - 4
+
+        # Spot-check the other ptr_align values, with the other axes pinned to
+        # keep the count low. ptr_align has to be a matrix axis for these to be
+        # added as new jobs: otherwise each include matches the same existing
+        # job, and each overwrites the previous one's ptr_align.
         include:
-          # Spot-check each ptr_align value; pin other axes to keep count low
-          - { build_type: Release, libtype: STATIC, build_mode: components,
+          - { build_type: release, libtype: STATIC, build_mode: components,
               er_plugin: LOG4CL, ptr_align: 1 }
-          - { build_type: Release, libtype: STATIC, build_mode: components,
+          - { build_type: release, libtype: STATIC, build_mode: components,
               er_plugin: LOG4CL, ptr_align: 2 }
-          - { build_type: Release, libtype: STATIC, build_mode: components,
-              er_plugin: LOG4CL, ptr_align: 4 }
+          - { build_type: release, libtype: STATIC, build_mode: components,
+              er_plugin: LOG4CL, ptr_align: 8 }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -90,43 +100,38 @@ jobs:
             MONOLITHIC=ON
           fi
 
-          PTR_ALIGN=${{ matrix.ptr_align || 4 }}
-
           clibra build --preset ${{ matrix.build_type }} \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
             -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
-            -DRCSW_CONFIG_PTR_ALIGN=${PTR_ALIGN} \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_STDIO_PUTCHAR=putchar
 
 # ---------------------------------------------------------------------------
 # Job 2: POSIX component-exclusion build
 #
-# Purpose: verify each optional component can be cleanly disabled, and that
-# the all-disabled configuration (core + al only) also builds cleanly.
+# Purpose: verify each optional component can be cleanly disabled (which also
+# disables the components that need it), and that the all-disabled
+# configuration (core only) also builds cleanly.
 # ---------------------------------------------------------------------------
   build-posix-components:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
         disabled_component:
-          - algorithm
-          - ds
-          - er
           - multiprocess
           - multithread
           - stdio
-          - tool
-          - utils
           - swbus
-          - ALL   # all optional components disabled; only core + al remain
+          - tool
+          - ALL   # all optional components disabled; only core remains
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -140,14 +145,11 @@ jobs:
           EXTRA_FLAGS=""
           if [ "${{ matrix.disabled_component }}" = "ALL" ]; then
             EXTRA_FLAGS="\
-              -DRCSW_CONFIG_ALGORITHM=OFF \
-              -DRCSW_CONFIG_DS=OFF \
-              -DRCSW_CONFIG_ER=OFF \
               -DRCSW_CONFIG_MULTIPROCESS=OFF \
               -DRCSW_CONFIG_MULTITHREAD=OFF \
               -DRCSW_CONFIG_STDIO=OFF \
-              -DRCSW_CONFIG_TOOL=OFF \
-              -DRCSW_CONFIG_UTILS=OFF"
+              -DRCSW_CONFIG_SWBUS=OFF \
+              -DRCSW_CONFIG_TOOL=OFF"
           else
             COMPONENT=$(echo "${{ matrix.disabled_component }}" | tr '[:lower:]' '[:upper:]')
             EXTRA_FLAGS="-DRCSW_CONFIG_${COMPONENT}=OFF"
@@ -165,12 +167,12 @@ jobs:
 # Job 3: Baremetal build (stdlib and nostdlib in one job)
 #
 # Purpose: verify baremetal targets compile across build types, ptr_align,
-# and stdlib presence. Previously split across two jobs for no reason.
+# and stdlib presence.
 # ---------------------------------------------------------------------------
   build-baremetal:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
@@ -188,7 +190,7 @@ jobs:
           - NONE
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -211,6 +213,112 @@ jobs:
             ${STDLIB_FLAGS}
 
 # ---------------------------------------------------------------------------
+# Job 3b: FPC abort build
+#
+# Purpose: verify the library and unit tests compile with function
+# precondition checks in ABORT mode. Build-only: many unit tests deliberately
+# violate preconditions to check the RETURN-mode error path, and would abort.
+# ---------------------------------------------------------------------------
+  build-fpc-abort:
+    runs-on: ubuntu-latest
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20261002
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - release
+          - debug
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Configure and build
+        shell: bash
+        run: |
+          clibra build --preset ${{ matrix.build_type }} \
+            --reconfigure \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
+            -DRCSW_CONFIG_PTR_ALIGN=4 \
+            -DLIBRA_FPC=ABORT \
+            -DLIBRA_TESTS=ON
+
+          clibra build --preset ${{ matrix.build_type }} --target unit-tests
+
+# ---------------------------------------------------------------------------
+# Job 3c: No-heap build and test
+#
+# Purpose: verify the library builds with all heap allocation compiled out
+# (RCSW_CONFIG_NOALLOC), and that everything which works without a heap
+# still works.
+#
+# ctest runs whole test binaries and can't pass a Catch2 tag filter, so the
+# unit test executables are run directly from the repository root (the
+# working directory LIBRA registers them with).
+# ---------------------------------------------------------------------------
+  test-noalloc:
+    runs-on: ubuntu-latest
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20261002
+    strategy:
+      fail-fast: false
+      matrix:
+        ptr_align:
+          - 1
+          - 4
+          - 8
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Configure and build
+        shell: bash
+        run: |
+          # SIMPLE: the LOG4CL plugin keeps its module list in a heap llist.
+          clibra build --preset ci-asan \
+            --reconfigure \
+            -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_LIBTYPE=STATIC \
+            -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
+            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_NOALLOC=YES \
+            -DLIBRA_SAN="ASAN;UBSAN" \
+            -DLIBRA_TESTS=ON
+
+          clibra build --preset ci-asan --target unit-tests
+
+      - name: Test [noalloc] subset under ASAN+UBSAN
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          status=0
+          for t in "${tests[@]}"; do
+            echo "::group::${t}"
+            if ! "${t}" "[noalloc]" --allow-running-no-tests; then
+              echo "::error::${t} failed"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit ${status}
+
+# ---------------------------------------------------------------------------
 # Job 4: POSIX test (memcheck + coverage)
 #
 # Purpose: functional correctness and memory safety across runtime-behavior
@@ -222,8 +330,9 @@ jobs:
       - build-posix
       - build-posix-components
       - build-baremetal
+      - build-fpc-abort
     container:
-        image: jharwell/ubuntu24.04-rcsw:20260929
+        image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
@@ -234,13 +343,14 @@ jobs:
         ptr_align:
           - 1
           - 4
+          - 8
 
         zalloc:
           - YES
           - NO
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -254,41 +364,66 @@ jobs:
           clibra test \
             --reconfigure \
             --preset ci-valgrind \
+            --type unit \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
       - name: Test under Memcheck
         shell: bash
         run: |
-          clibra build \
+          clibra test \
             --reconfigure \
-            --preset ci-asan \
+            --preset ci-valgrind \
+            --type unit \
+            --valgrind \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          # --test-dir is required because ctest + memcheck don't resolve the
-          # binary dir reliably as of CMake 3.31
-          ctest --preset ci-valgrind --test-dir build -T memcheck
-
-      - name: Test under ASAN
+      - name: Show valgrind reports
+        if: failure()
         shell: bash
+        run: |
+          for f in build/Testing/Temporary/MemoryChecker.*.log; do
+            grep -qE "ERROR SUMMARY: [1-9]" "$f" || continue
+            echo "::group::$f"
+            cat "$f"
+            echo "::endgroup::"
+          done
+
+      # LIBRA compiles UBSAN with -fsanitize-recover=all, so without
+      # halt_on_error UB is only printed and the test still passes.
+      - name: Test under ASAN+UBSAN
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          LSAN_OPTIONS: report_objects=1
         run: |
           clibra test \
             --reconfigure \
             --preset ci-asan \
+            --type unit \
+            -DLIBRA_SAN="ASAN;UBSAN" \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
       - name: Generate coverage
         shell: bash
         run: |
-          clibra build --preset ci-coverage \
+          clibra test \
+            --preset ci-coverage \
+            --type unit \
+            --reconfigure \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
 
-          clibra build --preset ci-coverage --target build-and-test
-          clibra build --preset ci-coverage --target lcov-report
+          # 2026-10-06 [JRH]: Starting in 0.13.16, the coverage command can be
+          # used to do this directly.
+          clibra build \
+            --preset ci-coverage \
+            --target lcov-report \
+            --reconfigure
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
@@ -302,19 +437,10 @@ jobs:
 # Purpose: end-to-end validation of the installed package, one install per
 # matrix entry:
 #
-# - core: no optional components (only al + core).
-# - <component>: exactly one optional component enabled, so its install must
-#   stand on its own: its headers must only need what is installed with it.
+# - core: no optional components.
+# - <component>: one optional component, plus the ones it needs, so its install
+#   must stand on its own.
 # - monolithic: everything, plus the monolithic rcsw::rcsw library.
-#
-# Each entry checks that:
-#
-# 1. The install contains headers for exactly the libraries it installed
-#    (no headers from components that weren't built, and none missing).
-# 2. A consumer can find_package() the requested components, link them, and
-#    compile every top-level header of each one. Including each header on its
-#    own in a fresh project catches headers that depend on something that
-#    wasn't installed.
 #
 # Runs after build-posix since it depends on install correctness, not tests.
 # ---------------------------------------------------------------------------
@@ -323,30 +449,26 @@ jobs:
     needs:
       - build-posix
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
         target:
           - core
-          - algorithm
-          - ds
-          - swbus
-          - er
           - multiprocess
           - multithread
           - stdio
           - swbus
           - tool
-          - utils
           - monolithic
+        libtype:
+          - STATIC
+          - SHARED
     env:
-      PREFIX: /tmp/rcsw-install
-      CONSUMER: /tmp/rcsw-consumer
-      OPTIONAL_COMPONENTS: algorithm ds er multiprocess multithread stdio swbus tool utils
+      RCSW_ER_PLUGIN: LOG4CL
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -354,122 +476,18 @@ jobs:
           git submodule update --init --remote --recursive
           cargo install clibra
 
-      - name: Select components
+      # setup_suite.bash builds and installs the configuration under test
+      # before the tests run.
+      - name: Integration tests
         shell: bash
+        env:
+          RCSW_ITEST_TARGET: ${{ matrix.target }}
+          RCSW_ITEST_LIBTYPE: ${{ matrix.libtype }}
         run: |
-          # COMPONENTS: what the consumer asks find_package() for and whose
-          # headers it compiles. CONFIG_FLAGS: one RCSW_CONFIG_<X> per
-          # optional component, ON only for the ones under test.
-          TARGET="${{ matrix.target }}"
-          FLAGS=""
-          for c in ${OPTIONAL_COMPONENTS}; do
-            if [ "${TARGET}" = "monolithic" ] || [ "${TARGET}" = "${c}" ]; then
-              VALUE=ON
-            else
-              VALUE=OFF
-            fi
-            FLAGS="${FLAGS} -DRCSW_CONFIG_${c^^}=${VALUE}"
-          done
-
-          case "${TARGET}" in
-            monolithic) COMPONENTS="al core ${OPTIONAL_COMPONENTS}"; MONOLITHIC=ON ;;
-            core)       COMPONENTS="al core";                        MONOLITHIC=OFF ;;
-            *)          COMPONENTS="${TARGET}";                      MONOLITHIC=OFF ;;
-          esac
-
-          echo "CONFIG_FLAGS=${FLAGS}" >> $GITHUB_ENV
-          echo "COMPONENTS=${COMPONENTS}" >> $GITHUB_ENV
-          echo "MONOLITHIC=${MONOLITHIC}" >> $GITHUB_ENV
-
-      - name: Build and install
-        shell: bash
-        run: |
-          clibra install --preset debug \
-            -DRCSW_BUILD_FOR=POSIX \
-            -DRCSW_CONFIG_LIBTYPE=STATIC \
-            -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
-            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4 \
-            -DCMAKE_INSTALL_PREFIX=${PREFIX} \
-            ${CONFIG_FLAGS}
-
-      - name: Check installed headers match installed libraries
-        shell: bash
-        run: |
-          cd ${PREFIX}
-          FAILED=0
-
-          # Every requested component was installed.
-          for c in ${COMPONENTS}; do
-            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
-              echo "::error::component ${c} was not installed (no lib/cmake/rcsw_${c})"
-              FAILED=1
-            fi
-          done
-
-          # Header directories and component libraries correspond one-to-one.
-          for d in include/rcsw/*/; do
-            c=$(basename "${d}")
-            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
-              echo "::error::headers for ${c} installed, but its library was not"
-              FAILED=1
-            fi
-          done
-          for d in lib/cmake/rcsw_*/; do
-            c=$(basename "${d}")
-            c=${c#rcsw_}
-            if [ ! -d "include/rcsw/${c}" ]; then
-              echo "::error::library rcsw_${c} installed without its headers"
-              FAILED=1
-            fi
-          done
-
-          echo "Installed components:"
-          ls lib/cmake | sed -n 's/^rcsw_/  /p'
-          exit ${FAILED}
-
-      - name: Build consumer
-        shell: bash
-        run: |
-          mkdir -p ${CONSUMER}
-
-          if [ "${MONOLITHIC}" = "ON" ]; then
-            FIND="find_package(rcsw REQUIRED)"
-            LIBS="rcsw::rcsw"
-          else
-            FIND="find_package(rcsw REQUIRED COMPONENTS ${COMPONENTS})"
-            LIBS=""
-            for c in ${COMPONENTS}; do
-              LIBS="${LIBS} rcsw::${c}"
-            done
-          fi
-
-          {
-            echo "cmake_minimum_required(VERSION 3.20)"
-            echo "project(rcsw_consumer C)"
-            echo "${FIND}"
-            echo "add_executable(consumer main.c)"
-            echo "target_link_libraries(consumer PRIVATE ${LIBS})"
-          } > ${CONSUMER}/CMakeLists.txt
-
-          # Every top-level header of each component under test. Subdirectories
-          # (er/plugin/, al/posix/, al/baremetal/) are platform- or
-          # plugin-specific and are reached through the top-level headers.
-          {
-            for c in ${COMPONENTS}; do
-              for h in ${PREFIX}/include/rcsw/${c}/*.h; do
-                echo "#include \"rcsw/${c}/$(basename "${h}")\""
-              done
-            done
-            echo "int main(void) { return 0; }"
-          } > ${CONSUMER}/main.c
-
-          echo "--- CMakeLists.txt"; cat ${CONSUMER}/CMakeLists.txt
-          echo "--- main.c";         cat ${CONSUMER}/main.c
-
-          cmake -S ${CONSUMER} -B ${CONSUMER}/build \
-            -DCMAKE_PREFIX_PATH=${PREFIX}
-          cmake --build ${CONSUMER}/build --verbose
+          clibra test \
+            --type integration \
+            --reconfigure \
+            --preset release
 
 # ---------------------------------------------------------------------------
 # Static analysis
@@ -479,7 +497,7 @@ jobs:
   analyze-code:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
@@ -487,7 +505,7 @@ jobs:
           - clang-tidy
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -512,7 +530,7 @@ jobs:
   analyze-formatting:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
@@ -520,7 +538,7 @@ jobs:
           - clang
           - cmake
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -531,19 +549,23 @@ jobs:
       - name: Analyze
         shell: bash
         run: |
-          clibra format --keep-going --reconfigure --check ${{ matrix.TYPE }} --preset format
+          clibra format \
+            --keep-going \
+            --reconfigure \
+            --check ${{ matrix.TYPE }} \
+            --preset format
 
   analyze-docs:
     runs-on: ubuntu-latest
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
     strategy:
       fail-fast: false
       matrix:
         TOOL:
           - clang
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup
         shell: bash
         run: |
@@ -554,15 +576,17 @@ jobs:
       - name: Analyze
         shell: bash
         run: |
-          clibra docs check --kind ${{ matrix.TOOL }} --preset docs --reconfigure --keep-going
+          clibra docs --reconfigure check --kind ${{ matrix.TOOL }} --preset docs --keep-going
 
 # ---------------------------------------------------------------------------
 # Job 7: Docs
 # ---------------------------------------------------------------------------
   docs:
     uses: ./.github/workflows/pages.yml
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs:
       - test-posix
+      - test-noalloc
       - test-install
       - analyze-code
       - analyze-formatting
@@ -584,6 +608,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test-posix
+      - test-noalloc
       - test-install
       - analyze-code
       - analyze-formatting
@@ -591,10 +616,10 @@ jobs:
     permissions:
       contents: write
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # version resolution needs full history + tags
 
@@ -619,8 +644,7 @@ jobs:
 
           # clibra reads the version from the configured build dir, so
           # configure first.
-          cmake --preset release
-          NEXT_VERSION=$(clibra version --preset release --bump)
+          NEXT_VERSION=$(clibra version --preset release --bump --reconfigure)
 
           git tag "v${NEXT_VERSION}" -m "Development release ${NEXT_VERSION}"
           git push origin "v${NEXT_VERSION}"
@@ -636,6 +660,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test-posix
+      - test-noalloc
       - test-install
       - analyze-code
       - analyze-formatting
@@ -643,10 +668,10 @@ jobs:
     permissions:
       contents: write
     container:
-      image: jharwell/ubuntu24.04-rcsw:20260929
+      image: jharwell/ubuntu24.04-rcsw:20261002
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # version resolution needs full history + tags
 
@@ -690,14 +715,6 @@ jobs:
       - name: Lint packages
         shell: bash
         run: lintian build/*.deb
-
-      # Tag only after everything above has succeeded, so a failed run
-      # doesn't leave a release tag behind.
-      - name: Tag release
-        shell: bash
-        run: |
-          git tag "${RELEASE_TAG}" -m "Release ${RELEASE_VERSION}"
-          git push origin "${RELEASE_TAG}"
 
       - name: Generate changelog
         shell: bash

@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 A custom plugin which is defined exactly how you want in terms of modules,
 levels, etc. To integrate your plugin with RCSW, you must create a ``.h`` file
 with a few ``#define`` macros. If your plugin uses :c:macro:`RCSW_ER_MODID`, it
@@ -7,9 +9,10 @@ should support 64-bit IDs if you want to use RCSW with it.
                will need to ensure that it is findable by any applications you
                want to use with RCSW+your custom ER plugin.
 
-
-Required plugin file contents (you can of course have whatever else you want in
-the file):
+Your file must define every macro below; RCSW stops the build with an
+``#error`` if one is missing. A macro your plugin has no use for can be
+defined as nothing (or, for ``RCSW_ER_PLUGIN_LVL_CHECK()``, as a true value).
+You can of course have whatever else you want in the file.
 
 .. tab-set::
 
@@ -18,55 +21,49 @@ the file):
       The main ER plugin hook. Will be called as part of every
       :c:macro:`ER_WARN()`, etc. statement. Arguments:
 
-      - ``LVL`` - The level of the statement. See :ref:`er-levels` for
-        details.
+      - ``LVL`` - The level of the statement, as a bare token (``WARN``,
+        ``INFO``, ...). See :ref:`concepts/event-reporting/levels` for details.
 
       - ``HANDLE`` - Whatever was returned from ``RCSW_ER_PLUGIN_HANDLE()``.
 
-      - ``ID`` - The ID of the current module (file). This will expand to
-        nothing if ``RCSW_ER_MODID`` is not defined.
+      - ``ID`` - The ID of the current module (file): :c:macro:`RCSW_ER_MODID`,
+        or ``0xFFFFFFFF`` if the file doesn't define one.
 
       - ``NAME`` - The name of the current module (file)
 
-      - ``MSG`` - The message string
+      - ``MSG`` - The message string, with ``"\r\n"`` already appended
 
       - ``...`` - Any additional arguments for the message string
 
-      .. NOTE:: Because this macro is used as a statement inside RCSW's ER
-                machinery, it must end in ``;``.
+      .. NOTE:: This macro is used as a statement inside RCSW's ER machinery,
+                so it must expand to a complete statement: a braced block, or
+                a call ending in ``;``.
 
-Optional plugin file contents (you can of course have whatever else you want in
-the file):
-
-.. tab-set::
    .. tab-item:: ``RCSW_ER_PLUGIN_PRINTF``
 
-       The name of the ``printf()``-like function which has the same signature;
-       used to define the :c:macro:`PRINTF()` / :c:macro:`DPRINTF()` macros.
-
-       If omitted, you can't use the :c:macro:`PRINTF()` / :c:macro:`DPRINTF()`
-       macros. If you want to omit it, ``#define`` as nothing.
+       The name of a ``printf()``-like function with the same signature; used to
+       define the :c:macro:`PRINTF()` / :c:macro:`DPRINTF()` macros. If you
+       define it as nothing, you can't use those macros.
 
    .. tab-item:: ``RCSW_ER_PLUGIN_INIT()``
 
-       A framework initialization hook which RCSW will call in its internal
-       modules; should be idempotent. Can take any number of arguments of any
-       type. If it is not needed by your plugin, ``#define`` as nothing.
+       A framework initialization hook, called by ``RCSW_ER_INIT()``; should be
+       idempotent. Can take any number of arguments of any type. If it is not
+       needed by your plugin, ``#define`` as nothing.
 
    .. tab-item:: ``RCSW_ER_PLUGIN_DEINIT()``
 
-      A framework shutdown hook; should be idempotent. Can take any number of
-      arguments of any type. If it is not needed by your plugin ``#define`` as
-      nothing.
-
+      A framework shutdown hook, called by ``RCSW_ER_DEINIT()``; should be
+      idempotent. Can take any number of arguments of any type. If it is not
+      needed by your plugin ``#define`` as nothing.
 
    .. tab-item:: ``RCSW_ER_PLUGIN_INSMOD()``
 
       Arguments:
 
-      - ``ID`` - The numeric UUID for the module.
+      - ``ID`` - The numeric ID for the module.
 
-      - ``NAME`` - The string UUID for the module.
+      - ``NAME`` - The string name for the module.
 
       Install/enable a module with the specified ID and name. If not needed by
       your plugin, ``#define`` as nothing.
@@ -75,19 +72,21 @@ the file):
 
       Arguments:
 
-      - ``ID`` - The numeric UUID for the module.
+      - ``ID`` - The numeric ID for the module.
 
-      - ``NAME`` - The string UUID for the module.
+      - ``NAME`` - The string name for the module.
 
       Get a logger "handle" of some kind which contains the necessary
       information to determine if a given module is enabled. For example, in the
       LOG4CL plugin, the :c:func:`log4cl_mod_query()` function serves this
       purpose.
 
-      If the module with the specified ``ID, NAME`` is not enabled, then the
-      handle should be a false-y value, like 0 or NULL.
+      RCSW doesn't inspect the handle; it only passes it to
+      ``RCSW_ER_PLUGIN_LVL_CHECK()``. If the module with the specified
+      ``ID, NAME`` is not enabled, return something (such as ``NULL``) that
+      your level check treats as "don't emit".
 
-      If not needed by your plugin ``#define`` as nothing.
+      If not needed by your plugin, ``#define`` as nothing.
 
    .. tab-item:: ``RCSW_ER_PLUGIN_LVL_CHECK()``
 
@@ -95,10 +94,16 @@ the file):
 
       - ``HANDLE`` - The module handle returned by ``RCSW_ER_PLUGIN_HANDLE()``.
 
-      - ``LVL`` - The level associated with the current reporting statement.
+      - ``LVL`` - The level associated with the current reporting statement,
+        as a bare token.
 
       Given an active module ``HANDLE``, determine if the statement with the
       specified ``LVL`` should be emitted or not.
 
       If not needed by your plugin, ``#define`` as a truth-y value,
       such as 1.
+
+   .. tab-item:: ``RCSW_ER_PLUGIN_MODNAME_COMPONENT_SEPARATOR``
+
+      The string :c:macro:`RCSW_ER_MODNAME_BUILDER` puts between name
+      components, such as ``"."``.

@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Ringbuffer.
  */
 
 #pragma once
@@ -13,6 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/iter.h"
@@ -25,14 +30,14 @@
  */
 struct rbuffer_config {
   /**
-   * For comparing elements. Can be NULL. If NULL, \ref rbuffer_index_query() is
-   * disabled.
+   * For comparing elements. Can be NULL. If NULL, \ref rbuffer_index_query()
+   * must not be called.
    */
   int (*cmpe)(const void* const e1, const void* const e2);
 
   /**
-   * For printing an element. Can be NULL. If NULL, \ref rbuffer_print() is
-   * disabled.
+   * For printing an element. Can be NULL. If NULL, \ref rbuffer_print() must
+   * not be called.
    */
   void (*printe)(const void* e);
 
@@ -95,7 +100,8 @@ struct rbuffer {
   size_t elt_size;
 
   /**
-   * Next element insert index.
+   * Physical index of the oldest element (the front). The next insert goes at
+   * <tt>(start + current) % max_elts</tt>.
    */
   size_t start;
 
@@ -126,8 +132,6 @@ BEGIN_C_DECLS
  * ringbuffers), the concept of "full" doesn't really make sense.
  *
  * \param rb The ringbuffer handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
   RCSW_FPC_NV(false, NULL != rb);
@@ -139,8 +143,6 @@ static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
  * \brief Determine if the ringbuffer is currently empty.
  *
  * \param rb The ringbuffer handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t rbuffer_isempty(const struct rbuffer* const rb) {
   RCSW_FPC_NV(false, NULL != rb);
@@ -188,9 +190,11 @@ static inline size_t rbuffer_element_space(size_t max_elts, size_t elt_size) {
 /**
  * \brief Initialize a ringbuffer.
  *
- * \param rb_in An application allocated handle for the ringbuffer. Can be NULL,
- *        depending on if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *        rbuffer_config.flags or not.
+ * \param rb_in Caller storage for the handle, used only if \ref
+ *        RCSW_NOALLOC_HANDLE is passed in \ref rbuffer_config.flags. It must
+ *        then be at least \c sizeof(struct rbuffer) bytes; with \ref
+ *        RCSW_ZALLOC that many bytes are zeroed. Ignored (may be NULL)
+ *        otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
@@ -200,7 +204,7 @@ RCSW_API struct rbuffer* rbuffer_init(
   struct rbuffer* rb_in, const struct rbuffer_config* params) RCSW_WUR;
 
 /**
- * \brief Delete a ringbuffer.
+ * \brief Destroy a ringbuffer.
  *
  * Any further reference to the ringbuffer after calling this function is
  * undefined.
@@ -212,12 +216,9 @@ RCSW_API void rbuffer_destroy(struct rbuffer* rb);
 /**
  * \brief Add an item into the ringbuffer.
  *
- * This function adds an item into the ringbuffer. If it is
- * currently full, the new entry will be added, and previous data overwritten,
- * UNLESS the ringbuffer is configured to action like a FIFO (\ref
- * RCSW_DS_RBUFFER_AS_FIFO passed during initialization).
- *
- * Sets errno to ENOSPC on error.
+ * If the ringbuffer is full, the oldest element is overwritten, unless it was
+ * created with \ref RCSW_DS_RBUFFER_AS_FIFO; then the add fails with \c errno
+ * set to \c ENOSPC.
  *
  * \param rb The ringbuffer handle.
  *
@@ -246,20 +247,16 @@ RCSW_API status_t rbuffer_remove(struct rbuffer* rb, void* e);
  *
  * \param rb The ringbuffer handle.
  *
- * \param idx The index. If >= max # elements for rbuffer, it is wrapped around
- *            (this IS a ringbuffer after all).
+ * \param idx Logical index: 0 is the front (oldest) element. Must be less than
+ *            \ref rbuffer_size().
  *
- * \note if \p idx is > rbuffer_size() and < max_elts, then this function
- * _might_ return potentially uninitialized/garbage/stale data past the end of
- * the valid data currently in the rbuffer. Whether or not this is _actually_
- * bad data depends on your application.
- *
- * \return The element, or NULL if an error occurred.
+ * \return The element, or NULL if \p idx is out of range or another error
+ * occurred.
  */
 RCSW_API void* rbuffer_data_get(const struct rbuffer* rb, size_t idx);
 
 /**
- * \brief  Get the index of an element in the ringbuffer.
+ * \brief Get the index of an element in the ringbuffer.
  *
  * If no element compare callback was passed during initialization, then calling
  * this function is undefined.
@@ -268,8 +265,9 @@ RCSW_API void* rbuffer_data_get(const struct rbuffer* rb, size_t idx);
  *
  * \param e The element to attempt to get the index of.
  *
- * \return The index of the first element in the rbuffer that matches according
- * to the compare function, or -1 on error.
+ * \return The logical index (as accepted by \ref rbuffer_data_get()) of the
+ * first element, from the front, that matches according to the compare
+ * function; -1 if none matches or on error.
  */
 RCSW_API int rbuffer_index_query(struct rbuffer* rb, const void* e);
 
@@ -319,7 +317,8 @@ RCSW_API status_t rbuffer_clear(struct rbuffer* rb);
 RCSW_API status_t rbuffer_map(struct rbuffer* rb, void (*f)(void* e));
 
 /**
- * \brief Compute a cumulative SOMETHING using elements in the ringbuffer.
+ * \brief Compute a cumulative result (sum, count, ...) over all elements in the
+ * ringbuffer.
  *
  * \param rb The ringbuffer handle.
  *
@@ -337,7 +336,7 @@ RCSW_API status_t rbuffer_inject(struct rbuffer* rb,
                                  void* result);
 
 /**
- * \brief Print the ringbuffer.
+ * \brief Print each element of the ringbuffer with its \c printe callback.
  *
  * If no element print callback was passed during initialization, then calling
  * this function is undefined.
@@ -359,10 +358,9 @@ RCSW_API void rbuffer_print(struct rbuffer* rb);
 extern const struct ds_ops rbuffer_iter_ops;
 
 /**
- * \brief Initialise an iterator over a \ref rbuffer.
+ * \brief Initialize an iterator over a \ref rbuffer.
  *
- * Only \ref ITER_FORWARD is supported. Passing \ref ITER_BACKWARD will
- * cause this function to return NULL.
+ * Iteration is always forward (\ref ITER_FORWARD).
  *
  * \param iter     Caller-allocated iterator storage.
  * \param rb       The ringbuffer to iterate over.

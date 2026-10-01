@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -26,56 +26,80 @@
  * Macros
  ******************************************************************************/
 /**
- * \def RCSW_BITS_HI32(v) - Get the upper 16 bits of a 32 bit integer in a 32-bit
- * integer.
+ * \brief Mask off all but the upper 16 bits of the 32-bit integer \p v. The
+ * bits stay in place; they are not shifted down.
  */
 #define RCSW_BITS_HI32(v) ((uint32_t)((v) & 0xFFFF0000))
 
 /**
- * \def RCSW_BITS_LO32(v) - Get the lower 16 bits of a 32 bit integer.
+ * \brief Mask off all but the lower 16 bits of the 32-bit integer \p v.
  */
 #define RCSW_BITS_LO32(v) ((uint32_t)((v) & 0x0000FFFF))
 
 /**
- * \def RCSW_BITS_HI64(v) - Get the upper 32 bits of a 64 bit integer as a 64-bit
- * integer.
+ * \brief Mask off all but the upper 32 bits of the 64-bit integer \p v. The
+ * bits stay in place; they are not shifted down.
  */
 #define RCSW_BITS_HI64(v) ((uint64_t)(((v) & UINT64_C(0xFFFFFFFF00000000))))
 
 /**
- * \def RCSW_BITS_LO64(v) - Get the lower 32 bits of a 64 bit integer.
+ * \brief Mask off all but the lower 32 bits of the 64-bit integer \p v.
  */
 #define RCSW_BITS_LO64(v) (((uint64_t)((v) & 0x00000000FFFFFFFF)))
 
 /**
- * Reversal macros (MSB becomes LSB and vice versa) This is NOT the same as
- * endianness swapping.
+ * \name Bit reversal (shift-based)
+ *
+ * Reverse the bit order of an 8, 16, or 32-bit value (MSB becomes LSB and vice
+ * versa). This is not endianness swapping.
+ * @{
  */
-
-/** Reversal using bit shifting */
+/** \brief Reverse a 8-bit value. */
 #define RCSW_REV8(v)                                                          \
   ((uint8_t)(((((v) * 0x0802LU & 0x22110LU) | ((v) * 0x8020LU & 0x88440LU)) * \
                 0x10101LU >>                                                  \
               16)))
+/** \brief Reverse a 16-bit value. */
 #define RCSW_REV16(v) \
   ((uint16_t)((RCSW_REV8(((v) & 0xFF)) << 8) | RCSW_REV8((((v) >> 8) & 0xFF))))
-#define RCSW_REV32(v)                                \
-  ((uint32_t)(((RCSW_REV16(((v) & 0xFFFF))) << 16) | \
-              (RCSW_REV16((((v) >> 16) & 0xFFFF)))))
+/** \brief Reverse a 32-bit value. */
+#define RCSW_REV32(v)                                        \
+  ((uint32_t)(((uint32_t)RCSW_REV16(((v) & 0xFFFF)) << 16) | \
+              (uint32_t)RCSW_REV16((((v) >> 16) & 0xFFFF))))
+/** @} */
 
-/** Reversal using a lookup table -- \ref rcsw_util_revtable */
+/**
+ * \name Bit reversal (table-based)
+ *
+ * Same results as the shift-based reversal macros, using the lookup table
+ * \ref rcsw_util_revtable.
+ * @{
+ */
+/** \brief Reverse a 8-bit value. */
 #define RCSW_REVTBL8(v) ((uint8_t)(rcsw_util_revtable[v]))
+/** \brief Reverse a 16-bit value. */
 #define RCSW_REVTBL16(v)                          \
   ((uint16_t)((RCSW_REVTBL8(((v) & 0xFF)) << 8) | \
               RCSW_REVTBL8((((v) >> 8) & 0xFF))))
-#define RCSW_REVTBL32(v)                                \
-  ((uint32_t)(((RCSW_REVTBL16(((v) & 0xFFFF))) << 16) | \
-              (RCSW_REVTBL16((((v) >> 16) & 0xFFFF)))))
+/** \brief Reverse a 32-bit value. */
+#define RCSW_REVTBL32(v)                                        \
+  ((uint32_t)(((uint32_t)RCSW_REVTBL16(((v) & 0xFFFF)) << 16) | \
+              (uint32_t)RCSW_REVTBL16((((v) >> 16) & 0xFFFF))))
+/** @} */
 
-/** Bit reflection (reflect/mirror an 8,16, or 32 bit value about its center)  */
+/**
+ * \name Bit reflection
+ *
+ * Mirror an 8, 16, or 32-bit value about its center, via \ref utils_reflect32().
+ * @{
+ */
+/** \brief Reflect a 8-bit value. */
 #define RCSW_REFLECT8(v) ((uint8_t)utils_reflect32(((v)), 8))
+/** \brief Reflect a 16-bit value. */
 #define RCSW_REFLECT16(v) ((uint16_t)utils_reflect32(((v)), 16))
+/** \brief Reflect a 32-bit value. */
 #define RCSW_REFLECT32(v) ((uint32_t)utils_reflect32(((v)), 32))
+/** @} */
 
 /* \cond INTERNAL */
 
@@ -99,7 +123,8 @@
 /* \endcond */
 
 /**
- * \defgroup rcsw_bin Binary-to-hex Conversion
+ * \defgroup rcsw_bin Binary literals
+ * \ingroup utils
  * Convert binary literals to their hexadecimal equivalents at
  * compile time.
  * @{
@@ -144,7 +169,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-/** \brief Lookup table for 8-bit bit-reversal. Used by \ref RCSW_REVL8. */
+/** \brief Lookup table for 8-bit bit-reversal. Used by \ref RCSW_REVTBL8(). */
 RCSW_API extern const uint8_t rcsw_util_revtable[];
 
 /******************************************************************************
@@ -161,6 +186,6 @@ RCSW_API extern const uint8_t rcsw_util_revtable[];
  *
  * \return The reflected value.
  */
-RCSW_API uint32_t utils_reflect32(uint32_t data, size_t n_bits) RCSW_CONST;
+RCSW_API uint32_t utils_reflect32(uint32_t data, uint8_t n_bits) RCSW_CONST;
 
 END_C_DECLS

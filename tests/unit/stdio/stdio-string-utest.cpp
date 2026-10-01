@@ -1,0 +1,266 @@
+/**
+ * \file
+ *
+ * \copyright 2017 John Harwell
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define CATCH_CONFIG_PREFIX_ALL
+#include <catch2/catch_test_macros.hpp>
+
+#include "rcsw/stdio/stdio.h"
+#include "rcsw/stdio/string.h"
+#include "rcsw/utils/byteops.h"
+#include "tests/unit/element.hpp"
+
+/******************************************************************************
+ * Constant Definitions
+ *****************************************************************************/
+#define MAX_STRING_SIZE 100
+
+/*******************************************************************************
+ * Test Function Forward Declarations
+ ******************************************************************************/
+static void strlen_test(void);
+static void strrev_test(void);
+static void strchr_test(void);
+static void strcpy_test(void);
+static void strncpy_test(void);
+static void strcmp_test(void);
+static void strncmp_test(void);
+static void strrep_test(void);
+
+/*******************************************************************************
+ * Test Cases
+ ******************************************************************************/
+CATCH_TEST_CASE("strlen() Test [string]", "[noalloc]") { strlen_test(); }
+CATCH_TEST_CASE("strrev() Test [string]", "[noalloc]") { strrev_test(); }
+CATCH_TEST_CASE("strchr() Test [string]", "[noalloc]") { strchr_test(); }
+CATCH_TEST_CASE("strcpy() Test [string]", "[noalloc]") { strcpy_test(); }
+CATCH_TEST_CASE("strncpy() Test [string]", "[noalloc]") { strncpy_test(); }
+CATCH_TEST_CASE("strcmp() Test [string]", "[noalloc]") { strcmp_test(); }
+CATCH_TEST_CASE("strncmp() Test [string]", "[noalloc]") { strncmp_test(); }
+CATCH_TEST_CASE("strrep() Test [string]", "[noalloc]") { strrep_test(); }
+
+static void strlen_test(void) {
+  char s[MAX_STRING_SIZE];
+  int  i;
+  int  len1;
+  int  len2;
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s, i);
+
+    len1 = (int)stdio_strlen(s);
+    len2 = (int)strlen(s);
+    CATCH_REQUIRE(len1 == i - 1);
+    CATCH_REQUIRE(len1 == len2);
+  }
+} /* strlen_test() */
+
+static void strrev_test(void) {
+  char s1[MAX_STRING_SIZE];
+  char s2[MAX_STRING_SIZE];
+  int  i;
+  int  j;
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    memcpy(s2, s1, i);
+    stdio_strrev(s1, i);
+    for (j = 0; j < i; j++) {
+      CATCH_REQUIRE(s1[j] == s2[i - j - 1]);
+    }
+  }
+} /* strrev_test() */
+
+static void strchr_test(void) {
+  char        s1[MAX_STRING_SIZE];
+  int         i;
+  int         j;
+  char*       rval1;
+  const char* rval2;
+
+  auto dist = std::uniform_int_distribution<size_t>(0, 126 - 33);
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    for (j = 0; j < i; j++) {
+      int c = (int)dist(th::make_rng()) + 33;
+      rval1 = strchr(s1, c);
+      rval2 = stdio_strchr(s1, (char)c);
+
+      CATCH_REQUIRE(rval1 == rval2);
+    }
+  }
+} /* strchr_test() */
+
+static void strcpy_test(void) {
+  char s1[MAX_STRING_SIZE];
+  char s2[MAX_STRING_SIZE];
+  int  i;
+
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    memset(s2, 0, MAX_STRING_SIZE);
+    stdio_strcpy(s2, s1);
+    CATCH_REQUIRE(strncmp(s1, s2, i) == 0);
+  }
+} /* strcpy_test() */
+
+static void strncpy_test(void) {
+  char s1[MAX_STRING_SIZE];
+  char s2[MAX_STRING_SIZE];
+  int  i;
+  int  j;
+
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    for (j = 0; j < i; j++) {
+      memset(s2, 0, MAX_STRING_SIZE);
+      stdio_strncpy(s2, s1, j);
+      CATCH_REQUIRE(strncmp(s1, s2, j) == 0);
+    } /* for(j..) */
+  } /* for(i..) */
+} /* strncpy_test() */
+
+static void strcmp_test(void) {
+  char s1[MAX_STRING_SIZE];
+  char s2[MAX_STRING_SIZE];
+  int  i;
+  int  rval1;
+  int  rval2;
+
+  /* test on random strings */
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    utils_string_gen(s2, i);
+    rval1 = stdio_strcmp(s1, s2);
+    rval2 = strcmp(s1, s2);
+    CATCH_REQUIRE(
+      !(((rval1 < 0) && (rval2 >= 0)) || ((rval1 > 0) && (rval2 <= 0)) ||
+        ((rval1 == 0) && (rval2 != 0)) || ((rval2 == 0) && (rval1 != 0))));
+  } /* for() */
+
+  /* test on strings that are known to match */
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    memcpy(s2, s1, i);
+    CATCH_REQUIRE(stdio_strcmp(s1, s2) == 0);
+  }
+} /* strcmp_test() */
+
+static void strncmp_test(void) {
+  char s1[MAX_STRING_SIZE];
+  char s2[MAX_STRING_SIZE];
+  int  i;
+  int  j;
+  int  rval1;
+  int  rval2;
+
+  /* test on random strings */
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    utils_string_gen(s2, i);
+    for (j = 0; j < i; j++) {
+      rval1 = stdio_strncmp(s1, s2, j);
+      rval2 = strncmp(s1, s2, j);
+      CATCH_REQUIRE(
+        !(((rval1 < 0) && (rval2 >= 0)) && ((rval1 > 0) && (rval2 <= 0)) &&
+          ((rval1 == 0) && (rval2 != 0)) && ((rval2 == 0) && (rval1 != 0))));
+    }
+  }
+
+  /* test on strings that are known to match */
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    utils_string_gen(s1, i);
+    for (j = 0; j < i; j++) {
+      memcpy(s2, s1, i);
+      CATCH_REQUIRE(stdio_strncmp(s1, s2, j) == 0);
+    }
+  }
+} /* strncmp_test() */
+
+static void strrep_test(void) {
+  char  original[MAX_STRING_SIZE];
+  char  pattern[MAX_STRING_SIZE];
+  char  replacement[MAX_STRING_SIZE];
+  char  new_str[MAX_STRING_SIZE * MAX_STRING_SIZE];
+  int   i;
+  int   j;
+  int   k;
+  char* tmp;
+  int   pat_count = 0;
+  int   pat_len   = 2;
+  int   rep_len   = 2;
+
+  /* test on random strings */
+  for (i = 1; i < MAX_STRING_SIZE; i++) {
+    if (((i % (MAX_STRING_SIZE / 10)) == 0) && (i != 0)) {
+      (void)fflush(NULL);
+    }
+    /* generate test string */
+    utils_string_gen(original, i);
+    rep_len = 2;
+
+    auto dist = std::uniform_int_distribution<size_t>(0, 10);
+    for (j = 1; j < MAX_STRING_SIZE; j++) {
+      /* generate string pattern to look for */
+      utils_string_gen(pattern, pat_len);
+
+      /* copy pattern to a few random locations within original */
+      for (k = 0; k < dist(th::make_rng()); k++) {
+        int pos = (int)dist(th::make_rng());
+        if (pos + strlen(pattern) < strlen(original)) {
+          strncpy(original + pos, pattern, strlen(pattern));
+        }
+      }
+
+      /* figure out how many times replacement pattern occurs in test string */
+      pat_count = 0;
+      char* tmp2;
+      for (tmp = original; (tmp2 = strstr(tmp, pattern)); tmp = tmp2 + 1) {
+        pat_count++;
+      }
+
+      /* generate replacement string */
+      utils_string_gen(replacement, rep_len);
+
+      /* replace the all occurrences of pattern in original with replacement */
+      stdio_strrep(original, pattern, replacement, new_str);
+      CATCH_REQUIRE(strlen(original) + (pat_count * strlen(replacement)) -
+                      (pat_count * strlen(pattern)) ==
+                    strlen(new_str));
+      rep_len++;
+    } /* for (j...) */
+  } /* for (i...) */
+  printf("\n");
+} /* strrep_test() */
+
+CATCH_TEST_CASE("stdio_strrep with an empty pattern copies the input",
+                "[stdio][string][noalloc]") {
+  char out[64];
+  CATCH_REQUIRE(out == stdio_strrep("abc", "", "x", out));
+  CATCH_REQUIRE(0 == strcmp(out, "abc"));
+}
+
+CATCH_TEST_CASE("stdio_strcmp/strncmp compare bytes as unsigned char",
+                "[stdio][string][noalloc]") {
+  const char hi[] = "\xff";
+  const char lo[] = "a";
+  CATCH_REQUIRE(stdio_strcmp(hi, lo) > 0);
+  CATCH_REQUIRE(stdio_strncmp(hi, lo, 1) > 0);
+  /* must agree in sign with the C library */
+  CATCH_REQUIRE((stdio_strcmp(hi, lo) > 0) == (strcmp(hi, lo) > 0));
+}
+
+CATCH_TEST_CASE("stdio_strchr finds the terminating NUL",
+                "[stdio][string][noalloc]") {
+  const char s[] = "abc";
+  CATCH_REQUIRE(s + 3 == stdio_strchr(s, '\0'));
+}
