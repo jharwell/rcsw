@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Counting semaphore.
  */
 
 #pragma once
@@ -14,9 +16,11 @@
  * Includes
  ******************************************************************************/
 #include <semaphore.h>
+#include <stdint.h>
+#include <time.h>
 
 #include "rcsw/core/compilers.h"
-#include "rcsw/multithread/mutex.h"
+#include "rcsw/core/core.h"
 
 /*******************************************************************************
  * Type Definitions
@@ -50,8 +54,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a counting semaphore
  *
- * \param sem_in Semaphore to initialize. Can be NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed.
+ * \param sem_in Caller storage for the handle, used only if \ref
+ *               RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *               otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param value The initial semaphore value.
  *
@@ -84,9 +89,8 @@ RCSW_API status_t csem_post(struct csem* sem);
  *
  * \param sem The semaphore handle.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *           specifies. This function converts the relative timeout to absolute
- *           timeout required.
+ * \param to A relative timeout. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t.
  */
@@ -97,7 +101,8 @@ RCSW_API status_t csem_timedwait(struct csem* sem, const struct timespec* to);
  *
  * \param sem The semaphore handle.
  *
- * \param to An ABSOLUTE timeout, NOT an RELATIVE timeout.
+ * \param to An absolute \c CLOCK_REALTIME deadline. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t.
  */

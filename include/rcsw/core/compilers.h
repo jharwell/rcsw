@@ -1,9 +1,14 @@
 /**
  * \file
  *
- * \copyright 2019 John Harwell, All rights reserved.
+ * \copyright 2019 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup core
+ *
+ * \brief Compiler portability: attributes, warning control, symbol visibility,
+ * and atomics.
  */
 
 #pragma once
@@ -31,6 +36,31 @@
 #error Unknown compiler: only GCC and Clang (including Intel oneAPI ICX) are supported.
 #endif
 
+/**
+ * \def RCSW_WARNING_DISABLE_PUSH()
+ *
+ * \brief Save the compiler's diagnostic state. Pair with
+ * \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_POP()
+ *
+ * \brief Restore the diagnostic state saved by the matching
+ * \ref RCSW_WARNING_DISABLE_PUSH().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE(X)
+ *
+ * \brief Suppress the compiler diagnostic named \a X (e.g.
+ * \c -Wfloat-equal) until the matching \ref RCSW_WARNING_DISABLE_POP().
+ *
+ * Prefer the named helpers below (\ref RCSW_WARNING_DISABLE_QUAL(), ...),
+ * which use the right diagnostic name for each compiler and expand to nothing
+ * where it doesn't have the warning.
+ */
+
 /*
  * Clang defines both __clang__ and __GNUC__ for compatibility. Check
  * __clang__ first so that ICX (which is Clang-based) is identified correctly.
@@ -44,13 +74,6 @@
  * Even though Clang accepts GCC diagnostic names, it also has diagnostics that
  * GCC does not, so we keep the Clang branch separate.
  */
-/**
- * \def RCSW_WARNING_DISABLE(X)
- *
- * Suppress a single compiler diagnostic named \a X for the current scope.
- * Must be paired with \ref RCSW_WARNING_DISABLE_PUSH and
- * \ref RCSW_WARNING_DISABLE_POP.
- */
 #define RCSW_WARNING_DISABLE(X) RCSW_PRAGMA(clang diagnostic ignored #X)
 
 #elif defined(__GNUC__)
@@ -58,16 +81,60 @@
 #define RCSW_WARNING_DISABLE_PUSH() RCSW_PRAGMA(GCC diagnostic push)
 #define RCSW_WARNING_DISABLE_POP() RCSW_PRAGMA(GCC diagnostic pop)
 
-/**
- * \def RCSW_WARNING_DISABLE(X)
- *
- * Suppress a single compiler diagnostic named \a X for the current scope.
- * Must be paired with \ref RCSW_WARNING_DISABLE_PUSH and
- * \ref RCSW_WARNING_DISABLE_POP.
- */
 #define RCSW_WARNING_DISABLE(X) RCSW_PRAGMA(GCC diagnostic ignored #X)
 
 #endif /* __clang__ / __GNUC__ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_QUAL()
+ *
+ * \brief Suppress warnings about discarding qualifiers (e.g. const). Use
+ * between \ref RCSW_WARNING_DISABLE_PUSH() and \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_VLA()
+ *
+ * \brief Suppress warnings about variable-length arrays. Use between \ref
+ * RCSW_WARNING_DISABLE_PUSH() and \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_FUNC_CAST()
+ *
+ * \brief Suppress warnings about casting a function call result (GCC only). Use
+ * between \ref RCSW_WARNING_DISABLE_PUSH() and \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_STRICT_PROTO()
+ *
+ * \brief Suppress warnings about non-prototype declarations (GCC, C only). Use
+ * between \ref RCSW_WARNING_DISABLE_PUSH() and \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_FLOAT_EQUAL()
+ *
+ * \brief Suppress warnings about comparing floating-point values for equality
+ * (GCC only). Use between \ref RCSW_WARNING_DISABLE_PUSH() and \ref
+ * RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_REDUNDANT_DECLS()
+ *
+ * \brief Suppress warnings about redundant declarations (GCC only). Use between
+ * \ref RCSW_WARNING_DISABLE_PUSH() and \ref RCSW_WARNING_DISABLE_POP().
+ */
+
+/**
+ * \def RCSW_WARNING_DISABLE_DOCUMENTATION()
+ *
+ * \brief Suppress warnings about malformed documentation comments (Clang only).
+ * Use between \ref RCSW_WARNING_DISABLE_PUSH() and \ref
+ * RCSW_WARNING_DISABLE_POP().
+ */
 
 /*
  * Compiler-agnostic warning suppression helpers.
@@ -88,6 +155,8 @@
 #define RCSW_WARNING_DISABLE_STRICT_PROTO(...)
 #define RCSW_WARNING_DISABLE_FLOAT_EQUAL(...)
 #define RCSW_WARNING_DISABLE_REDUNDANT_DECLS(...)
+#define RCSW_WARNING_DISABLE_DOCUMENTATION(...) \
+  RCSW_WARNING_DISABLE(-Wdocumentation)
 
 #elif defined(__GNUC__)
 
@@ -106,6 +175,8 @@
 /* clang-format off */
 #define RCSW_WARNING_DISABLE_FUNC_CAST(...) \
   RCSW_WARNING_DISABLE(-Wbad-function-cast)
+#define RCSW_WARNING_DISABLE_DOCUMENTATION(...)
+
 /* clang-format on */
 /*
  * Needed when compiling C++ unit tests for C code to suppress spurious
@@ -396,3 +467,39 @@
 #define END_C_DECLS
 
 #endif /* __cplusplus */
+
+/*******************************************************************************
+ * Atomics
+ ******************************************************************************/
+/*
+ * Thin wrappers around the GCC/Clang __atomic builtins. These are used instead
+ * of C11 <stdatomic.h> so that the same struct definitions are usable from C
+ * and C++, and so that the fields stay plain (non-_Atomic) types. Only
+ * word-sized loads/stores/exchanges are used, which are lock-free on every
+ * target RCSW supports (including Cortex-M0, which has no LDREX/STREX, for
+ * loads and stores).
+ */
+
+/**
+ * \def RCSW_ATOMIC_LOAD_ACQ(PTR)
+ *
+ * Atomically load \a *PTR with acquire ordering.
+ */
+#define RCSW_ATOMIC_LOAD_ACQ(PTR) __atomic_load_n((PTR), __ATOMIC_ACQUIRE)
+
+/**
+ * \def RCSW_ATOMIC_STORE_REL(PTR, VAL)
+ *
+ * Atomically store \a VAL to \a *PTR with release ordering.
+ */
+#define RCSW_ATOMIC_STORE_REL(PTR, VAL) \
+  __atomic_store_n((PTR), (VAL), __ATOMIC_RELEASE)
+
+/**
+ * \def RCSW_ATOMIC_XCHG_ACQ(PTR, VAL)
+ *
+ * Atomically store \a VAL to \a *PTR and return the previous value, with
+ * acquire ordering.
+ */
+#define RCSW_ATOMIC_XCHG_ACQ(PTR, VAL) \
+  __atomic_exchange_n((PTR), (VAL), __ATOMIC_ACQUIRE)

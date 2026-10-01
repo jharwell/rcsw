@@ -22,7 +22,7 @@ classifiers = [
 docs = [
     "sphinx",
     "docutils",
-    "sphinx-rtd-theme",
+    "pydata-sphinx-theme",
     "sphinx-argparse",
     "sphinx-tabs",
     "sphinx-copybutton",
@@ -36,7 +36,6 @@ docs = [
     "sphinx-autoapi",
     "toml",
     "breathe",
-    "exhale",
     "sphinx-autobuild",
     "sphinxcontrib-video",
     "sphinxcontrib-plantuml"

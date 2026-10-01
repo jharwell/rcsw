@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Fair reader/writer lock.
  */
 
 #pragma once
@@ -13,7 +15,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <time.h>
+
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/multithread/csem.h"
 
 /*******************************************************************************
@@ -67,8 +72,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a reader/writer fair lock
  *
- * \param rdwr_in Lock to initialize. Can be NULL if \ref RCSW_NOALLOC_HANDLE
- *                passed.
+ * \param rdwr_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param flags Configuration flags
  *
@@ -120,9 +126,8 @@ RCSW_API void rdwrl_exit(struct rdwrlock* rdwr, enum rdwrlock_scope scope);
  *
  * \param scope The scope of the privileges requested.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *           specifies. This function converts the relative timeout to absolute
- *           timeout required.
+ * \param to A relative timeout. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \return \ref status_t.
  */

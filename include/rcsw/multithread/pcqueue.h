@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Thread-safe producer-consumer queue.
  */
 
 #pragma once
@@ -13,6 +15,12 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <time.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
+#include "rcsw/core/fpc.h"
 #include "rcsw/ds/fifo.h"
 #include "rcsw/multithread/csem.h"
 #include "rcsw/multithread/mutex.h"
@@ -74,8 +82,6 @@ BEGIN_C_DECLS
  * \brief Determine if the queue is currently full.
  *
  * \param queue The queue  handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t pcqueue_isfull(const struct pcqueue* const queue) {
   RCSW_FPC_NV(false, NULL != queue);
@@ -86,8 +92,6 @@ static inline bool_t pcqueue_isfull(const struct pcqueue* const queue) {
  * \brief Determine if the queue is currently empty.
  *
  * \param queue The linked queue handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t pcqueue_isempty(const struct pcqueue* const queue) {
   RCSW_FPC_NV(false, NULL != queue);
@@ -138,8 +142,9 @@ static inline size_t pcqueue_n_free(const struct pcqueue* const queue) {
 /**
  * \brief Initialize a producer-consumer queue.
  *
- * \param pcqueue_in An application allocated handle for the queue. Can be NULL,
- *                   depending on if \ref RCSW_NOALLOC_HANDLE is passed or not.
+ * \param pcqueue_in Caller storage for the handle, used only if \ref
+ *                   RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                   otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
@@ -169,6 +174,17 @@ RCSW_API void pcqueue_destroy(struct pcqueue* pcqueue);
 RCSW_API status_t pcqueue_push(struct pcqueue* pcqueue, const void* e);
 
 /**
+ * \brief Push an item to the back of the queue if there is space, without
+ * waiting.
+ *
+ * \param pcqueue The queue handle.
+ * \param e The item to enqueue.
+ *
+ * \return \ref status_t. If the queue is full, ERROR with errno=ENOSPC.
+ */
+RCSW_API status_t pcqueue_trypush(struct pcqueue* pcqueue, const void* e);
+
+/**
  * \brief Pop and return the first element in the queue, waiting if
  * necessary for the queue to become non-empty.
  *
@@ -184,7 +200,7 @@ RCSW_API status_t pcqueue_pop(struct pcqueue* pcqueue, void* e);
  * timeout if necessary for the queue to become non-empty.
  *
  * \param pcqueue The queue handle.
- * \param to A RELATIVE timeout.
+ * \param to A relative timeout. See \rcswdoc{concepts/concurrency/timeouts}.
  * \param e The item to dequeue. Can be NULL.
  *
  * \return \ref status_t.
@@ -194,16 +210,15 @@ RCSW_API status_t pcqueue_timedpop(struct pcqueue*        pcqueue,
                                    void*                  e);
 
 /**
- * \brief Get the first element in the queue if it exists.
+ * \brief Get the first element in the queue if it exists, with a timeout.
  *
  * \note The filled value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
  *
  * \param queue The queue handle.
  *
- * \param to A RELATIVE timeout, NOT an ABSOLUTE timeout, as the POSIX standard
- *           specifies. This function converts the relative timeout to absolute
- *           timeout required.
+ * \param to A relative timeout. See
+ *           \rcswdoc{concepts/concurrency/timeouts}.
  *
  * \param e To be filled with the address of the first element, if it exists,
  *          and set to NULL otherwise.
@@ -214,7 +229,7 @@ RCSW_API status_t pcqueue_timedpeek(struct pcqueue*        queue,
                                     const struct timespec* to,
                                     void**                 e);
 /**
- * \brief Get the first element in the queue if it exists, with a timeout.
+ * \brief Get the first element in the queue if it exists.
  *
  * \note The filled value returned by this function cannot be relied upon in a
  * multi-threaded context without additional synchronization.
@@ -227,5 +242,7 @@ RCSW_API status_t pcqueue_timedpeek(struct pcqueue*        queue,
  * \return \ref status_t.
  */
 RCSW_API status_t pcqueue_peek(struct pcqueue* queue, void** e);
+
+RCSW_API status_t pcqueue_waitpeek(struct pcqueue* queue, void** e);
 
 END_C_DECLS

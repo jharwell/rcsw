@@ -1,6 +1,7 @@
 /**
  * \file
- * \copyright 2017 John Harwell, All rights reserved.
+ *
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -53,8 +54,8 @@ RCSW_API void utils_ts_add(struct timespec* __restrict__ sum,
  * \brief Compute the difference between two timespecs: \p diff = \p end - \p
  * start.
  *
- * \param start The subtractee.
- * \param end   The subtractor.
+ * \param start The value subtracted (subtrahend).
+ * \param end   The value subtracted from (minuend).
  * \param diff  Output: result of end - start.
  *
  * \note If \p end < \p start, the result is undefined.
@@ -107,9 +108,9 @@ RCSW_API status_t utils_ts_make_abs(const struct timespec* __restrict__ rel,
 /**
  * \brief Compute the remaining relative timeout from an absolute deadline.
  *
- * Subtracts the current wall-clock time from \p abs_deadline to produce the
- * remaining relative timeout in \p rel_out. If the deadline has already passed,
- * \p rel_out is set to {0, 0} and \ref ERROR is returned so callers can treat
+ * Subtracts the current wall-clock time from \p deadline to produce the
+ * remaining relative timeout in \p out. If the deadline has already passed,
+ * \p out is set to {0, 0} and \ref ERROR is returned so callers can treat
  * an expired deadline the same as a timed-out wait.
  *
  * \param deadline An absolute \c CLOCK_REALTIME deadline, as produced by

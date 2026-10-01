@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief General-purpose FIFO built on a ringbuffer.
  */
 
 #pragma once
@@ -11,6 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/rbuffer.h"
 
@@ -83,8 +90,6 @@ BEGIN_C_DECLS
  * \brief Determine if the FIFO is currently full
  *
  * \param fifo The FIFO handle
- *
- * \return \ref bool_t
  */
 static inline bool_t fifo_isfull(const struct fifo* const fifo) {
   RCSW_FPC_NV(false, NULL != fifo);
@@ -95,8 +100,6 @@ static inline bool_t fifo_isfull(const struct fifo* const fifo) {
  * \brief Determine if the FIFO is currently empty
  *
  * \param fifo The FIFO handle
- *
- * \return \ref bool_t
  */
 static inline bool_t fifo_isempty(const struct fifo* const fifo) {
   RCSW_FPC_NV(false, NULL != fifo);
@@ -158,9 +161,9 @@ static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
 /**
  * \brief Initialize a FIFO.
  *
- * \param fifo_in An application allocated handle for the FIFO. Cannot be NULL,
- *                if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *                fifo_config.flags.
+ * \param fifo_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
@@ -220,13 +223,14 @@ RCSW_API status_t fifo_clear(struct fifo* fifo);
 RCSW_API status_t fifo_map(struct fifo* fifo, void (*f)(void* e));
 
 /**
- * \brief Compute a cumulative SOMETHING over all elements of a FIFO.
+ * \brief Compute a cumulative result (sum, count, ...) over all elements of a
+ * FIFO.
  *
  * \param fifo The FIFO handle.
  * \param f A function point which will be called for every element in the
  *         FIFO. This function CAN modify FIFO elements.
  *
- * \param result The initial value for the cumulative SOMETHING to be
+ * \param result The initial value for the cumulative result to be
  *               computed. This will be passed to each invocation of the
  *               callback.
  *
@@ -240,7 +244,7 @@ RCSW_API status_t fifo_inject(struct fifo* fifo,
  * \brief Print a FIFO.
  *
  * \param fifo The FIFO handle.
- **/
+ */
 RCSW_API void fifo_print(struct fifo* fifo);
 
 END_C_DECLS

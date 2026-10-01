@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,60 +11,31 @@
  ******************************************************************************/
 #include "rcsw/ds/ds.h"
 
-#include <math.h>
+#include <stdint.h>
 #include <string.h>
 
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
-
-/******************************************************************************
- * Private API
- ******************************************************************************/
-/*
- * This is currently > max value of anything RCSW needs internally to swap; it
- * should be a pretty good bound for downstream use as well.
- */
-#define RCSW_DS_ELT_SWAP_MAXSIZE 128
 
 /*******************************************************************************
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 
-#ifndef __SIZEOF_FLOAT__
-#warning "__SIZEOF_FLOAT__ not defined--strange behavior may occur..."
-#endif
-
+/*
+ * These helpers operate on raw bytes via memcpy()/memset(). Element storage is
+ * only guaranteed to be aligned to RCSW_CONFIG_PTR_ALIGN, so loading elements
+ * through typed pointers (uint32_t*, double*, ...) is undefined behavior and
+ * can fault on strict-alignment targets. Compilers inline small fixed-size
+ * memcpy() calls, so nothing is lost.
+ */
 status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, elt_size > 0);
 
-  if (elt1 == elt2) {
-    return OK;
+  if (elt1 != elt2) {
+    memcpy(elt1, elt2, elt_size);
   }
-
-  switch (elt_size) {
-    case sizeof(uint8_t):
-      *((uint8_t*)(elt1)) = *((const uint8_t*)(elt2));
-      break;
-    case sizeof(uint16_t):
-      *((uint16_t*)(elt1)) = *((const uint16_t*)(elt2));
-      break;
-    case sizeof(uint32_t):
-      *((uint32_t*)(elt1)) = *((const uint32_t*)(elt2));
-      break;
-#if __SIZEOF_FLOAT__ != 4
-    case sizeof(float):
-      *((float*)(elt1)) = *((const float*)(elt2));
-      break;
-#endif
-    case sizeof(double):
-      *((double*)(elt1)) = *((const double*)(elt2));
-      break;
-    default:
-      memcpy(elt1, elt2, elt_size);
-      break;
-  }
-
   return OK;
 } /* ds_elt_copy() */
 
@@ -74,88 +45,26 @@ status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
   if (elt1 == elt2) {
     return OK;
   }
-  double tmp;
-  switch (elt_size) {
-    case sizeof(uint8_t):
-      *((uint8_t*)(elt1)) ^= *((const uint8_t*)(elt2));
-      *((uint8_t*)(elt2)) ^= *((const uint8_t*)(elt1));
-      *((uint8_t*)(elt1)) ^= *((const uint8_t*)(elt2));
-      break;
-    case sizeof(uint16_t):
-      *((uint16_t*)(elt1)) ^= *((const uint16_t*)(elt2));
-      *((uint16_t*)(elt2)) ^= *((const uint16_t*)(elt1));
-      *((uint16_t*)(elt1)) ^= *((const uint16_t*)(elt2));
-      break;
-    case sizeof(uint32_t):
-      *((uint32_t*)(elt1)) ^= *((const uint32_t*)(elt2));
-      *((uint32_t*)(elt2)) ^= *((const uint32_t*)(elt1));
-      *((uint32_t*)(elt1)) ^= *((const uint32_t*)(elt2));
-      break;
-#if __SIZEOF_FLOAT__ != 4
-    case sizeof(float):
-      tmp               = *((float*)(elt1));
-      *((float*)(elt1)) = *((const float*)(elt2));
-      *((float*)(elt2)) = tmp;
-      break;
-#endif
-    case sizeof(double):
-      tmp                = *((const double*)(elt1));
-      *((double*)(elt1)) = *((const double*)(elt2));
-      *((double*)(elt2)) = tmp;
-      break;
-    default:
-      /*
-       * Fixed-size temporary buffer. 64 bytes covers the largest element type
-       * used anywhere in RCSW (struct bstree_node is the largest at ~48 bytes).
-       * If a new DS requires larger elements, increase this constant and update
-       * the static assert below.
-       */
-      RCSW_CHECK(elt_size <= RCSW_DS_ELT_SWAP_MAXSIZE);
-
-      uint8_t tmp2[RCSW_DS_ELT_SWAP_MAXSIZE];
-      memcpy(tmp2, elt1, elt_size);
-      memcpy(elt1, elt2, elt_size);
-      memcpy(elt2, tmp2, elt_size);
-
-      break;
-  } /* switch() */
-
+  /* Swap through a small bounce buffer, so there is no element size limit */
+  uint8_t* a = elt1;
+  uint8_t* b = elt2;
+  uint8_t  chunk[32];
+  while (elt_size > 0) {
+    size_t n = RCSW_MIN(elt_size, sizeof(chunk));
+    memcpy(chunk, a, n);
+    memcpy(a, b, n);
+    memcpy(b, chunk, n);
+    a += n;
+    b += n;
+    elt_size -= n;
+  } /* while() */
   return OK;
-
-error:
-  return ERROR;
 } /* ds_elt_swap() */
 
 status_t ds_elt_clear(void* const elt, size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != elt, elt_size > 0);
 
-  switch (elt_size) {
-    case sizeof(uint8_t):
-      *((uint8_t*)(elt)) = 0;
-      break;
-    case sizeof(uint16_t):
-      *((uint16_t*)(elt)) = 0;
-      break;
-    case sizeof(uint32_t):
-      *((uint32_t*)(elt)) = 0;
-      break;
-/*
- * sizeof(float) is the same as sizeof(uint32_t) on most platforms, but
- * not all.
- */
-#if __SIZEOF_FLOAT__ != 4
-    case sizeof(float):
-      *((float*)(elt)) = 0;
-      break;
-#endif
-    case sizeof(double):
-      *((double*)(elt)) = 0;
-      break;
-    default:
-      memset(elt, 0, elt_size);
-      break;
-  } /* switch() */
-
+  memset(elt, 0, elt_size);
   return OK;
 } /* ds_elt_clear() */
 

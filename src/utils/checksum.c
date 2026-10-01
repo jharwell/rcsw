@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -27,9 +27,13 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
-static uint32_t crc32_eth_table[256];
-
-static uint32_t crc32_brown_table[] = {
+/*
+ * Standard reflected CRC-32 table (polynomial 0xEDB88320, i.e., the IEEE 802.3
+ * polynomial 0x04C11DB7 bit-reversed). Shared by utils_crc32_brown() and
+ * utils_crc32_ethl(); const so that it can live in ROM and needs no runtime
+ * initialization.
+ */
+static const uint32_t g_crc32_table[256] = {
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
   0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
   0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -169,54 +173,39 @@ uint32_t utils_achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed)
 } /* achks32() */
 
 uint32_t utils_crc32_brown(const uint8_t* buf, size_t size, uint32_t crc) {
-  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, size > 0);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf);
   const uint8_t* p;
 
+  /*
+   * Pre- and post-inversion, as in Brown's original: the result is standard
+   * CRC-32, and passing a previous result as crc continues the computation
+   * across buffers. Empty input returns crc unchanged.
+   */
   p   = buf;
   crc = crc ^ ~0U;
   while (size--) {
-    crc = crc32_brown_table[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+    crc = g_crc32_table[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
   }
-  return crc;
-}
-
-void utils_crc32_ethl_init(void) {
-  uint32_t      POLYNOMIAL = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
-  uint32_t      remainder;
-  unsigned char b = 0;
-  do {
-    remainder = b;
-    for (uint32_t bit = 8; bit > 0; --bit) {
-      if (remainder & 1) {
-        remainder = (remainder >> 1) ^ POLYNOMIAL;
-      } else {
-        remainder = (remainder >> 1);
-      }
-    } /* for(...) */
-    crc32_eth_table[(size_t)b] = remainder;
-  } while (0 != ++b);
+  return crc ^ ~0U;
 }
 
 uint32_t utils_crc32_ethl(const uint8_t* const buf, size_t n_bytes) {
-  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf);
   uint32_t crc;
-
-  /* if lookup table not already initialized, initialize it */
-  if (crc32_eth_table[1] == 0) {
-    utils_crc32_ethl_init();
-  }
 
   crc = CRC32_ETH_INITIAL_REMAINDER;
   for (size_t i = 0; i < n_bytes; ++i) {
-    crc = (crc >> 8) ^ crc32_eth_table[(crc & 0xFF) ^ buf[i]];
+    crc = (crc >> 8) ^ g_crc32_table[(crc & 0xFF) ^ buf[i]];
   } /* for(i..) */
   return ~crc; /* implied XOR with CRC32_ETH_FINAL_XOR */
 }
 
 uint32_t utils_crc32_eth(const uint8_t* const buf, size_t n_bytes) {
-  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf, n_bytes > 0);
-  int      i, j;
-  uint32_t crc, mask;
+  RCSW_FPC_NV(0xFFFFFFFF, NULL != buf);
+  int      i;
+  int      j;
+  uint32_t crc;
+  uint32_t mask;
   uint32_t poly = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
 
   i   = 0;

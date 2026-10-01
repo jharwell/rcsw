@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -9,7 +9,7 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/ds/llist_node.h"
+#include "ds/llist_node.h"
 
 #define RCSW_ER_MODNAME "rcsw.ds.llist"
 #define RCSW_ER_MODID LOG4CL_DS_LLIST
@@ -26,19 +26,9 @@ BEGIN_C_DECLS
 struct llist_node* llist_node_alloc(struct llist* const list) {
   struct llist_node* node = NULL;
   if (list->flags & RCSW_NOALLOC_META) {
-    /*
-     * Try to find an available data block. Start searching at the index
-     * corresponding to the element after that current # of elements in the
-     * list--this makes the search process O(1) even for large lists.
-     */
-    int alloc_idx =
-      allocm_probe(list->space.node_map, (size_t)list->max_elts, list->current);
-
+    int alloc_idx = allocm_alloc(list->space.node_map);
     RCSW_CHECK(-1 != alloc_idx);
     node = (list->space.nodes + alloc_idx);
-
-    /* mark node as in use */
-    allocm_mark_inuse(list->space.node_map + alloc_idx);
 
     ER_TRACE("Allocated llist_node %zu/%d", list->current + 1, list->max_elts);
   } else {
@@ -56,7 +46,7 @@ void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
   if (list->flags & RCSW_NOALLOC_META) {
     int index = (int)(node - list->space.nodes);
 
-    allocm_mark_free(list->space.node_map + index);
+    allocm_free(list->space.node_map, (size_t)index);
 
     ER_TRACE("Deallocated llist_node %d/%d", index + 1, list->max_elts);
   } else {
@@ -79,8 +69,8 @@ struct llist_node* llist_node_create(struct llist* const list,
   RCSW_CHECK_PTR(node);
 
   /*
-   * Get space for the datablock and copy the data, unless DS_LLIST_DB_DISOWN or
-   * DS_LLIST_NO_DATA was passed
+   * Get space for the datablock and copy the data, unless the list stores
+   * caller pointers (RCSW_DS_LLIST_DB_DISOWN or RCSW_DS_LLIST_DB_PTR)
    */
   if (list->flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
     node->data = data_in;
@@ -116,10 +106,9 @@ void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
       (size_t)((uint8_t*)datablock - (uint8_t*)list->space.datablocks) /
       list->elt_size;
 
-    /* mark data block as available */
-    allocm_mark_free(list->space.db_map + block_idx);
+    allocm_free(list->space.db_map, block_idx);
 
-    ER_TRACE("Dellocated data block %zu/%d", block_idx, list->max_elts);
+    ER_TRACE("Deallocated data block %zu/%d", block_idx, list->max_elts);
   } else {
     rcsw_free(datablock, RCSW_NONE);
   }
@@ -129,19 +118,10 @@ dptr_t* llist_node_datablock_alloc(struct llist* const list) {
   dptr_t* datablock = NULL;
 
   if (list->flags & RCSW_NOALLOC_DATA) {
-    /*
-     * Try to find an available data block. Start searching at the index
-     * corresponding to the element after that current # of elements in the
-     * list--this makes the search process O(1) even for large lists.
-     */
-    int alloc_idx =
-      allocm_probe(list->space.db_map, (size_t)list->max_elts, list->current);
+    int alloc_idx = allocm_alloc(list->space.db_map);
     RCSW_CHECK(-1 != alloc_idx);
     datablock = (void*)((uint8_t*)list->space.datablocks +
-                        (size_t)alloc_idx * list->elt_size);
-
-    /* mark data block as inuse */
-    allocm_mark_inuse(list->space.db_map + alloc_idx);
+                        ((size_t)alloc_idx * list->elt_size));
 
     ER_TRACE("Allocated data block %d/%d", alloc_idx, list->max_elts);
   } else {

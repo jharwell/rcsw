@@ -62,7 +62,8 @@ RUN apt-get update && apt-get install -y \
     file \
     graphviz \
     doxygen \
-    curl
+    curl \
+    bats
 
 ################################################################################
 # Install RCSW packages

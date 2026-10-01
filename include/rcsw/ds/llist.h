@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Doubly linked list.
  */
 
 #pragma once
@@ -14,6 +16,8 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/iter.h"
@@ -21,6 +25,8 @@
 /*******************************************************************************
  * Types
  ******************************************************************************/
+struct allocm_entry;
+
 /**
  * \brief Parameters for \ref llist.
  */
@@ -123,14 +129,14 @@ struct llist_space_mgmt {
 struct llist {
   /** For comparing two elements. Can be NULL. */
   int (*cmpe)(const void* const e1, const void* const e2);
-  void (*printe)(const void* e);  /// For printing an element. Can be NULL.
+  void (*printe)(const void* e);  ///< For printing an element. Can be NULL.
   struct llist_space_mgmt space;
-  size_t                  current;  /// number of nodes currently in the list.
-  int    max_elts;  /// Maximum # of allowed elements. -1 = no upper limit.
-  size_t elt_size;  /// Size in bytes of an element.
-  bool_t sorted;    /// If true, list is currently sorted.
-  struct llist_node* first;  /// First node in the list (for easy prepending)
-  struct llist_node* last;   /// Last node in the list (for easy appending)
+  size_t                  current;  ///< number of nodes currently in the list.
+  int    max_elts;  ///< Maximum # of allowed elements. -1 = no upper limit.
+  size_t elt_size;  ///< Size in bytes of an element.
+  bool_t sorted;    ///< If true, list is currently sorted.
+  struct llist_node* first;  ///< First node in the list (for easy prepending)
+  struct llist_node* last;   ///< Last node in the list (for easy appending)
 
   /**
    *
@@ -139,6 +145,7 @@ struct llist {
    * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
    * - \ref RCSW_DS_LLIST_DB_DISOWN
    * - \ref RCSW_DS_LLIST_DB_PTR
    * - \ref RCSW_DS_SORTED
@@ -206,8 +213,6 @@ BEGIN_C_DECLS
  * \brief Determine if the \ref llist is currently full.
  *
  * \param list The linked list handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t llist_isfull(const struct llist* const list) {
   RCSW_FPC_NV(false, NULL != list);
@@ -218,8 +223,6 @@ static inline bool_t llist_isfull(const struct llist* const list) {
  * \brief Determine if the \ref llist is currently empty.
  *
  * \param list The linked list handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t llist_isempty(const struct llist* const list) {
   RCSW_FPC_NV(false, NULL != list);
@@ -270,12 +273,13 @@ static inline size_t llist_meta_space(size_t max_elts) {
 /**
  * \brief Initialize a llist.
  *
- * \param list_in The handle to be filled. Must be non-NULL if \ref
- *                RCSW_NOALLOC_HANDLE passed in \ref llist_config.flags.
+ * \param list_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
- * \return The initialized list, or NULL if an error occured.
+ * \return The initialized list, or NULL if an error occurred.
  */
 RCSW_API struct llist* llist_init(struct llist*              list_in,
                                   const struct llist_config* params) RCSW_WUR;
@@ -284,7 +288,7 @@ RCSW_API struct llist* llist_init(struct llist*              list_in,
  * \brief Destroy a \ref llist
  *
  * The entire list is iterated through once. Any further use of the pointer to
- * this llist is undefined. This function is idempotent.
+ * this llist is undefined. Do not call it twice on the same list.
  *
  * \param list The list to destroy.
  */
@@ -309,7 +313,8 @@ RCSW_API status_t llist_clear(struct llist* list);
  * Memory for the node and its data is deallocated.
  *
  * \param list The linked list handle.
- * \param e To be filled with the data from the removed item if non-NULL.
+ * \param e The element to remove, matched with the list's \c cmpe
+ *          function.
  *
  * \return \ref status_t.
  */
@@ -366,7 +371,7 @@ RCSW_API void llist_print(struct llist* list);
  * \param list The linked list handle.
  * \param e The data to search for.
  *
- * \return The matching data, or NULL if an error occured or no match was
+ * \return The matching data, or NULL if an error occurred or no match was
  * found.
  */
 RCSW_API void* llist_data_query(struct llist* list, const void* e);
@@ -380,7 +385,7 @@ RCSW_API void* llist_data_query(struct llist* list, const void* e);
  * \param list The linked list handle
  * \param e The data to search for
  *
- * \return The node for which the data matched, or NULL if an error occured or
+ * \return The node for which the data matched, or NULL if an error occurred or
  * no match was found.
  */
 RCSW_API struct llist_node* llist_node_query(struct llist* list, const void* e);
@@ -402,8 +407,8 @@ RCSW_API status_t llist_sort(struct llist* list, enum exec_type type);
 /**
  * \brief Create a copy of a \ref llist.
  *
- * The flags,elements, and nodes fields of cparams are used to determine how
- * memory should be managed for the new list;
+ * \p flags, \p elements, and \p nodes determine how memory is managed for
+ * the new list.
  *
  * \param list The linked list handle.
  *
@@ -534,7 +539,8 @@ RCSW_API status_t llist_splice(struct llist*            list1,
 RCSW_API status_t llist_map(struct llist* list, void (*f)(void* e));
 
 /**
- * \brief Compute a cumulative SOMETHING using all elements in the \ref llist.
+ * \brief Compute a cumulative result (sum, count, ...) over all elements in the
+ * \ref llist.
  *
  * \param list The linked list handle.
  *
@@ -566,7 +572,7 @@ RCSW_API size_t llist_heap_footprint(const struct llist* list);
 extern const struct ds_ops llist_iter_ops;
 
 /**
- * \brief Initialise an iterator over a \ref llist.
+ * \brief Initialize an iterator over a \ref llist.
  *
  * \param iter     Caller-allocated iterator storage.
  * \param list     The list to iterate over.

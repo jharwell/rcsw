@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,6 +10,8 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/mutex.h"
+
+#include <errno.h>
 
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/flags.h"
@@ -21,18 +23,32 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/**
+ * \brief pthread functions return an error code instead of setting errno;
+ * copy it to errno so callers can tell, e.g., a timeout from a failure.
+ */
+static int rcsw_pthread_rc(int rc) {
+  if (0 != rc) {
+    errno = rc;
+  }
+  return rc;
+}
+
 struct mutex* mutex_init(struct mutex* mutex_in, uint32_t flags) {
-  struct mutex* mutex =
-    rcsw_alloc(mutex_in, sizeof(struct mutex), flags & RCSW_NOALLOC_HANDLE);
-
-  RCSW_CHECK_PTR(mutex);
+  struct mutex* mutex = rcsw_alloc(mutex_in,
+                                   sizeof(struct mutex),
+                                   flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == mutex) {
+    errno = ENOMEM;
+    return NULL;
+  }
   mutex->flags = flags;
-  RCSW_CHECK(0 == pthread_mutex_init(&mutex->impl, NULL));
+  if (0 != rcsw_pthread_rc(pthread_mutex_init(&mutex->impl, NULL))) {
+    /* never initialized: don't pthread_mutex_destroy() it */
+    rcsw_free(mutex, flags & RCSW_NOALLOC_HANDLE);
+    return NULL;
+  }
   return mutex;
-
-error:
-  mutex_destroy(mutex);
-  return NULL;
 } /* mutex_init() */
 
 void mutex_destroy(struct mutex* mutex) {
@@ -45,7 +61,7 @@ void mutex_destroy(struct mutex* mutex) {
 status_t mutex_lock(struct mutex* mutex) {
   RCSW_FPC_NV(ERROR, NULL != mutex);
 
-  RCSW_CHECK(0 == pthread_mutex_lock(&mutex->impl));
+  RCSW_CHECK(0 == rcsw_pthread_rc(pthread_mutex_lock(&mutex->impl)));
   return OK;
 
 error:
@@ -54,7 +70,7 @@ error:
 
 status_t mutex_unlock(struct mutex* mutex) {
   RCSW_FPC_NV(ERROR, NULL != mutex);
-  RCSW_CHECK(0 == pthread_mutex_unlock(&mutex->impl));
+  RCSW_CHECK(0 == rcsw_pthread_rc(pthread_mutex_unlock(&mutex->impl)));
   return OK;
 
 error:

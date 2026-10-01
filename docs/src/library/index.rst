@@ -1,8 +1,10 @@
-.. _libraries:
+.. SPDX-License-Identifier: MIT
 
-=========
-Libraries
-=========
+.. _library:
+
+=======
+Library
+=======
 
 RCSW (Robot Control Software) is a portable C library of foundational
 building blocks — data structures, synchronization primitives, logging, and
@@ -12,7 +14,7 @@ environments.
 All modules come with a thorough test suite; the tests also serve as
 worked usage examples.
 
-.. _library-platform-matrix:
+.. _library/platforms:
 
 Platform Availability
 =====================
@@ -49,7 +51,7 @@ which modules are available under each :cmake:variable:`RCSW_BUILD_FOR` setting.
      - ✗ (requires POSIX threads)
 
    * - :ref:`library/multiprocess`
-     - ✓ (requires MPI installation)
+     - ✓
      - ✗
 
    * - :ref:`library/swbus`
@@ -60,7 +62,7 @@ which modules are available under each :cmake:variable:`RCSW_BUILD_FOR` setting.
      - ✓
      - ✓
 
-   * - :ref:`library/boot`
+   * - :ref:`library/console`
      - ✗ (bare-metal only)
      - ✓
 
@@ -69,7 +71,7 @@ which modules are available under each :cmake:variable:`RCSW_BUILD_FOR` setting.
    :hidden:
 
    algorithm
-   boot
+   console
    er/index
    ds
    multithread

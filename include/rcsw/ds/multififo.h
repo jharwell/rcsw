@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2024 John Harwell, All rights reserved.
+ * \copyright 2024 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup ds
+ *
+ * \brief FIFO whose elements are consumed in pieces through child FIFOs.
  */
 
 #pragma once
@@ -11,6 +15,11 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <stdatomic.h>
+
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/fifo.h"
 
@@ -44,8 +53,8 @@ struct multififo_config {
   size_t max_elts;
 
   /**
-   * The # of child shadow FIFOs. Should be > 0; if it is 0, why are you using a
-   * multi-FIFO?
+   * The # of child shadow FIFOs: 1 to 8, since \ref multififo.front_refmask
+   * has one bit per child.
    */
   size_t n_children;
 
@@ -63,13 +72,12 @@ struct multififo_config {
 };
 
 /**
- * Convenience structure for making management of child FIFOs and their data
- * more readable in the code.
+ * \brief The child FIFOs of a \ref multififo and their storage.
  */
 struct multififo_children_mgmt {
   /**
    * Child shadow FIFOs containing references to the data in \ref
-   * multififo.root. Implictly uses \ref RCSW_NOALLOC_DATA, \ref
+   * multififo.root. Implicitly uses \ref RCSW_NOALLOC_DATA, \ref
    * RCSW_NOALLOC_HANDLE.
    */
   struct fifo* fifos;
@@ -78,7 +86,6 @@ struct multififo_children_mgmt {
    * Pointer to space for child FIFO elements; each FIFO has (root FIFO elt size
    * / child FIFO elt size) elements in it.
    */
-
   dptr_t* elements;
 
   /**
@@ -99,16 +106,13 @@ struct multififo_children_mgmt {
  *
  * All data lives in the "root" FIFO; no copies are made to child FIFOs.
  *
- * NOT thread safe.
- *
- * Synchronization safe, as in non-concurrent asynchronous accesses are OK: FIFO
- * provides a simple internal boolean "lock" which is taken and release during:
- *
- * - \ref multififo_add()
- * - \ref multififo_remove()
- *
- * All other functions must be called synchronously or bad things will probably
- * happen.
+ * NOT thread safe in general. \ref multififo_add() and \ref
+ * multififo_remove() hold an internal busy flag (taken with an atomic
+ * exchange) for their duration, so that an asynchronous consumer (e.g., an ISR
+ * draining a child FIFO) can check \ref multififo_islocked() and back off while
+ * the children are being updated. If either function finds the flag already
+ * held, it fails with \c EAGAIN without touching the multi-FIFO. All other
+ * functions must be called synchronously.
  */
 struct multififo {
   /**
@@ -119,19 +123,16 @@ struct multififo {
   /**
    * Bitmask indicating which child FIFOs have finished processing the current
    * front element in \ref multififo.root, and which haven't. Child FIFO \c i
-   * sets bit \code 1 << i \endcode.
+   * sets bit <tt>1 << i</tt>, so there can be at most 8 children.
    */
-
   uint8_t front_refmask;
 
   /**
-   * Super simple, non-threadsafe synchronization mechanism indicating if the
-   * \ref multififo is currently busy doing stuff. Callers consuming data
-   * through child FIFOs should check this flag before attempting to remove any
-   * data; if it is set, then an operation is in progress and any sort of
-   * dequeueing will probably cause errors.
+   * Atomic busy flag held by \ref multififo_add() and \ref
+   * multififo_remove(); read it with \ref multififo_islocked(). Consumers of
+   * child FIFOs must not dequeue while it is set.
    */
-  bool locked;
+  _Atomic(bool) locked;
 
   /**
    * Management of all root and child datablocks and metadata for the multi-FIFO.
@@ -139,11 +140,12 @@ struct multififo {
   struct multififo_children_mgmt children;
 
   /**
-   * Run-time configuration parameters. Valid flags are:
+   * Run-time configuration flags. Valid flags are:
    *
    * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
    *
    * All other flags are ignored.
    */
@@ -163,8 +165,6 @@ BEGIN_C_DECLS
  *       reference.
  *
  * \param fifo The multi-FIFO handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t multififo_isfull(const struct multififo* const fifo) {
   RCSW_FPC_NV(false, NULL != fifo);
@@ -179,8 +179,6 @@ static inline bool_t multififo_isfull(const struct multififo* const fifo) {
  *       reference.
  *
  * \param fifo The multi-FIFO handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t multififo_isempty(const struct multififo* const fifo) {
   RCSW_FPC_NV(false, NULL != fifo);
@@ -198,22 +196,20 @@ static inline bool_t multififo_isempty(const struct multififo* const fifo) {
  *
  * \return # elements in the multi-FIFO, or 0 on ERROR.
  */
-
 static inline size_t multififo_size(const struct multififo* const fifo) {
   RCSW_FPC_NV(0, NULL != fifo);
   return fifo_size(&fifo->root);
 }
 
 /**
- * \brief Determine if the multi-FIFO is currently locked (busy) or is safe for
- * child processes to try to receive data from.
+ * \brief Determine if the multi-FIFO is busy in \ref multififo_add() or \ref
+ * multififo_remove(). Child FIFO consumers must not dequeue while it is.
  *
  * \param fifo The multi-FIFO handle.
  */
-
 static inline bool_t multififo_islocked(const struct multififo* const fifo) {
   RCSW_FPC_NV(false, NULL != fifo);
-  return fifo->locked;
+  return atomic_load_explicit(&fifo->locked, memory_order_acquire);
 }
 
 /**
@@ -233,7 +229,7 @@ static inline size_t multififo_capacity(const struct multififo* const fifo) {
 }
 
 /**
- * \brief Calculate the # of bytes that the multi- FIFO will require if \ref
+ * \brief Calculate the # of bytes that the multi-FIFO will require if \ref
  * RCSW_NOALLOC_DATA is passed to manage a specified # of elements of a
  * specified size.
  *
@@ -249,9 +245,9 @@ static inline size_t multififo_element_space(size_t max_elts, size_t elt_size) {
 
 /**
  * \brief Calculate the # of bytes needed for all child shadow FIFOs to point
- * into elements in \ref multififo.root .
+ * into elements in \ref multififo.root.
  *
- * \param elt_size Sizeof root FIFO elements in bytes.
+ * \param elt_size Size of root FIFO elements in bytes.
  *
  * \param n_children # of shadow child FIFOs.
  *
@@ -268,9 +264,9 @@ static inline size_t multififo_meta_space(size_t elt_size, size_t n_children) {
 /**
  * \brief Initialize a multi-FIFO.
  *
- * \param fifo_in An application allocated handle for the multi-FIFO. Cannot be
- *                NULL if \ref RCSW_NOALLOC_HANDLE is passed in \ref
- *                multififo_config.flags.
+ * \param fifo_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param params The initialization parameters.
  *
@@ -302,7 +298,8 @@ RCSW_API void multififo_destroy(struct multififo* fifo);
  *
  * \param e The element to enqueue. Cannot be NULL.
  *
- * \return \ref status_t .
+ * \return \ref status_t. ERROR with errno=EAGAIN if the multi-FIFO is busy
+ * (see \ref multififo_islocked()).
  */
 RCSW_API status_t multififo_add(struct multififo* fifo, const void* e);
 
@@ -332,8 +329,9 @@ static inline void* multififo_front(const struct multififo* const fifo) {
  *
  * \param e The element to dequeue into from the multi-FIFO. Can be NULL.
  *
- * \return \ref status_t . Note that it is an ERROR to try to remove an element
- * from the root FIFO before all children have finished processing it.
+ * \return \ref status_t. Note that it is an ERROR to try to remove an element
+ * from the root FIFO before all children have finished processing it. ERROR
+ * with errno=EAGAIN if the multi-FIFO is busy (see \ref multififo_islocked()).
  */
 RCSW_API status_t multififo_remove(struct multififo* fifo, void* e);
 
@@ -342,6 +340,8 @@ RCSW_API status_t multififo_remove(struct multififo* fifo, void* e);
  *
  * Empty the FIFO, but do not deallocate its memory. This also clears all child
  * shadow FIFOs.
+ *
+ * \param fifo The multi-FIFO handle.
  *
  * \return \ref status_t.
  */

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,6 +10,8 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/rdwrlock.h"
+
+#include <errno.h>
 
 #define RCSW_ER_MODID LOG4CL_MT_RDWRLOCK
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "mt", "rdwrl")
@@ -132,23 +134,36 @@ error:
  * Public API
  ******************************************************************************/
 struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
-  struct rdwrlock* rdwr =
-    rcsw_alloc(rdwr_in, sizeof(struct rdwrlock), flags & RCSW_NOALLOC_HANDLE);
-
-  RCSW_CHECK_PTR(rdwr);
-  rdwr->flags = flags;
-
+  struct rdwrlock* rdwr = rcsw_alloc(rdwr_in,
+                                     sizeof(struct rdwrlock),
+                                     flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == rdwr) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  rdwr->flags     = flags;
   rdwr->n_readers = 0;
-  RCSW_CHECK(NULL != csem_init(&rdwr->order, 1, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK(NULL != csem_init(&rdwr->access, 1, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK(NULL != csem_init(&rdwr->read, 1, RCSW_NOALLOC_HANDLE));
 
+  /* Each step is undone in reverse on failure; errno is set by csem_init() */
+  if (NULL == csem_init(&rdwr->order, 1, RCSW_NOALLOC_HANDLE)) {
+    goto free_handle;
+  }
+  if (NULL == csem_init(&rdwr->access, 1, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_order;
+  }
+  if (NULL == csem_init(&rdwr->read, 1, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_access;
+  }
   return rdwr;
 
-error:
-  rdwrl_destroy(rdwr);
+destroy_access:
+  csem_destroy(&rdwr->access);
+destroy_order:
+  csem_destroy(&rdwr->order);
+free_handle:
+  rcsw_free(rdwr, flags & RCSW_NOALLOC_HANDLE);
   return NULL;
-} /* rdwrlinit() */
+} /* rdwrl_init() */
 
 void rdwrl_destroy(struct rdwrlock* const rdwr) {
   RCSW_FPC_V(NULL != rdwr);

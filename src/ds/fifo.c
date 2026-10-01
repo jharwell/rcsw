@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -29,7 +29,9 @@ struct fifo* fifo_init(struct fifo*                    fifo_in,
   RCSW_ER_MODULE_INIT();
 
   struct fifo* fifo =
-    rcsw_alloc(fifo_in, sizeof(struct fifo), params->flags & RCSW_NOALLOC_HANDLE);
+    rcsw_alloc(fifo_in,
+               sizeof(struct fifo),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(fifo);
   memset(fifo, 0, sizeof(*fifo));

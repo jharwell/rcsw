@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/swbus:
 
 ====================
@@ -24,8 +26,9 @@ Key concepts:
 
 - **Buffer Pool** — A :c:struct:`mpool` from which packet payload memory is
   allocated. One bus instance can have multiple pools of different element
-  sizes; the bus selects the smallest pool whose buffers are large enough to
-  hold a given packet. Memory is reference-counted: each subscribed RXQ holds
+  sizes; the bus uses the first pool, in configuration order, whose buffers
+  are large enough for the packet and that has one free. List pools from
+  smallest to largest to get the best fit. Memory is reference-counted: each subscribed RXQ holds
   one reference, which is released when the application calls
   :c:func:`swbus_rxq_pop_front()`.
 
@@ -41,23 +44,25 @@ Initialization
 
 ::
 
-   struct mpool_params pool_params = {
+   struct mpool_config pool_config = {
        .max_elts = 32,
        .elt_size = 128,   /* maximum packet size this pool can hold */
-       /* supply .elements / .meta or leave NULL to malloc */
+       /* .elements / .meta + RCSW_NOALLOC_* flags for caller storage */
    };
 
-   struct swbus_params params = {
+   struct swbus_config config = {
        .name      = "mybus",
        .max_rxqs  = 8,
        .max_subs  = 16,
        .max_pools = 1,
-       .pools     = &pool_params,
-       /* .flags = RCSW_SWBUS_ASYNC to opt out of sync guarantees */
+       .pools     = &pool_config,
+       /* &bus below is caller storage; add RCSW_SWBUS_ASYNC to opt out of
+        * sync guarantees */
+       .flags     = RCSW_NOALLOC_HANDLE,
    };
 
    struct swbus bus;
-   if (NULL == swbus_init(&bus, &params)) {
+   if (NULL == swbus_init(&bus, &config)) {
        /* initialization failed */
    }
 
@@ -82,12 +87,14 @@ Two-phase publish (reserve then release)
 -----------------------------------------
 
 For zero-copy or scatter-gather scenarios, you can write directly into the
-bus-allocated buffer before committing::
+bus-allocated buffer before committing. The packet size subscribers see is
+``res.pkt_size``; set it lower before releasing to publish less than you
+reserved::
 
    struct swbus_rsrvn res;
    if (OK == swbus_publish_reserve(&bus, &res, sizeof(pkt))) {
        memcpy(res.data, pkt, sizeof(pkt));
-       swbus_publish_release(&bus, 0x10, &res, sizeof(pkt));
+       swbus_publish_release(&bus, 0x10, &res);
    }
 
 .. NOTE::
@@ -95,6 +102,11 @@ bus-allocated buffer before committing::
    If :c:func:`swbus_publish_reserve()` succeeds but
    :c:func:`swbus_publish_release()` is never called, the reserved buffer
    will leak until the pool is destroyed. Always pair reserve with release.
+
+A reservation can also be built by hand, with ``data`` pointing at a buffer
+the application owns, ``pkt_size`` set, and ``bp = NULL``. Nothing is copied
+and no pool is involved, so the application must keep the buffer valid until
+every subscriber has called :c:func:`swbus_rxq_pop_front()`.
 
 Receiving
 =========
@@ -111,10 +123,10 @@ Receiving
        swbus_rxq_pop_front(rxq, ent);
    }
 
-   /* Non-blocking peek at front entry */
+   /* Front entry, without waiting: NULL (errno = EAGAIN) if the queue is empty */
    struct swbus_rxq_ent* front = swbus_rxq_front(rxq);
 
-   /* Timed wait */
+   /* Timed wait (relative timeout; see the concurrency concepts page) */
    struct timespec timeout = { .tv_sec = 1, .tv_nsec = 0 };
    ent = swbus_rxq_timedwait(&bus, rxq, &timeout);
 
@@ -156,7 +168,8 @@ API Summary
    * - :c:func:`swbus_publish()`
      - Convenience wrapper: reserve a buffer, copy the caller's packet into
        it, and notify all subscribers. Returns ``ERROR`` if no pool has a
-       free buffer large enough for ``pkt_size``.
+       free buffer large enough for ``pkt_size`` (``ENOSPC``), or if a
+       subscribed RXQ is full; publishing never blocks on a full RXQ.
 
    * - :c:func:`swbus_publish_reserve()`
      - Allocate a buffer from the appropriate pool and return a reservation
@@ -176,8 +189,9 @@ API Summary
        specified timeout if no packet arrives.
 
    * - :c:func:`swbus_rxq_front()`
-     - Non-blocking peek at the front entry. Returns ``NULL`` if the queue
-       is empty.
+     - Return the front entry without waiting, or ``NULL`` if the RXQ is
+       empty. Takes no bus handle, so in sync mode it doesn't wait for an
+       in-progress publish to reach every subscriber.
 
    * - :c:func:`swbus_rxq_pop_front()`
      - Release the buffer-pool reference for the front entry and remove it
@@ -187,10 +201,13 @@ API Summary
 Thread Safety
 =============
 
-The bus handle itself is protected by an internal :c:struct:`mutex` for
-subscription management and by a :c:struct:`rdwrlock` for publish/receive
-synchronization (in sync mode). Individual RXQs are :c:struct:`pcqueue`
-instances and are independently thread-safe for single-producer / multi-consumer
-use. Do not call :c:func:`swbus_rxq_init()` or :c:func:`swbus_subscribe()` /
-:c:func:`swbus_unsubscribe()` concurrently with :c:func:`swbus_publish()` on
-the same bus instance without external coordination.
+See also :ref:`concepts/concurrency`.
+
+Creating RXQs, subscribing, unsubscribing and releasing a publish all take
+the bus's internal :c:struct:`mutex`, so they can be called from any thread
+at any time; they are serialized with each other. In sync mode a
+:c:struct:`rdwrlock` additionally keeps receivers in :c:func:`swbus_rxq_wait()`
+/ :c:func:`swbus_rxq_timedwait()` from seeing a packet until it has reached
+every subscriber. RXQs are :c:struct:`pcqueue` instances and are thread-safe
+on their own. Don't call any function on a bus after
+:c:func:`swbus_destroy()`.

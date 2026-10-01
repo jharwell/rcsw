@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \brief Common definitions for all data structures.
+ *
+ * \ingroup ds
  */
 
 #pragma once
@@ -13,6 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include <stddef.h>
+
+#include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
 #include "rcsw/core/flags.h"
 #include "rcsw/ds/allocm.h"
@@ -79,14 +84,16 @@ enum exec_type {
  * another data structure. An example use case would be an LRU list pointing to
  * datablocks within a cache.
  *
- * This flag has several side effects:
+ * The list stores the caller's pointers and never allocates or frees
+ * datablocks. Consequently:
  *
- * 1. \ref llist_filter2() will not work as intended: the llist_nodes will be
- *    deallocated, but the datablocks for those llist_nodes will still be
- *    allocated, and (possibly) irretrievable.
+ * 1. Removing elements (\ref llist_remove(), \ref llist_remove_if(), \ref
+ *    llist_delete(), \ref llist_clear()) releases only the nodes; the data
+ *    remains owned by whoever owns it.
  *
- * 2. \ref llist_filter() works the same as \ref llist_copy2() (a conditional
- *    copy)
+ * 2. Lists created from this one (\ref llist_copy(), \ref llist_copy_if(),
+ *    \ref llist_filter()) copy the data, unless they are themselves created
+ *    with \ref RCSW_DS_LLIST_DB_DISOWN or \ref RCSW_DS_LLIST_DB_PTR.
  *
  */
 #define RCSW_DS_LLIST_DB_DISOWN (1 << (RCSW_MODFLAGS_SHIFT + 4))
@@ -133,10 +140,11 @@ enum exec_type {
 #define RCSW_DS_BINHEAP_MIN (1 << (RCSW_MODFLAGS_SHIFT + 9))
 
 /**
- * \brief If you want to define additional flags for derived data structures,
- * start with this one to ensure no conflicts.
+ * \brief Bit position of the first flag bit not used by \c ds. Data structures
+ * built on top of \c ds define their flags as
+ * <tt>(1 << (RCSW_DS_EXTFLAGS_SHIFT + n))</tt> to avoid conflicts.
  */
-#define RCSW_DS_EXTFLAGS_SHIFT 10
+#define RCSW_DS_EXTFLAGS_SHIFT (RCSW_MODFLAGS_SHIFT + 10)
 
 /*******************************************************************************
  * Private API
@@ -144,10 +152,9 @@ enum exec_type {
 BEGIN_C_DECLS
 
 /**
- * \brief Utility function to swap two elements.
+ * \brief Utility function to swap two non-overlapping elements of any size.
  *
- * If the element is larger than double, a for() loop is used. Otherwise
- * pointers are used.
+ * Works on raw bytes, so elements need no particular alignment.
  *
  * \param elt1 Element #1.
  * \param elt2 Element #2.
@@ -171,7 +178,7 @@ RCSW_LOCAL status_t ds_elt_swap(void* elt1, void* elt2, size_t elt_size);
  * \return Total # of bytes required.
  */
 static inline size_t ds_meta_space(size_t max_elts) {
-  return sizeof(struct allocm_entry) * max_elts;
+  return allocm_map_bytes(max_elts);
 }
 
 /**

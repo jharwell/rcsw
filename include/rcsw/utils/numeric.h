@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -17,6 +17,7 @@
  ******************************************************************************/
 #include "rcsw/al/types.h"
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"  // IWYU pragma: keep
 
 /*******************************************************************************
  * Public API
@@ -66,7 +67,7 @@ RCSW_API void utils_permute(
  * \param elt      Pointer to the element to test.
  * \param elt_size Size of the element in bytes.
  *
- * \return \ref bool_t TRUE if all bytes are zero.
+ * \return true if all bytes are zero.
  */
 RCSW_API bool_t utils_zchk(void* elt, size_t elt_size);
 

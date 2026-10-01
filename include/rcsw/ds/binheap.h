@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -17,9 +17,11 @@
  ******************************************************************************/
 #include <math.h>
 
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/ds/ds.h"
 
 /*******************************************************************************
  * Macro Definitions
@@ -50,11 +52,6 @@ struct binheap_config {
    * For comparing elements. Cannot be NULL.
    */
   int (*cmpe)(const void* const e1, const void* const e2);
-
-  /**
-   * For comparing keys associated with elements. Cannot be NULL.
-   */
-  int (*cmpkey)(const void* const e1, const void* const e2);
 
   /**
    * For printing an element. Can be NULL. If NULL, you can't use \ref
@@ -96,7 +93,7 @@ struct binheap_config {
  * the top of the heap; other elements can be in any order.
  *
  * Implemented using a binary tree inside a \ref darray, starting at index
- * 1. Index 0 is used for a temp element for swapping elements during sifting.
+ * 1; index 0 is used for a temp element for swapping elements during sifting.
  */
 struct binheap {
   /**
@@ -127,8 +124,6 @@ BEGIN_C_DECLS
  * \brief Determine if the heap is currently full.
  *
  * \param heap The heap handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t binheap_isfull(const struct binheap* const heap) {
   RCSW_FPC_NV(false, NULL != heap);
@@ -139,8 +134,6 @@ static inline bool_t binheap_isfull(const struct binheap* const heap) {
  * \brief Determine if the heap is currently empty.
  *
  * \param heap The heap handle.
- *
- * \return \ref bool_t
  */
 static inline bool_t binheap_isempty(const struct binheap* const heap) {
   RCSW_FPC_NV(false, NULL != heap);
@@ -168,7 +161,8 @@ static inline size_t binheap_size(const struct binheap* const heap) {
  */
 static inline size_t binheap_capacity(struct binheap* heap) {
   RCSW_FPC_NV(0, NULL != heap);
-  return darray_capacity(&heap->arr);
+  size_t cap = darray_capacity(&heap->arr);
+  return (cap > 0) ? cap - 1 : 0; /* -1 for the reserved tmp element */
 }
 
 /**
@@ -194,7 +188,12 @@ static inline size_t binheap_element_space(size_t max_elts, size_t elt_size) {
  */
 static inline status_t binheap_clear(struct binheap* heap) {
   RCSW_FPC_NV(ERROR, heap != NULL);
-  return darray_clear(&heap->arr);
+  RCSW_CHECK(OK == darray_clear(&heap->arr));
+  /* keep the reserved tmp element at index 0 */
+  return darray_set_size(&heap->arr, 1);
+
+error:
+  return ERROR;
 }
 
 /**
@@ -224,15 +223,16 @@ static inline size_t binheap_height(const struct binheap* heap) {
 /**
  * \brief Initialize a heap.
  *
- * \param heap_in The heap handle to be filled (can be NULL if
- *                    \ref RCSW_NOALLOC_HANDLE not passed).
+ * \param heap_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
  *
- * \param params Initialization parameters.
+ * \param config Initialization parameters.
  *
  * \return The initialized heap, or NULL if an error occurred.
  */
 RCSW_API struct binheap* binheap_init(
-  struct binheap* heap_in, const struct binheap_config* params) RCSW_WUR;
+  struct binheap* heap_in, const struct binheap_config* config) RCSW_WUR;
 
 /**
  * \brief Destroy a heap. Any further use of the heap handle after calling this
@@ -283,20 +283,15 @@ RCSW_API status_t binheap_extract(struct binheap* heap, void* e);
 /**
  * \brief Delete the key at index i on the heap.
  *
+ * The last element is moved into the hole and sifted to its correct position.
+ *
  * \param heap The heap handle.
  *
- * \param index The index to delete.
- *
- * \param minmax The minimum/maximum value of whatever data type the heap is
- *               managing (i.e. for a min heap of ints it would be
- *               INT_INT). Will be a sentinel data in the allocated array for
- *               the heap.
+ * \param index The index to delete (1-based, 1 <= index <= size).
  *
  * \return \ref status_t.
  */
-RCSW_API status_t binheap_delete_key(struct binheap* heap,
-                                     size_t          index,
-                                     const void*     minmax);
+RCSW_API status_t binheap_delete_key(struct binheap* heap, size_t index);
 
 /**
  * \brief Update the value of key at index i (presumably a decrease, but it

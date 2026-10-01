@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -29,9 +29,11 @@
 #define RCSW_BSWAP16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
 
 /** \brief Swap the byte order of a 32-bit value. */
-#define RCSW_BSWAP32(w32)                                     \
-  ((((w32) & 0xFF000000) >> 24) | (((w32) & 0xFF0000) >> 8) | \
-   (((w32) & 0xFF00) << 8) | (((w32) & 0xFF) << 24))
+#define RCSW_BSWAP32(w32)                    \
+  ((((uint32_t)(w32) & 0xFF000000U) >> 24) | \
+   (((uint32_t)(w32) & 0x00FF0000U) >> 8) |  \
+   (((uint32_t)(w32) & 0x0000FF00U) << 8) |  \
+   (((uint32_t)(w32) & 0x000000FFU) << 24))
 
 /** \brief Swap the byte order of a 64-bit value. */
 #define RCSW_BSWAP64(w64)                                \
@@ -39,8 +41,9 @@
    ((uint64_t)(RCSW_BSWAP32(RCSW_BITS_HI64(w64) >> 32))))
 
 /** \brief Swap the two 16-bit halves of a 32-bit value (word swap). */
-#define RCSW_WSWAP32(w32) \
-  ((((w32) & 0xFFFF0000) >> 16) | (((w32) & 0xFFFF) << 16))
+#define RCSW_WSWAP32(w32)                    \
+  ((((uint32_t)(w32) & 0xFFFF0000U) >> 16) | \
+   (((uint32_t)(w32) & 0x0000FFFFU) << 16))
 
 /*******************************************************************************
  * Public API
@@ -55,9 +58,10 @@ BEGIN_C_DECLS
 RCSW_API void utils_arr8_reverse(void* arr, size_t size);
 
 /**
- * \brief Swap two elements in a uint32_t array.
+ * \brief Swap two elements of any size in an array.
  *
- * \param v Array containing the elements.
+ * \param arr Array containing the elements.
+ * \param elt_size Size of each element in bytes.
  * \param i Index of the first element.
  * \param j Index of the second element.
  */
@@ -68,6 +72,9 @@ RCSW_API void utils_elt_swap(void* arr, size_t elt_size, size_t i, size_t j);
  *
  * Fills \p len - 1 characters from the printable ASCII range [33, 126]
  * and appends a null terminator, so \c strlen(buf) == len - 1 afterward.
+ *
+ * Characters come from the C library's random(). Not reentrant, and not
+ * suitable for anything security-related.
  *
  * \param buf Buffer to fill. Must be at least \p len bytes.
  * \param len Total buffer size including the null terminator.

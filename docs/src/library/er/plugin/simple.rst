@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 The simple bare-bones logger.
 
 This plugin uses RCSW's built-in :c:func:`stdio_printf()` and minimal stdlib
@@ -26,9 +28,10 @@ The modules in this plugin:
 
 Each emitted logging statement is of the form::
 
-  <RCSW_ER_MODNAME> [LVL] <message>
+  <RCSW_ER_MODNAME> [LVL  ] <message>
 
-``LVL`` is one of [FATAL, ERROR, INFO, WARN, DEBUG, TRACE], and
+``LVL`` is one of [FATAL, ERROR, WARN, INFO, DEBUG, TRACE], padded to five
+characters; FATAL and ERROR are colored red on an ANSI terminal.
 ``<message>`` is the rendered message. :c:macro:`RCSW_ER_MODNAME` defines the
 logical name of the module.
 
@@ -40,7 +43,7 @@ This plugin is useful in:
 - Bare metal hardware validation tests.
 
 
-Plugin Configuration Details
+.. rubric:: Plugin configuration
 
 .. list-table::
    :header-rows: 1
@@ -50,29 +53,31 @@ Plugin Configuration Details
 
      - Notes
 
-   * - :c:macro:`RCSW_ER_PLUGIN_PRINTF`
+   * - ``RCSW_ER_PLUGIN_PRINTF``
 
      - Defined as :c:func:`stdio_printf()`.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_INIT()`
+   * - ``RCSW_ER_PLUGIN_INIT()``
 
      - Idempotent/not used by this plugin.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_DEINIT()`
+   * - ``RCSW_ER_PLUGIN_DEINIT()``
 
      - Idempotent/not used by this plugin.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_REPORT()`
+   * - ``RCSW_ER_PLUGIN_REPORT()``
 
      - None.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_INSMOD`
+   * - ``RCSW_ER_PLUGIN_INSMOD``
 
      - Idempotent/not used by this plugin.
 
-   * - :c:macro:`RCSW_ER_PLUGIN_LVL_CHECK`
+   * - ``RCSW_ER_PLUGIN_LVL_CHECK``
 
-     - Not used by this plugin/always ``true``.
+     - Compares against the compile-time level only. Statements below it are
+       already compiled out, so in practice every remaining statement is
+       emitted.
 
    * - :c:macro:`RCSW_ER_MODNAME`
 

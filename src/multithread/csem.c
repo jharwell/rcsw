@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,6 +10,10 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/multithread/csem.h"
+
+#include <errno.h>
+#include <limits.h>
+#include <semaphore.h>
 
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/compilers.h"
@@ -24,18 +28,21 @@
 BEGIN_C_DECLS
 
 struct csem* csem_init(struct csem* const sem_in, size_t value, uint32_t flags) {
-  struct csem* sem =
-    rcsw_alloc(sem_in, sizeof(struct csem), flags & RCSW_NOALLOC_HANDLE);
-
-  RCSW_CHECK_PTR(sem);
+  RCSW_FPC_NV(NULL, value <= SEM_VALUE_MAX);
+  struct csem* sem = rcsw_alloc(sem_in,
+                                sizeof(struct csem),
+                                flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == sem) {
+    errno = ENOMEM;
+    return NULL;
+  }
   sem->flags = flags;
-  RCSW_CHECK(0 == sem_init(&sem->impl,
-                           0, /* shared between threads */
-                           (unsigned int)value));
+  if (0 !=
+      sem_init(&sem->impl, 0 /* shared between threads */, (unsigned)value)) {
+    rcsw_free(sem, flags & RCSW_NOALLOC_HANDLE); /* errno set by sem_init() */
+    return NULL;
+  }
   return sem;
-
-error:
-  return NULL;
 } /* csem_init() */
 
 void csem_destroy(struct csem* sem) {
@@ -47,7 +54,13 @@ void csem_destroy(struct csem* sem) {
 
 status_t csem_wait(struct csem* sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
-  RCSW_CHECK(0 == sem_wait(&sem->impl));
+
+  /* A signal interrupting the wait is not a failure: keep waiting */
+  int rc;
+  do {
+    rc = sem_wait(&sem->impl);
+  } while (0 != rc && EINTR == errno);
+  RCSW_CHECK(0 == rc);
   return OK;
 
 error:
@@ -67,9 +80,7 @@ status_t csem_timedwait(struct csem* const sem, const struct timespec* const to)
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
   struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
   RCSW_CHECK(OK == utils_ts_make_abs(to, &ts));
-  RCSW_CHECK(0 == sem_timedwait(&sem->impl, &ts));
-
-  return OK;
+  return csem_timedwait_abs(sem, &ts);
 
 error:
   return ERROR;
@@ -78,8 +89,13 @@ error:
 status_t csem_timedwait_abs(struct csem* const           sem,
                             const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
-  RCSW_CHECK(0 == sem_timedwait(&sem->impl, to));
 
+  /* Retry after a signal; the absolute deadline stays fixed */
+  int rc;
+  do {
+    rc = sem_timedwait(&sem->impl, to);
+  } while (0 != rc && EINTR == errno);
+  RCSW_CHECK(0 == rc);
   return OK;
 
 error:

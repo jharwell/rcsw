@@ -30,9 +30,14 @@ Or, if you have installed RCSW via ``cmake --install``:
    find_package(rcsw REQUIRED)
    target_link_libraries(myapp PRIVATE rcsw::rcsw)
 
-RCSW exports a single CMake target ``rcsw``. All include paths, compile
-definitions, and transitive dependencies are propagated automatically via that
-target.
+Which targets you link depends on how RCSW was built:
+
+- **Monolithic build**: one target, ``rcsw::rcsw``, as above.
+- **Component build**: one target per component. Link the components you use;
+  each one brings its own dependencies (see :ref:`concepts/components`).
+
+Either way, include paths, compile definitions, and transitive dependencies
+are propagated automatically through the targets.
 
 .. _startup/dev:
 
@@ -74,7 +79,7 @@ Build Targets
      stdlib from the selected compiler. To also strip stdlib, pass
      ``LIBRA_NOSTDLIB`` (see :ref:`LIBRA docs <libra:main>`); this
      restricts which modules are usable. See
-     :ref:`library-platform-matrix` for the full breakdown.
+     :ref:`library/platforms` for the full breakdown.
 
 
 .. cmake:variable:: RCSW_CONFIG_LIBTYPE
@@ -109,25 +114,23 @@ Memory Allocation
    :c:macro:`RCSW_NOALLOC_META`, :c:macro:`RCSW_NOALLOC_DATA`, and
    :c:macro:`RCSW_NOALLOC_HANDLE` for all modules that support them.
 
-   You can also set these flags individually at runtime via the
-   ``params->flags`` field on each module's ``_params`` struct. The three flags
-   are independent: for example, you can supply a caller-allocated handle
-   (:c:macro:`RCSW_NOALLOC_HANDLE`) while allowing the library to malloc element
-   storage (omit :c:macro:`RCSW_NOALLOC_DATA`).  See :ref:`ds-memory-model` for
-   details and ``XX_element_space()`` / ``XX_meta_space()`` for sizing helpers.
+   You can also set these flags individually at run time, in the ``flags``
+   field of each module's ``xx_config`` struct. See
+   :ref:`concepts/memory-model`.
 
 .. cmake:variable:: RCSW_CONFIG_ZALLOC
 
    :default: NO
 
    Zero-initialize all memory (whether dynamically allocated or caller-supplied)
-   before use. See :c:macro:`RCSW_ZALLOC` for full implications.
+   before use, as if :c:macro:`RCSW_ZALLOC` were passed everywhere. See
+   :ref:`concepts/memory-model`.
 
 .. cmake:variable:: RCSW_CONFIG_PTR_ALIGN
 
-   :default: x86: 4; ARM: 1; all others: 1
+   :default: 8 on 64-bit and 4 on 32-bit known architectures; 1 otherwise
 
-  Override the pointer alignment used to store all application data
+   Override the pointer alignment used to store all application data
    managed by RCSW.
 
    Some architectures trap on unaligned accesses (e.g., strict ARM variants);
@@ -136,7 +139,8 @@ Memory Allocation
    targets. Override if you know your target requires or benefits from a
    specific alignment.
 
-   Must be one of [1, 2, 4].
+   Must be one of [1, 2, 4, 8]. See :ref:`concepts/memory-model` for how to
+   choose.
 
 STDIO / printf Replacement
 --------------------------
@@ -148,14 +152,17 @@ STDIO / printf Replacement
    Name of the ``putchar()``-compatible function RCSW's printf will
    call to emit characters. Must have the same signature as
    ``putchar()``. Override when linking to a custom BSP output
-   routine.
+   routine. In a shared build the function must be resolvable when RCSW
+   itself is linked; see :ref:`concepts/components`.
 
 .. cmake:variable:: RCSW_CONFIG_STDIO_GETCHAR
 
    :default: ``getchar``
 
-   Name of the ``getchar()``-compatible function RCSW's printf will call to read
-   characters. Must have the same signature as ``getchar()``.
+   Name of the ``getchar()``-compatible function :c:func:`stdio_getchar` calls
+   to read characters (minimon reads its input this way). Must have the same
+   signature as ``getchar()``. The same linking rule as
+   :cmake:variable:`RCSW_CONFIG_STDIO_PUTCHAR` applies.
 
 printf() formatting behavior (float support, buffer sizes, precision,
 etc.) is controlled by the `eyalroz/printf

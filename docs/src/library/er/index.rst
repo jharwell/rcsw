@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/er:
 
 ====================
@@ -9,18 +11,8 @@ any of several *plugins*. Application code uses a single set of macros
 (``ER_DEBUG()``, ``ER_WARN()``, etc.) regardless of which plugin is active;
 the plugin is selected at build time via :cmake:variable:`RCSW_CONFIG_ER_PLUGIN`.
 
-Concepts
-========
-
-- **Module** — The unit into which related logging is grouped. Modules are
-  file-scoped: each ``.c`` file corresponds to at most one module. A module
-  is identified by a numeric UUID (:c:macro:`RCSW_ER_MODID`) and a string
-  name (:c:macro:`RCSW_ER_MODNAME`).
-
-- **Active module** — A module is active if
-  ``RCSW_ER_PLUGIN_INSMOD()`` has been previously called for it (for
-  plugins that support install/enable). Logging statements in an inactive
-  module are suppressed at runtime.
+See :ref:`concepts/event-reporting` for modules, module IDs, levels, and
+compile-time versus run-time filtering.
 
 Quickstart
 ==========
@@ -64,76 +56,6 @@ from a single initializer that doesn't correspond to a specific file.
    it works correctly with every plugin (e.g., it substitutes ``_`` for
    ``.`` when building for zlog).
 
-Module ID Allocation
-====================
-
-Module IDs are 64-bit integers. RCSW reserves the lower 32 bits
-(``0x00000000XXXXXXXX``) for its own internal modules. Application and
-library code should use IDs in the upper 32 bits.
-
-A simple allocation strategy for a multi-library project is to assign each
-library a unique upper 16-bit prefix, and use the lower 16 bits within
-that library for per-file IDs:
-
-.. code-block:: c
-
-   /* Library A owns prefix 0x0001 */
-   #define RCSW_ER_MODID  0x0001000000000001ULL  /* library_a/foo.c */
-   #define RCSW_ER_MODID  0x0001000000000002ULL  /* library_a/bar.c */
-
-   /* Library B owns prefix 0x0002 */
-   #define RCSW_ER_MODID  0x0002000000000001ULL  /* library_b/baz.c */
-
-ID uniqueness is only required for the ``LOG4CL`` plugin; other plugins
-ignore :c:macro:`RCSW_ER_MODID` entirely. Collisions in LOG4CL cause both
-files' log output to be controlled by whichever module was installed last
-under that ID.
-
-.. _er-levels:
-
-Levels
-======
-
-Levels are ordered from most to least severe. Setting a module's level to
-``X`` enables all statements at severity ``X`` and above.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 15 85
-
-   * - Level
-     - Behavior
-
-   * - ``NONE``
-     - All event reporting disabled.
-
-   * - ``FATAL``
-     - Only FATAL events emitted.
-
-   * - ``ERROR``
-     - [FATAL, ERROR] emitted.
-
-   * - ``WARN``
-     - [FATAL, ERROR, WARN] emitted.
-
-   * - ``INFO``
-     - [FATAL, ERROR, WARN, INFO] emitted. Default after
-       ``RCSW_ER_PLUGIN_INSMOD()`` for plugins that support levels.
-
-   * - ``DEBUG``
-     - [FATAL, ERROR, WARN, INFO, DEBUG] emitted.
-
-   * - ``TRACE``
-     - All events emitted. Highest verbosity.
-
-Levels can be controlled at two points:
-
-- **Compile-time**: Statements below the compile-time threshold are
-  removed by the preprocessor (zero overhead). Set via
-  ``LIBRA_ERL_LVL`` at build time.
-- **Run-time**: For plugins that support it (LOG4CL, zlog), levels can
-  be adjusted per module while the application is running.
-
 Plugins
 =======
 
@@ -170,9 +92,10 @@ Plugin Comparison
 
    * - Stdlib required
      - No
-     - No
      - Yes
-     - ``simple`` uses :c:func:`stdio_printf()`.
+     - Yes
+     - ``simple`` uses :c:func:`stdio_printf()`; LOG4CL uses libc
+       ``printf()``.
 
    * - Per-module enable/disable
      - No
@@ -198,12 +121,13 @@ Plugin Comparison
      - Yes
      - zlog routes to files, syslog, etc. via ``.conf``.
 
-   * - Thread safety (level check)
+   * - Thread safety
      - N/A
      - Yes\ :sup:`†`
      - N/A (zlog-internal)
-     - \ :sup:`†` LOG4CL level checks are thread-safe as long as module
-       installation/removal is not done concurrently.
+     - \ :sup:`†` On POSIX, LOG4CL serializes module installation, removal,
+       lookup and level changes internally. Don't call ``RCSW_ER_DEINIT()``
+       while other threads are reporting.
 
    * - Best for
      - Bare-metal, bootstraps, no OS

@@ -1,29 +1,25 @@
 @PACKAGE_INIT@
 
-# Every rcsw library links printf::printf (eyalroz/printf), which is installed
-# alongside rcsw by printf's own install rules. It must be found before the
-# exports files are loaded, since they reference it.
+# printf (eyalroz/printf) backs the stdio code, and is installed alongside rcsw
+# by printf's own install rules. It must be found before the exports files are
+# loaded, since they reference it.
 include(CMakeFindDependencyMacro)
 find_dependency(printf)
 
 # Monolithic library (installed only with RCSW_CONFIG_BUILD_MONOLITHIC=ON).
+# Its export namespace already gives it the name rcsw::rcsw.
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-exports.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-exports.cmake")
 endif()
 
 # Component libraries: each has its own exports file under
-# lib/cmake/@PROJECT_NAME@_<component>/. Loaded in dependency order (al and
-# core first), because an exports file errors out if a target it links to
-# hasn't been loaded yet.
-set(_@PROJECT_NAME@_components "@_CONFIGURED_COMPONENTS@")
-foreach(_comp IN LISTS _@PROJECT_NAME@_components)
-  set(_exports
-      "${CMAKE_CURRENT_LIST_DIR}/../@PROJECT_NAME@_${_comp}/@PROJECT_NAME@_${_comp}-exports.cmake"
+# lib/cmake/@PROJECT_NAME@_<component>/. They're listed after the components
+# they need, so each exports file's check that the targets it links exist
+# passes.
+foreach(_comp IN ITEMS @_CONFIGURED_COMPONENTS@)
+  include(
+    "${CMAKE_CURRENT_LIST_DIR}/../@PROJECT_NAME@_${_comp}/@PROJECT_NAME@_${_comp}-exports.cmake"
   )
-  if(NOT EXISTS "${_exports}")
-    continue()
-  endif()
-  include("${_exports}")
   set(@PROJECT_NAME@_${_comp}_FOUND TRUE)
 
   # Same name as in the build tree: rcsw::<component>. An INTERFACE IMPORTED
@@ -39,4 +35,19 @@ foreach(_comp IN LISTS _@PROJECT_NAME@_components)
 endforeach()
 
 set_and_check(@PROJECT_NAME@_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+
+# Say which requested components are missing; check_required_components() only
+# marks the package as not found.
+set(_@PROJECT_NAME@_missing)
+foreach(_comp IN LISTS @PROJECT_NAME@_FIND_COMPONENTS)
+  if(@PROJECT_NAME@_FIND_REQUIRED_${_comp} AND NOT @PROJECT_NAME@_${_comp}_FOUND)
+    list(APPEND _@PROJECT_NAME@_missing ${_comp})
+  endif()
+endforeach()
+if(_@PROJECT_NAME@_missing)
+  list(JOIN _@PROJECT_NAME@_missing ", " _@PROJECT_NAME@_missing)
+  set(@PROJECT_NAME@_NOT_FOUND_MESSAGE
+      "Requested components not installed: ${_@PROJECT_NAME@_missing}")
+endif()
+
 check_required_components(@PROJECT_NAME@)

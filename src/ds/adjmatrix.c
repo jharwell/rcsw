@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,6 +10,9 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/ds/adjmatrix.h"
+
+#include <errno.h>
+#include <string.h>
 
 #define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "adjmatrix")
 #define RCSW_ER_MODID LOG4CL_DS_ADJMATRIX
@@ -33,12 +36,17 @@ static void adjmatrix_printew(const void* const e) {
  ******************************************************************************/
 struct adjmatrix* adjmatrix_init(struct adjmatrix* const              matrix_in,
                                  const struct adjmatrix_config* const params) {
-  RCSW_FPC_NV(NULL, NULL != params);
+  RCSW_FPC_NV(NULL,
+              NULL != params,
+              params->n_vertices > 0,
+              /* weights on an undirected graph are not supported */
+              params->is_directed || !params->is_weighted);
   RCSW_ER_MODULE_INIT();
 
-  struct adjmatrix* matrix = rcsw_alloc(matrix_in,
-                                        sizeof(struct adjmatrix),
-                                        params->flags & RCSW_NOALLOC_HANDLE);
+  struct adjmatrix* matrix =
+    rcsw_alloc(matrix_in,
+               sizeof(struct adjmatrix),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(matrix);
   matrix->flags = params->flags;
@@ -77,9 +85,10 @@ struct adjmatrix* adjmatrix_init(struct adjmatrix* const              matrix_in,
   if (matrix->is_weighted) {
     for (size_t i = 0; i < matrix->n_vertices; ++i) {
       for (size_t j = 0; j < matrix->n_vertices; ++j) {
-        double* tmp = matrix_access(&matrix->matrix, i, j);
+        void* tmp = matrix_access(&matrix->matrix, i, j);
         if (RCSW_LIKELY(NULL != tmp)) {
-          *tmp = NAN;
+          double nan = NAN;
+          memcpy(tmp, &nan, sizeof(nan)); /* may be unaligned */
         }
       } /* for(j..) */
     } /* for(i..) */
@@ -106,14 +115,18 @@ status_t adjmatrix_edge_addu(struct adjmatrix* const matrix, size_t u, size_t v)
               u < matrix->n_vertices,
               v < matrix->n_vertices);
 
+  if (adjmatrix_edge_query(matrix, u, v)) {
+    return OK; /* already present: nothing to count */
+  }
   int val = 1;
   ER_TRACE("Add undirected edge: (%zu, %zu), (%zu, %zu)", u, v, v, u);
   RCSW_CHECK(OK == matrix_set(&matrix->matrix, u, v, &val));
   ++matrix->n_edges;
 
-  RCSW_CHECK(OK == matrix_set(&matrix->matrix, v, u, &val));
-  ++matrix->n_edges;
-
+  if (u != v) {
+    RCSW_CHECK(OK == matrix_set(&matrix->matrix, v, u, &val));
+    ++matrix->n_edges;
+  }
   return OK;
 
 error:
@@ -128,21 +141,39 @@ status_t adjmatrix_edge_addd(struct adjmatrix* const matrix,
               NULL != matrix,
               matrix->is_directed,
               u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              v < matrix->n_vertices,
+              !matrix->is_weighted || NULL != w);
 
+  bool_t existed = adjmatrix_edge_query(matrix, u, v);
   ER_TRACE("Add directed edge: (%zu, %zu) = %f", u, v, w ? *w : 1.0);
-  if (matrix->is_weighted) {
+  if (matrix->is_weighted) { /* re-adding updates the weight */
     RCSW_CHECK(OK == matrix_set(&matrix->matrix, u, v, w));
   } else {
     int val = 1;
     RCSW_CHECK(OK == matrix_set(&matrix->matrix, u, v, &val));
   }
-  ++matrix->n_edges;
+  if (!existed) {
+    ++matrix->n_edges;
+  }
   return OK;
 
 error:
   return ERROR;
 } /* adjmatrix_edge_addd() */
+
+/**
+ * \brief Clear the (u, v) entry: NAN for weighted graphs, 0 otherwise.
+ */
+static status_t adjmatrix_entry_clear(struct adjmatrix* const matrix,
+                                      size_t                  u,
+                                      size_t                  v) {
+  if (matrix->is_weighted) {
+    double nan = NAN;
+    memcpy(matrix_access(&matrix->matrix, u, v), &nan, sizeof(nan));
+    return OK;
+  }
+  return matrix_elt_clear(&matrix->matrix, u, v);
+} /* adjmatrix_entry_clear() */
 
 status_t adjmatrix_edge_remove(struct adjmatrix* const matrix,
                                size_t                  u,
@@ -151,24 +182,19 @@ status_t adjmatrix_edge_remove(struct adjmatrix* const matrix,
               NULL != matrix,
               u < matrix->n_vertices,
               v < matrix->n_vertices);
-  ER_TRACE("Remove edge: (%zu, %zu)", u, v);
 
-  if (matrix->is_weighted) {
-    *(double*)matrix_access(&matrix->matrix, u, v) = NAN;
-  } else {
-    RCSW_CHECK(OK == matrix_elt_clear(&matrix->matrix, u, v));
+  if (!adjmatrix_edge_query(matrix, u, v)) {
+    errno = ENOENT;
+    return ERROR;
   }
-
+  ER_TRACE("Remove edge: (%zu, %zu)", u, v);
+  RCSW_CHECK(OK == adjmatrix_entry_clear(matrix, u, v));
   --matrix->n_edges;
 
   /* If the graph is undirected, also remove edge from v to u. */
-  if (!matrix->is_directed) {
+  if (!matrix->is_directed && u != v) {
     ER_TRACE("Remove edge: (%zu, %zu)", v, u);
-    if (matrix->is_weighted) {
-      *(double*)matrix_access(&matrix->matrix, v, u) = NAN;
-    } else {
-      RCSW_CHECK(OK == matrix_elt_clear(&matrix->matrix, v, u));
-    }
+    RCSW_CHECK(OK == adjmatrix_entry_clear(matrix, v, u));
     --matrix->n_edges;
   }
   return OK;

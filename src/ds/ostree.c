@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -13,9 +13,8 @@
 
 #include <limits.h>
 
+#include "ds/ostree_node.h"
 #include "rcsw/core/fpc.h"
-#include "rcsw/ds/bstree_node.h"
-#include "rcsw/ds/ostree_node.h"
 #include "rcsw/er/client.h"
 
 BEGIN_C_DECLS
@@ -58,11 +57,12 @@ struct ostree_node* ostree_select(const struct bstree* const tree,
   int                 k    = node->left->count;
   if (i == k) {
     return node;
-  } else if (i < k) {
-    return ostree_select(tree, node->left, i);
-  } else {
-    return ostree_select(tree, node->right, i - (k + 1));
   }
+  if (i < k) {
+    return ostree_select(tree, node->left, i);
+  }
+  return ostree_select(tree, node->right, i - (k + 1));
+
 } /* ostree_select() */
 
 int ostree_rank(const struct bstree* const      tree,

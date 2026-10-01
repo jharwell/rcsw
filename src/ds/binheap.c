@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -114,7 +114,7 @@ static void binheap_sift_down(struct binheap* const heap, size_t m) {
  * \brief Sift nth element up to correct place in heap after insertion.
  *
  * \param heap The heap handle.
- * \param n The index of the element to sift.
+ * \param i The index of the element to sift.
  */
 static void binheap_sift_up(struct binheap* const heap, size_t i) {
   /*
@@ -144,33 +144,37 @@ static void binheap_sift_up(struct binheap* const heap, size_t i) {
  ******************************************************************************/
 struct binheap* binheap_init(struct binheap*                    heap_in,
                              const struct binheap_config* const config) {
-  RCSW_FPC_NV(NULL,
-              NULL != config,
-              config->max_elts > 0,
-              config->elt_size > 0,
-              NULL != config->cmpe);
+  RCSW_FPC_NV(NULL, NULL != config, config->max_elts > 0, config->elt_size > 0);
+  ER_ASSERT(NULL != config->cmpe, "binheap requires cmpe()");
   RCSW_ER_MODULE_INIT();
 
-  struct binheap* heap = rcsw_alloc(heap_in,
-                                    sizeof(struct binheap),
-                                    config->flags & RCSW_NOALLOC_HANDLE);
+  struct binheap* heap =
+    rcsw_alloc(heap_in,
+               sizeof(struct binheap),
+               config->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(heap);
 
   heap->flags = config->flags;
 
   struct darray_config dconfig = {
     /* +1 is for the tmp element at index 0 */
-    .init_size = RCSW_MAX((size_t)1, config->init_size + 1),
+    .init_size = RCSW_MIN(config->init_size, config->max_elts) + 1,
     .printe    = config->printe,
     .cmpe      = config->cmpe,
     .elt_size  = config->elt_size,
     .max_elts  = (int)config->max_elts,
     .elements  = config->elements,
-    .flags     = (config->flags & ~RCSW_NOALLOC_HANDLE)};
-  dconfig.flags |= RCSW_NOALLOC_HANDLE;
+    /* only allocation flags apply to the backing array: e.g. a user-passed
+     * RCSW_DS_SORTED must not make it re-sort the heap */
+    .flags =
+      (config->flags & (RCSW_NOALLOC_DATA | RCSW_ZALLOC)) | RCSW_NOALLOC_HANDLE};
   dconfig.max_elts += (dconfig.max_elts == -1) ? 0 : 1;
 
-  RCSW_CHECK(NULL != darray_init(&heap->arr, &dconfig));
+  if (NULL == darray_init(&heap->arr, &dconfig)) {
+    /* the array was never initialized: only release the handle */
+    rcsw_free(heap, heap->flags & RCSW_NOALLOC_HANDLE);
+    return NULL; /* errno set by darray_init() */
+  }
   RCSW_CHECK(OK == darray_set_size(&heap->arr, 1));
 
   /*
@@ -190,7 +194,7 @@ struct binheap* binheap_init(struct binheap*                    heap_in,
 
 error:
   binheap_destroy(heap);
-  errno = EAGAIN;
+  errno = ENOMEM;
   return NULL;
 } /* binheap_init() */
 
@@ -202,8 +206,12 @@ void binheap_destroy(struct binheap* heap) {
 } /* binheap_destroy() */
 
 status_t binheap_insert(struct binheap* const heap, const void* const e) {
-  RCSW_FPC_NV(ERROR, heap != NULL, e != NULL, !binheap_isfull(heap));
+  RCSW_FPC_NV(ERROR, heap != NULL, e != NULL);
 
+  if (binheap_isfull(heap)) {
+    errno = ENOSPC;
+    return ERROR;
+  }
   RCSW_CHECK(OK == darray_insert(&heap->arr, e, heap->arr.current));
 
   /* Sift last element up to its correct position in the heap. */
@@ -220,20 +228,17 @@ status_t binheap_make(struct binheap* const heap,
   RCSW_FPC_NV(ERROR, NULL != heap, NULL != data, n_elts > 0);
 
   ER_DEBUG("Making heap from %zu %zu-byte elements", n_elts, heap->arr.elt_size);
-  for (size_t i = 0; i < n_elts; ++i) {
-    RCSW_CHECK(OK == darray_insert(&heap->arr,
-                                   (const uint8_t*)data + heap->arr.elt_size * i,
-                                   i + 1));
-  } /* for(i..) */
-  RCSW_CHECK(OK == darray_set_size(&heap->arr, n_elts + 1));
-  /* Find median element, (n / 2) */
-  size_t k = (binheap_size(heap) / 2) + 1;
 
-  /* Sift each element preceding the median down to its correct position. */
-  while (k > 1) {
-    k--;
+  /* Append to any existing contents, then re-heapify everything (Floyd) */
+  for (size_t i = 0; i < n_elts; ++i) {
+    RCSW_CHECK(OK ==
+               darray_insert(&heap->arr,
+                             (const uint8_t*)data + (heap->arr.elt_size * i),
+                             heap->arr.current));
+  } /* for(i..) */
+  for (size_t k = binheap_size(heap) / 2; k >= 1; --k) {
     binheap_sift_down(heap, k);
-  } /* while() */
+  } /* for(k..) */
   return OK;
 
 error:
@@ -262,9 +267,15 @@ error:
 status_t binheap_update_key(struct binheap* const heap,
                             size_t                index,
                             const void* const     new_val) {
-  RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != new_val);
+  RCSW_FPC_NV(ERROR,
+              NULL != heap,
+              index > 0,
+              index <= binheap_size(heap),
+              NULL != new_val);
   RCSW_CHECK(OK == darray_data_set(&heap->arr, index, new_val));
+  /* the key may have moved either way; at most one of these does work */
   binheap_sift_up(heap, index);
+  binheap_sift_down(heap, index);
 
   return OK;
 
@@ -272,12 +283,21 @@ error:
   return ERROR;
 } /* binheap_update_key() */
 
-status_t binheap_delete_key(struct binheap* const heap,
-                            size_t                index,
-                            const void* const     minmax) {
-  RCSW_FPC_NV(ERROR, NULL != heap, index > 0, NULL != minmax);
-  RCSW_CHECK(OK == binheap_update_key(heap, index, minmax));
-  RCSW_CHECK(OK == binheap_extract(heap, NULL));
+status_t binheap_delete_key(struct binheap* const heap, size_t index) {
+  RCSW_FPC_NV(ERROR, NULL != heap, index > 0, index <= binheap_size(heap));
+
+  size_t last = binheap_size(heap);
+  if (index != last) {
+    /* move the last element into the hole, then restore heap order */
+    RCSW_CHECK(OK == darray_data_set(&heap->arr,
+                                     index,
+                                     darray_data_get(&heap->arr, last)));
+  }
+  RCSW_CHECK(OK == darray_remove(&heap->arr, NULL, last));
+  if (index < last) {
+    binheap_sift_up(heap, index);
+    binheap_sift_down(heap, index);
+  }
   return OK;
 
 error:
@@ -289,7 +309,7 @@ void binheap_print(const struct binheap* const heap) {
     DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
     return;
   }
-  return darray_print(&heap->arr);
+  darray_print(&heap->arr);
 } /* binheap_print() */
 
 END_C_DECLS

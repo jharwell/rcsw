@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,6 +11,7 @@
  ******************************************************************************/
 #include "rcsw/multithread/pcqueue.h"
 
+#include <errno.h>
 #include <string.h>
 
 #include "rcsw/core/alloc.h"
@@ -26,11 +27,14 @@ struct pcqueue* pcqueue_init(struct pcqueue*                    queue_in,
                              const struct pcqueue_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params, params->max_elts > 0, params->elt_size > 0);
 
-  struct pcqueue* queue = rcsw_alloc(queue_in,
-                                     sizeof(struct pcqueue),
-                                     params->flags & RCSW_NOALLOC_HANDLE);
-
-  RCSW_CHECK_PTR(queue);
+  struct pcqueue* queue =
+    rcsw_alloc(queue_in,
+               sizeof(struct pcqueue),
+               params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == queue) {
+    errno = ENOMEM;
+    return NULL;
+  }
   memset(queue, 0, sizeof(*queue));
   queue->flags = params->flags;
 
@@ -42,18 +46,31 @@ struct pcqueue* pcqueue_init(struct pcqueue*                    queue_in,
                                     .flags    = params->flags};
   impl_params.flags |= RCSW_NOALLOC_HANDLE;
 
-  RCSW_CHECK(NULL != fifo_init(&queue->fifo, &impl_params));
-
+  /* Each step is undone in reverse on failure; errno is set by the callee */
+  if (NULL == fifo_init(&queue->fifo, &impl_params)) {
+    goto free_handle;
+  }
   /* all slots available initially */
-  RCSW_CHECK_PTR(
-    csem_init(&queue->slots_avail, params->max_elts, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK_PTR(csem_init(&queue->slots_inuse, 0, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK_PTR(mutex_init(&queue->mutex, RCSW_NOALLOC_HANDLE));
+  if (NULL ==
+      csem_init(&queue->slots_avail, params->max_elts, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_fifo;
+  }
+  if (NULL == csem_init(&queue->slots_inuse, 0, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_avail;
+  }
+  if (NULL == mutex_init(&queue->mutex, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_inuse;
+  }
   return queue;
 
-error:
-  pcqueue_destroy(queue);
-  errno = EAGAIN;
+destroy_inuse:
+  csem_destroy(&queue->slots_inuse);
+destroy_avail:
+  csem_destroy(&queue->slots_avail);
+destroy_fifo:
+  fifo_destroy(&queue->fifo);
+free_handle:
+  rcsw_free(queue, params->flags & RCSW_NOALLOC_HANDLE);
   return NULL;
 } /* pcqueue_init() */
 
@@ -84,6 +101,26 @@ status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {
 
   return rval;
 } /* pcqueue_push() */
+
+status_t pcqueue_trypush(struct pcqueue* const queue, const void* const e) {
+  RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
+
+  if (OK != csem_trywait(&queue->slots_avail)) {
+    errno = ENOSPC; /* full: don't wait */
+    return ERROR;
+  }
+
+  mutex_lock(&queue->mutex);
+  status_t rval = fifo_add(&queue->fifo, e);
+  mutex_unlock(&queue->mutex);
+
+  if (OK == rval) {
+    csem_post(&queue->slots_inuse);
+  } else {
+    csem_post(&queue->slots_avail); /* give the slot back */
+  }
+  return rval;
+} /* pcqueue_trypush() */
 
 status_t pcqueue_pop(struct pcqueue* const queue, void* const e) {
   RCSW_FPC_NV(ERROR, NULL != queue);
@@ -150,7 +187,8 @@ error:
 status_t pcqueue_peek(struct pcqueue* const queue, void** const e) {
   RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
 
-  csem_wait(&queue->slots_inuse);
+  RCSW_CHECK(OK == csem_trywait(&queue->slots_inuse));
+
   mutex_lock(&queue->mutex);
 
   *e = fifo_front(&queue->fifo);
@@ -159,6 +197,20 @@ status_t pcqueue_peek(struct pcqueue* const queue, void** const e) {
   csem_post(&queue->slots_inuse);
 
   return OK;
+
+error:
+  *e    = NULL;
+  errno = EAGAIN;
+  return ERROR;
 } /* pcqueue_peek() */
 
+status_t pcqueue_waitpeek(struct pcqueue* const queue, void** const e) {
+  RCSW_FPC_NV(ERROR, NULL != queue, NULL != e);
+  csem_wait(&queue->slots_inuse);
+  mutex_lock(&queue->mutex);
+  *e = fifo_front(&queue->fifo);
+  mutex_unlock(&queue->mutex);
+  csem_post(&queue->slots_inuse);
+  return OK;
+}
 END_C_DECLS

@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup ds
+ *
+ * \brief Order statistics tree.
  */
 
 #pragma once
@@ -13,13 +15,17 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
+#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/ds/bstree.h"
+#include "rcsw/ds/ds.h"
 
 /*******************************************************************************
  * Macros
  ******************************************************************************/
 /**
- * \brief \see RCSW_BSTREE_ROOT()
+ * \copydoc RCSW_BSTREE_ROOT()
  */
 #define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
 
@@ -27,16 +33,8 @@
  * Types
  ******************************************************************************/
 /**
- * \struct ostree
- *
- * \brief An Order Statistics tree (specialized \ref bstree)
- *
- * \copydoc bstree
- */
-
-/**
- * \brief A node in an \ref ostree, derived from a \ref bstree_node (share
- * common fields).
+ * \brief A node in an order-statistic tree, derived from a \ref bstree_node
+ * (share common fields).
  *
  * \note With later GCC versions, if you don't have the casting right for
  * functions which are shared between bstree and ostree, things won't work
@@ -64,7 +62,7 @@ struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) ostree_node {
  ******************************************************************************/
 BEGIN_C_DECLS
 /**
- * \brief Initialize \ref ostree specific bits of a BST.
+ * \brief Initialize the order-statistic tree specific bits of a BST.
  *
  * \param tree The ostree handle.
  */
@@ -81,14 +79,14 @@ RCSW_LOCAL void ostree_init_helper(struct bstree* tree);
  ******************************************************************************/
 
 /**
- * \brief \see bstree_element_space()
+ * \copydoc bstree_element_space()
  */
 static inline size_t ostree_element_space(size_t max_elts, size_t elt_size) {
   return bstree_element_space(max_elts, elt_size);
 }
 
 /**
- * \brief Calculate the space needed for the nodes in a \ref ostree.
+ * \brief Calculate the space needed for the nodes in an order-statistic tree.
  *
  * Used in conjunction with \ref RCSW_NOALLOC_META. The +2 is for the root and
  * nil nodes.
@@ -103,7 +101,7 @@ static inline size_t ostree_meta_space(size_t max_elts) {
 }
 
 /**
- * \brief \see bstree_delete()
+ * \copydoc bstree_delete()
  */
 static inline status_t ostree_delete(struct bstree*      tree,
                                      struct ostree_node* victim,
@@ -112,19 +110,21 @@ static inline status_t ostree_delete(struct bstree*      tree,
 }
 
 /**
- * \brief \see bstree_remove()
+ * \copydoc bstree_remove()
  */
 static inline status_t ostree_remove(struct bstree* tree, const void* key) {
   return bstree_remove(tree, key);
 }
 
 /**
- * \brief \see bstree_destroy()
+ * \copydoc bstree_destroy()
  */
-static inline void ostree_destroy(struct bstree* tree) { bstree_destroy(tree); }
+static inline void ostree_destroy(struct bstree* tree) {
+  return bstree_destroy(tree);
+}
 
 /**
- * \brief \see bstree_node_query()
+ * \copydoc bstree_node_query()
  */
 static inline struct ostree_node* ostree_node_query(
   const struct bstree* const tree,
@@ -136,7 +136,7 @@ static inline struct ostree_node* ostree_node_query(
 }
 
 /**
- * \brief Select the ith smallest element in the \ref ostree.
+ * \brief Select the ith smallest element in the order-statistic tree.
  *
  * \param tree The ostree handle.
  *
@@ -152,7 +152,7 @@ RCSW_API struct ostree_node* ostree_select(const struct bstree* tree,
                                            int                  i);
 
 /**
- * \brief Get the rank of an element within an \ref ostree.
+ * \brief Get the rank of an element within an order-statistic tree.
  *
  * \param tree The OStree handle.
  * \param node The node to get the rank of.
@@ -163,13 +163,26 @@ RCSW_API int ostree_rank(const struct bstree*      tree,
                          const struct ostree_node* node);
 
 /**
- * \brief \see bstree_init_internal()
+ * \brief Initialize an order statistics tree.
+ *
+ * \param tree_in Caller storage for the handle, used only if \ref
+ *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                otherwise. See \rcswdoc{concepts/memory-model}.
+ * \param params Initialization parameters.
+ *
+ * \return The initialized tree, or NULL if an error occurred.
  */
 RCSW_API struct bstree* ostree_init(struct bstree*              tree_in,
                                     const struct bstree_config* params);
 
 /**
- * \brief \see bstree_insert_internal()
+ * \brief Insert an element into an order-statistic tree.
+ *
+ * \param tree The ostree handle.
+ * \param key The key for the data to insert.
+ * \param data The data to insert.
+ *
+ * \return \ref status_t
  */
 RCSW_API status_t ostree_insert(struct bstree* tree, void* key, void* data);
 

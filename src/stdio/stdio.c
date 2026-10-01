@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,6 +11,9 @@
  ******************************************************************************/
 #include "rcsw/stdio/stdio.h"
 
+#include <errno.h>
+
+#include "rcsw/core/fpc.h"
 #include "rcsw/stdio/string.h"
 
 /*******************************************************************************
@@ -20,8 +23,10 @@
  * This is the name of the putchar function that the printf() library expects,
  * so we shim it to stdio_putchar().
  */
+/* NOLINTBEGIN(readability-identifier-naming) */
 void putchar_(char c);
 void putchar_(char c) { stdio_putchar(c); }
+/* NOLINTEND(readability-identifier-naming) */
 
 /*******************************************************************************
  * Public API
@@ -39,8 +44,9 @@ size_t stdio_puts(const char* const s) {
 } /* stdio_puts() */
 
 int stdio_atoi(const char* s, int base) {
-  char c;
-  int  result = 0;
+  RCSW_FPC_NV(0, NULL != s, base >= 2, base <= 16);
+  /* Accumulate unsigned: INT_MIN parses, and overflow wraps rather than UB */
+  unsigned result = 0;
 
   while (*s == ' ') {
     ++s; /* advance past any spaces */
@@ -53,84 +59,83 @@ int stdio_atoi(const char* s, int base) {
     s++; /* advance pass the '-'/'+' */
   }
 
-  if (base == 16) {
-    s += 2; /* advance past the '0x' */
+  /* The 0x prefix is optional for base 16 */
+  if (base == 16 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+    s += 2;
   }
 
-  while (*s != '\0') {
-    c = (char)stdio_toupper(*s);
+  /* Stop at the first character that is not a digit in this base */
+  for (; *s != '\0'; ++s) {
+    char c     = (char)stdio_toupper(*s);
+    int  digit = -1;
     if ((c >= '0') && (c <= '9')) {
-      result = (result * base) + (c - '0');
-    } else if ((c >= 'A') && (c <= 'F') && (base == 16)) {
-      result = (result * base) + (c + 10 - 'A');
-    } else {
-      break; /* unknown char--bail */
+      digit = c - '0';
+    } else if ((c >= 'A') && (c <= 'F')) {
+      digit = c - 'A' + 10;
     }
-    ++s;
-  } /* while() */
+    if (digit < 0 || digit >= base) {
+      break;
+    }
+    result = (result * (unsigned)base) + (unsigned)digit;
+  } /* for(s..) */
 
-  return neg ? -result : result;
+  return (int)(neg ? 0U - result : result);
 } /* stdio_atoi() */
 
-char* stdio_itoad(int32_t n, char* s) {
-  int i = 0;
+char* stdio_itoad(int32_t n, char* s, size_t len) {
+  RCSW_FPC_NV(NULL, NULL != s);
 
-  if (n == 0) {
-    s[i++] = '0';
-  } else if (n < 0) {
+  /* Work with the magnitude as unsigned: -INT32_MIN does not fit in int32_t */
+  uint32_t mag = (n < 0) ? (0U - (uint32_t)n) : (uint32_t)n;
+
+  size_t n_digits = 1;
+  for (uint32_t tmp = mag; tmp >= 10; tmp /= 10) {
+    ++n_digits;
+  }
+  /* sign (except for 0) + digits + NUL */
+  size_t needed = n_digits + ((n == 0) ? 0U : 1U) + 1;
+  if (len < needed) {
+    errno = ENOSPC;
+    return NULL;
+  }
+
+  size_t i = 0;
+  if (n < 0) {
     s[i++] = '-';
-    n      = -n;
-  } else {
+  } else if (n > 0) {
     s[i++] = '+';
   }
-  while (n > 0) {
-    s[i++] = (char)((int)'0' + (int)(n % 10));
-    n /= 10;
+  s[i + n_digits] = '\0';
+  for (size_t k = n_digits; k != 0; --k) {
+    s[i + k - 1] = (char)('0' + (int)(mag % 10));
+    mag /= 10;
   }
-
-  s[i] = '\0';
-  stdio_strrev(s + 1, (size_t)(i - 1));
   return s;
 } /* stdio_itoad() */
 
-char* stdio_itoax(uint32_t i, char* s, bool_t add_0x) {
-  size_t n;
-  size_t n_digits;
+char* stdio_itoax(uint32_t i, char* s, size_t len, bool_t add_0x) {
+  RCSW_FPC_NV(NULL, NULL != s);
 
-  if (i < 0x10) {
-    n_digits = 1;
-  } else if (i < 0x100) {
-    n_digits = 2;
-  } else if (i < 0x1000) {
-    n_digits = 3;
-  } else if (i < 0x10000) {
-    n_digits = 4;
-  } else if (i < 0x100000) {
-    n_digits = 5;
-  } else if (i < 0x1000000) {
-    n_digits = 6;
-  } else if (i < 0x10000000) {
-    n_digits = 7;
-  } else {
-    n_digits = 8;
+  size_t n_digits = 1;
+  for (uint32_t tmp = i; tmp >= 0x10; tmp >>= 4) {
+    ++n_digits;
+  }
+  size_t prefix = add_0x ? 2U : 0U;
+  if (len < prefix + n_digits + 1) {
+    errno = ENOSPC;
+    return NULL;
   }
 
   if (add_0x) {
-    *s++ = '0';
-    *s++ = 'x';
+    s[0] = '0';
+    s[1] = 'x';
   }
-
-  s += n_digits;
-  *s = '\0';
-  for (n = n_digits; n != 0; --n) {
-    *--s = "0123456789abcdef"[i & 0x0F];
+  s[prefix + n_digits] = '\0';
+  for (size_t k = n_digits; k != 0; --k) {
+    s[prefix + k - 1] = "0123456789abcdef"[i & 0x0F];
     i >>= 4;
   }
-  if (add_0x) {
-    return s - 2;
-  } else {
-    return s;
-  }
+  return s;
 } /* stdio_itoax() */
 
 END_C_DECLS

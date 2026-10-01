@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: MIT
+
 .. _library/ds:
 
 ===============
@@ -50,10 +52,17 @@ Available Structures
      - :c:struct:`fifo`
      - Push/pop: O(1)
 
+   * - Multi-FIFO
+     - A FIFO of large elements, each consumed in smaller pieces through up
+       to 8 child FIFOs that point into it. Data is never copied to the
+       children.
+     - :c:struct:`multififo`
+     - Push/pop: see API reference
+
    * - Raw FIFO
-     - Only handles {1, 2, 4}-byte elements. Uses only pointer arithmetic
-       when adding/removing elements—no ``memcpy()`` or function calls—so
-       it is ISR-safe.
+     - Only handles {1, 2, 4}-byte elements. Lock-free for exactly one
+       producer and one consumer, so it can pass data between an ISR and the
+       main loop.
      - :c:struct:`rawfifo`
      - Push/pop: O(1)
 
@@ -69,33 +78,39 @@ Available Structures
      - Insert/remove/query: O(h), worst case O(n) on unbalanced tree
 
    * - Red-Black Tree
-     - Self-balancing BST. Uses approach in *Introduction To Algorithms*.
-     - :c:struct:`rbtree`
+     - Self-balancing BST: a :c:struct:`bstree` created with
+       :c:macro:`RCSW_DS_BSTREE_RB`. Uses approach in *Introduction To
+       Algorithms*.
+     - :c:struct:`bstree`
      - Insert/remove/query: O(log n) guaranteed
 
    * - Order Statistics Tree
      - Built on Red-Black Tree. Supports order-statistic queries (rank,
        select). Uses approach in *Introduction To Algorithms*.
-     - :c:struct:`ostree`
+     - :c:func:`ostree_init`
      - All BST ops + rank/select: O(log n)
 
    * - Interval Tree
-     - Built on Red-Black Tree. Uses approach in *Introduction To
-       Algorithms*.
-     - :c:struct:`inttree`
+     - Built on Red-Black Tree. Finds a stored interval that overlaps a given
+       one. Uses approach in *Introduction To Algorithms*.
+     - :c:func:`inttree_init`
      - Insert/query: O(log n)
 
    * - Hashmap
-     - Built using dynamic arrays. Open addressing with linear probing.
-       Uses FNV-1a as the default hash.
+     - Fixed-size buckets, each a dynamic array. Keys are
+       :c:macro:`RCSW_HASHMAP_KEYSIZE` (64) bytes. When a bucket is full, an
+       add fails unless :c:macro:`RCSW_DS_HASHMAP_LINPROB` is set, which
+       probes the following buckets. The hash function is supplied in
+       :c:member:`hashmap_config.hash`; ``rcsw/utils/hash.h`` provides
+       several.
      - :c:struct:`hashmap`
      - Insert/query: amortized O(1); worst case O(n) under pathological
        hash collisions
 
    * - Binary heap
-     - Built using dynamic array. Min or max heap depending on the
-       comparator provided at init.
-     - :c:struct:`bin_heap`
+     - Built using dynamic array. A max heap, or a min heap with
+       :c:macro:`RCSW_DS_BINHEAP_MIN`.
+     - :c:struct:`binheap`
      - Insert: O(log n); peek-min/max: O(1); extract-min/max: O(log n)
 
    * - Matrix
@@ -106,18 +121,22 @@ Available Structures
    * - Dynamic Matrix
      - Dimensions *can* change after initialization. Can be used to
        represent dynamic graphs. Works best on densely connected graphs.
-     - :c:struct:`dyn_matrix`
+     - :c:struct:`dynmatrix`
      - Element access: O(1); resize: O(m*n)
 
    * - Adjacency Matrix
      - Dimensions (# vertices) cannot change after initialization.
        Efficient graph representation; works best on densely connected
        graphs.
-     - :c:struct:`adj_matrix`
+     - :c:struct:`adjmatrix`
      - Edge query: O(1)
 
 Common API
 ==========
+
+Conventions shared by every structure (configuration, callbacks, element
+ownership, iterators, flags) are described in
+:ref:`concepts/data-structures`.
 
 All data structures (loosely) conform to the following API. Not all
 structures implement every function — e.g., :c:struct:`llist` does not
@@ -134,7 +153,7 @@ concept.
    * - ``XX_init()``
      - Initialize the data structure. Usage of the handle prior to calling
        this function is undefined behavior. Returns ``NULL`` on failure;
-       ``errno`` is set (see :ref:`ds-error-codes`).
+       ``errno`` is set (see :ref:`library/ds/error-codes`).
 
    * - ``XX_element_space()``
      - Given the max number of elements and the element size, returns the
@@ -155,28 +174,28 @@ concept.
 
    * - ``XX_add()`` / ``XX_insert()``
      - Add a new element. Returns ``ERROR`` with ``errno = ENOSPC`` if
-       the structure is full. See :ref:`ds-error-codes`.
+       the structure is full. See :ref:`library/ds/error-codes`.
 
    * - ``XX_remove()``
-     - Remove an existing element. **Semantics vary by structure:** most
-       structures return ``ERROR`` if the element is not present, but
-       :c:struct:`llist` treats removal of a non-existent element as a no-op
-       and returns ``OK``. Consult per-structure documentation.
+     - Remove an element: by value (:c:struct:`llist`, :c:struct:`hashmap`,
+       :c:struct:`bstree`), by index (:c:struct:`darray`) or from the front
+       (:c:struct:`fifo`, :c:struct:`rbuffer`). Removing an element that
+       isn't present returns ``ERROR`` with ``errno = ENOENT``.
 
    * - ``XX_clear()``
      - Remove all elements without destroying the structure. The handle
        remains valid and ``XX_init()`` does not need to be called again.
 
    * - ``XX_print()``
-     - Print all elements using the callback provided during
-       initialization. No-op if no print callback was provided.
+     - Print all elements using the ``printe`` callback provided during
+       initialization. Requires that callback.
 
    * - ``XX_isfull()``
-     - Returns non-zero if no further elements can be added without first
+     - Returns ``true`` if no further elements can be added without first
        removing one.
 
    * - ``XX_isempty()``
-     - Returns non-zero if the structure contains no elements.
+     - Returns ``true`` if the structure contains no elements.
 
    * - ``XX_size()``
      - Returns the current number of elements.
@@ -190,14 +209,14 @@ concept.
    * - ``XX_sort()``
      - Sort the structure in place using the comparator provided at init.
 
-   * - ``XX_filter()`` / ``XX_filter2()``
-     - Remove elements from the structure according to a caller-supplied
-       predicate. ``XX_filter()`` moves matching elements into a new
-       instance; ``XX_filter2()`` deletes them in place.
+   * - ``XX_filter()`` / ``XX_remove_if()``
+     - Remove the elements matching a caller-supplied predicate.
+       ``XX_filter()`` moves them into a new instance; ``XX_remove_if()``
+       deletes them in place.
 
-   * - ``XX_copy()`` / ``XX_copy2()``
-     - Copy the structure, optionally filtering element membership in the
-       new instance via a caller-supplied predicate.
+   * - ``XX_copy()`` / ``XX_copy_if()``
+     - Copy the structure; ``XX_copy_if()`` copies only the elements matching
+       a caller-supplied predicate.
 
    * - ``XX_inject()``
      - Iterate over all elements, computing a cumulative result via a
@@ -206,85 +225,67 @@ concept.
    * - ``XX_map()``
      - Apply a caller-supplied function to every element in place.
 
-   * - ``XX_query()``
-     - Test whether a given element is present. Some structures support
-       query by key only; others support query by key or index, or
-       multiple modalities. See per-structure documentation.
+   * - ``XX_*_query()``
+     - Find an element. Depending on the structure this returns the element
+       (``llist_data_query()``), its node (``llist_node_query()``) or its
+       index (``darray_idx_query()``). See per-structure documentation.
 
    * - ``XX_data_get()``
-     - Return a pointer to an element by index. **No bounds checking is
-       performed;** the caller must ensure the index is valid.
+     - Return a pointer to an element by index. Out-of-range indices are
+       the caller's error, and the response varies: :c:func:`rbuffer_data_get`
+       returns ``NULL``, while :c:func:`darray_data_get` reports a FATAL event
+       and fails an ``assert()``.
 
-.. _ds-memory-model:
+.. _library/ds/memory:
 
-Memory Model
-============
+Memory
+======
 
-Each data structure independently controls three memory regions:
+Each structure can take its handle, element storage and metadata from the
+caller instead of the heap. See :ref:`concepts/memory-model` for the flags,
+sizing rules, zeroing and alignment, and :ref:`library/ds/quickstart` for an
+example.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 20 40 40
-
-   * - Region
-     - Flag (``RCSW_NOALLOC_*``)
-     - Notes
-
-   * - Handle
-     - :c:macro:`RCSW_NOALLOC_HANDLE`
-     - The ``struct XX`` itself. Pass a caller-allocated handle as the
-       first argument to ``XX_init()``; ``NULL`` causes the library to
-       ``malloc()`` one.
-
-   * - Data
-     - :c:macro:`RCSW_NOALLOC_DATA`
-     - Storage for element payloads. Pass via ``params->elements``;
-       ``NULL`` causes the library to ``malloc()`` the required space
-       (use ``XX_element_space()`` to compute it).
-
-   * - Metadata
-     - :c:macro:`RCSW_NOALLOC_META`
-     - Per-element bookkeeping (e.g., :c:struct:`llist` node structs). Pass
-       via ``params->meta``; ``NULL`` causes the library to ``malloc()``
-       it. **Cannot be used with uncapped (max_elts = -1) data structures.**
-
-Setting :cmake:variable:`RCSW_CONFIG_NOALLOC` at build time implies all three flags for
-all modules.
-
-.. _ds-error-codes:
+.. _library/ds/error-codes:
 
 Error Codes
 ===========
 
 On failure, functions return ``NULL`` (pointer-returning) or ``ERROR``
-(``status_t``-returning) and set ``errno`` as follows:
+(``status_t``-returning) and, on most paths, set ``errno``:
 
 .. list-table::
    :header-rows: 1
-   :widths: 15 20 65
+   :widths: 15 85
 
    * - ``errno``
-     - Modules
      - Meaning
 
+   * - ``EINVAL``
+     - Invalid argument. Set by every function's precondition checks (see
+       :ref:`concepts/error-handling/fpc`) and by a few explicit checks in
+       :c:struct:`darray`, :c:struct:`llist` and :c:struct:`multififo`.
+
    * - ``ENOMEM``
-     - :c:struct:`llist`, :c:struct:`llist_node`
-     - Internal node or data allocation failed.
+     - An allocation failed (:c:struct:`darray`, :c:struct:`llist`,
+       :c:struct:`hashmap`, :c:struct:`binheap`, :c:struct:`multififo`).
 
    * - ``ENOSPC``
-     - :c:struct:`llist`, :c:struct:`rbuffer`, :c:struct:`darray`
-     - Structure is full; element cannot be added.
+     - The structure is full (:c:struct:`darray`, :c:struct:`llist`,
+       :c:struct:`hashmap`, :c:struct:`binheap`, :c:struct:`bstree`, and
+       :c:struct:`rbuffer` in FIFO mode).
 
-   * - ``EINVAL``
-     - :c:struct:`llist`
-     - Invalid argument (e.g., attempting to remove from an empty list,
-       or splice with invalid indices).
+   * - ``EEXIST``
+     - The key is already present (:c:struct:`hashmap`, :c:struct:`bstree`).
+
+   * - ``ENOENT``
+     - The element, key or edge isn't present (:c:func:`llist_remove`,
+       :c:func:`llist_splice`, :c:func:`hashmap_remove`,
+       :c:func:`adjmatrix_edge_remove`).
 
    * - ``EAGAIN``
-     - :c:struct:`darray`, :c:struct:`hashmap`, :c:struct:`bstree`,
-       :c:struct:`bin_heap`, :c:struct:`fifo`, :c:struct:`multififo`
-     - Internal resource temporarily unavailable (e.g., allocation
-       failure during resize or node creation).
+     - :c:func:`bstree_init` or :c:func:`fifo_init` failed partway through,
+       or :c:struct:`multififo` is busy (see :c:func:`multififo_islocked`).
 
 .. NOTE::
 
@@ -293,49 +294,52 @@ On failure, functions return ``NULL`` (pointer-returning) or ``ERROR``
    control flow and treat ``errno`` as advisory. This inconsistency is a
    known limitation and is tracked for improvement.
 
+.. _library/ds/quickstart:
+
 Quickstart Example
 ==================
 
-The following shows a minimal usage of :c:struct:`llist` with caller-managed
-memory (no heap allocation).
-
-.. NOTE::
-
-   The sizing functions ``llist_element_space()`` and
-   ``llist_meta_space()`` return values that are computed at compile time
-   from constant arguments, making them suitable as array sizes in C99.
-   In C++ or with ``-Wvla``, use ``static`` arrays sized conservatively,
-   or allocate with ``malloc`` and pass ``RCSW_NOALLOC_DATA`` /
-   ``RCSW_NOALLOC_META`` only when you need strict no-heap guarantees.
+The following creates a :c:struct:`llist` that uses no heap: the handle,
+element storage and node storage all come from the caller. The sizing
+functions are not constant expressions, so the static buffers are sized
+generously and checked before use.
 
 .. code-block:: c
 
    #include "rcsw/ds/llist.h"
 
-   /* Stack-allocate storage for up to 16 int-sized elements */
-   static uint8_t elts[llist_element_space(16, sizeof(int))];
-   static uint8_t meta[llist_meta_space(16)];
+   #define N_ELTS 16
 
-   struct llist list;
-   struct llist_params p = {
-       .max_elts  = 16,
-       .elt_size  = sizeof(int),
-       .elements  = elts,
-       .meta      = meta,
-       .flags     = RCSW_NOALLOC_ALL,
-   };
+   static dptr_t elements[512 / sizeof(dptr_t)];
+   static dptr_t nodes[1024 / sizeof(dptr_t)];
+   static struct llist list;
 
-   if (NULL == llist_init(&list, &p)) {
-       /* errno is set; inspect it for details */
+   status_t list_setup(void) {
+     if (sizeof(elements) < llist_element_space(N_ELTS, sizeof(int)) ||
+         sizeof(nodes) < llist_meta_space(N_ELTS)) {
        return ERROR;
+     }
+     struct llist_config config = {
+       .cmpe     = NULL,
+       .printe   = NULL,
+       .elements = elements,
+       .meta     = nodes,
+       .elt_size = sizeof(int),
+       .max_elts = N_ELTS,
+       .flags    = RCSW_NOALLOC_ALL,
+     };
+     if (NULL == llist_init(&list, &config)) {
+       return ERROR; /* errno says why */
+     }
+
+     int val = 42;
+     llist_append(&list, &val); /* copies val into the list */
+
+     /* ... use the list ... */
+
+     llist_destroy(&list); /* frees nothing: all memory is the caller's */
+     return OK;
    }
-
-   int val = 42;
-   llist_append(&list, &val);
-
-   /* ... use the list ... */
-
-   llist_destroy(&list);
 
 See the test suite for extensive usage examples covering all data
 structures.

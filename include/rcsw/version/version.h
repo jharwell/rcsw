@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2022 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup version
+ *
+ * \brief Accessors for RCSW's version, license, and build information.
  */
 
 #pragma once
@@ -28,92 +32,72 @@
  * Prefer the accessor functions below over direct field access so that call
  * sites remain insulated from future struct layout changes.
  */
-extern struct meta_info g_rcsw_metadata;
+extern const struct meta_info g_rcsw_metadata;
 
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+BEGIN_C_DECLS
+
 /**
  * \brief Return the release version string (e.g. \c "v1.2.3").
  */
-RCSW_PURE static inline const char* rcsw_version(void) {
-  return g_rcsw_metadata.version.version;
-}
+RCSW_API RCSW_CONST const char* rcsw_version(void);
 
 /**
  * \brief Return the abbreviated license notice.
  */
-RCSW_PURE static inline const char* rcsw_license_abbrev(void) {
-  return g_rcsw_metadata.version.license.abbrev;
-}
+RCSW_API RCSW_CONST const char* rcsw_license_abbrev(void);
 
 /**
  * \brief Return the full license text.
  */
-RCSW_PURE static inline const char* rcsw_license_full(void) {
-  return g_rcsw_metadata.version.license.full;
-}
+RCSW_API RCSW_CONST const char* rcsw_license_full(void);
 
 /**
  * \brief Return the copyright notice string.
  */
-RCSW_PURE static inline const char* rcsw_license_copyright(void) {
-  return g_rcsw_metadata.version.license.copyright;
-}
+RCSW_API RCSW_CONST const char* rcsw_license_copyright(void);
 
 /**
  * \brief Return the short git commit hash at build time, or \c "" if
  *        unavailable.
  */
-RCSW_PURE static inline const char* rcsw_build_git_rev(void) {
-  return g_rcsw_metadata.build.git_rev;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_git_rev(void);
 
 /**
  * \brief Return \c "+" if the tree was dirty at build time, \c "" otherwise.
  */
-RCSW_PURE static inline const char* rcsw_build_git_diff(void) {
-  return g_rcsw_metadata.build.git_diff;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_git_diff(void);
 
 /**
  * \brief Return the git tag at build time, or \c "" if none.
  */
-RCSW_PURE static inline const char* rcsw_build_git_tag(void) {
-  return g_rcsw_metadata.build.git_tag;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_git_tag(void);
 
 /**
  * \brief Return the git branch at build time, or \c "" if unavailable.
  */
-RCSW_PURE static inline const char* rcsw_build_git_branch(void) {
-  return g_rcsw_metadata.build.git_branch;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_git_branch(void);
 
 /**
  * \brief Return the compiler flags used for this build.
  */
-RCSW_PURE static inline const char* rcsw_build_compile_flags(void) {
-  return g_rcsw_metadata.build.compile_flags;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_compile_flags(void);
 
 /**
  * \brief Return the linker flags used for this build.
  */
-RCSW_PURE static inline const char* rcsw_build_link_flags(void) {
-  return g_rcsw_metadata.build.link_flags;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_link_flags(void);
 
 /**
  * \brief Return the calendar date of the build (\c __DATE__ format).
  */
-RCSW_PURE static inline const char* rcsw_build_date(void) {
-  return g_rcsw_metadata.build.date;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_date(void);
 
 /**
  * \brief Return the wall-clock time of the build (\c __TIME__ format).
  */
-RCSW_PURE static inline const char* rcsw_build_time(void) {
-  return g_rcsw_metadata.build.time;
-}
+RCSW_API RCSW_CONST const char* rcsw_build_time(void);
+
+END_C_DECLS

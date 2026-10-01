@@ -1,9 +1,14 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup er
+ *
+ * \brief Selects the configured ER plugin and checks that it defines everything
+ * RCSW needs.
  */
 
 #pragma once

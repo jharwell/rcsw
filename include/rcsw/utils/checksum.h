@@ -1,6 +1,7 @@
-/** * \file
+/**
+ * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -14,7 +15,9 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include "rcsw/al/types.h"
+#include <stddef.h>
+#include <stdint.h>
+
 #include "rcsw/core/compilers.h"
 
 /*******************************************************************************
@@ -109,19 +112,6 @@ RCSW_API uint32_t utils_achks32(const uint32_t* buf,
                                 uint32_t        seed) RCSW_PURE;
 
 /**
- * \brief Compute a 16-bit checksum (add-ignore-carry) over 8-bit values
- *
- * \param buf Buffer to compute over
- * \param n_bytes # bytes in buffer
- * \param seed Starting value for checksum
- *
- * \return computed 16-bit checksum
- */
-RCSW_API uint16_t utils_achks8_16(const uint8_t* buf,
-                                  size_t         n_bytes,
-                                  uint8_t        seed) RCSW_PURE;
-
-/**
  * \brief Compute a 32-bit CRC using the work of Gary S. Brown
  *
  *  COPYRIGHT (C) 1986 Gary S. Brown.  You may use this program, or
@@ -172,11 +162,6 @@ RCSW_API uint32_t utils_crc32_brown(const uint8_t* buf,
                                     uint32_t       crc);
 
 /**
- * \brief Initialize Ethernet 32 bit CRC lookup table
- */
-RCSW_API void utils_crc32_ethl_init(void);
-
-/**
  *
  * \brief 32 bit CRC according to IEEE 802.3 Ethernet standard
  *
@@ -185,7 +170,8 @@ RCSW_API void utils_crc32_ethl_init(void);
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
  *
- * You have to call \ref utils_crc32_ethl_init() first, CRC will be wrong
+ * The lookup table is a compile-time constant, so this function is
+ * reentrant and needs no initialization.
  *
  * \return CRC of data
  *

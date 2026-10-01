@@ -1,11 +1,11 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
-
- * \ingroup common
+ *
+ * \ingroup core
  *
  * \brief Function precondition/post-condition definitions (very useful!).
  *
@@ -13,9 +13,9 @@
  * proceed (preconditions) or that must be true when it returns (post
  * conditions). If a condition is not met:
  *
- * - Return a specified return value if \ref RCSW_FPC=\ref RCSW_FPC_RETURN
- * - Abort if \ref RCSW_FPC=\ref RCSW_FPC_ABORT
- * - Ignore if \ref RCSW_FPC=\ref RCSW_FPC_NONE
+ * - Return a specified return value if \ref RCSW_FPC is \ref RCSW_FPC_RETURN
+ * - Assert if \ref RCSW_FPC is \ref RCSW_FPC_ABORT
+ * - Ignore if \ref RCSW_FPC is \ref RCSW_FPC_NONE
  */
 
 #pragma once
@@ -24,9 +24,10 @@
  * Includes
  ******************************************************************************/
 #include <assert.h>
-#include <errno.h>
+#include <errno.h>  // NOLINT(misc-include-cleaner)
 
-#include "rcsw/core/core.h"
+#include "rcsw/core/compilers.h"
+#include "rcsw/core/variadics.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -61,7 +62,8 @@
 #define RCSW_FPC_RETURN LIBRA_FPC_RETURN
 
 /**
- * \brief Indicate that failure of FPC should cause program abort.
+ * \brief Indicate that failure of FPC should fail an \c assert(), which
+ * aborts the program unless \c NDEBUG is defined.
  */
 #define RCSW_FPC_ABORT LIBRA_FPC_ABORT
 
@@ -85,6 +87,7 @@
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
  * value of \ref RCSW_FPC.
  */
+/* NOLINTBEGIN(misc-include-cleaner) */
 #define RCSW_FPC_RET_NV(X, v)  \
   {                            \
     if (RCSW_UNLIKELY(!(X))) { \
@@ -92,6 +95,7 @@
       return v;                \
     }                          \
   }
+/* NOLINTEND(misc-include-cleaner) */
 
 /**
  * \def RCSW_FPC_RET_V(X)
@@ -114,8 +118,9 @@
 /**
  * \def RCSW_FPC_ASSERT(X)
  *
- * Check a single function pre/post condition, halting the program if the
- * condition \a X fails.
+ * Check a single function pre/post condition with \c assert(), halting the
+ * program if the condition \a X fails. Nothing is checked if \c NDEBUG is
+ * defined.
  */
 #define RCSW_FPC_ASSERT(X) \
   {                        \
@@ -125,24 +130,18 @@
 /**
  * \def RCSW_FPC_ABORT_NV(X)
  *
- * Check a single function pre/post condition \a X, aborting if the condition
- * is not met.
- *
- * This macro can be used to unconditionally abort if a precondition fails,
- * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
- * value of \ref RCSW_FPC.
+ * Check a single function pre/post condition \a X with \ref RCSW_FPC_ASSERT,
+ * regardless of \ref RCSW_FPC (whereas \ref RCSW_FPC_NV depends on it).
+ * Nothing is checked if \c NDEBUG is defined.
  */
 #define RCSW_FPC_ABORT_NV(X) RCSW_FPC_ASSERT(X)
 
 /**
  * \def RCSW_FPC_ABORT_V(X)
  *
- * Check a single function pre/post condition \a X, aborting if the condition
- * is not met.
- *
- * This macro can be used to unconditionally abort if a precondition fails,
- * rather than the behavior of \ref RCSW_FPC_V, which is dependent on the
- * value of \ref RCSW_FPC.
+ * Check a single function pre/post condition \a X with \ref RCSW_FPC_ASSERT,
+ * regardless of \ref RCSW_FPC (whereas \ref RCSW_FPC_V depends on it).
+ * Nothing is checked if \c NDEBUG is defined.
  */
 #define RCSW_FPC_ABORT_V(X) RCSW_FPC_ASSERT(X)
 
@@ -181,7 +180,8 @@
 
 #elif (RCSW_FPC == RCSW_FPC_ABORT)
 
-#define RCSW_FPC_NV(...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_NV, __VA_ARGS__)
+/* The return value is unused in ABORT mode; only the conditions are checked. */
+#define RCSW_FPC_NV(v, ...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_NV, __VA_ARGS__)
 
 #define RCSW_FPC_V(...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__)
 

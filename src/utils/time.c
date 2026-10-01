@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -21,11 +21,11 @@
 BEGIN_C_DECLS
 
 double utils_ts2mono(const struct timespec* const ts) {
-  return (double)ts->tv_sec + (double)ts->tv_nsec * 1.0e-9;
+  return (double)ts->tv_sec + ((double)ts->tv_nsec * 1.0e-9);
 }
 
 uint64_t utils_ts2monons(const struct timespec* const ts) {
-  return (uint64_t)ts->tv_sec * RCSW_E9 + (uint64_t)ts->tv_nsec;
+  return ((uint64_t)ts->tv_sec * RCSW_E9) + (uint64_t)ts->tv_nsec;
 }
 
 struct timespec utils_monons2ts(uint64_t val) {
@@ -38,11 +38,14 @@ struct timespec utils_monons2ts(uint64_t val) {
 int utils_ts_cmp(const struct timespec* const a, const struct timespec* const b) {
   if (a->tv_sec > b->tv_sec) {
     return 1;
-  } else if (a->tv_sec < b->tv_sec) {
+  }
+  if (a->tv_sec < b->tv_sec) {
     return -1;
-  } else if (a->tv_sec == b->tv_sec && a->tv_nsec > b->tv_nsec) {
+  }
+  if (a->tv_sec == b->tv_sec && a->tv_nsec > b->tv_nsec) {
     return 1;
-  } else if (a->tv_sec == b->tv_sec && a->tv_nsec < b->tv_nsec) {
+  }
+  if (a->tv_sec == b->tv_sec && a->tv_nsec < b->tv_nsec) {
     return -1;
   }
   return 0;

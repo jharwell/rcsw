@@ -1,7 +1,8 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
+ *
  * SPDX-License-Identifier: MIT
  *
  * \brief Wrapper over the eyalroz/printf library, providing the RCSW
@@ -10,6 +11,8 @@
  * This header adapts the upstream eyalroz/printf API to the RCSW naming
  * convention and type system. Application code should include this header
  * rather than the upstream <printf.h> directly.
+ *
+ * \ingroup stdio
  */
 
 #pragma once
@@ -18,8 +21,7 @@
  * Includes
  ******************************************************************************/
 #include <stdarg.h>
-
-#include <printf/printf.h>
+#include <stddef.h>
 
 #include "rcsw/core/compilers.h"
 
@@ -31,9 +33,9 @@ BEGIN_C_DECLS
 /**
  * \brief An implementation of the C standard's printf().
  *
- * \note Relies on \ref stdio_putchar() which must be provided by the
- * platform/BSP. This decouples printf() from OS/hardware details of how to
- * emit a character to stdout.
+ * \note Emits characters through \ref stdio_putchar(), which calls the
+ * function named by \c RCSW_CONFIG_STDIO_PUTCHAR. That is what the platform
+ * or BSP provides, if it overrides the default.
  *
  * \param format A string specifying the format of the output, with %-marked
  *               specifiers of how to interpret additional arguments.
@@ -41,14 +43,7 @@ BEGIN_C_DECLS
  *
  * \return The number of characters written, not counting the terminating NUL.
  */
-RCSW_API RCSW_ATTR_PRINTF(1, 2) static inline int stdio_printf(const char* format,
-                                                               ...) {
-  va_list args;
-  va_start(args, format);
-  int ret = vprintf_(format, args);
-  va_end(args);
-  return ret;
-}
+RCSW_API RCSW_ATTR_PRINTF(1, 2) int stdio_printf(const char* format, ...);
 
 /**
  * \brief Same as \ref stdio_printf(), but accepts a va_list directly.
@@ -58,11 +53,8 @@ RCSW_API RCSW_ATTR_PRINTF(1, 2) static inline int stdio_printf(const char* forma
  *
  * \return The number of characters written, not counting the terminating NUL.
  */
-RCSW_API static inline int stdio_vprintf(const char* format, va_list arg)
+RCSW_API int stdio_vprintf(const char* format, va_list arg)
   RCSW_ATTR_PRINTF(1, 0);
-static inline int stdio_vprintf(const char* format, va_list arg) {
-  return vprintf_(format, arg);
-}
 
 /**
  * \brief An implementation of the C standard's sprintf().
@@ -77,15 +69,8 @@ static inline int stdio_vprintf(const char* format, va_list arg) {
  * \return The number of characters written into \p s, not counting the
  *         terminating NUL.
  */
-RCSW_API static inline int stdio_sprintf(char* s, const char* format, ...)
+RCSW_API int stdio_sprintf(char* s, const char* format, ...)
   RCSW_ATTR_PRINTF(2, 3);
-static inline int stdio_sprintf(char* s, const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  int ret = vsprintf_(s, format, args);
-  va_end(args);
-  return ret;
-}
 
 /**
  * \brief Same as \ref stdio_sprintf(), but accepts a va_list directly.
@@ -97,12 +82,9 @@ static inline int stdio_sprintf(char* s, const char* format, ...) {
  * \return The number of characters written into \p s, not counting the
  *         terminating NUL.
  */
-RCSW_API static inline int stdio_vsprintf(char*       s,
-                                          const char* format,
-                                          va_list     arg) RCSW_ATTR_PRINTF(2, 0);
-static inline int stdio_vsprintf(char* s, const char* format, va_list arg) {
-  return vsprintf_(s, format, arg);
-}
+RCSW_API RCSW_ATTR_PRINTF(2, 0) int stdio_vsprintf(char*       s,
+                                                   const char* format,
+                                                   va_list     arg);
 
 /**
  * \brief An implementation of the C standard's snprintf().
@@ -116,17 +98,10 @@ static inline int stdio_vsprintf(char* s, const char* format, va_list arg) {
  * \return The number of characters that COULD have been written (excluding the
  *         terminating NUL). A value >= \p n indicates truncation.
  */
-RCSW_API static inline int stdio_snprintf(char*       s,
-                                          size_t      n,
-                                          const char* format,
-                                          ...) RCSW_ATTR_PRINTF(3, 4);
-static inline int stdio_snprintf(char* s, size_t n, const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  int ret = vsnprintf_(s, n, format, args);
-  va_end(args);
-  return ret;
-}
+RCSW_API RCSW_ATTR_PRINTF(3, 4) int stdio_snprintf(char*       s,
+                                                   size_t      n,
+                                                   const char* format,
+                                                   ...);
 
 /**
  * \brief Same as \ref stdio_snprintf(), but accepts a va_list directly.
@@ -140,16 +115,9 @@ static inline int stdio_snprintf(char* s, size_t n, const char* format, ...) {
  * \return The number of characters that COULD have been written. A value >=
  *         \p count indicates truncation.
  */
-RCSW_API static inline int stdio_vsnprintf(char*       s,
-                                           size_t      count,
-                                           const char* format,
-                                           va_list arg) RCSW_ATTR_PRINTF(3, 0);
-static inline int          stdio_vsnprintf(char*       s,
-                                           size_t      count,
-                                           const char* format,
-                                           va_list     arg) {
-  return vsnprintf_(s, count, format, arg);
-}
+RCSW_API RCSW_ATTR_PRINTF(3, 0)
+
+  int stdio_vsnprintf(char* s, size_t count, const char* format, va_list arg);
 
 /**
  * \brief printf() with a caller-supplied output function (USF = User Specified
@@ -168,17 +136,12 @@ static inline int          stdio_vsnprintf(char*       s,
  * \return The number of characters for which \p out was invoked, not counting
  *         the terminating NUL.
  */
-RCSW_API RCSW_ATTR_PRINTF(3, 4) static inline int stdio_usfprintf(
-  void (*out)(char c, void* extra_arg),
-  void*       extra_arg,
-  const char* format,
-  ...) {
-  va_list args;
-  va_start(args, format);
-  int ret = vfctprintf(out, extra_arg, format, args);
-  va_end(args);
-  return ret;
-}
+RCSW_API
+RCSW_ATTR_PRINTF(3, 4)
+int stdio_usfprintf(void (*out)(char c, void* extra_arg),
+                    void*       extra_arg,
+                    const char* format,
+                    ...);
 
 /**
  * \brief Same as \ref stdio_usfprintf(), but accepts a va_list directly.
@@ -191,12 +154,10 @@ RCSW_API RCSW_ATTR_PRINTF(3, 4) static inline int stdio_usfprintf(
  * \return The number of characters for which \p out was invoked, not counting
  *         the terminating NUL.
  */
-RCSW_API RCSW_ATTR_PRINTF(3, 0) static inline int stdio_vusfprintf(
-  void (*out)(char c, void* extra_arg),
-  void*       extra_arg,
-  const char* format,
-  va_list     arg) {
-  return vfctprintf(out, extra_arg, format, arg);
-}
+RCSW_API RCSW_ATTR_PRINTF(3, 0) int stdio_vusfprintf(void (*out)(char  c,
+                                                                 void* extra_arg),
+                                                     void*       extra_arg,
+                                                     const char* format,
+                                                     va_list     arg);
 
 END_C_DECLS

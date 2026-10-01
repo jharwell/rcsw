@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -28,13 +28,13 @@
  * two strings.
  */
 struct lcs_calculator {
-  size_t      size;      /// Longest common subsequence length.
-  size_t      len_x;     /// Length of string #1.
-  size_t      len_y;     /// Length of string #2.
-  const char* y;         /// String #1.
-  const char* x;         /// String #2.
-  int*        results;   /// N x N array storing the optimal results route.
-  char*       sequence;  /// Longest common subsequence.
+  size_t      size;      ///< Longest common subsequence length.
+  size_t      len_x;     ///< Length of string #1.
+  size_t      len_y;     ///< Length of string #2.
+  const char* y;         ///< String #2.
+  const char* x;         ///< String #1.
+  int*        results;   ///< N x N array storing the optimal results route.
+  char*       sequence;  ///< Longest common subsequence.
 };
 
 /*******************************************************************************
@@ -72,7 +72,7 @@ RCSW_API void lcs_destroy(struct lcs_calculator* lcs);
  *
  * \return LCS of (x,y) or -1 if an error occurred
  */
-RCSW_API int lcs_rec(const struct lcs_calculator* lcs);
+RCSW_API int lcs_rec(struct lcs_calculator* lcs);
 
 /**
  * \brief Compute LCS(x,y) using bottom up dynamic programming

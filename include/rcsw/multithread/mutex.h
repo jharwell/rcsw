@@ -1,11 +1,13 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
  * \ingroup multithread
+ *
+ * \brief Mutex.
  */
 
 #pragma once
@@ -13,9 +15,10 @@
 /*******************************************************************************
  * Includes
  ******************************************************************************/
-#include <pthread.h>
+#include <pthread.h>  // NOLINT(misc-include-cleaner)
+#include <stdint.h>
 
-#include "rcsw/al/types.h"
+#include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
 
 /*******************************************************************************
@@ -29,7 +32,7 @@
  * - POSIX mutexes
  */
 struct mutex {
-  pthread_mutex_t impl;
+  pthread_mutex_t impl;  // NOLINT(misc-include-cleaner)
 
   /**
    * Valid flags are:
@@ -50,8 +53,9 @@ BEGIN_C_DECLS
 /**
  * \brief Initialize a mutex.
  *
- * \param mutex_in The mutex to initialize. Can be NULL if \ref
- *                 RCSW_NOALLOC_HANDLE is not passed.
+ * \param mutex_in Caller storage for the handle, used only if \ref
+ *                 RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
+ *                 otherwise. See \rcswdoc{concepts/memory-model}.
  *
  * \param flags Configuration flags. See \ref mutex.flags for valid flags.
  *

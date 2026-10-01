@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -65,7 +65,7 @@ void rbtree_insert_fixup(struct bstree* const tree, struct bstree_node* node) {
       }
     } else { /* if (node->parent == node->parent->parent->right) */
       uncle = node->parent->parent->left;
-      if (uncle->red == true) {
+      if (uncle->red) {
         node->parent->red         = false;
         uncle->red                = false;
         node->parent->parent->red = true;
@@ -89,17 +89,17 @@ void rbtree_delete_fixup(struct bstree* const tree, struct bstree_node* node) {
   while (node->red == 0) {
     if (node == node->parent->left) {
       sibling = node->parent->right;
-      if (sibling->red == true) {
+      if (sibling->red) {
         sibling->red      = false;
         node->parent->red = true;
         bstree_node_rotate_left(tree, node->parent);
         sibling = node->parent->right;
       }
-      if (sibling->right->red == false && sibling->left->red == false) {
+      if (!sibling->right->red && !sibling->left->red) {
         sibling->red = true;
         node         = node->parent;
       } else {
-        if (sibling->right->red == false) {
+        if (!sibling->right->red) {
           sibling->left->red = false;
           sibling->red       = true;
           bstree_node_rotate_right(tree, sibling);
@@ -111,31 +111,33 @@ void rbtree_delete_fixup(struct bstree* const tree, struct bstree_node* node) {
         bstree_node_rotate_left(tree, node->parent);
         break;
       }
-    } else { /* if (node == node->parent->right) */
+      continue;
+    }
+    /* if (node == node->parent->right) */
+    sibling = node->parent->left;
+    if (sibling->red) {
+      sibling->red      = false;
+      node->parent->red = true;
+      bstree_node_rotate_right(tree, node->parent);
       sibling = node->parent->left;
-      if (sibling->red == true) {
-        sibling->red      = false;
-        node->parent->red = true;
-        bstree_node_rotate_right(tree, node->parent);
+    }
+    if (!sibling->right->red && !sibling->left->red) {
+      sibling->red = true;
+      node         = node->parent;
+    } else {
+      if (!sibling->left->red) {
+        sibling->right->red = false;
+        sibling->red        = true;
+        bstree_node_rotate_left(tree, sibling);
         sibling = node->parent->left;
       }
-      if (sibling->right->red == false && sibling->left->red == false) {
-        sibling->red = true;
-        node         = node->parent;
-      } else {
-        if (sibling->left->red == false) {
-          sibling->right->red = false;
-          sibling->red        = true;
-          bstree_node_rotate_left(tree, sibling);
-          sibling = node->parent->left;
-        }
-        sibling->red       = node->parent->red;
-        node->parent->red  = false;
-        sibling->left->red = false;
-        bstree_node_rotate_right(tree, node->parent);
-        break;
-      }
+      sibling->red       = node->parent->red;
+      node->parent->red  = false;
+      sibling->left->red = false;
+      bstree_node_rotate_right(tree, node->parent);
+      break;
     }
+
   } /* while() */
   node->red = false;
 } /* rbtree_delete_fixup() */

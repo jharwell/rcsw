@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2023 John Harwell, All rights reserved.
+ * \copyright 2023 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -16,6 +16,7 @@
  * Includes
  ******************************************************************************/
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/core.h"
 #include "rcsw/er/er.h"
 
 /* 2023-11-14 [JRH]: zlog does not come ready to interoperate with C++ :-(. */

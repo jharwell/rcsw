@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2022 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup version
+ *
+ * \brief The combined version and build record.
  */
 
 #pragma once
@@ -25,7 +29,7 @@
  *
  * Combines \ref version_info (release version + license) with \ref build_info
  * (git state + compiler flags + timestamps). The single global instance of this
- * struct is \ref rcsw_metadata, which is populated at compile time by the CMake
+ * struct is \ref g_rcsw_metadata, which is populated at compile time by the CMake
  * template \c version.c.in. Read it through the accessor functions declared in
  * \c version.h rather than accessing fields directly, so that your code remains
  * insulated from future layout changes.

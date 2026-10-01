@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -58,7 +58,7 @@ status_t utils_hash_fnv1a(const void* const data, size_t len, uint32_t* hash) {
 }
 
 status_t utils_hash_djb(const void* const data, size_t len, uint32_t* hash) {
-  RCSW_FPC_NV(ERROR, NULL != data, len > 0);
+  RCSW_FPC_NV(ERROR, NULL != data, len > 0, NULL != hash);
 
   const unsigned char* const key = data;
   *hash                          = 5381;

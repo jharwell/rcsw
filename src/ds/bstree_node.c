@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,17 +11,24 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
-#include <stdlib.h>
 #include <string.h>
 
+#include "ds/inttree_node.h"
+#include "ds/ostree_node.h"
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/allocm.h"
-#include "rcsw/ds/inttree_node.h"
-#include "rcsw/ds/ostree_node.h"
-#include "rcsw/er/client.h"
-#include "rcsw/utils/hash.h"
 
 BEGIN_C_DECLS
+
+/*
+ * Nodes for all tree variants are carved out of the same caller-provided node
+ * array (RCSW_NOALLOC_META) with a stride of sizeof(struct bstree_node), and
+ * the *_meta_space() helpers size it that way.
+ */
+_Static_assert(sizeof(struct inttree_node) == sizeof(struct bstree_node),
+               "inttree_node must be the same size as bstree_node");
+_Static_assert(sizeof(struct ostree_node) == sizeof(struct bstree_node),
+               "ostree_node must be the same size as bstree_node");
 
 /*******************************************************************************
  * Public API
@@ -54,10 +61,12 @@ struct bstree_node* bstree_node_create(const struct bstree* const tree,
     memcpy(&node->key, key_in, RCSW_BSTREE_NODE_KEYSIZE);
   }
 
-  /* create linkage */
+  /* create linkage; color is meaningful only for red-black trees, but is
+   * copied when nodes move, so it is always initialized */
   node->parent = parent;
   node->left   = tree->nil;
   node->right  = tree->nil;
+  node->red    = false;
 
   return node;
 
@@ -89,8 +98,7 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree,
       (size_t)((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) /
       tree->elt_size;
 
-    /* mark data block as available */
-    allocm_mark_free(tree->space.db_map + idx);
+    allocm_free(tree->space.db_map, idx);
   } else {
     rcsw_free(datablock, RCSW_NONE);
   }
@@ -100,30 +108,8 @@ void* bstree_node_datablock_alloc(const struct bstree* const tree) {
   void* datablock = NULL;
 
   if (tree->flags & RCSW_NOALLOC_DATA) {
-    /*
-     * Try to find an available data block. Use hashing/linearing probing
-     * instead of linear scanning. This reduces startup times if
-     * initializing/building a tree with a large number of items.
-     */
-    /* make sure that we have 32 bits of randomness */
-    uint32_t val =
-      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
-      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
-
-    uint32_t hash;
-    RCSW_CHECK(OK == utils_hash_fnv1a(&val, 4, &hash));
-    size_t search_idx = hash % ((size_t)tree->max_elts + 2);
-
-    /*
-     * The bstree requires 2 internal nodes for root and nil, hence the +2.
-     */
-    int alloc_idx =
-      allocm_probe(tree->space.db_map, (size_t)tree->max_elts + 2, search_idx);
+    int alloc_idx = allocm_alloc(tree->space.db_map);
     RCSW_CHECK(-1 != alloc_idx);
-
-    /* mark data block as in use */
-    allocm_mark_inuse(tree->space.db_map + alloc_idx);
-
     datablock =
       (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->elt_size);
   } else {
@@ -142,30 +128,8 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
   struct bstree_node* node = NULL;
 
   if (tree->flags & RCSW_NOALLOC_META) {
-    /*
-     * Try to find an available data block. Use hashing/linearing probing
-     * instead of linear scanning. This reduces startup times if
-     * initializing/building a tree with a large number of items.
-     */
-
-    /* make sure that we have 32 bits of randomness */
-    uint32_t val =
-      (uint32_t)(random() & 0xff) | (uint32_t)((random() & 0xff) << 8) |
-      (uint32_t)((random() & 0xff) << 16) | (uint32_t)((random() & 0xff) << 24);
-
-    uint32_t hash;
-    RCSW_CHECK(OK == utils_hash_fnv1a(&val, 4, &hash));
-    size_t search_idx = hash % ((size_t)tree->max_elts + 2);
-
-    /*
-     * The bstree requires 2 internal nodes for root and nil, hence the +2.
-     */
-    int alloc_idx =
-      allocm_probe(tree->space.node_map, (size_t)tree->max_elts + 2, search_idx);
+    int alloc_idx = allocm_alloc(tree->space.node_map);
     RCSW_CHECK(-1 != alloc_idx);
-
-    /* mark node as in use */
-    allocm_mark_inuse(tree->space.node_map + alloc_idx);
     node = tree->space.nodes + alloc_idx;
   } else {
     node = rcsw_alloc(NULL, node_size, RCSW_NONE);
@@ -182,9 +146,7 @@ void bstree_node_dealloc(const struct bstree* const tree,
                          struct bstree_node*        node) {
   if (tree->flags & RCSW_NOALLOC_META) {
     ptrdiff_t idx = node - tree->space.nodes;
-
-    /* mark node as available */
-    allocm_mark_free(tree->space.node_map + idx);
+    allocm_free(tree->space.node_map, (size_t)idx);
   } else {
     rcsw_free(node, RCSW_NONE);
   }
@@ -340,9 +302,8 @@ void bstree_node_rotate_right(struct bstree* const tree,
 
 struct bstree_node* bstree_node_successor(const struct bstree* const tree,
                                           const struct bstree_node*  node) {
-  struct bstree_node* succ;
-
-  if ((succ = node->right) != tree->nil) {
+  struct bstree_node* succ = node->right;
+  if (node->right != tree->nil) {
     while (succ->left != tree->nil) {
       succ = succ->left;
     } /* while() */

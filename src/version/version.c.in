@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2022 John Harwell, All rights reserved.
+ * \copyright 2022 John Harwell
  *
  * SPDX-License-Identifier: MIT
  *
@@ -23,15 +23,15 @@
 /*******************************************************************************
  * Global Variables
  ******************************************************************************/
-struct meta_info g_rcsw_metadata = {
+const struct meta_info g_rcsw_metadata = {
   .version =
     {
       .version = "v@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@"
                  ".@PROJECT_VERSION_PATCH@",
       .license =
         {
-          .abbrev    = RCSW_LICENSE_SHORT(MIT),
-          .full      = RCSW_LICENSE_FULL(MIT),
+          .abbrev    = RCSW_LICENSE_SHORT(mit),
+          .full      = RCSW_LICENSE_FULL(mit),
           .copyright = RCSW_COPYRIGHT(2023, "John Harwell"),
         },
     },

@@ -1,9 +1,13 @@
 /**
  * \file
  *
- * \copyright 2026 John Harwell, All rights reserved.
+ * \copyright 2026 John Harwell
  *
  * SPDX-License-Identifier: MIT
+ *
+ * \ingroup core
+ *
+ * \brief Macros for iterating over and counting variadic macro arguments.
  */
 
 #pragma once
@@ -370,12 +374,7 @@
 #define RCSW_XFE2_50(WHAT, v, X, ...) \
   WHAT(X, v) RCSW_XFE2_49(WHAT, v, __VA_ARGS__)
 
-/* \endcond */
-
-/**
- * \brief Helper macro to get the name of the RCSW_XFE[1,2]() helper
- * macro for the current iteration. Don't ever use it.
- */
+/* Selects the RCSW_XFE*() helper for the number of arguments. */
 #define RCSW_XGET_MACRO(_1,   \
                         _2,   \
                         _3,   \
@@ -429,9 +428,10 @@
                         NAME, \
                         ...)  \
   NAME
+/* \endcond */
 
 /**
- * \brief Call \p action on the current THING passed in the varargs list.
+ * \brief Call \p action on each item in the varargs list.
  *
  * \p action needs to have the following signature (as a macro or function):
  *
@@ -439,7 +439,7 @@
  * mymacro(X)
  * \endcode
  *
- * where \p X is the current THING passed in varargs.
+ * where \p X is the current item from the varargs list.
  */
 #define RCSW_XFOR_EACH1(action, ...) \
   RCSW_XGET_MACRO(__VA_ARGS__,       \
@@ -496,7 +496,7 @@
   (action, __VA_ARGS__)
 
 /**
- * \brief Call \p action on the current THING passed in the varargs list.
+ * \brief Call \p action on each item in the varargs list.
  *
  * \p action needs to have the following signature (as a macro or function):
  *
@@ -504,7 +504,7 @@
  * mymacro(X)
  * \endcode
  *
- * where \p X is the current THING passed in varargs. Identical to \ref
+ * where \p X is the current item from the varargs list. Identical to \ref
  * RCSW_XFOR_EACH1 EXCEPT the last item in the varargs list will NOT have the \p
  * action called on it. This results in:
  *
@@ -574,17 +574,17 @@
   (action, __VA_ARGS__)
 
 /**
- * \brief Call \p action on the current THING passed in the varargs list.
+ * \brief Call \p action on each item in the varargs list.
  *
- * An additional argument \p X is passed to each invocation, so \p action needs
+ * An additional argument \p v is passed to each invocation, so \p action needs
  * to have the following signature (as a macro or function):
  *
  * \code
- * mymacro(X,V)
+ * mymacro(X, v)
  * \endcode
  *
- * where \p X is the current THING passed in varargs, and \p v is the additional
- * parameter.
+ * where \p X is the current item from the varargs list, and \p v is the
+ * additional argument.
  */
 #define RCSW_XFOR_EACH2(action, v, ...) \
   RCSW_XGET_MACRO(__VA_ARGS__,          \

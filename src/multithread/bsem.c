@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \copyright 2017 John Harwell, All rights reserved.
+ * \copyright 2017 John Harwell
  *
  * SPDX-License-Identifier: MIT
  */
@@ -11,10 +11,14 @@
  ******************************************************************************/
 #include "rcsw/multithread/bsem.h"
 
+#include <errno.h>
+
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/compilers.h"
+#include "rcsw/core/flags.h"
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/utils/time.h"
 
 /*******************************************************************************
  * Public API
@@ -22,18 +26,30 @@
 BEGIN_C_DECLS
 
 struct bsem* bsem_init(struct bsem* const sem_in, uint32_t flags) {
-  struct bsem* sem =
-    rcsw_alloc(sem_in, sizeof(struct bsem), flags & RCSW_NOALLOC_HANDLE);
-  RCSW_CHECK_PTR(sem);
-  sem->flags = flags;
+  struct bsem* sem = rcsw_alloc(sem_in,
+                                sizeof(struct bsem),
+                                flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
+  if (NULL == sem) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  sem->flags     = flags;
+  sem->val       = 1;
+  sem->flush_gen = 0;
 
-  RCSW_CHECK(NULL != mutex_init(&sem->mtx, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK(NULL != condv_init(&sem->cv, RCSW_NOALLOC_HANDLE));
-  sem->val = 1;
+  if (NULL == mutex_init(&sem->mtx, RCSW_NOALLOC_HANDLE)) {
+    goto free_handle;
+  }
+  if (NULL == condv_init(&sem->cv, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_mutex;
+  }
   return sem;
 
-error:
-  bsem_destroy(sem);
+  /* Undo only what was initialized; errno is already set */
+destroy_mutex:
+  mutex_destroy(&sem->mtx);
+free_handle:
+  rcsw_free(sem, flags & RCSW_NOALLOC_HANDLE);
   return NULL;
 } /* bsem_init() */
 
@@ -49,46 +65,57 @@ status_t bsem_post(struct bsem* const sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
 
   RCSW_CHECK(OK == mutex_lock(&sem->mtx));
-  RCSW_CHECK(1 != sem->val);
-
-  sem->val += 1;
-
-  RCSW_CHECK(OK == condv_signal(&sem->cv));
+  /* Binary: posting an available semaphore leaves it available */
+  if (0 == sem->val) {
+    sem->val = 1;
+    condv_signal(&sem->cv);
+  }
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
-
   return OK;
 
 error:
-  mutex_unlock(&sem->mtx);
   return ERROR;
 } /* bsem_post() */
 
 status_t bsem_timedwait(struct bsem* const sem, const struct timespec* const to) {
   RCSW_FPC_NV(ERROR, NULL != sem, NULL != to);
 
+  /* One deadline for the whole wait, however many spurious wakeups */
+  struct timespec deadline = {.tv_sec = 0, .tv_nsec = 0};
+  RCSW_CHECK(OK == utils_ts_make_abs(to, &deadline));
+
   RCSW_CHECK(OK == mutex_lock(&sem->mtx));
-  while (0 == sem->val) {
-    if (OK != condv_timedwait(&sem->cv, &sem->mtx, to)) {
+  uint32_t gen = sem->flush_gen;
+  while (0 == sem->val && gen == sem->flush_gen) {
+    if (OK != condv_timedwait_abs(&sem->cv, &sem->mtx, &deadline)) {
       mutex_unlock(&sem->mtx);
-      return ERROR;
+      return ERROR; /* errno set (ETIMEDOUT on timeout) */
     }
   }
-  sem->val -= 1;
+  if (gen == sem->flush_gen) {
+    sem->val = 0; /* acquired */
+  }
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
   return OK;
 
 error:
   return ERROR;
-} /* struct bsemimedwait() */
+} /* bsem_timedwait() */
 
 status_t bsem_wait(struct bsem* const sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
 
   RCSW_CHECK(OK == mutex_lock(&sem->mtx));
-  while (0 == sem->val) {
-    condv_wait(&sem->cv, &sem->mtx);
+  uint32_t gen = sem->flush_gen;
+  while (0 == sem->val && gen == sem->flush_gen) {
+    if (OK != condv_wait(&sem->cv, &sem->mtx)) {
+      mutex_unlock(&sem->mtx);
+      return ERROR;
+    }
   }
-  sem->val -= 1;
+  if (gen == sem->flush_gen) {
+    sem->val = 0; /* acquired */
+  }
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
   return OK;
 
@@ -99,15 +126,15 @@ error:
 status_t bsem_flush(struct bsem* const sem) {
   RCSW_FPC_NV(ERROR, NULL != sem);
 
+  /* Release every current waiter, and leave the semaphore available */
   RCSW_CHECK(OK == mutex_lock(&sem->mtx));
-  RCSW_CHECK(1 != sem->val);
-  sem->val += 1;
-  RCSW_CHECK(OK == condv_broadcast(&sem->cv));
+  sem->flush_gen++;
+  sem->val = 1;
+  condv_broadcast(&sem->cv);
   RCSW_CHECK(OK == mutex_unlock(&sem->mtx));
   return OK;
 
 error:
-  mutex_unlock(&sem->mtx);
   return ERROR;
 } /* bsem_flush() */
 
