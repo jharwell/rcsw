@@ -122,6 +122,7 @@ jobs:
           - stdio
           - tool
           - utils
+          - swbus
           - ALL   # all optional components disabled; only core + al remain
 
     steps:
@@ -298,8 +299,22 @@ jobs:
 # ---------------------------------------------------------------------------
 # Job 5: Install and consume
 #
-# Purpose: end-to-end validation that the installed package is consumable
-# via find_package() for both monolithic and component-based use.
+# Purpose: end-to-end validation of the installed package, one install per
+# matrix entry:
+#
+# - core: no optional components (only al + core).
+# - <component>: exactly one optional component enabled, so its install must
+#   stand on its own: its headers must only need what is installed with it.
+# - monolithic: everything, plus the monolithic rcsw::rcsw library.
+#
+# Each entry checks that:
+#
+# 1. The install contains headers for exactly the libraries it installed
+#    (no headers from components that weren't built, and none missing).
+# 2. A consumer can find_package() the requested components, link them, and
+#    compile every top-level header of each one. Including each header on its
+#    own in a fresh project catches headers that depend on something that
+#    wasn't installed.
 #
 # Runs after build-posix since it depends on install correctness, not tests.
 # ---------------------------------------------------------------------------
@@ -309,6 +324,26 @@ jobs:
       - build-posix
     container:
       image: jharwell/ubuntu24.04-rcsw:20260929
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - core
+          - algorithm
+          - ds
+          - swbus
+          - er
+          - multiprocess
+          - multithread
+          - stdio
+          - swbus
+          - tool
+          - utils
+          - monolithic
+    env:
+      PREFIX: /tmp/rcsw-install
+      CONSUMER: /tmp/rcsw-consumer
+      OPTIONAL_COMPONENTS: algorithm ds er multiprocess multithread stdio swbus tool utils
 
     steps:
       - uses: actions/checkout@v4
@@ -319,77 +354,122 @@ jobs:
           git submodule update --init --remote --recursive
           cargo install clibra
 
-      - name: Build and install (component mode)
+      - name: Select components
+        shell: bash
+        run: |
+          # COMPONENTS: what the consumer asks find_package() for and whose
+          # headers it compiles. CONFIG_FLAGS: one RCSW_CONFIG_<X> per
+          # optional component, ON only for the ones under test.
+          TARGET="${{ matrix.target }}"
+          FLAGS=""
+          for c in ${OPTIONAL_COMPONENTS}; do
+            if [ "${TARGET}" = "monolithic" ] || [ "${TARGET}" = "${c}" ]; then
+              VALUE=ON
+            else
+              VALUE=OFF
+            fi
+            FLAGS="${FLAGS} -DRCSW_CONFIG_${c^^}=${VALUE}"
+          done
+
+          case "${TARGET}" in
+            monolithic) COMPONENTS="al core ${OPTIONAL_COMPONENTS}"; MONOLITHIC=ON ;;
+            core)       COMPONENTS="al core";                        MONOLITHIC=OFF ;;
+            *)          COMPONENTS="${TARGET}";                      MONOLITHIC=OFF ;;
+          esac
+
+          echo "CONFIG_FLAGS=${FLAGS}" >> $GITHUB_ENV
+          echo "COMPONENTS=${COMPONENTS}" >> $GITHUB_ENV
+          echo "MONOLITHIC=${MONOLITHIC}" >> $GITHUB_ENV
+
+      - name: Build and install
         shell: bash
         run: |
           clibra install --preset debug \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
-            -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
+            -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
             -DRCSW_CONFIG_PTR_ALIGN=4 \
-            -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install
+            -DCMAKE_INSTALL_PREFIX=${PREFIX} \
+            ${CONFIG_FLAGS}
 
-      - name: Verify component find_package
+      - name: Check installed headers match installed libraries
         shell: bash
         run: |
-          # Write a minimal consumer and verify it configures and builds
-          # cleanly against the installed tree.
-          mkdir -p /tmp/rcsw-consumer
-          cat > /tmp/rcsw-consumer/CMakeLists.txt << 'EOF'
-          cmake_minimum_required(VERSION 3.20)
-          project(rcsw_consumer C)
+          cd ${PREFIX}
+          FAILED=0
 
-          find_package(rcsw REQUIRED COMPONENTS ds utils er al core)
+          # Every requested component was installed.
+          for c in ${COMPONENTS}; do
+            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
+              echo "::error::component ${c} was not installed (no lib/cmake/rcsw_${c})"
+              FAILED=1
+            fi
+          done
 
-          add_executable(consumer main.c)
-          target_link_libraries(consumer PRIVATE rcsw::ds rcsw::utils rcsw::er)
-          EOF
+          # Header directories and component libraries correspond one-to-one.
+          for d in include/rcsw/*/; do
+            c=$(basename "${d}")
+            if [ ! -d "lib/cmake/rcsw_${c}" ]; then
+              echo "::error::headers for ${c} installed, but its library was not"
+              FAILED=1
+            fi
+          done
+          for d in lib/cmake/rcsw_*/; do
+            c=$(basename "${d}")
+            c=${c#rcsw_}
+            if [ ! -d "include/rcsw/${c}" ]; then
+              echo "::error::library rcsw_${c} installed without its headers"
+              FAILED=1
+            fi
+          done
 
-          cat > /tmp/rcsw-consumer/main.c << 'EOF'
-          #include "rcsw/ds/darray.h"
-          int main(void) { return 0; }
-          EOF
+          echo "Installed components:"
+          ls lib/cmake | sed -n 's/^rcsw_/  /p'
+          exit ${FAILED}
 
-          cmake -S /tmp/rcsw-consumer -B /tmp/rcsw-consumer/build \
-            -DCMAKE_PREFIX_PATH=/tmp/rcsw-install
-
-          cmake --build /tmp/rcsw-consumer/build
-
-      - name: Build and install (monolithic mode)
+      - name: Build consumer
         shell: bash
         run: |
-          clibra install --preset debug \
-            -DRCSW_BUILD_FOR=POSIX \
-            -DRCSW_CONFIG_LIBTYPE=STATIC \
-            -DRCSW_CONFIG_BUILD_MONOLITHIC=ON \
-            -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4 \
-            -DCMAKE_INSTALL_PREFIX=/tmp/rcsw-install-mono
+          mkdir -p ${CONSUMER}
 
-      - name: Verify monolithic find_package
-        shell: bash
-        run: |
-          mkdir -p /tmp/rcsw-consumer-mono
-          cat > /tmp/rcsw-consumer-mono/CMakeLists.txt << 'EOF'
-          cmake_minimum_required(VERSION 3.20)
-          project(rcsw_consumer_mono C)
+          if [ "${MONOLITHIC}" = "ON" ]; then
+            FIND="find_package(rcsw REQUIRED)"
+            LIBS="rcsw::rcsw"
+          else
+            FIND="find_package(rcsw REQUIRED COMPONENTS ${COMPONENTS})"
+            LIBS=""
+            for c in ${COMPONENTS}; do
+              LIBS="${LIBS} rcsw::${c}"
+            done
+          fi
 
-          find_package(rcsw REQUIRED)
+          {
+            echo "cmake_minimum_required(VERSION 3.20)"
+            echo "project(rcsw_consumer C)"
+            echo "${FIND}"
+            echo "add_executable(consumer main.c)"
+            echo "target_link_libraries(consumer PRIVATE ${LIBS})"
+          } > ${CONSUMER}/CMakeLists.txt
 
-          add_executable(consumer main.c)
-          target_link_libraries(consumer PRIVATE rcsw::rcsw)
-          EOF
+          # Every top-level header of each component under test. Subdirectories
+          # (er/plugin/, al/posix/, al/baremetal/) are platform- or
+          # plugin-specific and are reached through the top-level headers.
+          {
+            for c in ${COMPONENTS}; do
+              for h in ${PREFIX}/include/rcsw/${c}/*.h; do
+                echo "#include \"rcsw/${c}/$(basename "${h}")\""
+              done
+            done
+            echo "int main(void) { return 0; }"
+          } > ${CONSUMER}/main.c
 
-          cat > /tmp/rcsw-consumer-mono/main.c << 'EOF'
-          #include "rcsw/ds/darray.h"
-          int main(void) { return 0; }
-          EOF
+          echo "--- CMakeLists.txt"; cat ${CONSUMER}/CMakeLists.txt
+          echo "--- main.c";         cat ${CONSUMER}/main.c
 
-          cmake -S /tmp/rcsw-consumer-mono -B /tmp/rcsw-consumer-mono/build \
-            -DCMAKE_PREFIX_PATH=/tmp/rcsw-install-mono
-
-          cmake --build /tmp/rcsw-consumer-mono/build
+          cmake -S ${CONSUMER} -B ${CONSUMER}/build \
+            -DCMAKE_PREFIX_PATH=${PREFIX}
+          cmake --build ${CONSUMER}/build --verbose
 
 # ---------------------------------------------------------------------------
 # Static analysis

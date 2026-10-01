@@ -825,14 +825,14 @@ void minimon_start(void) {
                  "BUILD TIME=%s\r\n"
                  "---------------------------------------------------------------"
                  "-----------------\r\n",
-                 rcsw_metadata.version.version,
-                 rcsw_metadata.build.git_rev,
-                 rcsw_metadata.build.git_diff,
-                 rcsw_metadata.build.git_tag,
-                 rcsw_metadata.build.git_branch,
-                 rcsw_metadata.build.compile_flags,
-                 rcsw_metadata.build.date,
-                 rcsw_metadata.build.time);
+                 g_rcsw_metadata.version.version,
+                 g_rcsw_metadata.build.git_rev,
+                 g_rcsw_metadata.build.git_diff,
+                 g_rcsw_metadata.build.git_tag,
+                 g_rcsw_metadata.build.git_branch,
+                 g_rcsw_metadata.build.compile_flags,
+                 g_rcsw_metadata.build.date,
+                 g_rcsw_metadata.build.time);
   stdio_puts(buf);
 
   /* display the monitor tag line */

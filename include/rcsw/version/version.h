@@ -28,7 +28,7 @@
  * Prefer the accessor functions below over direct field access so that call
  * sites remain insulated from future struct layout changes.
  */
-extern struct meta_info g_rcsw_metadatata;
+extern struct meta_info g_rcsw_metadata;
 
 /*******************************************************************************
  * Public API
@@ -37,28 +37,28 @@ extern struct meta_info g_rcsw_metadatata;
  * \brief Return the release version string (e.g. \c "v1.2.3").
  */
 RCSW_PURE static inline const char* rcsw_version(void) {
-  return g_rcsw_metadatata.version.version;
+  return g_rcsw_metadata.version.version;
 }
 
 /**
  * \brief Return the abbreviated license notice.
  */
 RCSW_PURE static inline const char* rcsw_license_abbrev(void) {
-  return g_rcsw_metadatata.version.license.abbrev;
+  return g_rcsw_metadata.version.license.abbrev;
 }
 
 /**
  * \brief Return the full license text.
  */
 RCSW_PURE static inline const char* rcsw_license_full(void) {
-  return g_rcsw_metadatata.version.license.full;
+  return g_rcsw_metadata.version.license.full;
 }
 
 /**
  * \brief Return the copyright notice string.
  */
 RCSW_PURE static inline const char* rcsw_license_copyright(void) {
-  return g_rcsw_metadatata.version.license.copyright;
+  return g_rcsw_metadata.version.license.copyright;
 }
 
 /**
@@ -66,54 +66,54 @@ RCSW_PURE static inline const char* rcsw_license_copyright(void) {
  *        unavailable.
  */
 RCSW_PURE static inline const char* rcsw_build_git_rev(void) {
-  return g_rcsw_metadatata.build.git_rev;
+  return g_rcsw_metadata.build.git_rev;
 }
 
 /**
  * \brief Return \c "+" if the tree was dirty at build time, \c "" otherwise.
  */
 RCSW_PURE static inline const char* rcsw_build_git_diff(void) {
-  return g_rcsw_metadatata.build.git_diff;
+  return g_rcsw_metadata.build.git_diff;
 }
 
 /**
  * \brief Return the git tag at build time, or \c "" if none.
  */
 RCSW_PURE static inline const char* rcsw_build_git_tag(void) {
-  return g_rcsw_metadatata.build.git_tag;
+  return g_rcsw_metadata.build.git_tag;
 }
 
 /**
  * \brief Return the git branch at build time, or \c "" if unavailable.
  */
 RCSW_PURE static inline const char* rcsw_build_git_branch(void) {
-  return g_rcsw_metadatata.build.git_branch;
+  return g_rcsw_metadata.build.git_branch;
 }
 
 /**
  * \brief Return the compiler flags used for this build.
  */
 RCSW_PURE static inline const char* rcsw_build_compile_flags(void) {
-  return g_rcsw_metadatata.build.compile_flags;
+  return g_rcsw_metadata.build.compile_flags;
 }
 
 /**
  * \brief Return the linker flags used for this build.
  */
 RCSW_PURE static inline const char* rcsw_build_link_flags(void) {
-  return g_rcsw_metadatata.build.link_flags;
+  return g_rcsw_metadata.build.link_flags;
 }
 
 /**
  * \brief Return the calendar date of the build (\c __DATE__ format).
  */
 RCSW_PURE static inline const char* rcsw_build_date(void) {
-  return g_rcsw_metadatata.build.date;
+  return g_rcsw_metadata.build.date;
 }
 
 /**
  * \brief Return the wall-clock time of the build (\c __TIME__ format).
  */
 RCSW_PURE static inline const char* rcsw_build_time(void) {
-  return g_rcsw_metadatata.build.time;
+  return g_rcsw_metadata.build.time;
 }

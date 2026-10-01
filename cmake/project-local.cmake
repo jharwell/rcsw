@@ -76,11 +76,6 @@ cpmaddpackage(
   "PRINTF_MAX_INTEGRAL_DIGITS_FOR_DECIMAL 9"
   "PRINTF_CHECK_FOR_NUL_IN_FORMAT_SPECIFIER ON")
 
-# Override the printf target's include path to avoid collision with rcsw/include
-# and system headers
-file(WRITE "${CMAKE_BINARY_DIR}/include/eyalroz/printf.h"
-     "#include \"${printf_SOURCE_DIR}/src/printf/printf.h\"\n")
-
 set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain printf)
 
 function(rcsw_message type msg)
@@ -307,7 +302,6 @@ endif()
 # ##############################################################################
 # Library targets
 # ##############################################################################
-
 # Generate version.c and append it to the source list unconditionally. This must
 # run before any target is created (monolithic or stub) so that: (a) the
 # generated file exists when the build system is invoked, and (b) the stub rcsw
@@ -368,7 +362,7 @@ foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
       SOURCES
       ${${PROJECT_NAME}_C_SRC}
       REGEX
-      "src/core")
+      "src/core|src/version")
   elseif(_component STREQUAL tool AND "${RCSW_BUILD_FOR}" MATCHES "POSIX")
 
     # minimon is baremetal-only, so exclude it
@@ -398,7 +392,40 @@ endforeach()
 # --- Namespace aliases for all component targets ------------------------------
 foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
   add_library(rcsw::${_component} ALIAS ${PROJECT_NAME}_${_component})
+
 endforeach()
+
+# Each library's public headers are those of the components it contains, so an
+# install with 3/10 components contains only those 3 components' headers.
+# Populating HEADERS via target_sources() stops LIBRA's automatic calculation,
+# which is what we want in this case.
+function(_rcsw_add_headers target)
+  set(_hdrs)
+  foreach(_c IN LISTS ARGN)
+    file(GLOB_RECURSE _c_hdrs CONFIGURE_DEPENDS
+         "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/${_c}/*.h")
+    list(APPEND _hdrs ${_c_hdrs})
+  endforeach()
+
+  set(_base_dirs "${PROJECT_SOURCE_DIR}/include")
+
+  target_sources(
+    ${target}
+    PUBLIC FILE_SET
+           HEADERS
+           BASE_DIRS
+           ${_base_dirs}
+           FILES
+           ${_hdrs})
+endfunction()
+
+foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
+  _rcsw_add_headers(${PROJECT_NAME}_${_component} ${_component})
+endforeach()
+
+if(RCSW_CONFIG_BUILD_MONOLITHIC)
+  _rcsw_add_headers(${PROJECT_NAME} ${_CONFIGURED_COMPONENTS})
+endif()
 
 # ##############################################################################
 # Compile definitions
@@ -438,11 +465,24 @@ _rcsw_apply_compile_defs(${PROJECT_NAME})
 # ##############################################################################
 # Include directories
 # ##############################################################################
+# printf's own include directory (${printf_SOURCE_DIR}/src, which contains
+# printf/printf.h) normally comes from linking printf. It is also listed here
+# because LIBRA's negative compile tests take their -I flags only from this
+# project's INCLUDE_DIRECTORIES, not from linked libraries. Once installed,
+# printf's header is at <prefix>/include/printf/printf.h, which
+# $<INSTALL_INTERFACE:include> already covers.
+if(NOT printf_SOURCE_DIR)
+  rcsw_message(
+    FATAL_ERROR
+    "printf_SOURCE_DIR is not set; was printf found as an installed package instead of added by CPM?"
+  )
+endif()
+
 function(_rcsw_apply_includes target)
   target_include_directories(
     ${target}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-           $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+           $<BUILD_INTERFACE:${printf_SOURCE_DIR}/src>
            $<INSTALL_INTERFACE:include>)
 endfunction()
 
@@ -488,15 +528,13 @@ if("${RCSW_BUILD_FOR}" MATCHES "POSIX")
 
   # Install every component library
   foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
-    libra_install_target(${PROJECT_NAME}_${_component} INCLUDE_DIR
-                         include/${PROJECT_NAME}/${_component})
+    libra_install_target(${PROJECT_NAME}_${_component})
   endforeach()
 
-  libra_install_files(DESTINATION include/eyalroz FILES
-                      ${CMAKE_BINARY_DIR}/include/eyalroz/printf.h)
-  # Install monolithic library only if built
+  # Install monolithic library only if built. Its HEADERS file set holds only
+  # the configured components' headers; INCLUDE_DIR would install all of them.
   if(RCSW_CONFIG_BUILD_MONOLITHIC)
-    libra_install_target(${PROJECT_NAME} INCLUDE_DIR include/${PROJECT_NAME})
+    libra_install_target(${PROJECT_NAME})
   endif()
 
   if(RCSW_CONFIG_BUILD_MONOLITHIC)

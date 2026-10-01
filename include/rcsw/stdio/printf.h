@@ -19,7 +19,7 @@
  ******************************************************************************/
 #include <stdarg.h>
 
-#include <eyalroz/printf.h>
+#include <printf/printf.h>
 
 #include "rcsw/core/compilers.h"
 

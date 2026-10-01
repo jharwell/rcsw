@@ -34,9 +34,9 @@ cpmaddpackage(
   GIT_REPOSITORY
   https://github.com/jharwell/libra.git
   VERSION
-  0.13.12
+  0.13.13
   GIT_TAG
-  v0.13.12
+  v0.13.13-dev.7
   DOWNLOAD_ONLY
   YES)
 
