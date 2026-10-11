@@ -39,8 +39,8 @@ jobs:
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-
-          clibra docs --preset docs --reconfigure
+          cargo install clibra
+          clibra docs build --preset docs --reconfigure
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
