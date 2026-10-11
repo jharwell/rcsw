@@ -1,0 +1,84 @@
+name: Release
+
+# Triggered ONLY by pushing a stable version tag: vX.Y.Z.
+#
+# This is a SEPARATE workflow from coverage-top.yml because `paths` (needed
+# there for feature-branch CI) also filters tag pushes, which would silently
+# skip releases. Tag-triggered releases therefore live on their own.
+#
+# Cutting a release (manual):
+#   git checkout master && git pull
+#   git tag -a v1.5.16 -m "Release v1.5.16"
+#   git push origin v1.5.16
+#
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: jharwell/ubuntu24.04-rcsw:20261002
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        shell: bash
+        run: |
+          git config --global --add safe.directory $PWD
+          git config --global user.email "${{ github.event.pusher.email }}"
+          git config --global user.name "${{ github.event.pusher.name }}"
+          git submodule update --init --remote --recursive
+          cargo install clibra
+
+      - name: Build
+        shell: bash
+        run: |
+          clibra install \
+            --preset release \
+            --reconfigure \
+            -DCMAKE_INSTALL_PREFIX=./install
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rcsw-release
+          path: ./install
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+
+    permissions:
+      contents: write   # create the GitHub release / attach assets
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rcsw-release
+          path: install
+
+      - name: Github release
+        uses: softprops/action-gh-release@v2
+        with:
+          # NOTE: intentionally NOT secrets.GITHUB_TOKEN. A workflow can't
+          # trigger another workflow (publish.yml) using the token it was
+          # itself triggered with. BOT_RELEASE_TOKEN is a fine-grained PAT
+          # scoped to this repo whose 'published' event DOES trigger
+          # publish.yml.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # The tag already exists (you pushed it) — reuse it.
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          prerelease: false
+          files: install/*

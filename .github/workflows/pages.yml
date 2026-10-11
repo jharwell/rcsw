@@ -39,7 +39,7 @@ jobs:
 
           git config --global --add safe.directory $PWD
           git submodule update --init --remote --recursive
-
+          cargo install clibra
           clibra docs --preset docs --reconfigure
 
       - name: Upload artifact
