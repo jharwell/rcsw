@@ -65,7 +65,6 @@
  * regardless of module levels.
  */
 #define DPRINTF(...) PRINTF(__VA_ARGS__)
-
 /**
  * \brief Print a token and its value in decimal/hexadecimal.
  */

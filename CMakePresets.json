@@ -44,11 +44,10 @@
         {
             "name": "release",
             "displayName": "Release",
-            "description": "Optimized release build with LTO",
+            "description": "Optimized release build",
             "inherits": "base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "LIBRA_LTO": "ON",
                 "LIBRA_TESTS": "ON"
             }
         },

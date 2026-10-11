@@ -110,7 +110,7 @@ if(RCSW_CONFIG_BUILD_MONOLITHIC)
 endif()
 
 target_sources(${PROJECT_NAME}_core
-               PRIVATE ${CMAKE_BINARY_DIR}/src/version/version.c)
+               PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/version/version.c)
 
 # ##############################################################################
 # Compile definitions

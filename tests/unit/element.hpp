@@ -139,11 +139,11 @@ T gen_elt(enum gen_elt_type type, int i, int max_elts) {
 template<typename T>
 void printe(const void *e) {
   const T *el = reinterpret_cast<const T*>(e);
-  if constexpr (std::is_same<T, element1>::value) {
-      DPRINTF("value1: %d value2: N/A\n", el->value1);
-  } else {
-    DPRINTF("value1: %d value2: %d\n", el->value1, el->value2);
-  }
+  // if constexpr (std::is_same<T, element1>::value) {
+  //     DPRINTF("value1: %d value2: N/A\n", el->value1);
+  // } else {
+  //   DPRINTF("value1: %d value2: %d\n", el->value1, el->value2);
+  // }
 } /* th_printe() */
 
 /**

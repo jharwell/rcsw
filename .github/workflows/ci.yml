@@ -5,7 +5,9 @@ name: Build and test
 # - Every month. Scheduling helps keep drift/issues with updates
 #   to runners at bay.
 # - On pushes to relevant paths.
-# - On pushes of stable release tags (vX.Y.Z), which cut a GitHub release.
+#
+# Releases (stable vX.Y.Z tags) are handled by release.yml, since the path
+# filter here would also filter tag pushes.
 #
 on:
   push:
@@ -29,9 +31,9 @@ on:
     - cron: '0 0 1 * *'
 
 concurrency:
-  group: ${{ github.ref }}
-  # Never cancel a run on master/devel partway through: that could leave a
-  # pushed tag without its release.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel a run on master/devel partway through: on devel that could
+  # leave a tested commit without its dev tag (see tag-devel).
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/devel' }}
 
 jobs:
@@ -286,8 +288,8 @@ jobs:
       - name: Configure and build
         shell: bash
         run: |
-          # SIMPLE: the LOG4CL plugin keeps its module list in a heap llist.
-          clibra build --preset ci-asan \
+          clibra build \
+            --preset ci-asan \
             --reconfigure \
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
@@ -305,6 +307,13 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
+          # Collect the unit test executables.
+          mapfile -t tests < <(find build/bin/unit -type f -executable -name '*-utest*' | sort)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "::error::no unit test binaries found under build/"
+            exit 1
+          fi
+
           status=0
           for t in "${tests[@]}"; do
             echo "::group::${t}"
@@ -428,6 +437,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: build/coverage/coverage.info
+          # Each matrix entry is one part of a single Coveralls build;
+          # coverage-finish closes it once they're all in.
+          parallel: true
+          flag-name: ${{ matrix.build_type }}-align${{ matrix.ptr_align }}-zalloc${{ matrix.zalloc }}
+
+  coverage-finish:
+    needs: test-posix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Finish Coveralls parallel build
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
 
 # ---------------------------------------------------------------------------
 # Job 5: Install and consume

@@ -2,9 +2,9 @@ name: Release
 
 # Triggered ONLY by pushing a stable version tag: vX.Y.Z.
 #
-# This is a SEPARATE workflow from coverage-top.yml because `paths` (needed
-# there for feature-branch CI) also filters tag pushes, which would silently
-# skip releases. Tag-triggered releases therefore live on their own.
+# This is a SEPARATE workflow from ci.yml because `paths` (needed there for
+# feature-branch CI) also filters tag pushes, which would silently skip
+# releases. Tag-triggered releases therefore live on their own.
 #
 # Cutting a release (manual):
 #   git checkout master && git pull
@@ -15,7 +15,11 @@ name: Release
 on:
   push:
     tags:
+      # In GitHub's glob syntax `[0-9]*` is a digit followed by anything, so
+      # the first pattern alone also matches dev tags (vX.Y.Z-dev.N). The
+      # negated pattern excludes any tag with a pre-release suffix.
       - 'v[0-9]*.[0-9]*.[0-9]*'
+      - '!v*-*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -74,14 +78,8 @@ jobs:
       - name: Github release
         uses: softprops/action-gh-release@v2
         with:
-          # NOTE: intentionally NOT secrets.GITHUB_TOKEN. A workflow can't
-          # trigger another workflow (publish.yml) using the token it was
-          # itself triggered with. BOT_RELEASE_TOKEN is a fine-grained PAT
-          # scoped to this repo whose 'published' event DOES trigger
-          # publish.yml.
           token: ${{ secrets.GITHUB_TOKEN }}
           # The tag already exists (you pushed it) — reuse it.
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           prerelease: false
-          files: install/*
