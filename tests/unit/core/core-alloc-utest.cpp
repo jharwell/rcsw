@@ -19,6 +19,7 @@
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/flags.h"
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises the malloc() path */
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
@@ -27,6 +28,7 @@ CATCH_TEST_CASE("rcsw_alloc - malloc path", "[core][alloc]") {
   CATCH_REQUIRE(p != nullptr);
   rcsw_free(p, RCSW_NONE);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE("rcsw_alloc - NOALLOC_HANDLE uses caller pointer",
                 "[core][alloc][noalloc]") {
@@ -52,6 +54,7 @@ CATCH_TEST_CASE("rcsw_alloc - NOALLOC_META uses caller pointer",
   rcsw_free(p, RCSW_NOALLOC_META);
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises the malloc() path */
 CATCH_TEST_CASE("rcsw_alloc - ZALLOC zeroes memory", "[core][alloc]") {
   void* p = rcsw_alloc(nullptr, 64, RCSW_ZALLOC);
   CATCH_REQUIRE(p != nullptr);
@@ -60,6 +63,7 @@ CATCH_TEST_CASE("rcsw_alloc - ZALLOC zeroes memory", "[core][alloc]") {
   CATCH_REQUIRE(memcmp(p, expected, 64) == 0);
   rcsw_free(p, RCSW_NONE);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE("rcsw_alloc - NOALLOC|ZALLOC zeroes caller memory",
                 "[core][alloc][noalloc]") {
@@ -90,6 +94,7 @@ CATCH_TEST_CASE("rcsw_free - NOALLOC flags skip free", "[core][alloc][noalloc]")
   rcsw_free(stack_buf, RCSW_NOALLOC_ALL);
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises the malloc() path */
 CATCH_TEST_CASE("rcsw_alloc - multiple independent allocations",
                 "[core][alloc]") {
   const size_t n = 16;
@@ -105,6 +110,7 @@ CATCH_TEST_CASE("rcsw_alloc - multiple independent allocations",
     rcsw_free(ptrs[i], RCSW_NONE);
   }
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 CATCH_TEST_CASE(
   "rcsw_alloc with RCSW_ZALLOC and a NULL caller pointer "
   "returns NULL instead of crashing",
@@ -112,3 +118,13 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(nullptr ==
                 rcsw_alloc(nullptr, 16, RCSW_NOALLOC_DATA | RCSW_ZALLOC));
 }
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("rcsw_alloc never allocates under RCSW_CONFIG_NOALLOC",
+                "[core][alloc][noalloc]") {
+  /* no caller pointer, so there is nothing to return, regardless of flags */
+  CATCH_REQUIRE(nullptr == rcsw_alloc(nullptr, 64, RCSW_NONE));
+  CATCH_REQUIRE(nullptr == rcsw_alloc(nullptr, 64, RCSW_ZALLOC));
+  rcsw_free(nullptr, RCSW_NONE); /* and freeing that is safe */
+}
+#endif /* RCSW_CONFIG_NOALLOC */

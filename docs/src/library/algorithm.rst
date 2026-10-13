@@ -14,7 +14,8 @@ Dynamic Programming
 
 All DP modules follow the same lifecycle: initialize a handle, call the compute
 function(s), then destroy. The caller provides the handle (on the stack is
-fine); internal scratch memory is always heap-allocated.
+fine); internal scratch memory is always heap-allocated, so these modules
+can't be used in a build with :cmake:variable:`RCSW_CONFIG_NOALLOC`.
 
 **Edit Distance** (``rcsw/algorithm/edit_dist.h``) — Works on any element
 type, not just characters; the caller supplies comparator and length
@@ -86,7 +87,7 @@ Sorting
    * - :c:func:`radix_sort()`
      - O(nk)
      - O(nk)
-     - Non-comparative. Integer keys only. ``k`` = number of digits in
+     - Non-comparative. ``size_t`` keys only. ``k`` = number of digits in
        the maximum value for the chosen base.
 
 The comparison sorts take a ``void*`` array, its bounds or element count, the
@@ -94,48 +95,25 @@ element size, and a comparator ``int cmpe(const void* e1, const void* e2)``.
 :c:func:`radix_sort()` takes an array of ``size_t`` keys, a temporary array of
 the same size, and a base. None are thread-safe.
 
-Sorting Algorithms
-==================
+Choosing a sort
+---------------
 
-In RCSW, sorting algorithms operate on access patterns, not container types. To
-choose the appropriate algorithm, match it to the data access model.
+RCSW's sorts are organized by the data access they need, not by container
+type:
 
-The RCSW library provides sorting algorithms organized around the **data access
-model** they require. Rather than forcing all algorithms through a single
-abstraction, the library separates them into two categories:
+- **Memory-based** sorts (:c:func:`qsort_rec`, :c:func:`qsort_iter`,
+  :c:func:`insertion_sort`, :c:func:`radix_sort`) work on any contiguous
+  buffer with O(1) random access, swapping elements by copying memory.
+- **Structure-based** sorts belong to one data structure and use its layout,
+  such as :c:func:`llist_sort`, which relinks nodes instead of copying them.
 
-1. **Memory-based (contiguous) sorting algorithms**.
-2. **Structure-based (container-specific) sorting algorithms**.
+A single "universal" sort interface would need access callbacks (``get``,
+``set``, ``swap``) and an indirect call on every operation, for no real
+benefit. The memory-based sorts live in ``algorithm/``; each structure-based
+sort lives in the ``ds/`` module that owns its structure.
 
-This split reflects fundamental differences in how data is accessed and
-manipulated, and results in cleaner APIs, better performance, and clearer
-ownership boundaries.
-
-By separating memory-based and structure-based algorithms, the library achieves:
-
-- High performance
-- Clean modularity
-- Minimal abstraction overhead
-- Clear and predictable APIs
-
-- Avoids artificial abstractions. A single “universal” sorting interface would
-  require:
-
-  - Function pointers for access (``get``, ``set``, ``swap``)
-  - Indirection on every operation
-  - Loss of compile-time guarantees
-
-  This adds complexity without meaningful benefit.
-
-- Preserves Performance. Memory-based algorithms remain fully optimized, and
-  structure-based algorithms exploit internal layout.
-
-- Maintains clean layering. ``algorithm/`` depends only on core primitives for
-  generic algorithms, and ``ds/`` modules own their data structures and
-  associated algorithms.
-
-Memory-Based Sorting Algorithms
--------------------------------
+Memory-based sorts
+^^^^^^^^^^^^^^^^^^
 
 These algorithms operate on raw memory buffers and require:
 
@@ -155,7 +133,6 @@ These algorithms operate on raw memory buffers and require:
 
 - Fully generic (independent of any data structure)
 - Reusable across all contiguous containers (e.g., dynamic arrays)
-- No dependency on ``ds/`` modules
 - Minimal abstraction overhead
 
 .. rubric:: Usage
@@ -167,15 +144,15 @@ These algorithms are appropriate for:
 - Any user-managed contiguous buffer
 
 
-Structure-Based Sorting Algorithms
-----------------------------------
+Structure-based sorts
+^^^^^^^^^^^^^^^^^^^^^
 
 These algorithms operate on specific data structures and require:
 
 - Pointer traversal
 - Structural manipulation (e.g., relinking nodes)
 
-.. rubric:: Assumptions:
+.. rubric:: Assumptions
 
 - **Non-contiguous storage**
 - **No efficient random access**
@@ -188,8 +165,7 @@ These algorithms operate on specific data structures and require:
 - Located within the corresponding ``ds/`` module
 - Do not attempt to be generic across unrelated structures
 
-Example: linked list sorting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: Example: linked list sorting
 
 Linked lists cannot efficiently support array-based algorithms like quicksort
 due to:

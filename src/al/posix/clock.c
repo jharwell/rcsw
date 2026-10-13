@@ -24,6 +24,7 @@ struct timespec clock_monotime(void) {
   struct timespec ts = {0};
   int             rc = clock_gettime(CLOCK_MONOTONIC, &ts);
   assert(0 == rc);
+  (void)rc; /* unused when NDEBUG removes the assert */
   return ts;
 } /* clock_monotime() */
 
@@ -31,6 +32,7 @@ struct timespec clock_realtime(void) {
   struct timespec ts = {0};
   int             rc = clock_gettime(CLOCK_REALTIME, &ts);
   assert(0 == rc);
+  (void)rc; /* unused when NDEBUG removes the assert */
   return ts;
 } /* clock_realtime() */
 

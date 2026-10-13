@@ -83,8 +83,8 @@ status_t utils_ts_make_rel(const struct timespec* const deadline,
                            struct timespec* const       out) {
   RCSW_FPC_NV(ERROR, NULL != deadline, NULL != out);
 
-  struct timespec now;
-  RCSW_CHECK(0 == clock_gettime(CLOCK_REALTIME, &now));
+  /* the same clock as utils_ts_make_abs(), via the platform abstraction */
+  struct timespec now = clock_realtime();
 
   out->tv_sec  = deadline->tv_sec - now.tv_sec;
   out->tv_nsec = deadline->tv_nsec - now.tv_nsec;
@@ -102,9 +102,6 @@ status_t utils_ts_make_rel(const struct timespec* const deadline,
   }
 
   return OK;
-
-error:
-  return ERROR;
 }
 
 END_C_DECLS

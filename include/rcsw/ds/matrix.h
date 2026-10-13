@@ -46,7 +46,13 @@ struct matrix_config {
   size_t elt_size;
 
   /**
-   * Configuration flags. See \ref matrix.flags for valid flags.
+   * Run-time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   *
+   * All other flags ignored.
    */
   uint32_t flags;
 
@@ -72,33 +78,19 @@ struct matrix_config {
  * dimensions of the matrix are small (if the dimensions are large AND the
  * matrix is sparse, it will definitely be really inefficient, and possibly
  * won't even fit into memory).
+ *
+ * \note \ref matrix_transpose() supports square matrices only.
  */
 struct matrix {
-  /** # of rows in matrix. */
-  size_t n_rows;
-
-  /** # of columns in matrix. */
-  size_t n_cols;
+  /**
+   * The configuration the matrix was initialized with. \ref
+   * matrix_config.elements is as passed (NULL if the library allocated the
+   * storage); use \ref matrix.elements for the storage in use.
+   */
+  struct matrix_config cfg;
 
   /** Matrix data. */
   dptr_t* elements;
-
-  /**
-   * Run-time configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   *
-   * All other flags ignored.
-   */
-  uint32_t flags;
-
-  /** Size of matrix elements in bytes. */
-  size_t elt_size;
-
-  /** For printing an element. Can be NULL. */
-  void (*printe)(const void* const e);
 };
 
 /*******************************************************************************
@@ -118,9 +110,13 @@ BEGIN_C_DECLS
 static inline void* matrix_access(const struct matrix* const matrix,
                                   size_t                     u,
                                   size_t                     v) {
-  RCSW_FPC_NV(NULL, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
-  return (uint8_t*)matrix->elements + (matrix->n_cols * matrix->elt_size * u) +
-         (matrix->elt_size * v);
+  RCSW_FPC_NV(NULL,
+              NULL != matrix,
+              u < matrix->cfg.n_rows,
+              v < matrix->cfg.n_cols);
+  return (uint8_t*)matrix->elements +
+         (matrix->cfg.n_cols * matrix->cfg.elt_size * u) +
+         (matrix->cfg.elt_size * v);
 }
 
 /**
@@ -150,8 +146,11 @@ static inline size_t matrix_element_space(size_t n_rows,
 static inline status_t matrix_elt_clear(struct matrix* const matrix,
                                         size_t               u,
                                         size_t               v) {
-  RCSW_FPC_NV(ERROR, NULL != matrix, u < matrix->n_rows, v < matrix->n_cols);
-  ds_elt_clear(matrix_access(matrix, u, v), matrix->elt_size);
+  RCSW_FPC_NV(ERROR,
+              NULL != matrix,
+              u < matrix->cfg.n_rows,
+              v < matrix->cfg.n_cols);
+  ds_elt_clear(matrix_access(matrix, u, v), matrix->cfg.elt_size);
   return OK;
 }
 
@@ -172,10 +171,10 @@ static inline status_t matrix_set(struct matrix* const matrix,
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               NULL != w,
-              u < matrix->n_rows,
-              v < matrix->n_cols);
+              u < matrix->cfg.n_rows,
+              v < matrix->cfg.n_cols);
 
-  ds_elt_copy(matrix_access(matrix, u, v), w, matrix->elt_size);
+  ds_elt_copy(matrix_access(matrix, u, v), w, matrix->cfg.elt_size);
   return OK;
 } /* matrix_set() */
 
@@ -184,7 +183,7 @@ static inline status_t matrix_set(struct matrix* const matrix,
  */
 static inline bool_t matrix_issquare(const struct matrix* const matrix) {
   RCSW_FPC_NV(false, NULL != matrix);
-  return matrix->n_cols == matrix->n_rows;
+  return matrix->cfg.n_cols == matrix->cfg.n_rows;
 }
 
 /**
@@ -211,9 +210,13 @@ RCSW_API struct matrix* matrix_init(struct matrix*              matrix_in,
 RCSW_API void matrix_destroy(struct matrix* matrix);
 
 /**
- * \brief Transpose a static matrix.
+ * \brief Transpose a static matrix in place.
  *
- * \note Currently only works if the matrix is square.
+ * \note Square matrices only. Transposing a non-square matrix in place would
+ * also have to swap \ref matrix_config.n_rows and \ref matrix_config.n_cols
+ * and permute the storage by cycles, which is not implemented. A non-square
+ * matrix fails the function precondition (ERROR under \c LIBRA_FPC_RETURN). To
+ * transpose an M x N matrix, copy it element by element into an N x M one.
  *
  * \param matrix The matrix handle.
  *

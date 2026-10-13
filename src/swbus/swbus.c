@@ -24,7 +24,6 @@
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
-
 static status_t swbus_subscriber_notify(struct swbus*         swb,
                                         struct mpool*         bp,
                                         struct swbus_sub*     sub,
@@ -94,6 +93,7 @@ static int swbus_sub_cmp(const void* a, const void* b) {
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct swbus* swbus_init(struct swbus*              swb_in,
                          const struct swbus_config* params) {
   RCSW_FPC_NV(NULL,
@@ -266,24 +266,30 @@ status_t swbus_publish_reserve(struct swbus*       swb,
   for (size_t i = 0; i < swb->n_pools; i++) {
     struct mpool* pool = &swb->pools[i];
 
-    /* can't use this buffer pool--buffers are too small or pool is full */
-    if (pool->elt_size < pkt_size || mpool_isfull(pool)) {
+    /* can't use this buffer pool--buffers are too small */
+    if (pool->cfg.elt_size < pkt_size) {
       ER_TRACE(
         "Skipping buffer pool %zu in reservation search: buf_size=%zu, "
-        "pkt_size=%zu, full=%d",
+        "pkt_size=%zu",
         i,
-        pool->elt_size,
-        pkt_size,
-        mpool_isfull(pool));
+        pool->cfg.elt_size,
+        pkt_size);
       continue;
     }
-    dptr_t* space = mpool_req(pool);
-    if (NULL != space) {
+    /*
+     * Take a buffer only if one is free right now. Checking mpool_isfull()
+     * and then calling the blocking mpool_req() would block if another
+     * publisher took the last buffer in between, instead of trying the next
+     * pool.
+     */
+    void* space = NULL;
+    if (OK == mpool_tryreq(pool, &space)) {
       res->data     = space;
       res->pkt_size = pkt_size;
       res->bp       = swb->pools + i;
       return OK;
     }
+    ER_TRACE("Skipping buffer pool %zu in reservation search: full", i);
   } /*  for(i...) */
 
   /* no free buffer big enough found */
@@ -292,6 +298,7 @@ status_t swbus_publish_reserve(struct swbus*       swb,
   return ERROR;
 } /* swbus_publish_reserve() */
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t swbus_publish_release(struct swbus*       swb,
                                uint32_t            pid,
                                struct swbus_rsrvn* res) {

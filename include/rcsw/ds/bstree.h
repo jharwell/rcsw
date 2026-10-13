@@ -43,14 +43,6 @@ enum bstree_traversal_type {
 };
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * Convenience macro for getting a reference to the root node in the tree.
- */
-#define RCSW_BSTREE_ROOT(tree) ((tree)->root->left)
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 struct allocm_entry;
@@ -92,7 +84,17 @@ struct bstree_config {
   int max_elts;
 
   /**
-   * Configuration flags. See \ref bstree.flags for valid flags.
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   * - \ref RCSW_DS_BSTREE_INT
+   * - \ref RCSW_DS_BSTREE_OS
+   * - \ref RCSW_DS_BSTREE_RB
+   * - \ref RCSW_ZALLOC
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -111,10 +113,11 @@ struct bstree_config {
  * bstree/bstree_node, and pass it to a function in the bstree class, and have
  * everything work as desired.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref bstree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) bstree_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) bstree_node {
   uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
   dptr_t*             data;
   struct bstree_node* left;
@@ -166,14 +169,14 @@ struct bstree_space_mgmt {
  */
 struct bstree {
   /**
-   * For comparing the keys from two different elements. Cannot be NULL.
+   * The configuration the tree was initialized with, with \ref
+   * bstree_config.flags, \ref bstree_config.elt_size and \ref
+   * bstree_config.cmpkey as the tree uses them (\ref ostree_init() and \ref
+   * inttree_init() set some of these themselves). \ref bstree_config.meta and
+   * \ref bstree_config.elements are as passed (NULL unless caller-provided
+   * memory is used); \ref bstree.space holds the views into them.
    */
-  int (*cmpkey)(const void* const a, const void* const b);
-
-  /**
-   * For printing an element. Can be NULL.
-   */
-  void (*printe)(const void* const e);
+  struct bstree_config cfg;
 
   /**
    * Management of all node and element space for the tree.
@@ -189,32 +192,6 @@ struct bstree {
    * Current depth as a traversal progresses.
    */
   size_t depth;
-
-  /**
-   * Configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   * - \ref RCSW_NOALLOC_META
-   * - \ref RCSW_DS_BSTREE_INT
-   * - \ref RCSW_DS_BSTREE_OS
-   * - \ref RCSW_DS_BSTREE_RB
-   * - \ref RCSW_ZALLOC
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
-
-  /**
-   * Max # of elements for tree. -1 indicates no limit.
-   */
-
-  int max_elts;
-
-  /**
-   * Size of each element in bytes.
-   */
-  size_t elt_size;
 
   /**
    * Root of the tree (sentinel). root->left should always point to the node
@@ -235,6 +212,17 @@ struct bstree {
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of the tree.
+ *
+ * The tree's \ref bstree.root is a sentinel; the real root is its left
+ * child. Returns \ref bstree.nil if the tree is empty, and NULL if \p tree is
+ * NULL (function precondition).
+ */
+static inline struct bstree_node* bstree_root(const struct bstree* const tree) {
+  RCSW_FPC_NV(NULL, NULL != tree);
+  return tree->root->left;
+}
 
 /**
  * \brief Determine if a \ref bstree is currently full.
@@ -243,7 +231,7 @@ BEGIN_C_DECLS
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
-  return (bst->max_elts != -1) && (bst->current == (size_t)bst->max_elts);
+  return (bst->cfg.max_elts != -1) && (bst->current == (size_t)bst->cfg.max_elts);
 }
 
 /**
@@ -303,9 +291,14 @@ static inline size_t bstree_meta_space(size_t max_elts) {
 /**
  * \brief Insert an item into a \ref bstree
  *
+ * Keys are fixed-size: exactly \ref RCSW_BSTREE_NODE_KEYSIZE bytes are copied
+ * from \p key, and \ref bstree_config.cmpkey compares those copies. Duplicate
+ * keys are rejected (ERROR with errno=EEXIST).
+ *
  * \param tree The BST handle
-
- * \param key The key for the data to insert
+ *
+ * \param key The key for the data to insert. Must point to \ref
+ *            RCSW_BSTREE_NODE_KEYSIZE readable bytes.
  *
  * \param data The data to insert
  */
@@ -339,7 +332,7 @@ RCSW_API void bstree_destroy(struct bstree* tree);
  * \param tree The BST handle
  * \param key Key to match in the search for the node to delete
  *
- * \return \ref status_t
+ * \return \ref status_t. ERROR with errno=ENOENT if no node has \p key.
  */
 RCSW_API status_t bstree_remove(struct bstree* tree, const void* key);
 

@@ -51,7 +51,7 @@ _rcsw_summary_line("No dynamic memory allocation" "${EMIT_RCSW_CONFIG_NOALLOC}"
 _rcsw_summary_line("Zero alloc'd memory" "${EMIT_RCSW_CONFIG_ZALLOC}"
                    "RCSW_CONFIG_ZALLOC")
 _rcsw_summary_line("Pointer alignment" "${EMIT_RCSW_CONFIG_PTR_ALIGN}"
-                   "RCSW_CONFIG_PTR_ALIGN={1,2,4}")
+                   "RCSW_CONFIG_PTR_ALIGN={1,2,4,8}")
 _rcsw_summary_line("No GRIND macros" "${EMIT_RCSW_CONFIG_TOOL_NO_GRIND}"
                    "RCSW_CONFIG_TOOL_NO_GRIND")
 _rcsw_summary_line("stdio putchar()" "${EMIT_RCSW_CONFIG_STDIO_PUTCHAR}"

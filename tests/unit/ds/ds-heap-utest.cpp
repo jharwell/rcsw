@@ -48,7 +48,7 @@ static void run_test(void (*test)(th::gen_elt_type, struct binheap_config*),
   /* Each flag in isolation */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (int m = 1; m < TH_NUM_ITEMS; ++m) {
-      config.flags     = flags[i];
+      config.flags     = flags[i] | th::kForcedFlags;
       config.max_elts  = m;
       config.init_size = 0;
       test(type, &config);
@@ -60,7 +60,7 @@ static void run_test(void (*test)(th::gen_elt_type, struct binheap_config*),
     for (size_t j = i + 1; j < RCSW_ARRAY_ELTS(flags); ++j) {
       uint32_t applied = flags[i] | flags[j];
       for (int m = 1; m < TH_NUM_ITEMS; ++m) {
-        config.flags     = applied;
+        config.flags     = applied | th::kForcedFlags;
         config.max_elts  = m;
         config.init_size = 0;
         test(type, &config);
@@ -84,16 +84,16 @@ static void verify_heap(struct binheap* heap) {
   while (++i <= binheap_size(heap)) {
     T* parent = (T*)darray_data_get(&heap->arr, i);
 
-    if (RCSW_BINHEAP_LCHILD(i) <= binheap_size(heap)) {
-      T* lc = (T*)darray_data_get(&heap->arr, RCSW_BINHEAP_LCHILD(i));
+    if (binheap_lchild(i) <= binheap_size(heap)) {
+      T* lc = (T*)darray_data_get(&heap->arr, binheap_lchild(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, lc) <= 0);
       } else {
         CATCH_REQUIRE(heap->arr.cmpe(parent, lc) >= 0);
       }
     }
-    if (RCSW_BINHEAP_RCHILD(i) <= binheap_size(heap)) {
-      T* rc = (T*)darray_data_get(&heap->arr, RCSW_BINHEAP_RCHILD(i));
+    if (binheap_rchild(i) <= binheap_size(heap)) {
+      T* rc = (T*)darray_data_get(&heap->arr, binheap_rchild(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, rc) <= 0);
       } else {
@@ -111,15 +111,40 @@ int cmp_int(const void* const a, const void* const b) {
   return (x > y) - (x < y);
 }
 
-struct binheap* make_heap(size_t max_elts, uint32_t flags) {
+/*
+ * Storage for one int heap made by make_heap(). Heap builds let the library
+ * allocate (so growth is exercised); under RCSW_CONFIG_NOALLOC the heap uses
+ * this handle and space instead.
+ */
+constexpr size_t kIntHeapElts = 64;
+struct int_heap_storage {
+  struct binheap handle;
+  /* +1 for the scratch element at index 0 */
+  dptr_t space[((kIntHeapElts + 1) * sizeof(int)) / sizeof(dptr_t) + 1];
+};
+
+struct binheap* make_heap(int_heap_storage* s,
+                          size_t            max_elts,
+                          uint32_t          flags,
+                          int (*cmpe)(const void*, const void*) = cmp_int,
+                          size_t init_size                      = 4) {
   struct binheap_config c;
   memset(&c, 0, sizeof(c));
-  c.cmpe      = cmp_int;
+  c.cmpe      = cmpe;
   c.elt_size  = sizeof(int);
   c.max_elts  = max_elts;
-  c.init_size = 4;
+  c.init_size = init_size;
   c.flags     = flags;
+#if defined(RCSW_CONFIG_NOALLOC)
+  CATCH_REQUIRE(binheap_element_space(max_elts, sizeof(int)) <=
+                sizeof(s->space));
+  c.elements = s->space;
+  c.flags |= RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+  return binheap_init(&s->handle, &c);
+#else
+  (void)s;
   return binheap_init(nullptr, &c);
+#endif
 }
 } /* namespace */
 
@@ -283,8 +308,13 @@ static void print_test(th::gen_elt_type type, struct binheap_config* config) {
   /* NULL handle must not crash */
   binheap_print(nullptr);
 
+#if defined(RCSW_CONFIG_NOALLOC)
+  struct binheap  myheap;
+  struct binheap* heap = binheap_init(&myheap, config);
+#else
   config->flags &= ~RCSW_NOALLOC_HANDLE;
   struct binheap* heap = binheap_init(nullptr, config);
+#endif
   CATCH_REQUIRE(nullptr != heap);
 
   binheap_print(heap); /* empty */
@@ -369,7 +399,8 @@ CATCH_TEST_CASE("binheap Print Test", "[ds][binheap]") {
 }
 
 CATCH_TEST_CASE("binheap_clear leaves a valid, empty heap", "[ds][binheap]") {
-  struct binheap* h = make_heap(16, RCSW_DS_BINHEAP_MIN);
+  int_heap_storage s{};
+  struct binheap* h = make_heap(&s, 16, RCSW_DS_BINHEAP_MIN);
   int             x = 3;
   CATCH_REQUIRE(OK == binheap_insert(h, &x));
   CATCH_REQUIRE(OK == binheap_clear(h));
@@ -388,7 +419,8 @@ CATCH_TEST_CASE(
   "binheap_update_key restores heap order when a key moves "
   "away from the root",
   "[ds][binheap]") {
-  struct binheap* h = make_heap(16, RCSW_DS_BINHEAP_MIN);
+  int_heap_storage s{};
+  struct binheap* h = make_heap(&s, 16, RCSW_DS_BINHEAP_MIN);
   for (int i = 1; i <= 7; ++i) {
     CATCH_REQUIRE(OK == binheap_insert(h, &i));
   }
@@ -408,7 +440,8 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("binheap_capacity matches the configured max_elts",
                 "[ds][binheap]") {
-  struct binheap* h = make_heap(16, RCSW_NONE);
+  int_heap_storage s{};
+  struct binheap* h = make_heap(&s, 16, RCSW_NONE);
   for (int i = 0; i < 16; ++i) {
     CATCH_REQUIRE(OK == binheap_insert(h, &i));
   }
@@ -418,7 +451,8 @@ CATCH_TEST_CASE("binheap_capacity matches the configured max_elts",
 }
 
 CATCH_TEST_CASE("binheap_make appends to existing contents", "[ds][binheap]") {
-  struct binheap* h = make_heap(16, RCSW_NONE);
+  int_heap_storage s{};
+  struct binheap* h = make_heap(&s, 16, RCSW_NONE);
   int             a = 50;
   CATCH_REQUIRE(OK == binheap_insert(h, &a));
 
@@ -431,7 +465,8 @@ CATCH_TEST_CASE("binheap_make appends to existing contents", "[ds][binheap]") {
 
 CATCH_TEST_CASE("binheap_insert into a full heap reports ENOSPC",
                 "[ds][binheap]") {
-  struct binheap* h = make_heap(2, RCSW_NONE);
+  int_heap_storage s{};
+  struct binheap* h = make_heap(&s, 2, RCSW_NONE);
   for (int i = 0; i < 2; ++i) {
     CATCH_REQUIRE(OK == binheap_insert(h, &i));
   }
@@ -440,4 +475,76 @@ CATCH_TEST_CASE("binheap_insert into a full heap reports ENOSPC",
   CATCH_REQUIRE(ERROR == binheap_insert(h, &x));
   CATCH_REQUIRE(ENOSPC == errno);
   binheap_destroy(h);
+}
+
+CATCH_TEST_CASE("binheap extracts in order with duplicates and growth",
+                "[ds][binheap]") {
+  std::uniform_int_distribution<int> len_dist(0, 50);
+  std::uniform_int_distribution<int> val_dist(0, 99);
+  for (uint32_t flags : {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_BINHEAP_MIN}) {
+    bool min_heap = flags & RCSW_DS_BINHEAP_MIN;
+    for (int trial = 0; trial < 150; ++trial) {
+      /* starts at 4 elements, so inserts grow the storage */
+      int_heap_storage s{};
+      struct binheap* h = make_heap(&s, 64, flags);
+      int             n = len_dist(th::make_rng());
+      for (int i = 0; i < n; ++i) {
+        int v = val_dist(th::make_rng());
+        CATCH_REQUIRE(OK == binheap_insert(h, &v));
+      }
+      int prev = min_heap ? INT_MIN : INT_MAX;
+      int count = 0;
+      while (!binheap_isempty(h)) {
+        int v = 0;
+        CATCH_REQUIRE(OK == binheap_extract(h, &v));
+        CATCH_REQUIRE((min_heap ? v >= prev : v <= prev));
+        prev = v;
+        ++count;
+      }
+      CATCH_REQUIRE(n == count);
+      binheap_destroy(h);
+    }
+  }
+}
+
+namespace {
+/* The scratch slot (index 0) of the heap under test */
+const void* g_scratch          = nullptr;
+int         g_scratch_compares = 0;
+
+int cmp_int_no_scratch(const void* a, const void* b) {
+  if (a == g_scratch || b == g_scratch) {
+    ++g_scratch_compares;
+  }
+  int x, y;
+  memcpy(&x, a, sizeof(x));
+  memcpy(&y, b, sizeof(y));
+  return (x > y) - (x < y);
+}
+} /* namespace */
+
+CATCH_TEST_CASE("binheap never compares against its scratch slot",
+                "[ds][binheap]") {
+  /*
+   * Slot 0 is scratch space holding zeroes or a stale copy; a cmpe that
+   * dereferences pointers inside elements would crash on it.
+   */
+  for (uint32_t flags : {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_BINHEAP_MIN}) {
+    /* init_size == max_elts: no reallocation, so slot 0 stays put */
+    int_heap_storage s{};
+    struct binheap*  h = make_heap(&s, 32, flags, cmp_int_no_scratch, 32);
+    CATCH_REQUIRE(nullptr != h);
+    g_scratch          = darray_data_get(&h->arr, 0);
+    g_scratch_compares = 0;
+
+    for (int v : {5, 9, 1, 7, 3, 8, 2, 6, 4, 0}) {
+      CATCH_REQUIRE(OK == binheap_insert(h, &v));
+    }
+    while (!binheap_isempty(h)) {
+      int v;
+      CATCH_REQUIRE(OK == binheap_extract(h, &v));
+    }
+    CATCH_REQUIRE(0 == g_scratch_compares);
+    binheap_destroy(h);
+  }
 }

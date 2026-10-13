@@ -82,9 +82,11 @@ Flags
 
 Flags are bits in a ``uint32_t``. The memory flags in ``rcsw/core/flags.h``
 use the lowest bits; module flags start at ``RCSW_MODFLAGS_SHIFT`` and are
-defined by each module. Data structure flags are in ``rcsw/ds/ds.h``, and
-modules built on top of the data structures start theirs at
-``RCSW_DS_EXTFLAGS_SHIFT``.
+defined by each module. Data structure flags are in ``rcsw/ds/ds.h``. A
+structure built on top of them whose flags are passed through to the
+underlying structure starts its own at ``RCSW_DS_EXTFLAGS_SHIFT`` so the two
+sets can't collide. Modules that never pass their flags to a data structure,
+such as swbus and grind, start theirs at ``RCSW_MODFLAGS_SHIFT``.
 
 Binary search trees
 ===================

@@ -20,6 +20,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/multithread/pcqueue.h"
+#include "tests/unit/test.h"
 #include "tests/unit/element.hpp"
 
 #define TH_NUM_MT_ITEMS 500UL
@@ -41,13 +42,19 @@ static void run_test(pcqueue_test test, size_t n_prod = 1, size_t n_cons = 1) {
   config.printe    = NULL;
   config.elt_size  = sizeof(T);
   config.max_elts  = TH_NUM_MT_ITEMS * 10UL;
+#if defined(RCSW_CONFIG_NOALLOC)
+  /* no heap: the queue's FIFO lives in caller-provided space */
+  std::vector<dptr_t> space(
+    fifo_element_space(config.max_elts, config.elt_size) / sizeof(dptr_t) + 1);
+  config.elements = space.data();
+#endif
   uint32_t flags[] = {
     RCSW_NONE,
     RCSW_NOALLOC_HANDLE,
   };
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    config.flags = flags[i];
+    config.flags = flags[i] | TH_FORCED_FLAGS;
     test(&config, n_prod, n_cons);
   }
 } /* test_runner() */
@@ -342,7 +349,15 @@ CATCH_TEST_CASE("pcqueue_peek does not wait on an empty queue",
   memset(&c, 0, sizeof(c));
   c.elt_size        = sizeof(int);
   c.max_elts        = 4;
+#if defined(RCSW_CONFIG_NOALLOC)
+  static dptr_t         space[(4 * sizeof(int)) / sizeof(dptr_t) + 1];
+  static struct pcqueue handle;
+  c.elements        = space;
+  c.flags           = RCSW_NOALLOC_ALL;
+  struct pcqueue* q = pcqueue_init(&handle, &c);
+#else
   struct pcqueue* q = pcqueue_init(nullptr, &c);
+#endif
   CATCH_REQUIRE(nullptr != q);
 
   void* e = &c;

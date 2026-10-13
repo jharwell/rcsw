@@ -97,6 +97,8 @@ status_t pcqueue_push(struct pcqueue* const queue, const void* const e) {
 
   if (OK == rval) {
     csem_post(&queue->slots_inuse);
+  } else {
+    csem_post(&queue->slots_avail); /* give the slot back */
   }
 
   return rval;
@@ -133,6 +135,8 @@ status_t pcqueue_pop(struct pcqueue* const queue, void* const e) {
 
   if (OK == rval) {
     csem_post(&queue->slots_avail);
+  } else {
+    csem_post(&queue->slots_inuse); /* nothing was taken: give it back */
   }
 
   return rval;
@@ -155,13 +159,19 @@ status_t pcqueue_timedpop(struct pcqueue* const        queue,
    */
   status_t rval = fifo_remove(&queue->fifo, e);
   mutex_unlock(&queue->mutex);
-  csem_post(&queue->slots_avail);
+
+  /* A slot is only freed if an element was actually removed */
+  if (OK == rval) {
+    csem_post(&queue->slots_avail);
+  } else {
+    csem_post(&queue->slots_inuse); /* nothing was taken: give it back */
+  }
 
   return rval;
 
 error:
   return ERROR;
-} /* pcqueue_pop() */
+} /* pcqueue_timedpop() */
 
 status_t pcqueue_timedpeek(struct pcqueue* const        queue,
                            const struct timespec* const to,

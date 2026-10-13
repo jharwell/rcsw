@@ -18,6 +18,12 @@
 #include "rcsw/ds/dynmatrix.h"
 #include "tests/unit/ds/ds_test.hpp"
 
+/*
+ * dynmatrix rows are heap-allocated darrays that grow and shrink with the
+ * matrix, so nothing below can run without a heap.
+ */
+#if !defined(RCSW_CONFIG_NOALLOC)
+
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
@@ -230,3 +236,49 @@ CATCH_TEST_CASE("dynmatrix_resize can shrink the matrix", "[ds][dynmatrix]") {
   CATCH_REQUIRE(3 == m->n_cols);
   dynmatrix_destroy(m);
 }
+
+CATCH_TEST_CASE("dynmatrix_resize keeps the overlap and zeroes new cells",
+                "[ds][dynmatrix]") {
+  struct dynmatrix* m = make_dyn(3, 3);
+  CATCH_REQUIRE(nullptr != m);
+  for (size_t i = 0; i < 3; ++i) {
+    for (size_t j = 0; j < 3; ++j) {
+      int v = static_cast<int>(i * 10 + j + 1);
+      CATCH_REQUIRE(OK == dynmatrix_set(m, i, j, &v));
+    }
+  }
+  auto cell = [&](size_t i, size_t j) {
+    return *static_cast<int*>(dynmatrix_access(m, i, j));
+  };
+
+  /* more rows, fewer columns */
+  CATCH_REQUIRE(OK == dynmatrix_resize(m, 5, 2));
+  for (size_t i = 0; i < 5; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      CATCH_REQUIRE(cell(i, j) == (i < 3 ? static_cast<int>(i * 10 + j + 1) : 0));
+    }
+  }
+
+  /* fewer rows, more columns: the dropped column comes back zeroed */
+  CATCH_REQUIRE(OK == dynmatrix_resize(m, 1, 4));
+  CATCH_REQUIRE(1 == cell(0, 0));
+  CATCH_REQUIRE(2 == cell(0, 1));
+  CATCH_REQUIRE(0 == cell(0, 2));
+  CATCH_REQUIRE(0 == cell(0, 3));
+  dynmatrix_destroy(m);
+}
+#endif /* !RCSW_CONFIG_NOALLOC */
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("dynmatrix_init fails cleanly without a heap",
+                "[ds][dynmatrix][noalloc]") {
+  struct dynmatrix        handle;
+  struct dynmatrix_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size = sizeof(int);
+  c.n_rows   = 2;
+  c.n_cols   = 2;
+  c.flags    = RCSW_NOALLOC_HANDLE;
+  CATCH_REQUIRE(nullptr == dynmatrix_init(&handle, &c));
+}
+#endif /* RCSW_CONFIG_NOALLOC */

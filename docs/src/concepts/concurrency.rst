@@ -38,8 +38,10 @@ What is thread-safe
        context.
 
    * - LOG4CL plugin
-     - Module installation, removal and lookup are serialized internally on
-       POSIX.
+     - On POSIX, reporting and installing modules are safe from any thread.
+       Removing modules, changing levels and ``RCSW_ER_DEINIT()`` are not:
+       do them before starting the threads that report, or after stopping
+       them.
 
    * - All other data structures
      - Not thread-safe. Lock around every call.

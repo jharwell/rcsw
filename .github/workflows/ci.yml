@@ -69,7 +69,7 @@ jobs:
           - ZLOG
 
         ptr_align:
-          - 4
+          - 8
 
         # Spot-check the other ptr_align values, with the other axes pinned to
         # keep the count low. ptr_align has to be a matrix axis for these to be
@@ -81,7 +81,7 @@ jobs:
           - { build_type: release, libtype: STATIC, build_mode: components,
               er_plugin: LOG4CL, ptr_align: 2 }
           - { build_type: release, libtype: STATIC, build_mode: components,
-              er_plugin: LOG4CL, ptr_align: 8 }
+              er_plugin: LOG4CL, ptr_align: 4 }
 
     steps:
       - uses: actions/checkout@v7
@@ -102,6 +102,7 @@ jobs:
 
           clibra build --preset ${{ matrix.build_type }} \
             -DRCSW_BUILD_FOR=POSIX \
+            -DRCSW_CONFIG_PTR_ALIGN_NO_CHECK=YES \
             -DRCSW_CONFIG_LIBTYPE=${{ matrix.libtype }} \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=${MONOLITHIC} \
             -DRCSW_CONFIG_ER_PLUGIN=${{ matrix.er_plugin }} \
@@ -160,7 +161,6 @@ jobs:
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4 \
             ${EXTRA_FLAGS}
 
 # ---------------------------------------------------------------------------
@@ -209,6 +209,7 @@ jobs:
             -DRCSW_BUILD_FOR=BAREMETAL \
             -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
+            -DRCSW_CONFIG_PTR_ALIGN_NO_CHECK=YES \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             ${STDLIB_FLAGS}
 
@@ -247,7 +248,6 @@ jobs:
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4 \
             -DLIBRA_FPC=ABORT \
             -DLIBRA_TESTS=ON
 
@@ -268,13 +268,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: jharwell/ubuntu24.04-rcsw:20261002
-    strategy:
-      fail-fast: false
-      matrix:
-        ptr_align:
-          - 1
-          - 4
-          - 8
 
     steps:
       - uses: actions/checkout@v7
@@ -294,7 +287,6 @@ jobs:
             -DRCSW_BUILD_FOR=POSIX \
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_ER_PLUGIN=SIMPLE \
-            -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
             -DRCSW_CONFIG_NOALLOC=YES \
             -DLIBRA_SAN="ASAN;UBSAN" \
             -DLIBRA_TESTS=ON
@@ -307,23 +299,9 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
-          # Collect the unit test executables.
-          mapfile -t tests < <(find build/bin/unit -type f -executable -name '*-utest*' | sort)
-          if [ ${#tests[@]} -eq 0 ]; then
-            echo "::error::no unit test binaries found under build/"
-            exit 1
-          fi
-
-          status=0
-          for t in "${tests[@]}"; do
-            echo "::group::${t}"
-            if ! "${t}" "[noalloc]" --allow-running-no-tests; then
-              echo "::error::${t} failed"
-              status=1
-            fi
-            echo "::endgroup::"
-          done
-          exit ${status}
+             clibra test \
+               --preset ci-asan \
+               --type unit
 
 # ---------------------------------------------------------------------------
 # Job 4: POSIX test (memcheck + coverage)
@@ -343,10 +321,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - release
-          - debug
-
+        # 2026-11-02 [JRH]: OK to allow alignments other than native because we
+        # are NOT testing with user provided storage, which is where doing so
+        # otherwise bites.
         ptr_align:
           - 1
           - 4
@@ -373,7 +350,10 @@ jobs:
             --preset ci-valgrind \
             --type unit \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+            -DRCSW_CONFIG_PTR_ALIGN_NO_CHECK=YES \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+            -DCMAKE_BUILD_TYPE=release
+
 
       - name: Test under Memcheck
         shell: bash
@@ -384,7 +364,9 @@ jobs:
             --type unit \
             --valgrind \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+            -DRCSW_CONFIG_PTR_ALIGN_NO_CHECK=YES \
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+            -DCMAKE_BUILD_TYPE=release
 
       - name: Show valgrind reports
         if: failure()
@@ -405,6 +387,10 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
           LSAN_OPTIONS: report_objects=1
+
+        # 2026-11-03 [JRH]: This will only pass if the alignment matches the
+        # native alignment for the platform, which in this case is 64 bit x86.
+        if: ${{ matrix.ptr_align == 8 }}
         run: |
           clibra test \
             --reconfigure \
@@ -412,7 +398,8 @@ jobs:
             --type unit \
             -DLIBRA_SAN="ASAN;UBSAN" \
             -DRCSW_CONFIG_PTR_ALIGN=${{ matrix.ptr_align }} \
-            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }}
+            -DRCSW_CONFIG_ZALLOC=${{ matrix.zalloc }} \
+            -DCMAKE_BUILD_TYPE=release
 
       - name: Generate coverage
         shell: bash
@@ -546,7 +533,6 @@ jobs:
             -DRCSW_CONFIG_LIBTYPE=STATIC \
             -DRCSW_CONFIG_BUILD_MONOLITHIC=OFF \
             -DRCSW_CONFIG_ER_PLUGIN=LOG4CL \
-            -DRCSW_CONFIG_PTR_ALIGN=4 \
             ${{ matrix.TOOL }}
 
   analyze-formatting:

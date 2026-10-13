@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/llist.h"
 
-#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "list")
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "llist")
 #define RCSW_ER_MODID LOG4CL_DS_LLIST
 #include "ds/llist_node.h"
 #include "rcsw/core/alloc.h"
@@ -271,6 +271,7 @@ const struct ds_ops llist_iter_ops = {
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct llist* llist_init(struct llist*                    list_in,
                          const struct llist_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts != 0, params->elt_size > 0);
@@ -282,7 +283,7 @@ struct llist* llist_init(struct llist*                    list_in,
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(list);
   list->current = 0;
-  list->flags   = params->flags;
+  list->cfg     = *params;
   list->first   = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
@@ -317,18 +318,14 @@ struct llist* llist_init(struct llist*                    list_in,
       "passed\n");
   }
 
-  list->first    = NULL;
-  list->last     = NULL;
-  list->elt_size = params->elt_size;
-  list->cmpe     = params->cmpe;
-  list->printe   = params->printe;
-  list->max_elts = params->max_elts;
-  list->sorted   = false;
+  list->first  = NULL;
+  list->last   = NULL;
+  list->sorted = false;
 
   ER_DEBUG("elt_size=%zu max_elts=%d flags=0x%08x",
-           list->elt_size,
-           list->max_elts,
-           list->flags);
+           list->cfg.elt_size,
+           list->cfg.max_elts,
+           list->cfg.flags);
   return list;
 
 error:
@@ -350,7 +347,7 @@ void llist_destroy(struct llist* list) {
     --list->current;
   } /* while() */
 
-  rcsw_free(list, list->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(list, list->cfg.flags & RCSW_NOALLOC_HANDLE);
 } /* llist_destroy() */
 
 status_t llist_clear(struct llist* const list) {
@@ -401,7 +398,7 @@ status_t llist_delete(struct llist* const list,
 
   list->current--;
   if (NULL != e) {
-    ds_elt_copy(e, victim->data, list->elt_size);
+    ds_elt_copy(e, victim->data, list->cfg.elt_size);
   }
   llist_node_destroy(list, victim);
   return OK;
@@ -413,7 +410,7 @@ status_t llist_delete(struct llist* const list,
  */
 static void llist_link_sorted(struct llist* const list, struct llist_node* node) {
   struct llist_node* pos = list->first;
-  while (pos != NULL && list->cmpe(pos->data, node->data) <= 0) {
+  while (pos != NULL && list->cfg.cmpe(pos->data, node->data) <= 0) {
     pos = pos->next;
   }
   if (pos == NULL) { /* goes at the end */
@@ -450,7 +447,8 @@ status_t llist_append(struct llist* const list, void* const data) {
   status_t           rval = ERROR;
   RCSW_CHECK_PTR(node);
 
-  if ((list->flags & RCSW_DS_SORTED) && (list->sorted || list->current == 0)) {
+  if ((list->cfg.flags & RCSW_DS_SORTED) &&
+      (list->sorted || list->current == 0)) {
     llist_link_sorted(list, node);
     list->current++;
     list->sorted = true;
@@ -470,7 +468,7 @@ status_t llist_append(struct llist* const list, void* const data) {
   }
   list->current++;
   list->sorted = false;
-  if (list->flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+  if (list->cfg.flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
     RCSW_CHECK(OK == llist_sort(list, EXEC_REC));
   }
   rval = OK;
@@ -492,7 +490,8 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   status_t           rval = ERROR;
   RCSW_CHECK_PTR(node);
 
-  if ((list->flags & RCSW_DS_SORTED) && (list->sorted || list->current == 0)) {
+  if ((list->cfg.flags & RCSW_DS_SORTED) &&
+      (list->sorted || list->current == 0)) {
     llist_link_sorted(list, node);
     list->current++;
     list->sorted = true;
@@ -513,7 +512,7 @@ status_t llist_prepend(struct llist* const list, void* const data) {
   list->current++;
 
   list->sorted = false;
-  if (list->flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+  if (list->cfg.flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
     RCSW_CHECK(OK == llist_sort(list, EXEC_REC));
   }
   rval = OK;
@@ -531,12 +530,12 @@ void llist_print(struct llist* const list) {
     DPRINTF(RCSW_ER_MODNAME ": < Empty >\n");
     return;
   }
-  if (list->printe == NULL) {
+  if (list->cfg.printe == NULL) {
     DPRINTF(RCSW_ER_MODNAME ": < No print function >\n");
     return;
   }
 
-  LLIST_FOREACH(list, next, curr) { list->printe(curr->data); }
+  LLIST_FOREACH(list, next, curr) { list->cfg.printe(curr->data); }
 
   DPRINTF("\n");
 } /* llist_print() */
@@ -544,7 +543,7 @@ void llist_print(struct llist* const list) {
 void* llist_data_query(struct llist* const list, const void* const e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_DB_PTR)) {
+  if (list->cfg.cmpe == NULL && !(list->cfg.flags & RCSW_DS_LLIST_DB_PTR)) {
     ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
@@ -557,20 +556,20 @@ struct llist_node* llist_node_query(struct llist* const list,
                                     const void* const   e) {
   RCSW_FPC_NV(NULL, list != NULL, e != NULL);
 
-  if (list->cmpe == NULL && !(list->flags & RCSW_DS_LLIST_DB_PTR)) {
+  if (list->cfg.cmpe == NULL && !(list->cfg.flags & RCSW_DS_LLIST_DB_PTR)) {
     ER_ERR("Cannot search list: NULL cmpe()");
     return NULL;
   }
 
   void* match = NULL;
   LLIST_FOREACH(list, next, curr) {
-    if (list->flags & RCSW_DS_LLIST_DB_PTR) {
+    if (list->cfg.flags & RCSW_DS_LLIST_DB_PTR) {
       if (curr->data == e) {
         match = curr;
         break;
       }
     } else {
-      if (list->cmpe(curr->data, e) == 0) {
+      if (list->cfg.cmpe(curr->data, e) == 0) {
         match = curr;
         break;
       }
@@ -581,7 +580,7 @@ struct llist_node* llist_node_query(struct llist* const list,
 
 status_t llist_sort(struct llist* const list, enum exec_type type) {
   RCSW_FPC_NV(ERROR, list != NULL, EXEC_REC == type || EXEC_ITER == type);
-  ER_ASSERT(NULL != list->cmpe, "llist_sort() requires cmpe()");
+  ER_ASSERT(NULL != list->cfg.cmpe, "llist_sort() requires cmpe()");
 
   /* 0 or 1 element lists are already sorted, as are those marked sorted */
   if (list->current <= 1 || list->sorted) {
@@ -590,9 +589,9 @@ status_t llist_sort(struct llist* const list, enum exec_type type) {
     return OK;
   }
   if (type == EXEC_REC) {
-    list->first = mergesort_rec(list->first, list->cmpe, true);
+    list->first = mergesort_rec(list->first, list->cfg.cmpe, true);
   } else {
-    list->first = mergesort_iter(list->first, list->cmpe, true);
+    list->first = mergesort_iter(list->first, list->cfg.cmpe, true);
   }
 
   /* find new list->last */
@@ -611,28 +610,37 @@ status_t llist_sort(struct llist* const list, enum exec_type type) {
   return OK;
 } /* llist_sort() */
 
+/**
+ * \brief The configuration for a new list holding the same kind of elements
+ * as \p list, with its own flags and memory.
+ */
+static struct llist_config llist_derived_config(const struct llist* const list,
+                                                uint32_t                  flags,
+                                                void* const elements,
+                                                void* const nodes) {
+  struct llist_config params = list->cfg;
+  params.flags               = flags;
+  params.elements            = elements;
+  params.meta                = nodes;
+  return params;
+} /* llist_derived_config() */
+
 struct llist* llist_copy(struct llist* const list,
                          uint32_t            flags,
                          void*               elements,
                          void*               nodes) {
   RCSW_FPC_NV(NULL, list != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct llist_config params = {
-    .cmpe     = list->cmpe,
-    .printe   = list->printe,
-    .elt_size = list->elt_size,
-    .max_elts = list->max_elts,
-    .flags    = flags,
-    .elements = elements,
-    .meta     = nodes,
-  };
+  struct llist_config params = llist_derived_config(list, flags, elements, nodes);
 
   struct llist* clist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(clist);
 
   LLIST_FOREACH(list, next, curr) { llist_append(clist, curr->data); }
 
-  ER_DEBUG("Copied list: %zu %zu-byte elements", list->current, list->elt_size);
+  ER_DEBUG("Copied list: %zu %zu-byte elements",
+           list->current,
+           list->cfg.elt_size);
 error:
   return clist;
 } /* llist_copy() */
@@ -644,15 +652,7 @@ struct llist* llist_copy_if(struct llist* const list,
                             void*    nodes) {
   RCSW_FPC_NV(NULL, list != NULL, pred != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct llist_config params = {
-    .cmpe     = list->cmpe,
-    .printe   = list->printe,
-    .elt_size = list->elt_size,
-    .max_elts = list->max_elts,
-    .flags    = flags,
-    .elements = elements,
-    .meta     = nodes,
-  };
+  struct llist_config params = llist_derived_config(list, flags, elements, nodes);
 
   struct llist* clist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(clist);
@@ -665,12 +665,13 @@ struct llist* llist_copy_if(struct llist* const list,
   }
   ER_DEBUG("Copied list: %zu %zu-byte elements matched copy predicate",
            clist->current,
-           clist->elt_size);
+           clist->cfg.elt_size);
 
 error:
   return clist;
 } /* llist_copy2() */
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct llist* llist_filter(struct llist* list,
                            bool_t (*pred)(const void* const e),
                            uint32_t flags,
@@ -678,15 +679,22 @@ struct llist* llist_filter(struct llist* list,
                            void*    nodes) {
   RCSW_FPC_NV(NULL, list != NULL, pred != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
-  struct llist_config params = {
-    .cmpe     = list->cmpe,
-    .printe   = list->printe,
-    .elt_size = list->elt_size,
-    .max_elts = list->max_elts,
-    .flags    = flags,
-    .elements = elements,
-    .meta     = nodes,
-  };
+  /*
+   * Elements are moved: each one is added to the new list and then deleted
+   * from this one. A new list that stores pointers would keep a pointer to a
+   * datablock this list frees on the delete, unless this list doesn't own its
+   * datablocks either.
+   */
+  uint32_t ptr_flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR;
+  if ((flags & ptr_flags) && !(list->cfg.flags & ptr_flags)) {
+    ER_ERR(
+      "Cannot filter into a list storing pointers from a list owning its "
+      "data: the pointers would dangle");
+    errno = EINVAL;
+    return NULL;
+  }
+
+  struct llist_config params = llist_derived_config(list, flags, elements, nodes);
 
   struct llist* flist = llist_init(NULL, &params);
   RCSW_CHECK_PTR(flist);
@@ -717,7 +725,7 @@ struct llist* llist_filter(struct llist* list,
     "Filtered list: %zu %zu-byte elements filtered out. %zu elements "
     "remain.",
     flist->current,
-    flist->elt_size,
+    flist->cfg.elt_size,
     list->current);
 
   return flist;
@@ -727,7 +735,6 @@ error:
   return NULL;
 } /* llist_filter() */
 
-/* NOLINTNEXTLINE(readability-function-size) */
 status_t llist_remove_if(struct llist* list,
                          bool_t (*pred)(const void* const e)) {
   RCSW_FPC_NV(ERROR, list != NULL, pred != NULL);
@@ -757,31 +764,27 @@ status_t llist_remove_if(struct llist* list,
 
   ER_DEBUG("%zu %zu-byte elements removed. %zu elements remain.",
            count,
-           list->elt_size,
+           list->cfg.elt_size,
            list->current);
   return OK;
 
 error:
   return ERROR;
-} /* llist_remove_if() */
+}
 
-status_t llist_splice(struct llist*                  list1,
-                      struct llist*                  list2,
-                      const struct llist_node* const node) {
-  RCSW_FPC_NV(ERROR, list1 != NULL, list2 != NULL, node != NULL);
+/* NOLINTNEXTLINE(readability-function-size) */
+status_t llist_splice(struct llist*      list1,
+                      struct llist*      list2,
+                      struct llist_node* node) {
+  RCSW_FPC_NV(ERROR, list1 != NULL, list2 != NULL, list1 != list2);
 
-  if (list1->current + list2->current > (size_t)list1->max_elts &&
-      list1->max_elts != -1) {
+  if (list1->current + list2->current > (size_t)list1->cfg.max_elts &&
+      list1->cfg.max_elts != -1) {
     ER_ERR("Cannot splice: %zu + %zu > %d (max elements exceeded)",
            list1->current,
            list2->current,
-           list1->max_elts);
+           list1->cfg.max_elts);
     errno = ENOSPC;
-    return ERROR;
-  }
-  if (list1->current == 0 || list2->current == 0) {
-    ER_ERR("Cannot splice an empty list");
-    errno = EINVAL;
     return ERROR;
   }
   /*
@@ -789,65 +792,72 @@ status_t llist_splice(struct llist*                  list1,
    * from the heap: nodes from list2's pools would later be returned to the
    * wrong pool (or free()d).
    */
-  if ((list1->flags | list2->flags) & (RCSW_NOALLOC_DATA | RCSW_NOALLOC_META)) {
+  if ((list1->cfg.flags | list2->cfg.flags) &
+      (RCSW_NOALLOC_DATA | RCSW_NOALLOC_META)) {
     ER_ERR("Cannot splice lists using caller-provided node/data pools");
     errno = EINVAL;
     return ERROR;
   }
-  if (list1->elt_size != list2->elt_size) {
+  if (list1->cfg.elt_size != list2->cfg.elt_size) {
     ER_ERR("Cannot splice: element sizes differ");
     errno = EINVAL;
     return ERROR;
   }
-
-  size_t             count = list1->current;
-  struct llist_node* pos   = NULL;
-  status_t           rval  = ERROR;
-
-  LLIST_FOREACH(list1, next, curr) {
-    /* locate the llist_node to insert at */
-    if (curr != node) {
-      count--;
-      continue;
+  /*
+   * Both lists must agree on who owns the data: an owning list1 would later
+   * free() list2's caller pointers, and a non-owning list1 would leak list2's
+   * datablocks.
+   */
+  if ((list1->cfg.flags ^ list2->cfg.flags) &
+      (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
+    ER_ERR("Cannot splice: lists differ in RCSW_DS_LLIST_DB_DISOWN/DB_PTR");
+    errno = EINVAL;
+    return ERROR;
+  }
+  if (NULL != node) {
+    bool_t found = false;
+    LLIST_FOREACH(list1, next, curr) {
+      if (curr == node) {
+        found = true;
+        break;
+      }
     }
+    if (!found) {
+      ER_ERR("Could not splice: splice node not found in list1");
+      errno = ENOENT;
+      return ERROR;
+    }
+  }
 
-    if (curr == list1->first) { /* splice at start of list == prepend */
-      list1->first->prev = list2->last;
-      list2->last->next  = list1->first;
-      list1->first       = list2->first;
-      list1->current += list2->current;
-
-    } else if (curr == list1->last) { /* splice at end of list == append */
-      list1->last->next  = list2->first;
+  if (list2->current > 0) {
+    if (NULL == node) { /* append */
       list2->first->prev = list1->last;
-      list1->last        = list2->last;
-      list1->current += list2->current;
-
-    } else { /* general case: insert list2 into the middle of list1 */
-      pos                = curr;
-      curr               = curr->prev;
-      curr->next         = list2->first;
-      list2->first->prev = curr;
-      list2->last->next  = pos;
-      pos->prev          = list2->last;
-      list1->current += list2->current;
+      if (NULL != list1->last) {
+        list1->last->next = list2->first;
+      } else { /* list1 was empty */
+        list1->first = list2->first;
+      }
+      list1->last = list2->last;
+    } else { /* insert before node */
+      struct llist_node* prev = node->prev;
+      list2->first->prev      = prev;
+      list2->last->next       = node;
+      node->prev              = list2->last;
+      if (NULL != prev) {
+        prev->next = list2->first;
+      } else { /* node was first */
+        list1->first = list2->first;
+      }
     }
-
+    list1->current += list2->current;
     list1->sorted = false;
-    rcsw_free(list2, list2->flags & RCSW_NOALLOC_HANDLE);
-    break;
+    if (list1->cfg.flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+      llist_sort(list1, EXEC_REC);
+    }
   }
-
-  if (count == 0) {
-    ER_ERR("Could not splice: splice node not found in list1");
-    errno = ENOENT;
-    goto error;
-  }
-
-  rval = OK;
-error:
-  return rval;
-} /* llist_splice() */
+  rcsw_free(list2, list2->cfg.flags & RCSW_NOALLOC_HANDLE);
+  return OK;
+}
 
 status_t llist_map(struct llist* list, void (*f)(void* e)) {
   RCSW_FPC_NV(ERROR, list != NULL, f != NULL);
@@ -856,7 +866,7 @@ status_t llist_map(struct llist* list, void (*f)(void* e)) {
   /* f() may have modified elements */
   list->sorted = false;
   return OK;
-} /* llist_map() */
+}
 
 status_t llist_inject(struct llist* const list,
                       void (*f)(void* e, void* res),
@@ -866,25 +876,7 @@ status_t llist_inject(struct llist* const list,
   LLIST_FOREACH(list, next, curr) { f(curr->data, result); }
 
   return OK;
-} /* llist_inject() */
-
-size_t llist_heap_footprint(const struct llist* const list) {
-  RCSW_FPC_NV(0, NULL != list);
-
-  /* Count only what this list allocated from the heap */
-  size_t size = 0;
-  if (!(list->flags & RCSW_NOALLOC_HANDLE)) {
-    size += sizeof(struct llist);
-  }
-  if (!(list->flags & RCSW_NOALLOC_META)) {
-    size += list->current * sizeof(struct llist_node);
-  }
-  if (!(list->flags &
-        (RCSW_NOALLOC_DATA | RCSW_DS_LLIST_DB_PTR | RCSW_DS_LLIST_DB_DISOWN))) {
-    size += list->current * list->elt_size;
-  }
-  return size;
-} /* llist_heap_footprint() */
+}
 
 struct ds_iterator* llist_iter_init(struct ds_iterator* iter,
                                     struct llist*       list,

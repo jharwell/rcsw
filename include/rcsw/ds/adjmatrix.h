@@ -39,11 +39,6 @@ struct adjmatrix_config {
   dptr_t* elements;
 
   /**
-   * Size of elements in bytes.
-   */
-  size_t elt_size;
-
-  /**
    * Configuration flags. See \ref adjmatrix.flags for valid flags.
    */
   uint32_t flags;
@@ -59,8 +54,9 @@ struct adjmatrix_config {
   bool_t is_directed;
 
   /**
-   * Are the graph edges weighted? If a graph is undirected it cannot be
-   * weighted.
+   * Are the graph edges weighted? Must be false if \ref
+   * adjmatrix_config.is_directed is false: weighted undirected graphs are not
+   * supported (see \ref adjmatrix).
    */
   bool_t is_weighted;
 };
@@ -70,9 +66,18 @@ struct adjmatrix_config {
  * \brief Implementation of adjacency matrix representation of a "static" graph.
  *
  * Static in the sense that the # of vertices in the graph cannot be changed
- * after initialization. Graphs can be both weighted/unweighted,
- * directed/undirected, per configuration. However, you can't have an undirected
- * graph that is weighted.
+ * after initialization. Graphs can be weighted or unweighted, and directed or
+ * undirected, with one exception:
+ *
+ * \note Weighted graphs must be directed. \ref adjmatrix_init() rejects
+ * <tt>is_weighted && !is_directed</tt> (function precondition: NULL under \c
+ * LIBRA_FPC_RETURN), because \ref adjmatrix_edge_addu() takes no weight. To
+ * model a weighted undirected graph, make it directed and add each edge in
+ * both directions with \ref adjmatrix_edge_addd(), and remove both directions
+ * when removing it.
+ *
+ * \note Edge weights are always \c double and unweighted edges are \c int;
+ * the element type is not configurable.
  *
  * Sentinel values in the matrix used for detecting if an edge exists are NAN
  * for weighted graphs and 0 for unweighted graphs, so don't use those values
@@ -96,14 +101,10 @@ struct adjmatrix {
   size_t n_edges;
 
   /**
-   * Size of elements in bytes (only used to make edge queries a bit faster.)
+   * Underlying matrix implementation handle. Its \ref matrix_config.n_rows is
+   * the number of vertices, and its \ref matrix_config.elt_size the size of an
+   * edge (\c double if weighted, \c int if not).
    */
-  size_t elt_size;
-
-  /** Numer of vertices in the graph */
-  size_t n_vertices;
-
-  /** Underlying matrix implementation handle. */
   struct matrix matrix;
 
   /**
@@ -117,6 +118,10 @@ struct adjmatrix {
    */
   uint32_t flags;
 };
+/** \brief The number of vertices in the graph. */
+static inline size_t adjmatrix_n_vertices(const struct adjmatrix* matrix) {
+  return matrix->matrix.cfg.n_rows;
+}
 
 /*******************************************************************************
  * Public API
@@ -138,8 +143,8 @@ static inline void* adjmatrix_access(const struct adjmatrix* const matrix,
                                      size_t                        v) {
   RCSW_FPC_NV(NULL,
               NULL != matrix,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
   return matrix_access(&matrix->matrix, u, v);
 }
 
@@ -171,14 +176,14 @@ static inline bool_t adjmatrix_edge_query(const struct adjmatrix* const matrix,
                                           size_t                        v) {
   RCSW_FPC_NV(false,
               NULL != matrix,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
   if (matrix->is_weighted) {
     double w;
     memcpy(&w, adjmatrix_access(matrix, u, v), sizeof(w)); /* may be unaligned */
     return !isnan(w);
   }
-  return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->elt_size);
+  return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->matrix.cfg.elt_size);
 }
 
 /**
@@ -266,10 +271,8 @@ RCSW_API status_t adjmatrix_edge_addd(struct adjmatrix* matrix,
 /**
  * \brief Add an undirected edge to the graph.
  *
- * Adding an edge  (u, v) will also automatically add an edge (v, u) with the
- * same value (1.0). This is OK because the having a graph that is both
- * undirected and weighted is disallowed, and was checked during
- * initialization.
+ * Adding an edge (u, v) also adds the edge (v, u). Undirected graphs are
+ * always unweighted (see \ref adjmatrix), so no weight is taken.
  *
  * \param matrix The matrix handle.
  * \param u Vertex #1.

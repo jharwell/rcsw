@@ -20,8 +20,14 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "rcsw/al/clock.h"
 #include "rcsw/tool/grind.h"
 
+/*
+ * grind_init() allocates its grindee and timing tables itself, so nothing below
+ * can run without a heap.
+ */
+#if !defined(RCSW_CONFIG_NOALLOC)
 /*******************************************************************************
  * Helpers
  ******************************************************************************/
@@ -167,3 +173,44 @@ CATCH_TEST_CASE("grind captures on an unknown grindee are ENOENT",
   CATCH_REQUIRE(ENOENT == errno);
   grind_destroy(g);
 }
+
+CATCH_TEST_CASE("grind_init defaults to the monotonic clock", "[tool][grind]") {
+  /* wall-clock steps (NTP, manual changes) must not skew timings */
+  struct grind_config c = base_config(RCSW_GRIND_MODE_DURATION, RCSW_NONE);
+  c.gettime             = nullptr;
+  struct grinder* g     = grind_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != g);
+  CATCH_REQUIRE(clock_monotime == g->cfg.gettime);
+  grind_destroy(g);
+}
+
+CATCH_TEST_CASE("grind_init does not keep the caller's names array",
+                "[tool][grind]") {
+  struct grind_config c = base_config(RCSW_GRIND_MODE_COUNT, RCSW_NONE);
+  struct grinder*     g = grind_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != g);
+  /* the names were copied into the grindees */
+  CATCH_REQUIRE(nullptr == g->cfg.names);
+  CATCH_REQUIRE(0 == strcmp("a", g->grindees[0].name));
+  CATCH_REQUIRE(c.n_inst == g->cfg.n_inst);
+  grind_destroy(g);
+}
+#endif /* !RCSW_CONFIG_NOALLOC */
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("grind_init fails cleanly without a heap",
+                "[tool][grind][noalloc]") {
+  char                name[]  = "a";
+  char*               names[] = {name};
+  struct grinder      handle;
+  struct grind_config c;
+  memset(&c, 0, sizeof(c));
+  c.names  = names;
+  c.n_inst = 1;
+  c.mode   = RCSW_GRIND_MODE_COUNT;
+  c.res    = 1;
+  c.tsize  = 4;
+  c.flags  = RCSW_NOALLOC_HANDLE;
+  CATCH_REQUIRE(nullptr == grind_init(&handle, &c));
+}
+#endif /* RCSW_CONFIG_NOALLOC */

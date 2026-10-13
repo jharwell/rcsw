@@ -58,18 +58,16 @@
 /**
  * \brief The LOG4CL module codes used by RCSW.
  *
- * When defining your own module codes, you should always start them at or
- * above \c LOG4CL_EXTERNAL, so as to not conflict with the internal codes in
- * RCSW. See \rcswdoc{concepts/event-reporting/ids}.
+ * Your own module IDs must not be below \c LOG4CL_EXTERNAL (these codes) or
+ * equal to 0xFFFFFFFF (the default \ref RCSW_ER_MODID). Using the upper 32 bits
+ * avoids both; see \rcswdoc{concepts/event-reporting/ids}.
  */
 #define RCSW_LOG4CL_MODULES                                                     \
   LOG4CL_SELF, LOG4CL_DS_BSTREE, LOG4CL_DS_DARRAY, LOG4CL_DS_LLIST,             \
-    LOG4CL_DS_HASHMAP, LOG4CL_DS_RBUFFER, LOG4CL_MT_PCQUEUE, LOG4CL_MT_MPOOL,   \
-    LOG4CL_SWBUS, LOG4CL_STDIO, LOG4CL_GRIND, LOG4CL_DS_BINHEAP,                \
-    LOG4CL_DS_CSMATRIX, LOG4CL_DS_FIFO, LOG4CL_DS_MULTIFIFO, LOG4CL_DS_RAWFIFO, \
-    LOG4CL_DS_RBTREE, LOG4CL_TESTING, LOG4CL_DS_OSTREE, LOG4CL_DS_ADJMATRIX,    \
-    LOG4CL_DS_MATRIX, LOG4CL_DS_DYNMATRIX, LOG4CL_MT_RDWRLOCK, LOG4CL_MT_RADIX, \
-    LOG4CL_MULTIPROCESS, LOG4CL_EXTERNAL
+    LOG4CL_DS_HASHMAP, LOG4CL_DS_RBUFFER, LOG4CL_MT_MPOOL, LOG4CL_SWBUS,        \
+    LOG4CL_GRIND, LOG4CL_DS_BINHEAP, LOG4CL_DS_MULTIFIFO, LOG4CL_DS_ADJMATRIX,  \
+    LOG4CL_DS_MATRIX, LOG4CL_DS_DYNMATRIX, LOG4CL_MT_RDWRLOCK, LOG4CL_ALG_SORT, \
+    LOG4CL_CONSOLE_MINIMON, LOG4CL_EXTERNAL
 
 /** \brief Module codes generated from \ref RCSW_LOG4CL_MODULES. */
 enum log4cl_module_codes { RCSW_XTABLE_SEQ_ENUM(RCSW_LOG4CL_MODULES) };
@@ -83,10 +81,11 @@ enum log4cl_module_codes { RCSW_XTABLE_SEQ_ENUM(RCSW_LOG4CL_MODULES) };
  * A module is defined on a per file basis (multiple modules in the same file
  * are disallowed).
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref llist_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) log4cl_module {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) log4cl_module {
   /**
    * ID of the module, unique within the application. See \ref RCSW_ER_MODID.
    */
@@ -115,6 +114,21 @@ struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) log4cl_module {
  * initialized from multiple threads concurrently. Reports issued from inside
  * LOG4CL itself (e.g., by the \ref llist that holds the modules) are
  * suppressed.
+ *
+ * \par Configure modules before reporting concurrently
+ * A report looks up its module under the lock, then checks the module's level
+ * after releasing it. Installing modules (\ref log4cl_insmod()) is safe at
+ * any time, but the following must only be called while no other thread can
+ * be reporting, i.e. during startup or shutdown:
+ *
+ * - \ref log4cl_rmmod() and \ref log4cl_rmmod2(): a concurrent report may
+ *   still use the removed module (use after free).
+ * - \ref log4cl_mod_lvl_set() and \ref log4cl_default_lvl_set(): a
+ *   concurrent report reads the level while it is written (a data race).
+ * - \ref log4cl_deinit().
+ *
+ * In short: install modules and set levels before starting the threads that
+ * report, and do not reconfigure LOG4CL while they run.
  */
 struct log4cl_plugin {
   struct llist* modules;      ///< The installed \ref log4cl_module objects.
@@ -128,12 +142,16 @@ struct log4cl_plugin {
 BEGIN_C_DECLS
 
 /**
- * \brief Check if a module with the specified ID is currently loaded.
+ * \brief Get the module to report through for the specified ID.
  *
  * \param id The module ID.
  *
- * \return The module, or NULL if not found. The pointer stays valid until the
- * module is removed or the plugin is shut down.
+ * \return The installed module with that ID. If none is installed, a shared
+ * default module whose level is the plugin's default level (see \ref
+ * log4cl_default_lvl_set()), so reports from unregistered modules are filtered
+ * rather than dropped. NULL if the plugin is not initialized, or when called
+ * from inside LOG4CL itself (which suppresses those reports). The pointer
+ * stays valid until the module is removed or the plugin is shut down.
  */
 RCSW_API struct log4cl_module* log4cl_mod_query(int64_t id);
 
@@ -170,7 +188,9 @@ RCSW_API void log4cl_deinit(void);
  * \brief Add a module to the active list of debug printing modules.
  *
  * If a module with the same ID is already loaded, nothing is done and OK is
- * returned.
+ * returned. Safe to call before \ref log4cl_init() (for example from a
+ * library module's *_init() function): it then does nothing and returns ERROR
+ * with errno=EAGAIN.
  *
  * \param id The ID of the module to install.
  *
@@ -184,6 +204,9 @@ RCSW_API status_t log4cl_insmod(int64_t id, const char* name);
 /**
  * \brief Remove a module from the active list by ID.
  *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
+ *
  * \param id The ID of the module to remove.
  *
  * \return \ref status_t. ERROR with errno=ENOENT if no such module is loaded.
@@ -193,6 +216,9 @@ RCSW_API status_t log4cl_rmmod(int64_t id);
 /**
  * \brief Remove a module from the active list by name.
  *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
+ *
  * \param name The name of the module to remove.
  *
  * \return \ref status_t. ERROR with errno=ENOENT if no such module is loaded.
@@ -201,6 +227,9 @@ RCSW_API status_t log4cl_rmmod2(const char* name);
 
 /**
  * \brief Set the reporting level for a module.
+ *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
  *
  * \param id The module ID.
  * \param lvl The new level (an \c RCSW_ERL_* value). See
@@ -213,8 +242,12 @@ RCSW_API status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
 /**
  * \brief Set the default reporting level for the plugin.
  *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
+ *
  * All modules installed after calling this function will have the specified
- * level set by default.
+ * level set by default. It also applies immediately to every module ID that is
+ * not installed (see \ref log4cl_mod_query()).
  *
  * \param lvl The new default level.
  */

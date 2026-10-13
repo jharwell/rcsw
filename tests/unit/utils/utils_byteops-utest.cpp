@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for rcsw/utils/byteops.h: byte-swap macros (BSWAP16/32/64,
- * WSWAP32), utils_arr8_reverse(), utils_elt_swap(), and utils_string_gen().
+ * Unit tests for rcsw/utils/byteops.h: utils_bswap16/32/64(),
+ * utils_arr8_reverse(), utils_elt_swap(), and utils_string_gen().
  */
 
 /*******************************************************************************
@@ -23,42 +23,31 @@
  * Test Helper Functions
  ******************************************************************************/
 
-static void bswap_macros_test() {
+static void bswap_test() {
   /* Single active byte migrates to the opposite end */
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0001)) == 0x0100u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x00000001)) == 0x01000000u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0000000000000001)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x0001)) == 0x0100u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x00000001)) == 0x01000000u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x0000000000000001)) ==
                 UINT64_C(0x0100000000000000));
 
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x8000)) == 0x0080u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x80000000)) == 0x00000080u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x8000000000000000)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x8000)) == 0x0080u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x80000000)) == 0x00000080u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x8000000000000000)) ==
                 UINT64_C(0x0000000000000080));
 
   /* Known byte-reversal patterns */
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0123)) == 0x2301u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x01234567)) == 0x67452301u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0123456789ABCDEFull)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x0123)) == 0x2301u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x01234567)) == 0x67452301u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x0123456789ABCDEFull)) ==
                 UINT64_C(0xEFCDAB8967452301));
 
-  /* Applying BSWAP twice restores the original value */
+  /* Applying bswap twice restores the original value */
   uint16_t v16 = 0xABCDu;
   uint32_t v32 = 0x01234567u;
   uint64_t v64 = UINT64_C(0x0123456789ABCDEF);
-  CATCH_REQUIRE(RCSW_BSWAP16(RCSW_BSWAP16(v16)) == v16);
-  CATCH_REQUIRE(RCSW_BSWAP32(RCSW_BSWAP32(v32)) == v32);
-  CATCH_REQUIRE(RCSW_BSWAP64(RCSW_BSWAP64(v64)) == v64);
-}
-
-static void wswap32_test() {
-  /* WSWAP32 swaps the two 16-bit halves of a 32-bit word */
-  CATCH_REQUIRE(RCSW_WSWAP32(uint32_t(0x00010000)) == 0x00000001u);
-  CATCH_REQUIRE(RCSW_WSWAP32(uint32_t(0x12340000)) == 0x00001234u);
-  CATCH_REQUIRE(RCSW_WSWAP32(uint32_t(0xABCD1234)) == 0x1234ABCDu);
-
-  /* Applying WSWAP twice restores the original */
-  uint32_t v = 0xDEADBEEFu;
-  CATCH_REQUIRE(RCSW_WSWAP32(RCSW_WSWAP32(v)) == v);
+  CATCH_REQUIRE(utils_bswap16(utils_bswap16(v16)) == v16);
+  CATCH_REQUIRE(utils_bswap32(utils_bswap32(v32)) == v32);
+  CATCH_REQUIRE(utils_bswap64(utils_bswap64(v64)) == v64);
 }
 
 static void arr8_reverse_test() {
@@ -92,21 +81,32 @@ static void elt_swap_test() {
   /* Swap adjacent elements in a uint32_t array */
   uint32_t arr[4]      = {0x4, 0x1, 0x2, 0x3};
   uint32_t expected[4] = {0x1, 0x4, 0x3, 0x2};
-  utils_elt_swap(arr, sizeof(uint32_t), 0, 1);
-  utils_elt_swap(arr, sizeof(uint32_t), 2, 3);
+  utils_elt_swap(&arr[0], &arr[1], sizeof(uint32_t));
+  utils_elt_swap(&arr[2], &arr[3], sizeof(uint32_t));
   CATCH_REQUIRE(std::memcmp(arr, expected, sizeof(arr)) == 0);
 
   /* Swapping an element with itself must be a no-op */
   uint32_t same[2] = {0xDEAD, 0xBEEF};
-  utils_elt_swap(same, sizeof(uint32_t), 0, 0);
+  utils_elt_swap(&same[0], &same[0], sizeof(uint32_t));
   CATCH_REQUIRE(same[0] == 0xDEADu);
   CATCH_REQUIRE(same[1] == 0xBEEFu);
 
   /* Swap on a byte array */
   uint8_t bytes[4]     = {0xAA, 0xBB, 0xCC, 0xDD};
   uint8_t bytes_exp[4] = {0xDD, 0xBB, 0xCC, 0xAA};
-  utils_elt_swap(bytes, sizeof(uint8_t), 0, 3);
+  utils_elt_swap(&bytes[0], &bytes[3], sizeof(uint8_t));
   CATCH_REQUIRE(std::memcmp(bytes, bytes_exp, sizeof(bytes)) == 0);
+
+  /* Elements larger than the internal bounce buffer, at odd addresses */
+  uint8_t big[2 * 101 + 1];
+  for (size_t i = 0; i < sizeof(big); ++i) {
+    big[i] = static_cast<uint8_t>(i);
+  }
+  utils_elt_swap(&big[1], &big[1 + 101], 101);
+  for (size_t i = 0; i < 101; ++i) {
+    CATCH_REQUIRE(big[1 + i] == static_cast<uint8_t>(1 + 101 + i));
+    CATCH_REQUIRE(big[1 + 101 + i] == static_cast<uint8_t>(1 + i));
+  }
 }
 
 static void string_gen_test() {
@@ -134,11 +134,8 @@ static void string_gen_test() {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Byteops BSWAP Macros Test", "[utils][byteops][noalloc]") {
-  bswap_macros_test();
-}
-CATCH_TEST_CASE("Byteops WSWAP32 Test", "[utils][byteops][noalloc]") {
-  wswap32_test();
+CATCH_TEST_CASE("Byteops bswap Test", "[utils][byteops][noalloc]") {
+  bswap_test();
 }
 CATCH_TEST_CASE("Byteops arr8_reverse Test", "[utils][byteops][noalloc]") {
   arr8_reverse_test();

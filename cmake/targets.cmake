@@ -122,7 +122,12 @@ function(_rcsw_apply_compile_defs target)
     PUBLIC RCSW_CONFIG_PLATFORM=RCSW_CONFIG_PLATFORM_${RCSW_BUILD_FOR})
 
   foreach(_config IN ITEMS RCSW_CONFIG_TOOL_NO_GRIND RCSW_CONFIG_NOALLOC
-                           RCSW_CONFIG_ZALLOC)
+                           RCSW_CONFIG_PTR_ALIGN_NO_CHECK)
+    if(${_config})
+      target_compile_definitions(${target} PUBLIC ${_config})
+    endif()
+  endforeach()
+  foreach(_config IN ITEMS RCSW_CONFIG_ZALLOC)
     if(${_config})
       target_compile_definitions(${target} PRIVATE ${_config})
     endif()
@@ -132,24 +137,6 @@ function(_rcsw_apply_compile_defs target)
                            RCSW_CONFIG_PTR_ALIGN)
     target_compile_definitions(${target} PUBLIC ${_config}=${${_config}})
   endforeach()
-
-  # Shared libraries export only RCSW_API functions, which needs RCSW_EXPORTS
-  # defined while building them (see compilers.h). CMake's default,
-  # <target>_EXPORTS, would be rcsw_EXPORTS, rcsw_core_EXPORTS, etc.
-  #
-  # Installed component libraries link each other, and sit in the same
-  # directory, so look for them there.
-  #
-  # 2026-10-05 [JRH]: TODO: Once we updated to the next version, the below can
-  # go away, as  it is baked into LIBRA.
-  get_target_property(_ttype ${target} TYPE)
-  if(_ttype STREQUAL SHARED_LIBRARY)
-    set_target_properties(
-      ${target}
-      PROPERTIES C_VISIBILITY_PRESET hidden
-                 DEFINE_SYMBOL RCSW_EXPORTS
-                 INSTALL_RPATH "$ORIGIN")
-  endif()
 endfunction()
 
 # The parent target always exists (monolithic or stub) and always compiles
@@ -223,5 +210,11 @@ foreach(_component IN LISTS _CONFIGURED_COMPONENTS)
   foreach(_dep IN LISTS _RCSW_DEPS_${_component})
     target_link_libraries(${PROJECT_NAME}_${_component}
                           PUBLIC ${PROJECT_NAME}_${_dep})
+    # 2026-11-03 [JRH]: This says "search for my dependencies in the same
+    # directory I'm in" for components that depend on other components.
+    if("${RCSW_CONFIG_LIBTYPE}" STREQUAL "SHARED")
+      set_target_properties(${PROJECT_NAME}_${_component}
+                            PROPERTIES INSTALL_RPATH "$ORIGIN")
+    endif()
   endforeach()
 endforeach()

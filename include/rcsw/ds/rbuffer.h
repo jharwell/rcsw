@@ -58,54 +58,6 @@ struct rbuffer_config {
   size_t max_elts;
 
   /**
-   * Configuration flags. See \ref rbuffer.flags for valid flags.
-   */
-  uint32_t flags;
-};
-
-/**
- * \brief Ringbuffer data structure. Implemented using a fixed-size array.
- */
-struct rbuffer {
-  /**
-   * For printing an element. Can be NULL. If NULL, calling \ref rbuffer_print()
-   * is undefined.
-   */
-  void (*printe)(const void* const e);
-
-  /**
-   * For comparing elements. Can be NULL. If NULL, calling \ref
-   * rbuffer_index_query() is undefined.
-   */
-  int (*cmpe)(const void* const e1, const void* const e2);
-
-  /**
-   * The actual data.
-   */
-  dptr_t* elements;
-
-  /**
-   * Current # of elements in buffer.
-   */
-  size_t current;
-
-  /**
-   * Maximum number of elements in buffer.
-   */
-  size_t max_elts;
-
-  /**
-   * Size of an element in bytes
-   */
-  size_t elt_size;
-
-  /**
-   * Physical index of the oldest element (the front). The next insert goes at
-   * <tt>(start + current) % max_elts</tt>.
-   */
-  size_t start;
-
-  /**
    * \brief Run-time configuration flags.
    *
    * Valid flags are:
@@ -118,6 +70,34 @@ struct rbuffer {
    * All other flags are ignored.
    */
   uint32_t flags;
+};
+
+/**
+ * \brief Ringbuffer data structure. Implemented using a fixed-size array.
+ */
+struct rbuffer {
+  /**
+   * The configuration the buffer was initialized with. \ref
+   * rbuffer_config.elements is as passed (NULL if the library allocated the
+   * storage); use \ref rbuffer.elements for the storage in use.
+   */
+  struct rbuffer_config cfg;
+
+  /**
+   * The actual data.
+   */
+  dptr_t* elements;
+
+  /**
+   * Current # of elements in buffer.
+   */
+  size_t current;
+
+  /**
+   * Physical index of the oldest element (the front). The next insert goes at
+   * <tt>(start + current) % cfg.max_elts</tt>.
+   */
+  size_t start;
 };
 
 /*******************************************************************************
@@ -136,7 +116,7 @@ BEGIN_C_DECLS
 static inline bool_t rbuffer_isfull(const struct rbuffer* const rb) {
   RCSW_FPC_NV(false, NULL != rb);
 
-  return rb->current == rb->max_elts;
+  return rb->current == rb->cfg.max_elts;
 }
 
 /**
@@ -170,7 +150,7 @@ static inline size_t rbuffer_size(const struct rbuffer* const rb) {
  */
 static inline size_t rbuffer_capacity(const struct rbuffer* const rb) {
   RCSW_FPC_NV(0, NULL != rb);
-  return rb->max_elts;
+  return rb->cfg.max_elts;
 }
 
 /**

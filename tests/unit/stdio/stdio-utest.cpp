@@ -38,47 +38,59 @@ int th_putchar(int c) {
  ******************************************************************************/
 // NOLINTNEXTLINE(readability-function-size)o
 CATCH_TEST_CASE("Char Test", "[stdio][noalloc]") {
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('A') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('Z') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('a') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('x') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('Z') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('1') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('%') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISUPPER('E') == 1);
+  CATCH_REQUIRE(stdio_isupper('A') == 1);
+  CATCH_REQUIRE(stdio_isupper('Z') == 1);
+  CATCH_REQUIRE(stdio_isupper('a') == 0);
+  CATCH_REQUIRE(stdio_isupper('x') == 0);
+  CATCH_REQUIRE(stdio_isupper('Z') == 1);
+  CATCH_REQUIRE(stdio_isupper('1') == 0);
+  CATCH_REQUIRE(stdio_isupper('%') == 0);
+  CATCH_REQUIRE(stdio_isupper('E') == 1);
 
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('A') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('Z') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('a') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('x') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('Z') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('1') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('%') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISLOWER('e') == 1);
+  CATCH_REQUIRE(stdio_islower('A') == 0);
+  CATCH_REQUIRE(stdio_islower('Z') == 0);
+  CATCH_REQUIRE(stdio_islower('a') == 1);
+  CATCH_REQUIRE(stdio_islower('x') == 1);
+  CATCH_REQUIRE(stdio_islower('Z') == 0);
+  CATCH_REQUIRE(stdio_islower('1') == 0);
+  CATCH_REQUIRE(stdio_islower('%') == 0);
+  CATCH_REQUIRE(stdio_islower('e') == 1);
 
-  CATCH_REQUIRE(RCSW_STDIO_ISSPACE(' ') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISSPACE('Z') == 0);
+  CATCH_REQUIRE(stdio_isspace(' ') == 1);
+  CATCH_REQUIRE(stdio_isspace('Z') == 0);
 
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('A') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('X') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('Z') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('1') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('%') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISALPHA('E') == 1);
+  CATCH_REQUIRE(stdio_isalpha('A') == 1);
+  CATCH_REQUIRE(stdio_isalpha('X') == 1);
+  CATCH_REQUIRE(stdio_isalpha('Z') == 1);
+  CATCH_REQUIRE(stdio_isalpha('1') == 0);
+  CATCH_REQUIRE(stdio_isalpha('%') == 0);
+  CATCH_REQUIRE(stdio_isalpha('E') == 1);
 
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE('A') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE('#') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE('~') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE(0) == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE('%') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISPRINTABLE(240) == 0);
+  CATCH_REQUIRE(stdio_isprintable('A') == 1);
+  CATCH_REQUIRE(stdio_isprintable('#') == 1);
+  CATCH_REQUIRE(stdio_isprintable('~') == 1);
+  CATCH_REQUIRE(stdio_isprintable(0) == 0);
+  CATCH_REQUIRE(stdio_isprintable('%') == 1);
+  CATCH_REQUIRE(stdio_isprintable(240) == 0);
 
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('A') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('X') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('Z') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('1') == 1);
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('%') == 0);
-  CATCH_REQUIRE(RCSW_STDIO_ISDIGIT('e') == 0);
+  CATCH_REQUIRE(stdio_isdigit('A') == 0);
+  CATCH_REQUIRE(stdio_isdigit('X') == 0);
+  CATCH_REQUIRE(stdio_isdigit('Z') == 0);
+  CATCH_REQUIRE(stdio_isdigit('1') == 1);
+  CATCH_REQUIRE(stdio_isdigit('%') == 0);
+  CATCH_REQUIRE(stdio_isdigit('e') == 0);
+
+  CATCH_REQUIRE(stdio_ishex('0') == 1);
+  CATCH_REQUIRE(stdio_ishex('9') == 1);
+  CATCH_REQUIRE(stdio_ishex('a') == 1);
+  CATCH_REQUIRE(stdio_ishex('F') == 1);
+  CATCH_REQUIRE(stdio_ishex('g') == 0);
+  CATCH_REQUIRE(stdio_ishex('G') == 0);
+  CATCH_REQUIRE(stdio_ishex('%') == 0);
+
+  /* Negative (signed char) values are in no class */
+  CATCH_REQUIRE(stdio_isprintable(-16) == 0);
+  CATCH_REQUIRE(stdio_isalpha(-16) == 0);
 
   CATCH_REQUIRE(stdio_puts("this is a test") == 14);
 

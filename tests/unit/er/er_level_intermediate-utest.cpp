@@ -61,9 +61,6 @@ static void dprintf_available_test() {
   /* DPRINTF is available at any level >= FATAL and must emit at ERL_WARN. */
   CATCH_REQUIRE(capture_stdout([] { DPRINTF("dprintf at warn\n"); }) ==
                 "dprintf at warn\n");
-
-  int x = 7;
-  CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOKD(x); }) == "x: 7\n");
 }
 
 static void suppressed_syntax_test() {

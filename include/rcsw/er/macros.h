@@ -9,8 +9,10 @@
  *
  * \brief Event reporting macros (ER_DEBUG(), ER_WARN(), ...).
  *
- * Each \c ER_<LEVEL>() macro expands to nothing when \ref RCSW_ERL is below
- * that level, so disabled events cost nothing. See
+ * When \ref RCSW_ERL is below a level, its \c ER_<LEVEL>() macro becomes a
+ * statement that is never executed and generates no code, so disabled events
+ * cost nothing. Its arguments are still type-checked against the format
+ * string and count as used. See
  * \rcswdoc{concepts/event-reporting/levels}.
  */
 
@@ -65,27 +67,6 @@
  * regardless of module levels.
  */
 #define DPRINTF(...) PRINTF(__VA_ARGS__)
-/**
- * \brief Print a token and its value in decimal/hexadecimal.
- */
-#define DPRINT_TOK(tok) \
-  DPRINTF(RCSW_XSTR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok));
-
-/**
- * \brief Print a token and its value in decimal.
- */
-#define DPRINT_TOKD(tok) DPRINTF(RCSW_XSTR(tok) ": %d\n", (int)(tok));
-
-/**
- * \brief Print a token and its value in hexadecimal.
- */
-#define DPRINT_TOKX(tok) DPRINTF(RCSW_XSTR(tok) ": 0x%x\n", (int)(tok));
-
-/**
- * \brief Print a token and its value in floating point.
- */
-#define DPRINT_TOKF(tok) DPRINTF(RCSW_XSTR(tok) ": %.8f\n", (float)(tok));
-
 #endif /* RCSW_ERL >= RCSW_ERL_FATAL */
 
 /*******************************************************************************
@@ -108,7 +89,8 @@
  *
  * If not specified, defined as 0xFFFFFFFF. That value is above every ID RCSW
  * uses internally, so it cannot collide with them; all translation units which
- * do not define their own ID share it (and therefore share one LOG4CL module).
+ * do not define their own ID share it. With LOG4CL, an ID that is never
+ * installed reports at the plugin's default level.
  */
 #if !defined(RCSW_ER_MODID)
 #define RCSW_ER_MODID (0xFFFFFFFF)
@@ -119,14 +101,15 @@
  *
  * Report a FATAL message. With \ref RCSW_ERL above FATAL it goes through the
  * ER plugin, like the other levels. With \ref RCSW_ERL equal to FATAL no
- * plugin is used and the message is printed with \ref DPRINTF().
+ * plugin is used and the message is printed with \ref DPRINTF(). Either way
+ * \c "\\r\\n" is appended (see \ref ER_REPORT).
  */
 #if (RCSW_ERL == RCSW_ERL_FATAL)
 
-#define ER_FATAL(msg, ...)                                    \
-  {                                                           \
-    DPRINTF(RCSW_ER_MODNAME " [FATAL]: " msg, ##__VA_ARGS__); \
-  }
+#define ER_FATAL(msg, ...)                                           \
+  do {                                                               \
+    DPRINTF(RCSW_ER_MODNAME " [FATAL]: " msg "\r\n", ##__VA_ARGS__); \
+  } while (0)
 
 /** \cond INTERNAL */
 #define RCSW_ER_MODULE_INIT(...)
@@ -140,11 +123,11 @@
 
 /* \cond INTERNAL */
 #define ER_FATAL_IMPL(handle, ...)                 \
-  {                                                \
+  do {                                             \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, FATAL)) { \
-      ER_REPORT(FATAL, handle, __VA_ARGS__)        \
+      ER_REPORT(FATAL, handle, __VA_ARGS__);       \
     }                                              \
-  }
+  } while (0)
 /* \endcond */
 #endif
 
@@ -167,11 +150,11 @@
 
 /* \cond INTERNAL */
 #define ER_ERR_IMPL(handle, ...)                   \
-  {                                                \
+  do {                                             \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, ERROR)) { \
-      ER_REPORT(ERROR, handle, __VA_ARGS__)        \
+      ER_REPORT(ERROR, handle, __VA_ARGS__);       \
     }                                              \
-  }
+  } while (0)
 /* \endcond */
 
 /**
@@ -219,11 +202,11 @@
 
 /* \cond INTERNAL */
 #define ER_WARN_IMPL(handle, ...)                 \
-  {                                               \
+  do {                                            \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, WARN)) { \
-      ER_REPORT(WARN, handle, ##__VA_ARGS__)      \
+      ER_REPORT(WARN, handle, __VA_ARGS__);       \
     }                                             \
-  }
+  } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_WARN */
 
@@ -247,11 +230,11 @@
 
 /* \cond INTERNAL */
 #define ER_INFO_IMPL(handle, ...)                 \
-  {                                               \
+  do {                                            \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, INFO)) { \
-      ER_REPORT(INFO, handle, ##__VA_ARGS__)      \
+      ER_REPORT(INFO, handle, __VA_ARGS__);       \
     }                                             \
-  }
+  } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_INFO */
 
@@ -276,11 +259,11 @@
 
 /* \cond INTERNAL */
 #define ER_DEBUG_IMPL(handle, ...)                 \
-  {                                                \
+  do {                                             \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, DEBUG)) { \
-      ER_REPORT(DEBUG, handle, ##__VA_ARGS__)      \
+      ER_REPORT(DEBUG, handle, __VA_ARGS__);       \
     }                                              \
-  }
+  } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_DEBUG */
 
@@ -305,11 +288,11 @@
 
 /* \cond INTERNAL */
 #define ER_TRACE_IMPL(handle, ...)                 \
-  {                                                \
+  do {                                             \
     if (RCSW_ER_PLUGIN_LVL_CHECK(handle, TRACE)) { \
-      ER_REPORT(TRACE, handle, ##__VA_ARGS__)      \
+      ER_REPORT(TRACE, handle, __VA_ARGS__);       \
     }                                              \
-  }
+  } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_TRACE */
 
@@ -327,13 +310,15 @@
  *
  * This macro is only available if the event reporting level is > NONE.
  */
-#define ER_REPORT(lvl, handle, msg, ...)  \
-  {RCSW_ER_PLUGIN_REPORT(lvl,             \
-                         handle,          \
-                         RCSW_ER_MODID,   \
-                         RCSW_ER_MODNAME, \
-                         msg "\r\n",      \
-                         ##__VA_ARGS__)}
+#define ER_REPORT(lvl, handle, msg, ...)   \
+  do {                                     \
+    RCSW_ER_PLUGIN_REPORT(lvl,             \
+                          handle,          \
+                          RCSW_ER_MODID,   \
+                          RCSW_ER_MODNAME, \
+                          msg "\r\n",      \
+                          ##__VA_ARGS__);  \
+  } while (0)
 
 #endif /* (RCSW_ERL != RCSW_ERL_NONE) */
 
@@ -354,16 +339,15 @@
  * program unless \c NDEBUG is defined. \a cond is evaluated in every build.
  */
 /*
- * The (void)sizeof() keeps variables used only in the condition "used" even
- * if the rest of the expansion is optimized away.
+ * cond is evaluated exactly once, in the if(); the assert() only reports the
+ * failure (its text includes cond).
  */
-#define ER_ASSERT(cond, msg, ...)   \
-  do {                              \
-    (void)sizeof((cond));           \
-    if (RCSW_UNLIKELY(!(cond))) {   \
-      ER_FATAL(msg, ##__VA_ARGS__); \
-      assert(cond);                 \
-    }                               \
+#define ER_ASSERT(cond, msg, ...)                   \
+  do {                                              \
+    if (RCSW_UNLIKELY(!(cond))) {                   \
+      ER_FATAL(msg, ##__VA_ARGS__);                 \
+      assert((cond) && "ER_ASSERT failed: " #cond); \
+    }                                               \
   } while (0)
 
 /**
@@ -373,11 +357,11 @@
  * emit a warning message.
  */
 #define ER_CONDW(cond, msg, ...)   \
-  {                                \
-    if (RCSW_LIKELY((cond))) {     \
+  do {                             \
+    if (cond) {                    \
       ER_WARN(msg, ##__VA_ARGS__); \
     }                              \
-  }
+  } while (0)
 
 /**
  * \def ER_CONDI(cond, msg, ...)
@@ -386,11 +370,11 @@
  * emit an informational message.
  */
 #define ER_CONDI(cond, msg, ...)   \
-  {                                \
-    if (RCSW_LIKELY((cond))) {     \
+  do {                             \
+    if (cond) {                    \
       ER_INFO(msg, ##__VA_ARGS__); \
     }                              \
-  }
+  } while (0)
 
 /**
  * \def ER_CONDD(cond, msg, ...)
@@ -399,11 +383,11 @@
  * emit a debug message.
  */
 #define ER_CONDD(cond, msg, ...)    \
-  {                                 \
-    if (RCSW_LIKELY((cond))) {      \
+  do {                              \
+    if (cond) {                     \
       ER_DEBUG(msg, ##__VA_ARGS__); \
     }                               \
-  }
+  } while (0)
 
 /**
  * \def ER_FATAL_SENTINEL(msg,...)
@@ -412,10 +396,10 @@
  * there, report \a msg as a FATAL event and call \c abort().
  */
 #define ER_FATAL_SENTINEL(msg, ...) \
-  {                                 \
+  do {                              \
     ER_FATAL(msg, ##__VA_ARGS__);   \
     abort();                        \
-  }
+  } while (0)
 
 /**
  * \def ER_CHECK(cond, msg, ...)
@@ -425,12 +409,12 @@
  * must exist.
  */
 #define ER_CHECK(cond, msg, ...)  \
-  {                               \
+  do {                            \
     if (RCSW_UNLIKELY(!(cond))) { \
       ER_ERR(msg, ##__VA_ARGS__); \
       goto error;                 \
     }                             \
-  }
+  } while (0)
 
 /**
  * \def ER_SENTINEL(msg,...)
@@ -440,10 +424,10 @@
  * label, which must exist.
  */
 #define ER_SENTINEL(msg, ...)   \
-  {                             \
+  do {                          \
     ER_ERR(msg, ##__VA_ARGS__); \
     goto error;                 \
-  }
+  } while (0)
 
 /*******************************************************************************
  * Macro Cleanup
@@ -451,28 +435,47 @@
  * Depending on compile-time level, one or more of these macros may be
  * undefined, so make sure everything is defined so things build cleanly.
  ******************************************************************************/
+/*
+ * Disabled reporting macros keep their arguments: the call is placed in an
+ * if (0) block, so it is never executed (and is removed by the compiler at any
+ * optimization level), but its arguments still count as used and the format
+ * string is still checked. This avoids unused-variable warnings for values
+ * computed only to be reported, and keeps format errors from hiding in builds
+ * where reporting is compiled out. The plugin's print function must therefore
+ * be declared even when reporting is disabled; every built-in plugin header
+ * does this.
+ */
+/** \cond INTERNAL */
+#define RCSW_ER_DISCARD_(...)             \
+  do {                                    \
+    if (0) {                              \
+      RCSW_ER_PLUGIN_PRINTF(__VA_ARGS__); \
+    }                                     \
+  } while (0)
+/** \endcond */
+
 #ifndef ER_FATAL
-#define ER_FATAL(...)
+#define ER_FATAL(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_ERR
-#define ER_ERR(...)
+#define ER_ERR(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_WARN
-#define ER_WARN(...)
+#define ER_WARN(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_INFO
-#define ER_INFO(...)
+#define ER_INFO(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_DEBUG
-#define ER_DEBUG(...)
+#define ER_DEBUG(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_TRACE
-#define ER_TRACE(...)
+#define ER_TRACE(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 /** \cond INTERNAL */
@@ -494,25 +497,9 @@
 #endif
 
 #ifndef ER_REPORT
-#define ER_REPORT(...)
+#define ER_REPORT(lvl, handle, ...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef DPRINTF
-#define DPRINTF(...)
-#endif
-
-#ifndef DPRINT_TOK
-#define DPRINT_TOK(...)
-#endif
-
-#ifndef DPRINT_TOKD
-#define DPRINT_TOKD(...)
-#endif
-
-#ifndef DPRINT_TOKX
-#define DPRINT_TOKX(...)
-#endif
-
-#ifndef DPRINT_TOKF
-#define DPRINT_TOKF(...)
+#define DPRINTF(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif

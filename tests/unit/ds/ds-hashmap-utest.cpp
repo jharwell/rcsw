@@ -28,10 +28,8 @@ static void run_test(void (*test)(struct hashmap_config* config)) {
   struct hashmap_config config;
   memset(&config, 0, sizeof(hashmap_config));
   config.hash        = utils_hash_default;
-  config.sort_thresh = -1;
   config.elt_size    = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&config) == OK);
-  config.sort_thresh = -1;
 
   uint32_t flags[] = {
     RCSW_ZALLOC,
@@ -74,10 +72,6 @@ static void build_test(struct hashmap_config* config) {
   struct hashmap mymap;
   size_t         attempts     = config->n_buckets * config->bsize;
   int            failed_count = 0;
-
-  if (config->flags & RCSW_DS_SORTED) {
-    config->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
-  }
 
   struct hashmap* map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(nullptr != map);
@@ -206,16 +200,52 @@ key_buf make_key(const char* s) {
   return k;
 }
 
-struct hashmap* make_map(size_t n_buckets, size_t bsize, uint32_t flags) {
+/*
+ * Caller-owned storage for one hashmap. Under RCSW_CONFIG_NOALLOC the library
+ * cannot allocate, so with_storage() fills in whatever memory \p c does not
+ * already provide and returns the handle to pass to hashmap_init(). In heap
+ * builds it leaves \p c alone and returns NULL, so the library allocates.
+ */
+struct map_storage {
+  struct hashmap      handle;
+  std::vector<dptr_t> buckets;
+  std::vector<dptr_t> elements;
+};
+
+struct hashmap* with_storage(map_storage& s, struct hashmap_config* c) {
+#if defined(RCSW_CONFIG_NOALLOC)
+  if (!(c->flags & RCSW_NOALLOC_META)) {
+    s.buckets.resize(hashmap_meta_space(c->n_buckets) / sizeof(dptr_t) + 1);
+    c->meta = s.buckets.data();
+  }
+  if (!(c->flags & RCSW_NOALLOC_DATA)) {
+    s.elements.resize(
+      hashmap_element_space(c->n_buckets, c->bsize, c->elt_size) /
+        sizeof(dptr_t) +
+      1);
+    c->elements = s.elements.data();
+  }
+  c->flags |= RCSW_NOALLOC_ALL;
+  return &s.handle;
+#else
+  (void)s;
+  (void)c;
+  return nullptr;
+#endif
+}
+
+struct hashmap* make_map(map_storage& s,
+                         size_t       n_buckets,
+                         size_t       bsize,
+                         uint32_t     flags) {
   struct hashmap_config c;
   memset(&c, 0, sizeof(c));
   c.elt_size    = sizeof(int);
   c.n_buckets   = n_buckets;
   c.bsize       = bsize;
-  c.sort_thresh = -1;
   c.hash        = utils_hash_fnv1a;
   c.flags       = flags;
-  return hashmap_init(nullptr, &c);
+  return hashmap_init(with_storage(s, &c), &c);
 }
 
 size_t bucket_of(const key_buf& k, size_t n_buckets) {
@@ -264,7 +294,6 @@ CATCH_TEST_CASE("hashmap Print Test", "[ds][hashmap][noalloc]") {
   struct hashmap_config config;
   memset(&config, 0, sizeof(hashmap_config));
   config.hash        = utils_hash_default;
-  config.sort_thresh = -1;
   config.elt_size    = sizeof(element4);
   config.bsize       = TH_NUM_ITEMS;
   config.n_buckets   = TH_NUM_BUCKETS;
@@ -276,7 +305,6 @@ CATCH_TEST_CASE("hashmap Print Test", "[ds][hashmap][noalloc]") {
   struct hashmap* map = hashmap_init(&mymap, &config);
   CATCH_REQUIRE(map != nullptr);
   hashmap_print(map);
-  hashmap_print_dist(map);
   hashmap_destroy(map);
   th::ds_shutdown(&config);
 }
@@ -288,7 +316,8 @@ CATCH_TEST_CASE("hashmap: keys are full RCSW_HASHMAP_KEYSIZE-byte blobs",
    * bytes, so two buffers holding the same C string but different trailing
    * bytes are DIFFERENT keys, and each is found exactly.
    */
-  struct hashmap* m = make_map(16, 4, RCSW_NONE);
+  map_storage mem;
+  struct hashmap* m = make_map(mem, 16, 4, RCSW_NONE);
 
   key_buf a = make_key("abc"); /* "abc\0\0\0..." */
   key_buf b;
@@ -312,7 +341,8 @@ CATCH_TEST_CASE("hashmap: keys are full RCSW_HASHMAP_KEYSIZE-byte blobs",
 
 CATCH_TEST_CASE("hashmap_clear returns all datablocks to the pool",
                 "[ds][hashmap]") {
-  struct hashmap* m = make_map(2, 2, RCSW_DS_HASHMAP_LINPROB);
+  map_storage mem;
+  struct hashmap* m = make_map(mem, 2, 2, RCSW_DS_HASHMAP_LINPROB);
   int             v = 1;
   for (const char* s : {"a", "b", "c", "d"}) {
     key_buf k = make_key(s);
@@ -335,10 +365,11 @@ CATCH_TEST_CASE(
   "hashmap: duplicate key rejected even when the original "
   "lives in a probed bucket",
   "[ds][hashmap]") {
+  map_storage mem;
   auto keys = colliding_keys(2);
   CATCH_REQUIRE(0 != memcmp(&keys.first, &keys.second, sizeof(key_buf)));
 
-  struct hashmap* m = make_map(2, 1, RCSW_DS_HASHMAP_LINPROB);
+  struct hashmap* m = make_map(mem, 2, 1, RCSW_DS_HASHMAP_LINPROB);
   int             v = 1;
   CATCH_REQUIRE(OK == hashmap_add(m, keys.first.bytes, &v));
   /* home bucket full -> probed into the other bucket */
@@ -357,8 +388,9 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("hashmap: duplicate key rejected when the home bucket is full",
                 "[ds][hashmap]") {
+  map_storage mem;
   auto            keys = colliding_keys(2);
-  struct hashmap* m    = make_map(2, 1, RCSW_DS_HASHMAP_LINPROB);
+  struct hashmap* m    = make_map(mem, 2, 1, RCSW_DS_HASHMAP_LINPROB);
   int             v    = 1;
   CATCH_REQUIRE(OK == hashmap_add(m, keys.first.bytes, &v));
   /* home bucket full: the duplicate check must still look there */
@@ -367,14 +399,16 @@ CATCH_TEST_CASE("hashmap: duplicate key rejected when the home bucket is full",
 }
 
 CATCH_TEST_CASE("hashmap_add rejects NULL data", "[ds][hashmap]") {
-  struct hashmap* m = make_map(4, 4, RCSW_NONE);
+  map_storage mem;
+  struct hashmap* m = make_map(mem, 4, 4, RCSW_NONE);
   key_buf         k = make_key("k");
   CATCH_REQUIRE(ERROR == hashmap_add(m, k.bytes, nullptr));
   hashmap_destroy(m);
 }
 
 CATCH_TEST_CASE("hashmap_gather reports sane utilization", "[ds][hashmap]") {
-  struct hashmap*      m = make_map(4, 4, RCSW_NONE);
+  map_storage mem;
+  struct hashmap*      m = make_map(mem, 4, 4, RCSW_NONE);
   struct hashmap_stats stats;
 
   CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
@@ -387,5 +421,309 @@ CATCH_TEST_CASE("hashmap_gather reports sane utilization", "[ds][hashmap]") {
   CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
   CATCH_REQUIRE(stats.min_util >= 0.0);
   CATCH_REQUIRE(stats.min_util <= stats.max_util);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: key_len selects short keys", "[ds][hashmap]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 2;
+  c.key_len   = sizeof(int);
+  c.flags     = RCSW_DS_HASHMAP_LINPROB; /* fill every slot, via probing */
+
+  map_storage     mem;
+  struct hashmap* m = hashmap_init(with_storage(mem, &c), &c);
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(sizeof(int) == m->cfg.key_len);
+
+  /* plain ints as keys: no padding to RCSW_HASHMAP_KEYSIZE needed */
+  for (int k = 0; k < 8; ++k) {
+    int v = k * 10;
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  int dup = 3;
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &dup, &dup));
+  for (int k = 0; k < 8; ++k) {
+    auto* v = static_cast<int*>(hashmap_data_get(m, &k));
+    CATCH_REQUIRE(nullptr != v);
+    CATCH_REQUIRE(k * 10 == *v);
+  }
+
+  int gone = 5;
+  CATCH_REQUIRE(OK == hashmap_remove(m, &gone));
+  CATCH_REQUIRE(nullptr == hashmap_data_get(m, &gone));
+  errno = 0;
+  CATCH_REQUIRE(ERROR == hashmap_remove(m, &gone));
+  CATCH_REQUIRE(ENOENT == errno);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: key_len 0 means RCSW_HASHMAP_KEYSIZE-byte keys",
+                "[ds][hashmap]") {
+  map_storage mem;
+  struct hashmap* m = make_map(mem, 4, 4, RCSW_NONE); /* key_len left 0 */
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(RCSW_HASHMAP_KEYSIZE == m->cfg.key_len);
+
+  key_buf k = make_key("abc");
+  int     v = 7;
+  CATCH_REQUIRE(OK == hashmap_add(m, k.bytes, &v));
+  CATCH_REQUIRE(7 == *static_cast<int*>(hashmap_data_get(m, k.bytes)));
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap_init rejects key_len above RCSW_HASHMAP_KEYSIZE",
+                "[ds][hashmap][noalloc]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 4;
+  c.key_len   = RCSW_HASHMAP_KEYSIZE + 1;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+}
+
+CATCH_TEST_CASE("hashmap_init fails cleanly without promised caller memory",
+                "[ds][hashmap]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 4;
+  c.key_len   = sizeof(int);
+
+  /* no bucket memory: fails before anything is initialized */
+  c.flags = RCSW_NOALLOC_META;
+  c.meta  = nullptr;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+
+  /* no element memory: fails after the buckets are allocated */
+  c.flags    = RCSW_NOALLOC_DATA;
+  c.elements = nullptr;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+}
+
+CATCH_TEST_CASE("hashmap_element_space is enough for any element size",
+                "[ds][hashmap]") {
+  /* 12 bytes: the datablocks do not end on a dptr_t boundary */
+  struct rec {
+    char tag[12];
+  };
+  for (size_t n_buckets = 1; n_buckets <= 5; ++n_buckets) {
+    for (size_t bsize = 1; bsize <= 3; ++bsize) {
+      size_t n = n_buckets * bsize;
+      /* exactly the reported size, so ASAN flags any overrun */
+      size_t bytes = hashmap_element_space(n_buckets, bsize, sizeof(rec));
+      auto*  elements = static_cast<dptr_t*>(malloc(bytes));
+
+      struct hashmap_config c;
+      memset(&c, 0, sizeof(c));
+      c.elt_size  = sizeof(rec);
+      c.hash      = utils_hash_fnv1a;
+      c.n_buckets = n_buckets;
+      c.bsize     = bsize;
+      c.key_len   = sizeof(int);
+      c.elements  = elements;
+      c.flags     = RCSW_NOALLOC_DATA | RCSW_DS_HASHMAP_LINPROB;
+      map_storage     mem;
+      struct hashmap* m = hashmap_init(with_storage(mem, &c), &c);
+      CATCH_REQUIRE(nullptr != m);
+      /* the hashnode array after the datablocks is still aligned */
+      CATCH_REQUIRE(0 ==
+                    reinterpret_cast<uintptr_t>(m->space.hashnodes) %
+                      sizeof(dptr_t));
+
+      for (int k = 0; k < static_cast<int>(n); ++k) {
+        rec r;
+        snprintf(r.tag, sizeof(r.tag), "k%d", k);
+        CATCH_REQUIRE(OK == hashmap_add(m, &k, &r));
+      }
+      int full = static_cast<int>(n);
+      rec r    = {"x"};
+      CATCH_REQUIRE(ERROR == hashmap_add(m, &full, &r));
+
+      for (int k = 0; k < static_cast<int>(n); ++k) {
+        char want[12];
+        snprintf(want, sizeof(want), "k%d", k);
+        auto* got = static_cast<rec*>(hashmap_data_get(m, &k));
+        CATCH_REQUIRE(nullptr != got);
+        CATCH_REQUIRE(0 == strcmp(want, got->tag));
+      }
+      hashmap_destroy(m);
+      free(elements);
+    }
+  }
+}
+
+namespace {
+/* Every key hashes to the same value: the worst possible hash function */
+status_t constant_hash(const void*, size_t, uint32_t* out) {
+  *out = 7;
+  return OK;
+}
+
+struct hashmap* make_int_map(map_storage& s,
+                             size_t   n_buckets,
+                             size_t bsize,
+                             uint32_t flags,
+                             status_t (*hash)(const void*, size_t, uint32_t*)) {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.n_buckets = n_buckets;
+  c.bsize     = bsize;
+  c.key_len   = sizeof(uint32_t);
+  c.hash      = hash;
+  c.flags     = flags;
+  return hashmap_init(with_storage(s, &c), &c);
+}
+} /* namespace */
+
+CATCH_TEST_CASE("hashmap_gather rates a good hash function close to random",
+                "[ds][hashmap]") {
+  map_storage mem;
+  constexpr size_t kBuckets = 101;
+  constexpr size_t kKeys    = 2000;
+  std::uniform_int_distribution<uint32_t> dist;
+  for (uint32_t flags :
+       {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_HASHMAP_LINPROB}) {
+    struct hashmap* m = make_int_map(mem, kBuckets, 64, flags, utils_hash_fnv1a);
+    CATCH_REQUIRE(nullptr != m);
+    struct hashmap_stats stats;
+    CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+    CATCH_REQUIRE(0.0 == stats.hash_quality); /* empty */
+
+    int v = 1;
+    for (size_t i = 0; i < kKeys; ++i) {
+      uint32_t k = dist(th::make_rng());
+      (void)hashmap_add(m, &k, &v); /* a rare duplicate key is fine */
+    }
+    CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+    CATCH_REQUIRE(stats.hash_quality > 0.85);
+    CATCH_REQUIRE(stats.hash_quality < 1.15);
+    hashmap_destroy(m);
+  }
+}
+
+CATCH_TEST_CASE("hashmap_gather exposes a degenerate hash function",
+                "[ds][hashmap]") {
+  map_storage mem;
+  /* Linear probing still stores every key, but each one's home is bucket 7 */
+  constexpr size_t kBuckets = 16;
+  struct hashmap*  m =
+    make_int_map(mem, kBuckets, 4, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < 40; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  struct hashmap_stats stats;
+  CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+  /* all n keys in one bucket: (n+1)m/(n+2m-1) times worse than random */
+  double n        = 40;
+  double expected = (n * (n + 1) / 2) / ((n / (2 * kBuckets)) * (n + 2 * kBuckets - 1));
+  CATCH_REQUIRE(stats.hash_quality > 5.0);
+  CATCH_REQUIRE(std::fabs(stats.hash_quality - expected) < 1e-9);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: linear probing searches only max_probe buckets",
+                "[ds][hashmap]") {
+  map_storage mem;
+  /* Every key's home is the same bucket: 40 keys / 4 per bucket = 10 buckets */
+  constexpr size_t kBuckets = 16;
+  struct hashmap*  m =
+    make_int_map(mem, kBuckets, 4, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(0 == m->max_probe);
+
+  int v = 1;
+  for (uint32_t k = 0; k < 40; ++k) {
+    v = static_cast<int>(k);
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(9 == m->max_probe); /* the 10th bucket is 9 past home */
+
+  /* Every key is still found, including the furthest spilled ones */
+  for (uint32_t k = 0; k < 40; ++k) {
+    auto* got = static_cast<int*>(hashmap_data_get(m, &k));
+    CATCH_REQUIRE(nullptr != got);
+    CATCH_REQUIRE(static_cast<int>(k) == *got);
+  }
+  uint32_t absent = 1000;
+  CATCH_REQUIRE(nullptr == hashmap_data_get(m, &absent));
+
+  /* Duplicates are rejected wherever the original was placed */
+  for (uint32_t k : {0U, 21U, 39U}) {
+    errno = 0;
+    CATCH_REQUIRE(ERROR == hashmap_add(m, &k, &v));
+    CATCH_REQUIRE(EEXIST == errno);
+  }
+
+  /* Removing from the home bucket and from the last spilled bucket */
+  for (uint32_t k : {0U, 39U}) {
+    CATCH_REQUIRE(OK == hashmap_remove(m, &k));
+    CATCH_REQUIRE(nullptr == hashmap_data_get(m, &k));
+  }
+  CATCH_REQUIRE(9 == m->max_probe); /* remove never lowers it */
+  for (uint32_t k = 1; k < 39; ++k) {
+    CATCH_REQUIRE(nullptr != hashmap_data_get(m, &k));
+  }
+
+  CATCH_REQUIRE(OK == hashmap_clear(m));
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: max_probe stays 0 until a node spills",
+                "[ds][hashmap]") {
+  map_storage mem;
+  /* Each bucket can hold every key, so nothing ever spills */
+  struct hashmap* m =
+    make_int_map(mem, 8, 8, RCSW_DS_HASHMAP_LINPROB, utils_hash_fnv1a);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < 8; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+
+  /* Without LINPROB a full bucket fails instead of spilling */
+  m = make_int_map(mem, 4, 1, 0, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  uint32_t k0 = 0;
+  uint32_t k1 = 1;
+  CATCH_REQUIRE(OK == hashmap_add(m, &k0, &v));
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &k1, &v));
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: linear probing wraps past the last bucket",
+                "[ds][hashmap]") {
+  map_storage mem;
+  /* One slot per bucket and a single home: the probe visits every bucket */
+  constexpr size_t kBuckets = 8;
+  struct hashmap*  m =
+    make_int_map(mem, kBuckets, 1, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < kBuckets; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(kBuckets - 1 == m->max_probe);
+  uint32_t extra = kBuckets;
+  errno          = 0;
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &extra, &v));
+  CATCH_REQUIRE(ENOSPC == errno);
+  for (uint32_t k = 0; k < kBuckets; ++k) {
+    CATCH_REQUIRE(nullptr != hashmap_data_get(m, &k));
+  }
   hashmap_destroy(m);
 }

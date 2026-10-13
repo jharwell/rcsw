@@ -25,8 +25,12 @@ set_property(CACHE RCSW_CONFIG_ER_PLUGIN PROPERTY STRINGS LOG4CL ZLOG SIMPLE)
 
 set(RCSW_CONFIG_PTR_ALIGN
     ""
-    CACHE STRING
-          "Data pointer alignment in bytes (1, 2, 4). Auto-detected if empty.")
+    CACHE
+      STRING
+      "Data pointer alignment in bytes (1, 2, 4, 8). Auto-detected if empty.")
+option(RCSW_CONFIG_PTR_ALIGN_NO_CHECK
+       "Allow building RCSW even if the alignment for the target platform "
+       "doesn't match RCSW_CONFIG_PTR_ALIGN.")
 
 set(RCSW_CONFIG_STDIO_PUTCHAR
     putchar
@@ -93,7 +97,6 @@ if(NOT RCSW_CONFIG_PTR_ALIGN)
     )
   endif()
 endif()
-
 # Sanity check: auto-detection or an explicit value must have produced something
 # non-empty before we proceed to bake it into compile definitions.
 if(NOT RCSW_CONFIG_PTR_ALIGN)

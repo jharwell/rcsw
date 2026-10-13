@@ -36,7 +36,7 @@ cpmaddpackage(
   VERSION
   0.13.16
   GIT_TAG
-  v0.13.16-dev.4
+  v0.13.17
   DOWNLOAD_ONLY
   YES)
 

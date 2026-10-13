@@ -264,3 +264,7 @@ CATCH_TEST_CASE("stdio_strchr finds the terminating NUL",
   const char s[] = "abc";
   CATCH_REQUIRE(s + 3 == stdio_strchr(s, '\0'));
 }
+
+CATCH_TEST_CASE("stdio_strrep rejects a NULL output buffer", "[noalloc]") {
+  CATCH_REQUIRE(nullptr == stdio_strrep("abc", "b", "x", nullptr));
+}

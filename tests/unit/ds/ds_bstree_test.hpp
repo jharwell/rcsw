@@ -33,8 +33,6 @@ using test_t = void (*)(int len, struct bstree_config *config,
 using rm_test_t = void (*)(int len, int remove_type,
                            struct bstree_config *config,
                            bst_verify_cb verify_cb);
-typedef int (*int_verify_cb)(const struct bstree *const tree,
-                             struct inttree_node *const node);
 
 /*******************************************************************************
  * Forward Decls
@@ -61,7 +59,7 @@ int verify_nodes_bst(const struct bstree *const tree,
  * \return 0 if OK, nonzero otherwise
  */
 int verify_nodes_int(const struct bstree *const tree,
-                     struct inttree_node *const node);
+                     struct bstree_node *const node);
 
 extern std::vector<int32_t> g_inorder;
 
@@ -75,4 +73,22 @@ bool max_high_ok(const struct bstree *t, const struct inttree_node *n,
 bool count_ok(const struct bstree *t, const struct ostree_node *n,
               int32_t *count);
 struct bstree *make_inttree(struct bstree_config *c);
+
+/*
+ * Caller-owned storage for one tree. Under RCSW_CONFIG_NOALLOC the library
+ * cannot allocate, so with_storage() gives \p c element and node pools (and
+ * bounds an unbounded max_elts to kTreeElts) and returns the handle to pass to
+ * X_init(). In heap builds it leaves \p c alone and returns NULL, so the
+ * library allocates.
+ */
+enum class tree_kind { bstree, ostree, inttree };
+constexpr int kTreeElts = 256;
+struct tree_storage {
+  struct bstree handle;
+  std::vector<dptr_t> elements;
+  std::vector<dptr_t> nodes;
+};
+struct bstree *with_storage(tree_storage &s,
+                            struct bstree_config *c,
+                            tree_kind kind = tree_kind::bstree);
 } /* namespace th::bst */

@@ -31,11 +31,6 @@ For an overview, see :ref:`library/utils`.
 
 .. doxygenfile:: checksum.h
 
-``rcsw/utils/endian.h``
------------------------
-
-.. doxygenfile:: endian.h
-
 ``rcsw/utils/hash.h``
 ---------------------
 

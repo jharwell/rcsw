@@ -55,14 +55,31 @@ static void run_test(void (*test)(int len, struct rbuffer_config* config)) {
   th::ds_shutdown(&config);
 }
 
-struct rbuffer* make_rb(size_t max_elts, uint32_t flags = RCSW_NONE) {
+/*
+ * Caller-owned storage for one buffer made by make_rb(). Heap builds ignore it
+ * and let the library allocate; under RCSW_CONFIG_NOALLOC, where
+ * rbuffer_init() cannot allocate anything itself, the buffer uses it.
+ */
+struct rb_storage {
+  struct rbuffer handle;
+  dptr_t         space[(16 * sizeof(int)) / sizeof(dptr_t)];
+};
+
+struct rbuffer* make_rb(rb_storage* s, size_t max_elts) {
+  CATCH_REQUIRE(rbuffer_element_space(max_elts, sizeof(int)) <=
+                sizeof(s->space));
   struct rbuffer_config c;
   memset(&c, 0, sizeof(c));
   c.cmpe     = th::cmp_int;
   c.elt_size = sizeof(int);
   c.max_elts = max_elts;
-  c.flags    = flags;
+#if defined(RCSW_CONFIG_NOALLOC)
+  c.elements = s->space;
+  c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+  return rbuffer_init(&s->handle, &c);
+#else
   return rbuffer_init(nullptr, &c);
+#endif
 }
 
 /*******************************************************************************
@@ -311,8 +328,10 @@ CATCH_TEST_CASE("rbuffer Iterator Test", "[ds][rbuffer][noalloc]") {
   run_test<element8>(iter_test<element8>);
 }
 CATCH_TEST_CASE("rbuffer_clear zeroes the managed memory after wrap-around",
-                "[ds][rbuffer]") {
-  struct rbuffer* rb = make_rb(4);
+                "[ds][rbuffer][noalloc]") {
+  rb_storage      s{};
+  struct rbuffer* rb = make_rb(&s, 4);
+  CATCH_REQUIRE(nullptr != rb);
   for (int i = 1; i <= 6; ++i) { /* overwrite mode: wraps, start != 0 */
     CATCH_REQUIRE(OK == rbuffer_add(rb, &i));
   }
@@ -330,8 +349,10 @@ CATCH_TEST_CASE("rbuffer_clear zeroes the managed memory after wrap-around",
 }
 
 CATCH_TEST_CASE("rbuffer_index_query does not match removed (stale) elements",
-                "[ds][rbuffer]") {
-  struct rbuffer* rb = make_rb(4);
+                "[ds][rbuffer][noalloc]") {
+  rb_storage      s{};
+  struct rbuffer* rb = make_rb(&s, 4);
+  CATCH_REQUIRE(nullptr != rb);
   int             a  = 11;
   int             b  = 22;
   CATCH_REQUIRE(OK == rbuffer_add(rb, &a));
@@ -347,8 +368,10 @@ CATCH_TEST_CASE("rbuffer_index_query does not match removed (stale) elements",
 }
 
 CATCH_TEST_CASE("rbuffer indices count from the front after wrap-around",
-                "[ds][rbuffer]") {
-  struct rbuffer* rb = make_rb(3);
+                "[ds][rbuffer][noalloc]") {
+  rb_storage      s{};
+  struct rbuffer* rb = make_rb(&s, 3);
+  CATCH_REQUIRE(nullptr != rb);
   for (int i = 1; i <= 5; ++i) { /* overwrite mode: holds 3,4,5 */
     CATCH_REQUIRE(OK == rbuffer_add(rb, &i));
   }
@@ -369,8 +392,10 @@ CATCH_TEST_CASE("rbuffer indices count from the front after wrap-around",
 }
 
 CATCH_TEST_CASE("rbuffer honors RCSW_ZALLOC for caller-provided element space",
-                "[ds][rbuffer]") {
-  static int space[8];
+                "[ds][rbuffer][noalloc]") {
+  /* sized in bytes: dptr_t is RCSW_CONFIG_PTR_ALIGN bytes */
+  static dptr_t         space[(8 * sizeof(int)) / sizeof(dptr_t)];
+  static struct rbuffer handle;
   memset(space, 0xAB, sizeof(space));
 
   struct rbuffer_config c;
@@ -378,9 +403,9 @@ CATCH_TEST_CASE("rbuffer honors RCSW_ZALLOC for caller-provided element space",
   c.cmpe             = th::cmp_int;
   c.elt_size         = sizeof(int);
   c.max_elts         = 8;
-  c.elements         = (dptr_t*)space;
-  c.flags            = RCSW_NOALLOC_DATA | RCSW_ZALLOC;
-  struct rbuffer* rb = rbuffer_init(nullptr, &c);
+  c.elements         = space;
+  c.flags            = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA | RCSW_ZALLOC;
+  struct rbuffer* rb = rbuffer_init(&handle, &c);
   CATCH_REQUIRE(nullptr != rb);
 
   const unsigned char* bytes = reinterpret_cast<const unsigned char*>(space);

@@ -49,22 +49,16 @@ struct adjmatrix* adjmatrix_init(struct adjmatrix* const              matrix_in,
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(matrix);
-  matrix->flags = params->flags;
-  if (params->is_weighted) {
-    matrix->elt_size = sizeof(double);
-  } else {
-    matrix->elt_size = sizeof(int);
-  }
+  matrix->flags       = params->flags;
   matrix->is_weighted = params->is_weighted;
   matrix->is_directed = params->is_directed;
-  matrix->n_vertices  = params->n_vertices;
   matrix->n_edges     = 0;
 
   struct matrix_config mat_params = {
     .n_rows   = params->n_vertices,
     .n_cols   = params->n_vertices,
     .elements = params->elements,
-    .elt_size = matrix->elt_size,
+    .elt_size = params->is_weighted ? sizeof(double) : sizeof(int),
     /*
      * 2023-11-02 [JRH]: The matrix relies on elts being zeroed initially (at
      * least, my test code cb does, and other code might too).
@@ -83,8 +77,8 @@ struct adjmatrix* adjmatrix_init(struct adjmatrix* const              matrix_in,
    * graphs for correct edge detection.
    */
   if (matrix->is_weighted) {
-    for (size_t i = 0; i < matrix->n_vertices; ++i) {
-      for (size_t j = 0; j < matrix->n_vertices; ++j) {
+    for (size_t i = 0; i < adjmatrix_n_vertices(matrix); ++i) {
+      for (size_t j = 0; j < adjmatrix_n_vertices(matrix); ++j) {
         void* tmp = matrix_access(&matrix->matrix, i, j);
         if (RCSW_LIKELY(NULL != tmp)) {
           double nan = NAN;
@@ -112,8 +106,8 @@ status_t adjmatrix_edge_addu(struct adjmatrix* const matrix, size_t u, size_t v)
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               !matrix->is_directed,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
 
   if (adjmatrix_edge_query(matrix, u, v)) {
     return OK; /* already present: nothing to count */
@@ -140,8 +134,8 @@ status_t adjmatrix_edge_addd(struct adjmatrix* const matrix,
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
               matrix->is_directed,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices,
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix),
               !matrix->is_weighted || NULL != w);
 
   bool_t existed = adjmatrix_edge_query(matrix, u, v);
@@ -180,8 +174,8 @@ status_t adjmatrix_edge_remove(struct adjmatrix* const matrix,
                                size_t                  v) {
   RCSW_FPC_NV(ERROR,
               NULL != matrix,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
 
   if (!adjmatrix_edge_query(matrix, u, v)) {
     errno = ENOENT;

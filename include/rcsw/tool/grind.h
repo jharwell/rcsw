@@ -25,11 +25,12 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#if defined(RCSW_NO_GRIND)
-#define RCSW_GRIND_START(the_grinder, name)
-#define RCSW_GRIND_END(the_grinder, name)
-#define RCSW_GRIND_COUNT(the_grinder, name)
-#define RCSW_GRIND_TICK(the_grinder, name)
+#if defined(RCSW_CONFIG_TOOL_NO_GRIND)
+/* Compiled out: each macro is an empty statement and evaluates nothing */
+#define RCSW_GRIND_START(the_grinder, name) ((void)0)
+#define RCSW_GRIND_END(the_grinder, name) ((void)0)
+#define RCSW_GRIND_COUNT(the_grinder, name) ((void)0)
+#define RCSW_GRIND_TICK(the_grinder, name) ((void)0)
 #else
 /**
  * \brief Compile-time macro for \ref grind_capture_start()
@@ -257,7 +258,18 @@ struct grind_config {
   size_t n_inst;
 
   /**
-   * Configuration flags. See \ref grinder.flags for valid flags.
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_GRIND_REPORT_DATAPOINTS
+   * - \ref RCSW_GRIND_REPORT_HISTOGRAM
+   * - \ref RCSW_GRIND_REPORT_AUTO
+   * - \ref RCSW_GRIND_REPORT_REQ_FULL
+   * - \ref RCSW_GRIND_RESET_AUTO
+   * - \ref RCSW_GRIND_INTERVAL
+   *
+   * All other flags are ignored.
    */
   uint32_t        flags;
   enum grind_mode mode;
@@ -277,8 +289,8 @@ struct grind_config {
   struct timespec interval;
 
   /**
-   * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref RCSW_GRIND_COUNT mode.
+   * Callback to return the current time for a \ref grindee. If NULL, \ref
+   * clock_monotime() is used. Not used in \ref RCSW_GRIND_MODE_COUNT mode.
    */
   struct timespec (*gettime)(void);
 };
@@ -288,17 +300,13 @@ struct grind_config {
  * about a running application.
  */
 struct grinder {
-  /** What is our mode of operation? */
-  enum grind_mode mode;
-
-  /** How many \ref grindee are we managing? */
-  size_t n_inst;
-
   /**
-   * How many counts of a grindee being executed will be averaged to form a
-   * single entry in the grindee's metric table
+   * The configuration the grinder was initialized with, with \ref
+   * grind_config.gettime set to the clock in use. \ref grind_config.names is
+   * NULL: the names are copied into the grindees, so the caller's array is not
+   * retained.
    */
-  size_t res;
+  struct grind_config cfg;
 
   /** One or more grindees are ready to report */
   bool_t avail;
@@ -306,26 +314,7 @@ struct grinder {
   /** That the timeout interval has begun (timing-related modes only) */
   bool_t in_interval;
 
-  /**
-   * Configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_GRIND_REPORT_DATAPOINTS
-   * - \ref RCSW_GRIND_REPORT_HISTOGRAM
-   * - \ref RCSW_GRIND_REPORT_AUTO
-   * - \ref RCSW_GRIND_REPORT_REQ_FULL
-   * - \ref RCSW_GRIND_RESET_AUTO
-   * - \ref RCSW_GRIND_INTERVAL
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
-
   struct grindee* grindees;
-
-  /** Timeout to reset statistics */
-  struct timespec interval;
 
   /**
    * Time call to \ref grind_capture_start()/\ref grind_capture_tick() was
@@ -333,12 +322,6 @@ struct grinder {
    * \ref RCSW_GRIND_INTERVAL was passed.
    */
   struct timespec interval_start;
-
-  /**
-   * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref RCSW_GRIND_COUNT mode.
-   */
-  struct timespec (*gettime)(void);
 };
 
 /*******************************************************************************
@@ -353,6 +336,8 @@ struct grinder {
  * \param grind_in Caller storage for the handle, used only if \ref
  *                 RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
  *                 otherwise. See \rcswdoc{concepts/memory-model}.
+ *
+ * \param config The initialization parameters.
  *
  * \return The initialized grinder, or NULL if an error occurred.
  */
@@ -370,7 +355,7 @@ RCSW_API void grind_destroy(struct grinder* the_grinder);
 /**
  * \brief Mark the start of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_MODE_DURATION.
  *
  * \return \ref status_t
  *
@@ -381,7 +366,7 @@ RCSW_API status_t grind_capture_start(struct grinder* the_grinder,
 /**
  * \brief Mark the end of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_MODE_DURATION.
  *
  * \return \ref status_t
  */
@@ -391,7 +376,7 @@ RCSW_API status_t grind_capture_end(struct grinder* the_grinder,
 /**
  * \brief Increment the execution count for the \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_COUNT.
+ * Only valid with \ref RCSW_GRIND_MODE_COUNT.
  *
  * \return \ref status_t
  */
@@ -401,7 +386,7 @@ RCSW_API status_t grind_capture_count(struct grinder* the_grinder,
 /**
  * \brief Capture the current time/tick for the \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_PERIOD.
+ * Only valid with \ref RCSW_GRIND_MODE_PERIOD.
  *
  * \return \ref status_t
  */

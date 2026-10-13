@@ -118,6 +118,21 @@ Memory Allocation
    field of each module's ``xx_config`` struct. See
    :ref:`concepts/memory-model`.
 
+   Some parts of RCSW can't work without a heap, and fail to initialize in
+   such a build:
+
+   - the LOG4CL ER plugin, whose module table is a heap-allocated list; use
+     the ``simple`` plugin instead;
+   - :c:struct:`dynmatrix`, whose rows are always heap-allocated;
+   - the dynamic-programming algorithms (edit distance, LCS, matrix chain
+     optimization), whose scratch tables are heap-allocated;
+   - :c:struct:`darray` growth beyond its initial capacity, and unbounded
+     (``max_elts = -1``) structures.
+
+   Tests tagged ``[noalloc]`` are exactly the ones that run without a heap;
+   run only those (``"[noalloc]"`` as the Catch2 test spec) in a
+   ``RCSW_CONFIG_NOALLOC`` build.
+
 .. cmake:variable:: RCSW_CONFIG_ZALLOC
 
    :default: NO

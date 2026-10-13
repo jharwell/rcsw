@@ -99,7 +99,6 @@ rcsw_itest_install() {
         -DRCSW_CONFIG_LIBTYPE="${libtype}" \
         -DRCSW_CONFIG_BUILD_MONOLITHIC="${RCSW_MONOLITHIC}" \
         -DRCSW_CONFIG_ER_PLUGIN="${RCSW_ER_PLUGIN}" \
-        -DRCSW_CONFIG_PTR_ALIGN=4 \
         -DCMAKE_INSTALL_PREFIX="${RCSW_PREFIX}" \
         "${_RCSW_ITEST_FLAGS[@]}" &&
       cmake --build "${build}" --parallel "$(nproc 2>/dev/null || echo 2)" &&

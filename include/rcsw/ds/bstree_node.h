@@ -190,8 +190,8 @@ RCSW_LOCAL void bstree_node_rotate_right(struct bstree*      tree,
  * callback to print a bstree
  *
  */
-RCSW_LOCAL int bstree_node_print(const struct bstree*      tree,
-                                 const struct bstree_node* node);
+RCSW_LOCAL int bstree_node_print(const struct bstree* tree,
+                                 struct bstree_node*  node);
 
 /**
  * \brief Get the successor of \p node (the smallest node larger than it).

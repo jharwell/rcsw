@@ -314,11 +314,10 @@
  * is useful and should be resolved structurally.
  */
 #if defined(NDEBUG)
-#define RCSW_UNUSED __attribute__((unused))
-#else
 #define RCSW_UNUSED
+#else
+#define RCSW_UNUSED __attribute__((unused))
 #endif /* NDEBUG */
-
 #endif /* RCSW_UNUSED */
 
 #if defined(RCSW_WUR)
@@ -342,6 +341,10 @@
  *
  * Mark a function as depending only on its arguments and (possibly) global
  * memory reads, but with no side effects. Weaker than \ref RCSW_CONST.
+ *
+ * Setting \c errno is a side effect, so this must not be used on functions
+ * with \ref RCSW_FPC_NV() checks (or that set \c errno otherwise): the compiler
+ * may then drop or merge calls, and with them the \c errno update.
  */
 #define RCSW_PURE __attribute__((pure))
 #endif

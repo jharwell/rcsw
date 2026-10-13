@@ -189,3 +189,15 @@ CATCH_TEST_CASE("Time ts_make_rel Test", "[utils][time][noalloc]") {
 CATCH_TEST_CASE("Time Monotonic Advance Test", "[utils][time][slow][noalloc]") {
   monotonic_advance_test();
 }
+
+CATCH_TEST_CASE("utils_ts_make_rel undoes utils_ts_make_abs",
+                "[utils][time][noalloc]") {
+  /* both use the same (wall) clock, so the round trip loses only elapsed time */
+  struct timespec rel  = {.tv_sec = 5, .tv_nsec = 0};
+  struct timespec abs_ = {};
+  struct timespec back = {};
+  CATCH_REQUIRE(OK == utils_ts_make_abs(&rel, &abs_));
+  CATCH_REQUIRE(OK == utils_ts_make_rel(&abs_, &back));
+  CATCH_REQUIRE(back.tv_sec >= 4);
+  CATCH_REQUIRE(utils_ts_cmp(&back, &rel) <= 0);
+}

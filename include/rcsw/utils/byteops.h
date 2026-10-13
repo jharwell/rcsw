@@ -7,7 +7,7 @@
  *
  * \ingroup utils
  *
- * \brief Byte-level macros and functions, such as swapping and string generation.
+ * \brief Byte-level functions, such as swapping and string generation.
  */
 
 #pragma once
@@ -20,52 +20,65 @@
 
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
-#include "rcsw/utils/bit.h"
-
-/******************************************************************************
- * Macros
- ******************************************************************************/
-/** \brief Swap the byte order of a 16-bit value. */
-#define RCSW_BSWAP16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
-
-/** \brief Swap the byte order of a 32-bit value. */
-#define RCSW_BSWAP32(w32)                    \
-  ((((uint32_t)(w32) & 0xFF000000U) >> 24) | \
-   (((uint32_t)(w32) & 0x00FF0000U) >> 8) |  \
-   (((uint32_t)(w32) & 0x0000FF00U) << 8) |  \
-   (((uint32_t)(w32) & 0x000000FFU) << 24))
-
-/** \brief Swap the byte order of a 64-bit value. */
-#define RCSW_BSWAP64(w64)                                \
-  (((uint64_t)RCSW_BSWAP32(RCSW_BITS_LO64(w64)) << 32) | \
-   ((uint64_t)(RCSW_BSWAP32(RCSW_BITS_HI64(w64) >> 32))))
-
-/** \brief Swap the two 16-bit halves of a 32-bit value (word swap). */
-#define RCSW_WSWAP32(w32)                    \
-  ((((uint32_t)(w32) & 0xFFFF0000U) >> 16) | \
-   (((uint32_t)(w32) & 0x0000FFFFU) << 16))
 
 /*******************************************************************************
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
 /**
- * \brief Reverse the bytes of an array in place.
- *
- * \param arr  The byte array to reverse.
- * \param size Number of bytes in the array.
+ * \brief Swap the byte order of a 16-bit value.
  */
-RCSW_API void utils_arr8_reverse(void* arr, size_t size);
+static inline uint16_t utils_bswap16(uint16_t w16) {
+  return (uint16_t)((w16 >> 8) | (w16 << 8));
+}
 
 /**
- * \brief Swap two elements of any size in an array.
- *
- * \param arr Array containing the elements.
- * \param elt_size Size of each element in bytes.
- * \param i Index of the first element.
- * \param j Index of the second element.
+ * \brief Swap the byte order of a 32-bit value.
  */
-RCSW_API void utils_elt_swap(void* arr, size_t elt_size, size_t i, size_t j);
+static inline uint32_t utils_bswap32(uint32_t w32) {
+  return ((w32 & 0xFF000000U) >> 24) | ((w32 & 0x00FF0000U) >> 8) |
+         ((w32 & 0x0000FF00U) << 8) | ((w32 & 0x000000FFU) << 24);
+}
+
+/**
+ * \brief Swap the byte order of a 64-bit value.
+ */
+static inline uint64_t utils_bswap64(uint64_t w64) {
+  return ((uint64_t)utils_bswap32((uint32_t)w64) << 32) |
+         utils_bswap32((uint32_t)(w64 >> 32));
+}
+
+/**
+ * \brief Reverse the bytes of an array in place.
+ *
+ * Header-only, so that \ref stdio_strrev() can use it without linking against
+ * the utils module.
+ *
+ * \param arr  The byte array to reverse. Can be NULL if \p size is 0.
+ * \param size Number of bytes in the array.
+ */
+static inline void utils_arr8_reverse(void* const arr, size_t size) {
+  uint8_t* const a = (uint8_t*)arr;
+  for (size_t i = 0, j = size; i + 1 < j; ++i) {
+    --j;
+    uint8_t tmp = a[i];
+    a[i]        = a[j];
+    a[j]        = tmp;
+  } /* for() */
+}
+
+/**
+ * \brief Swap two elements of any size.
+ *
+ * Works on raw bytes through a small fixed-size buffer, so the elements need
+ * no particular alignment and there is no limit on their size. Swapping an
+ * element with itself does nothing; otherwise the elements must not overlap.
+ *
+ * \param elt1 The first element.
+ * \param elt2 The second element.
+ * \param elt_size Size of each element in bytes.
+ */
+RCSW_API void utils_elt_swap(void* elt1, void* elt2, size_t elt_size);
 
 /**
  * \brief Fill \p buf with a random printable ASCII string.

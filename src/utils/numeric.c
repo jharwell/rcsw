@@ -32,9 +32,11 @@ void utils_permute(void*  arr,
     return;
   }
   for (size_t j = start; j < n_elts; ++j) {
-    utils_elt_swap(arr, elt_size, start, j);
+    uint8_t* base = arr;
+    utils_elt_swap(base + (start * elt_size), base + (j * elt_size), elt_size);
     utils_permute(arr, n_elts, elt_size, start + 1, fp);
-    utils_elt_swap(arr, elt_size, start, j); /* restore */
+    /* restore */
+    utils_elt_swap(base + (start * elt_size), base + (j * elt_size), elt_size);
   }
 }
 

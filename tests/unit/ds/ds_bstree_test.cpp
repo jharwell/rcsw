@@ -30,7 +30,10 @@ std::vector<int32_t> g_inorder;
  * API Functions
  ******************************************************************************/
 int verify_nodes_int(const struct bstree* const tree,
-                     struct inttree_node* const node) {
+                     struct bstree_node* const  base) {
+  /* Traversal callbacks take the base node type; an inttree node starts
+   * with a bstree node, so the cast is valid. */
+  auto*               node = reinterpret_cast<inttree_node*>(base);
   uint8_t*            left_key;
   uint8_t*            right_key;
   struct bstree_node* nil = tree->nil;
@@ -40,7 +43,7 @@ int verify_nodes_int(const struct bstree* const tree,
    */
 
   if (node != reinterpret_cast<inttree_node*>(nil)) {
-    if (node->right != reinterpret_cast<inttree_node*>(nil)) {
+    if (node->left != reinterpret_cast<inttree_node*>(nil)) {
       CATCH_REQUIRE(node->max_high >= node->left->max_high);
     }
     if (node->right != reinterpret_cast<inttree_node*>(nil)) {
@@ -168,6 +171,44 @@ bool count_ok(const struct bstree*      t,
   }
   *count = l + r + 1;
   return n->count == *count;
+}
+
+struct bstree* with_storage(tree_storage&         s,
+                             struct bstree_config* c,
+                             tree_kind             kind) {
+#if defined(RCSW_CONFIG_NOALLOC)
+  if (-1 == c->max_elts) {
+    c->max_elts = kTreeElts;
+  }
+  size_t n = static_cast<size_t>(c->max_elts);
+  size_t elt_bytes;
+  size_t node_bytes;
+  switch (kind) {
+    case tree_kind::ostree:
+      elt_bytes  = ostree_element_space(n, c->elt_size);
+      node_bytes = ostree_meta_space(n);
+      break;
+    case tree_kind::inttree:
+      elt_bytes  = inttree_element_space(n);
+      node_bytes = inttree_meta_space(n);
+      break;
+    default:
+      elt_bytes  = bstree_element_space(n, c->elt_size);
+      node_bytes = bstree_meta_space(n);
+      break;
+  }
+  s.elements.resize(elt_bytes / sizeof(dptr_t) + 1);
+  s.nodes.resize(node_bytes / sizeof(dptr_t) + 1);
+  c->elements = s.elements.data();
+  c->meta     = s.nodes.data();
+  c->flags |= RCSW_NOALLOC_ALL;
+  return &s.handle;
+#else
+  (void)s;
+  (void)c;
+  (void)kind;
+  return nullptr;
+#endif
 }
 
 struct bstree* make_inttree(struct bstree_config* c) {

@@ -146,6 +146,9 @@ error:
   return 1;
 }
 
+/** See TH_FORCED_FLAGS. */
+static constexpr uint32_t kForcedFlags = TH_FORCED_FLAGS;
+
 /**
  * run_test_flags
  *
@@ -154,6 +157,7 @@ error:
  *   2. Each flag alone
  *   3. All pairwise combinations of flags
  * across len = 1..max_len.
+ * Every configuration also carries kForcedFlags.
  */
 template <typename Config, typename TestFn>
 static void run_test_flags(Config&              config,
@@ -163,14 +167,14 @@ static void run_test_flags(Config&              config,
                            TestFn               test) {
   /* 1. RCSW_NONE */
   for (int k = 1; k <= max_len; ++k) {
-    config.flags = RCSW_NONE;
+    config.flags = RCSW_NONE | kForcedFlags;
     test(k, &config);
   }
 
   /* 2. Each flag alone */
   for (size_t i = 0; i < n_flags; ++i) {
     for (int k = 1; k <= max_len; ++k) {
-      config.flags = flags[i];
+      config.flags = flags[i] | kForcedFlags;
       test(k, &config);
     }
   }
@@ -180,7 +184,7 @@ static void run_test_flags(Config&              config,
     for (size_t j = i + 1; j < n_flags; ++j) {
       uint32_t combo = flags[i] | flags[j];
       for (int k = 1; k <= max_len; ++k) {
-        config.flags = combo;
+        config.flags = combo | kForcedFlags;
         test(k, &config);
       }
     }

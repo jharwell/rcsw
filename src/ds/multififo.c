@@ -23,6 +23,7 @@
  * Private Functions
  ******************************************************************************/
 static status_t multififo_children_feed(struct multififo* fifo) {
+  fifo->front_fed = false;
   /* No food available! */
   if (multififo_isempty(fifo)) {
     return OK;
@@ -33,15 +34,17 @@ static status_t multififo_children_feed(struct multififo* fifo) {
      * Each child FIFO may/will have a different # elements in it, depending on
      * its chunk size vs. the root FIFO.
      */
-    size_t n_elts = fifo->root.rb.elt_size / fifo->children.fifos[i].rb.elt_size;
+    size_t n_elts =
+      fifo->root.rb.cfg.elt_size / fifo->children.fifos[i].rb.cfg.elt_size;
 
     for (size_t j = 0; j < n_elts; ++j) {
       uint8_t* target = (uint8_t*)fifo_front(&fifo->root) +
-                        (fifo->children.fifos[i].rb.elt_size * j);
+                        (fifo->children.fifos[i].rb.cfg.elt_size * j);
       RCSW_CHECK(OK == fifo_add(&fifo->children.fifos[i], target));
       fifo->front_refmask |= 1 << i;
     } /* for(j..) */
   } /* for(i..) */
+  fifo->front_fed = true;
 
   return OK;
 
@@ -103,6 +106,7 @@ struct multififo* multififo_init(struct multififo*                    fifo_in,
   fifo->children.count = 0; /* incremented as children are initialized */
   fifo->children.fifos = NULL;
   fifo->front_refmask  = 0;
+  fifo->front_fed      = false;
 
   struct fifo_config root_params = {.printe   = NULL,
                                     .elt_size = params->elt_size,
@@ -174,12 +178,13 @@ status_t multififo_add(struct multififo* const fifo, const void* const e) {
 
   RCSW_CHECK(OK == fifo_add(&fifo->root, e));
 
-  multififo_children_status_update(fifo);
   /*
-   * All children have finished processing root FIFO front element--onto the
-   * next one.
+   * Feed the children only if the front element hasn't been fed yet (the root
+   * FIFO was empty, so the new element is the front). A front element the
+   * children have already drained stays at the front until multififo_remove();
+   * feeding it again would duplicate it.
    */
-  if (0 == fifo->front_refmask) {
+  if (!fifo->front_fed) {
     RCSW_CHECK(OK == multififo_children_feed(fifo));
   }
   atomic_store_explicit(&fifo->locked, false, memory_order_release);
@@ -224,6 +229,7 @@ status_t multififo_clear(struct multififo* const fifo) {
     fifo_clear(&fifo->children.fifos[i]);
   } /* for(i..) */
   fifo->front_refmask = 0;
+  fifo->front_fed     = false;
   atomic_store_explicit(&fifo->locked, false, memory_order_release);
 
   return OK;

@@ -31,6 +31,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct bstree* bstree_init_internal(struct bstree*                    tree_in,
                                     const struct bstree_config* const params,
                                     size_t                            node_size) {
@@ -43,9 +44,9 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(tree);
 
-  tree->flags = params->flags;
-  tree->root  = NULL;
-  tree->nil   = NULL;
+  tree->cfg  = *params;
+  tree->root = NULL;
+  tree->nil  = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->meta);
@@ -80,12 +81,7 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
       (dptr_t*)((uint8_t*)tree->space.db_map +
                 allocm_map_bytes((size_t)params->max_elts + 2));
   }
-
-  tree->cmpkey   = params->cmpkey;
-  tree->current  = 0;
-  tree->printe   = params->printe;
-  tree->max_elts = params->max_elts;
-  tree->elt_size = params->elt_size;
+  tree->current = 0;
 
   tree->nil = bstree_node_create(tree, NULL, NULL, NULL, node_size);
   RCSW_CHECK_PTR(tree->nil);
@@ -97,15 +93,15 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
   tree->root->parent = tree->root->left = tree->root->right = tree->nil;
   tree->root->red                                           = false;
 
-  if (tree->flags & RCSW_DS_BSTREE_INT) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_INT) {
     inttree_init_helper(tree);
-  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
+  } else if (tree->cfg.flags & RCSW_DS_BSTREE_OS) {
     ostree_init_helper(tree);
   }
   ER_DEBUG("max_elts=%d elt_size=%zu flags=0x%08x",
-           tree->max_elts,
-           tree->elt_size,
-           tree->flags);
+           tree->cfg.max_elts,
+           tree->cfg.elt_size,
+           tree->cfg.flags);
   return tree;
 
 error:
@@ -123,11 +119,11 @@ error:
  */
 static void bstree_aux_update_path(const struct bstree* const tree,
                                    struct bstree_node*        node) {
-  if (!(tree->flags & (RCSW_DS_BSTREE_INT | RCSW_DS_BSTREE_OS))) {
+  if (!(tree->cfg.flags & (RCSW_DS_BSTREE_INT | RCSW_DS_BSTREE_OS))) {
     return;
   }
   while (node != tree->root && node != tree->nil) {
-    if (tree->flags & RCSW_DS_BSTREE_INT) {
+    if (tree->cfg.flags & RCSW_DS_BSTREE_INT) {
       inttree_node_update_max((struct inttree_node*)node);
     } else {
       ostree_node_update_count((struct ostree_node*)node);
@@ -157,7 +153,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
     parent = node;
 
     /* no duplicates allowed */
-    int res = tree->cmpkey(key, node->key);
+    int res = tree->cfg.cmpkey(key, node->key);
     if (0 == res) {
       errno = EEXIST;
       return ERROR;
@@ -170,7 +166,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
    */
   node = bstree_node_create(tree, parent, key, data, node_size);
   RCSW_CHECK_PTR(node);
-  if (parent == tree->root || tree->cmpkey(key, parent->key) < 0) {
+  if (parent == tree->root || tree->cfg.cmpkey(key, parent->key) < 0) {
     parent->left = node;
   } else {
     parent->right = node;
@@ -183,7 +179,7 @@ status_t bstree_insert_internal(struct bstree* const tree,
    */
   bstree_aux_update_path(tree, node);
 
-  if (tree->flags & RCSW_DS_BSTREE_RB) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_RB) {
     node->red = true;
 
     /*
@@ -232,7 +228,7 @@ void bstree_destroy(struct bstree* tree) {
    */
   bstree_node_destroy(tree, tree->nil);
 
-  rcsw_free(tree, tree->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(tree, tree->cfg.flags & RCSW_NOALLOC_HANDLE);
 } /* bstree_destroy() */
 
 void* bstree_data_query(const struct bstree* const tree, const void* const key) {
@@ -247,7 +243,7 @@ struct bstree_node* bstree_node_query(const struct bstree* const tree,
                                       const void* const          key) {
   struct bstree_node* x = search_root;
   while (x != tree->nil) {
-    int res = tree->cmpkey(key, x->key);
+    int res = tree->cfg.cmpkey(key, x->key);
     if (0 == res) {
       return x;
     }
@@ -377,11 +373,11 @@ status_t bstree_remove(struct bstree* const tree, const void* const key) {
   RCSW_FPC_NV(ERROR, tree != NULL, key != NULL);
 
   struct bstree_node* victim = bstree_node_query(tree, tree->root->left, key);
-  RCSW_CHECK_PTR(victim);
+  if (NULL == victim) {
+    errno = ENOENT;
+    return ERROR;
+  }
   return bstree_delete(tree, victim, NULL);
-
-error:
-  return ERROR;
 } /* bstree_remove() */
 
 /* NOLINTNEXTLINE(readability-function-size) */
@@ -428,7 +424,7 @@ status_t bstree_delete(struct bstree* const tree,
   /*
    * Fix up RBTree structure if required
    */
-  if (tree->flags & RCSW_DS_BSTREE_RB && !y->red) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_RB && !y->red) {
     rbtree_delete_fixup(tree, x);
   }
 
@@ -447,7 +443,7 @@ status_t bstree_delete(struct bstree* const tree,
     bstree_aux_update_path(tree, y);
   }
 
-  if (tree->flags & RCSW_DS_BSTREE_RB) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_RB) {
     /* Verify properties of RB Tree still hold (debug builds) */
     ER_ASSERT(!tree->root->red, "Sentinel root is red");
     ER_ASSERT(!tree->nil->red, "Sentinel nil is red");
@@ -456,7 +452,7 @@ status_t bstree_delete(struct bstree* const tree,
               "Black heights differ");
   }
   if (NULL != elt) {
-    ds_elt_copy(elt, victim->data, tree->elt_size);
+    ds_elt_copy(elt, victim->data, tree->cfg.elt_size);
   }
   bstree_node_destroy(tree, victim);
   tree->current--;
@@ -472,15 +468,12 @@ void bstree_print(struct bstree* const tree) {
     DPRINTF(RCSW_ER_MODNAME " :  < Empty >\n");
     return;
   }
-  if (tree->printe == NULL) {
+  if (tree->cfg.printe == NULL) {
     DPRINTF(RCSW_ER_MODNAME " :  < No print function >\n");
     return;
   }
 
-  bstree_traverse_nodes_inorder(
-    tree,
-    RCSW_BSTREE_ROOT(tree),
-    (int (*)(const struct bstree* const, struct bstree_node*))bstree_node_print);
+  bstree_traverse_nodes_inorder(tree, bstree_root(tree), bstree_node_print);
 } /* bstree_print() */
 
 END_C_DECLS

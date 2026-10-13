@@ -18,42 +18,46 @@
 #include <stddef.h>
 
 #include "rcsw/core/compilers.h"
-
-/*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * \name Character classification
- *
- * ASCII-only, locale-independent tests on a single character. Each evaluates to
- * 1 or 0. \p c may be evaluated more than once.
- * @{
- */
-/** \brief Printable character (space through tilde). */
-#define RCSW_STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
-/** \brief A space. Tabs and newlines do not count. */
-#define RCSW_STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
-/** \brief Lowercase letter. */
-#define RCSW_STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
-/** \brief Uppercase letter. */
-#define RCSW_STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
-/** \brief Decimal digit. */
-#define RCSW_STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
-/** \brief Hexadecimal digit, either case. */
-#define RCSW_STDIO_ISHEX(c)                               \
-  (RCSW_STDIO_ISDIGIT(c) || ((c) >= 'a' && (c) <= 'f') || \
-       ((c) >= 'A' && (c) <= 'F')                         \
-     ? 1                                                  \
-     : 0)
-/** \brief Letter, either case. */
-#define RCSW_STDIO_ISALPHA(c) \
-  ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
-/** @} */
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * PUBLIC API
  ******************************************************************************/
 BEGIN_C_DECLS
+
+/**
+ * \name Character classification
+ *
+ * ASCII-only, locale-independent tests on a single character. Each returns 1
+ * or 0. Values outside 0-127 (including negative \c char values) are never in
+ * any class.
+ * @{
+ */
+/** \brief Printable character (space through tilde). */
+static inline int stdio_isprintable(int c) { return c >= ' ' && c <= '~'; }
+
+/** \brief A space. Tabs and newlines do not count. */
+static inline int stdio_isspace(int c) { return c == ' '; }
+
+/** \brief Lowercase letter. */
+static inline int stdio_islower(int c) { return c >= 'a' && c <= 'z'; }
+
+/** \brief Uppercase letter. */
+static inline int stdio_isupper(int c) { return c >= 'A' && c <= 'Z'; }
+
+/** \brief Decimal digit. */
+static inline int stdio_isdigit(int c) { return c >= '0' && c <= '9'; }
+
+/** \brief Hexadecimal digit, either case. */
+static inline int stdio_ishex(int c) {
+  return stdio_isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+/** \brief Letter, either case. */
+static inline int stdio_isalpha(int c) {
+  return stdio_islower(c) || stdio_isupper(c);
+}
+/** @} */
 
 /**
  * \brief Copy memory.
@@ -122,19 +126,21 @@ RCSW_API size_t stdio_strlen(const char* s) RCSW_PURE;
  * \return The length of the string.
  */
 
-RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize) RCSW_PURE;
+RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize);
 
 /**
- * \brief Reverse a string of known length.
+ * \brief Reverse a string of known length in place.
  *
- * Reverses a string of known length in O(N) time, because there is no need to
- * call strlen() to find the length of the string. Modified the original string
- * is by this function.
+ * O(\p len); no strlen() is needed because the length is given. The
+ * terminating NUL (if any) is not moved. Equivalent to
+ * \ref utils_arr8_reverse() on the string's bytes.
  *
  * \param s The string to reverse.
  * \param len Length of the string to reverse.
  */
-RCSW_API void stdio_strrev(char* s, size_t len);
+static inline void stdio_strrev(char* const s, size_t len) {
+  utils_arr8_reverse(s, len);
+}
 
 /**
  * \brief Search a string for another string.
@@ -236,15 +242,17 @@ RCSW_API int stdio_strcmp(const char* s1, const char* s2) RCSW_PURE;
  * \brief Replace a occurrences of one substring within another string with
  * a new substring.
  *
- * If new is not large enough to hold the new string formed by replacing all
- * occurrences of pattern with replacement, undefined behavior will occur.
+ * Nothing is allocated: \p new_str must be large enough to hold the string
+ * formed by replacing all occurrences of \p pattern with \p replacement,
+ * plus the NUL; otherwise the behavior is undefined.
  *
  * \param original The string to replacement stuff in.
  * \param pattern The substring to replace.
  * \param replacement The substring to replace occurrences of pattern with.
- * \param new_str The updated string.
+ * \param new_str Where to write the updated string. Must not overlap the
+ *                other arguments.
  *
- * \return The updated string.
+ * \return \p new_str, or NULL if an argument is NULL.
  */
 RCSW_API char* stdio_strrep(const char* __restrict__ original,
                             const char* __restrict__ pattern,

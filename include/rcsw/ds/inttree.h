@@ -21,23 +21,16 @@
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * Convenience macro for getting a reference to the root node in the tree
- */
-#define RCSW_INTTREE_ROOT(tree) ((struct inttree_node*)RCSW_BSTREE_ROOT(tree))
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 /**
  * A simple representation of an interval for use in an interval tree.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref inttree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) interval_data {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) interval_data {
   int32_t high;
   int32_t low;
 };
@@ -48,10 +41,11 @@ struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) interval_data {
  * Note that the first fields are identical to the ones in the bstree_node; this
  * is necessary for the casting to "up" the inheritance tree to work.
  *
-  Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref inttree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) inttree_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) inttree_node {
   uint8_t              key[RCSW_BSTREE_NODE_KEYSIZE];
   dptr_t*              data;
   struct inttree_node* left;
@@ -75,17 +69,6 @@ struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) inttree_node {
  */
 RCSW_LOCAL void inttree_init_helper(const struct bstree* tree);
 
-/**
- * \brief Fixup high field for all nodes above target node after an
- * insertion/deletion
- *
- * \param tree The interval tree handle.
- * \param node The leaf node to propagate fixes up the tree for.
- */
-
-RCSW_LOCAL void inttree_high_fixup(const struct bstree* tree,
-                                   struct inttree_node* node);
-
 /*******************************************************************************
  * Public API
  *
@@ -96,6 +79,15 @@ RCSW_LOCAL void inttree_high_fixup(const struct bstree* tree,
  *
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of an interval tree.
+ *
+ * As \ref bstree_root(), typed as a \c struct \c inttree_node*.
+ */
+static inline struct inttree_node* inttree_root(const struct bstree* const tree) {
+  return (struct inttree_node*)bstree_root(tree);
+}
+
 /**
  * \brief Determine if an interval tree is full.
  *
@@ -182,8 +174,10 @@ RCSW_API status_t inttree_insert(struct bstree*        tree,
 /**
  * \brief Initialize an interval tree.
  *
- * \p params->elt_size must be \c sizeof(struct interval_data); it is not set
- * automatically.
+ * \ref RCSW_DS_BSTREE_INT and \ref RCSW_DS_BSTREE_RB are added to
+ * \p params->flags, \p params->elt_size is set to
+ * \c sizeof(struct interval_data), and \p params->cmpkey is ignored (intervals
+ * are keyed on their low end). \p params itself is not modified.
  *
  * \param tree_in Caller storage for the handle, used only if \ref
  *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
@@ -192,13 +186,14 @@ RCSW_API status_t inttree_insert(struct bstree*        tree,
  *
  * \return The initialized tree, or NULL if an error occurred.
  */
-RCSW_API struct bstree* inttree_init(struct bstree*        tree_in,
-                                     struct bstree_config* params);
+RCSW_API struct bstree* inttree_init(struct bstree*              tree_in,
+                                     const struct bstree_config* params);
 
 /**
  * \brief Determine if the given interval overlaps any in the interval tree.
  *
- * To search the entire tree, pass \ref RCSW_INTTREE_ROOT(tree) as \p root.
+ * To search the entire tree, pass <tt>inttree_root(tree)</tt> (see \ref
+ * inttree_root()) as \p root.
  * (\c tree->root is a sentinel, not the root node.)
  *
  * \param tree The interval tree handle

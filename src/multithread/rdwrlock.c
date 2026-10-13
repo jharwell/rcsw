@@ -134,6 +134,7 @@ error:
  * Public API
  ******************************************************************************/
 struct rdwrlock* rdwrl_init(struct rdwrlock* const rdwr_in, uint32_t flags) {
+  RCSW_ER_MODULE_INIT();
   struct rdwrlock* rdwr = rcsw_alloc(rdwr_in,
                                      sizeof(struct rdwrlock),
                                      flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));

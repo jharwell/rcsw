@@ -14,11 +14,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "alg", "sort")
+#define RCSW_ER_MODID LOG4CL_ALG_SORT
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/er/client.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * Constants
@@ -48,22 +51,6 @@ static size_t arr_largest(const size_t* const array, size_t n_elts) {
 } /* arr_largest() */
 
 /**
- * \brief Swap two non-overlapping elements of any size.
- */
-static void sort_swap(uint8_t* a, uint8_t* b, size_t elt_size) {
-  uint8_t chunk[32];
-  while (elt_size > 0) {
-    size_t n = RCSW_MIN(elt_size, sizeof(chunk));
-    memcpy(chunk, a, n);
-    memcpy(a, b, n);
-    memcpy(b, chunk, n);
-    a += n;
-    b += n;
-    elt_size -= n;
-  } /* while() */
-} /* sort_swap() */
-
-/**
  * \brief Move the median of the first, middle, and last elements of [lo, hi]
  * to index lo, for use as the quicksort pivot.
  *
@@ -83,16 +70,16 @@ static void pivot_select(uint8_t* const arr,
 
   /* order a <= b <= c, then the median is in b */
   if (cmpe(b, a) < 0) {
-    sort_swap(a, b, elt_size);
+    utils_elt_swap(a, b, elt_size);
   }
   if (cmpe(c, b) < 0) {
-    sort_swap(b, c, elt_size);
+    utils_elt_swap(b, c, elt_size);
     if (cmpe(b, a) < 0) {
-      sort_swap(a, b, elt_size);
+      utils_elt_swap(a, b, elt_size);
     }
   }
   if (mid != lo) {
-    sort_swap(a, b, elt_size);
+    utils_elt_swap(a, b, elt_size);
   }
 } /* pivot_select() */
 
@@ -132,13 +119,13 @@ static int partition(void* const a,
     if (left >= right) {
       break;
     }
-    sort_swap(arr + ((size_t)left * elt_size),
-              arr + ((size_t)right * elt_size),
-              elt_size);
+    utils_elt_swap(arr + ((size_t)left * elt_size),
+                   arr + ((size_t)right * elt_size),
+                   elt_size);
   } /* for(;;) */
 
   if (right != min_index) {
-    sort_swap(pivot, arr + ((size_t)right * elt_size), elt_size);
+    utils_elt_swap(pivot, arr + ((size_t)right * elt_size), elt_size);
   }
   return right;
 } /* partition() */
@@ -235,7 +222,7 @@ status_t insertion_sort(void*  arr,
       if (cmpe(prev, curr) <= 0) {
         break;
       }
-      sort_swap(prev, curr, elt_size);
+      utils_elt_swap(prev, curr, elt_size);
     } /* for(j..) */
   } /* for(i..) */
   return OK;

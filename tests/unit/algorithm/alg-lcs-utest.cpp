@@ -16,6 +16,7 @@
 
 #include "rcsw/algorithm/lcs.h"
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* lcs_init() allocates its table internally */
 /*******************************************************************************
  * Test Helpers
  ******************************************************************************/
@@ -48,6 +49,7 @@ static void check_lcs(const char* x,
   lcs_destroy(&lcs_i);
   lcs_destroy(&lcs_r);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 /*******************************************************************************
  * Test Cases
@@ -62,6 +64,7 @@ CATCH_TEST_CASE("LCS - NULL Input Rejected", "[alg][lcs][noalloc]") {
   lcs_destroy(nullptr); /* must not crash */
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* lcs_init() allocates its table internally */
 CATCH_TEST_CASE("LCS - Known Cases", "[alg][lcs]") {
   CATCH_SECTION("ABCRCQ7Xz vs o15RCQ0Xz") {
     check_lcs("ABCRCq7Xz", "o15RCQ0Xz", 4, nullptr);
@@ -126,3 +129,11 @@ CATCH_TEST_CASE("lcs_iter can be called twice without leaking",
   CATCH_REQUIRE(4 == lcs.size);
   lcs_destroy(&lcs);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("lcs_init fails cleanly without a heap", "[alg][lcs][noalloc]") {
+  struct lcs_calculator lcs;
+  CATCH_REQUIRE(ERROR == lcs_init(&lcs, "ABCBDAB", "BDCABA"));
+}
+#endif /* RCSW_CONFIG_NOALLOC */

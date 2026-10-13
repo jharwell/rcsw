@@ -58,7 +58,7 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   };
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    config.flags = flags[i];
+    config.flags = flags[i] | TH_FORCED_FLAGS;
     test(&config, n_threads);
   }
 
@@ -67,12 +67,34 @@ static void run_test(mpool_test test, size_t n_threads = 1) {
   RCSW_ER_DEINIT();
 } /* test_runner() */
 
-static struct mpool* make_pool(size_t max_elts) {
+/*
+ * Caller-owned storage for one pool of up to 8 16-byte chunks made by
+ * make_pool(): used under RCSW_CONFIG_NOALLOC, where the library cannot
+ * allocate.
+ */
+struct pool_storage {
+  struct mpool        handle;
+  std::vector<dptr_t> elements;
+  std::vector<dptr_t> meta;
+};
+
+static struct mpool* make_pool(pool_storage& s, size_t max_elts) {
   struct mpool_config c;
   memset(&c, 0, sizeof(c));
   c.elt_size = 16;
   c.max_elts = max_elts;
+#if defined(RCSW_CONFIG_NOALLOC)
+  s.elements.resize(mpool_element_space(max_elts, c.elt_size) / sizeof(dptr_t) +
+                    1);
+  s.meta.resize(mpool_meta_space(max_elts) / sizeof(dptr_t) + 1);
+  c.elements = s.elements.data();
+  c.meta     = s.meta.data();
+  c.flags    = RCSW_NOALLOC_ALL;
+  return mpool_init(&s.handle, &c);
+#else
+  (void)s;
   return mpool_init(nullptr, &c);
+#endif
 }
 
 template <typename T>
@@ -230,7 +252,8 @@ CATCH_TEST_CASE(
   "mpool_release of an already-free chunk is rejected and does "
   "not corrupt the pool",
   "[multithread][mpool]") {
-  struct mpool* p  = make_pool(2);
+  pool_storage  s;
+  struct mpool* p  = make_pool(s, 2);
   void*         c0 = mpool_req(p);
   CATCH_REQUIRE(OK == mpool_release(p, c0));
   CATCH_REQUIRE(ERROR == mpool_release(p, c0));
@@ -250,7 +273,8 @@ CATCH_TEST_CASE(
 CATCH_TEST_CASE("mpool_timedreq rejects a NULL chunk pointer without "
                 "taking a chunk",
                 "[multithread][mpool]") {
-  struct mpool*   p  = make_pool(1);
+  pool_storage  s;
+  struct mpool*   p  = make_pool(s, 1);
   struct timespec to = {0, 20 * 1000 * 1000};
   CATCH_REQUIRE(ERROR == mpool_timedreq(p, &to, nullptr));
 
@@ -265,7 +289,8 @@ CATCH_TEST_CASE("mpool_timedreq rejects a NULL chunk pointer without "
 
 CATCH_TEST_CASE("mpool_ref_query rejects pointers that are not chunk starts",
                 "[multithread][mpool]") {
-  struct mpool* p    = make_pool(4);
+  pool_storage  s;
+  struct mpool* p    = make_pool(s, 4);
   auto*         base = reinterpret_cast<uint8_t*>(p->elements);
   CATCH_REQUIRE(0 == mpool_ref_query(p, base));
   CATCH_REQUIRE(-1 == mpool_ref_query(p, base + 1));      /* mid-chunk */
@@ -275,7 +300,8 @@ CATCH_TEST_CASE("mpool_ref_query rejects pointers that are not chunk starts",
 
 CATCH_TEST_CASE("mpool_ref_count reports errors as SIZE_MAX",
                 "[multithread][mpool]") {
-  struct mpool* p = make_pool(4);
+  pool_storage  s;
+  struct mpool* p = make_pool(s, 4);
   int           not_from_pool;
   CATCH_REQUIRE(SIZE_MAX == mpool_ref_count(p, &not_from_pool));
   mpool_destroy(p);
@@ -298,7 +324,8 @@ CATCH_TEST_CASE("mpool_req survives EINTR while waiting for a chunk",
   sa.sa_handler = on_usr1; /* no SA_RESTART: sem_wait returns EINTR */
   sigaction(SIGUSR1, &sa, &old_sa);
 
-  g_eintr_pool = make_pool(1);
+  pool_storage s;
+  g_eintr_pool = make_pool(s, 1);
   void* held   = mpool_req(g_eintr_pool); /* pool now empty */
 
   pthread_t t;
@@ -315,4 +342,101 @@ CATCH_TEST_CASE("mpool_req survives EINTR while waiting for a chunk",
   sigaction(SIGUSR1, &old_sa, nullptr);
   CATCH_REQUIRE(OK == mpool_release(g_eintr_pool, got));
   mpool_destroy(g_eintr_pool);
+}
+
+CATCH_TEST_CASE("mpool_element_space is exactly the chunk storage",
+                "[multithread][mpool]") {
+  constexpr size_t kChunks = 8;
+  constexpr size_t kSize   = 16;
+  CATCH_REQUIRE(kChunks * kSize == mpool_element_space(kChunks, kSize));
+
+  /* and that is enough for caller-provided storage */
+  dptr_t              elements[kChunks * kSize / sizeof(dptr_t)];
+  struct mpool_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size      = kSize;
+  c.max_elts      = kChunks;
+  c.elements      = elements;
+  c.flags         = RCSW_NOALLOC_DATA;
+#if defined(RCSW_CONFIG_NOALLOC)
+  /* no heap for the handle or the chunk metadata either */
+  std::vector<dptr_t> meta(mpool_meta_space(kChunks) / sizeof(dptr_t) + 1);
+  struct mpool        handle;
+  c.meta          = meta.data();
+  c.flags         = RCSW_NOALLOC_ALL;
+  struct mpool* p = mpool_init(&handle, &c);
+#else
+  struct mpool* p = mpool_init(nullptr, &c);
+#endif
+  CATCH_REQUIRE(nullptr != p);
+
+  auto* lo = reinterpret_cast<uint8_t*>(elements);
+  auto* hi = lo + sizeof(elements);
+  void* chunks[kChunks];
+  for (auto& chunk : chunks) {
+    chunk   = mpool_req(p);
+    auto* b = static_cast<uint8_t*>(chunk);
+    CATCH_REQUIRE(b >= lo);
+    CATCH_REQUIRE(b + kSize <= hi);
+  }
+  CATCH_REQUIRE(mpool_isfull(p));
+  for (auto* chunk : chunks) {
+    CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  }
+  mpool_destroy(p);
+}
+
+CATCH_TEST_CASE("an mpool chunk with an extra reference survives one release",
+                "[multithread][mpool]") {
+  pool_storage  s;
+  struct mpool* p = make_pool(s, 4);
+  void*         chunks[4];
+  for (auto& chunk : chunks) {
+    chunk = mpool_req(p);
+    CATCH_REQUIRE(nullptr != chunk);
+  }
+  CATCH_REQUIRE(mpool_isfull(p));
+
+  CATCH_REQUIRE(OK == mpool_ref_add(p, chunks[1]));
+  CATCH_REQUIRE(OK == mpool_release(p, chunks[1]));
+  CATCH_REQUIRE(1 == mpool_ref_count(p, chunks[1]));
+
+  for (auto* chunk : chunks) {
+    CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  }
+  CATCH_REQUIRE(mpool_isempty(p));
+  mpool_destroy(p);
+}
+
+CATCH_TEST_CASE("mpool_init with RCSW_NOALLOC_META needs the meta memory",
+                "[multithread][mpool]") {
+  struct mpool        pool;
+  struct mpool_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size = 16;
+  c.max_elts = 8;
+  c.meta     = nullptr; /* promised, but not provided */
+  c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META;
+  CATCH_REQUIRE(nullptr == mpool_init(&pool, &c));
+}
+
+CATCH_TEST_CASE("mpool_tryreq fails with ENOSPC instead of waiting",
+                "[multithread][mpool]") {
+  pool_storage  s;
+  struct mpool* p     = make_pool(s, 1);
+  void*         chunk = nullptr;
+  CATCH_REQUIRE(OK == mpool_tryreq(p, &chunk));
+  CATCH_REQUIRE(nullptr != chunk);
+
+  void* none = nullptr;
+  errno      = 0;
+  CATCH_REQUIRE(ERROR == mpool_tryreq(p, &none)); /* returns at once */
+  CATCH_REQUIRE(ENOSPC == errno);
+  CATCH_REQUIRE(nullptr == none);
+
+  CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  CATCH_REQUIRE(OK == mpool_tryreq(p, &none));
+  CATCH_REQUIRE(chunk == none);
+  CATCH_REQUIRE(OK == mpool_release(p, none));
+  mpool_destroy(p);
 }

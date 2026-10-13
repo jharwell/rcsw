@@ -22,7 +22,11 @@ char* stdio_strrep(const char* const __restrict__ original,
                    const char* const __restrict__ pattern,
                    const char* const __restrict__ replacement,
                    char* const __restrict__ new_str) {
-  RCSW_FPC_NV(NULL, NULL != original, NULL != pattern, NULL != replacement);
+  RCSW_FPC_NV(NULL,
+              NULL != original,
+              NULL != pattern,
+              NULL != replacement,
+              NULL != new_str);
   size_t      orilen = stdio_strlen(original);
   size_t      replen = stdio_strlen(replacement);
   size_t      patlen = stdio_strlen(pattern);
@@ -42,7 +46,10 @@ char* stdio_strrep(const char* const __restrict__ original,
     patcnt++;
   }
 
-  /* allocate memory for the new string */
+  /*
+   * Length of the result. replen - patlen may wrap when the replacement is
+   * shorter; unsigned arithmetic is modular, so the sum is still exact.
+   */
   size_t newlen   = orilen + (patcnt * (replen - patlen));
   new_str[newlen] = '\0';
 
@@ -65,17 +72,6 @@ char* stdio_strrep(const char* const __restrict__ original,
   stdio_strcpy(retptr, oriptr);
   return new_str;
 }
-
-void stdio_strrev(char* const s, size_t len) {
-  if (len < 2) {
-    return;
-  }
-  for (size_t i = 0, j = len - 1; i < j; ++i, --j) {
-    char tmp = s[i];
-    s[i]     = s[j];
-    s[j]     = tmp;
-  }
-} /* stdio_strrev() */
 
 size_t stdio_strlen(const char* const s) {
   RCSW_FPC_NV(0, NULL != s);

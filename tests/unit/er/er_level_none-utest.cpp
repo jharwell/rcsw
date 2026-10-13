@@ -52,24 +52,20 @@ static void silence_test() {
 
 static void dprintf_silence_test() {
   /*
-   * DPRINTF and DPRINT_TOK* are gated by ERL >= FATAL; at ERL_NONE they
-   * must expand to nothing.
+   * DPRINTF is gated by ERL >= FATAL; at ERL_NONE it
+   * must never execute.
    */
   int         x   = 42;
   std::string out = capture_stdout([&] {
-    DPRINTF("must not appear\n");
-    DPRINT_TOKD(x);
-    DPRINT_TOKX(x);
-    DPRINT_TOKF(x);
-    DPRINT_TOK(x);
+    DPRINTF("must not appear: %d\n", x);
   });
   CATCH_REQUIRE(out.empty());
 }
 
 static void syntax_test() {
   /*
-   * Every macro must remain syntactically legal when it expands to nothing
-   * so that user code needs no #ifdefs around individual log calls.
+   * Every macro must remain syntactically legal when it is disabled, so
+   * that user code needs no #ifdefs around individual log calls.
    * Reaching this point without a compile error proves the contract.
    */
   ER_FATAL("f");
@@ -79,11 +75,7 @@ static void syntax_test() {
   ER_DEBUG("d");
   ER_TRACE("t");
   int x = 1;
-  DPRINTF("dp\n");
-  DPRINT_TOKD(x);
-  DPRINT_TOKX(x);
-  DPRINT_TOKF(x);
-  DPRINT_TOK(x);
+  DPRINTF("dp %d\n", x);
 
   RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
@@ -115,6 +107,29 @@ done:
   CATCH_REQUIRE(reached);
 }
 
+/*
+ * Values computed only to be reported must not trigger unused-variable
+ * warnings when reporting is compiled out: the disabled macros still use their
+ * arguments. Promote the warnings to errors here so a regression fails the
+ * build.
+ */
+RCSW_WARNING_DISABLE_PUSH()
+#pragma GCC diagnostic error "-Wunused-variable"
+#pragma GCC diagnostic error "-Wunused-but-set-variable"
+static int report_only_values_test(int x) {
+  int only_reported = x * 2;
+  int set_then_reported = 0;
+  set_then_reported = x + 1;
+  ER_ERR("value %d", only_reported);
+  ER_DEBUG("value %d", set_then_reported);
+  int only_dprinted = x - 1;
+  DPRINTF("%d\n", only_dprinted);
+  int only_asserted = x;
+  ER_ASSERT(only_asserted >= 0, "negative: %d", only_asserted);
+  return x;
+}
+RCSW_WARNING_DISABLE_POP()
+
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
@@ -132,4 +147,9 @@ CATCH_TEST_CASE("ER None Assert Test", "[er][level_none][noalloc]") {
 }
 CATCH_TEST_CASE("ER None Check Flow Test", "[er][level_none][noalloc]") {
   er_check_still_flows_test();
+}
+CATCH_TEST_CASE("ER None arguments still count as used",
+                "[er][level_none][noalloc]") {
+  std::string out = capture_stdout([] { report_only_values_test(3); });
+  CATCH_REQUIRE(out.empty());
 }

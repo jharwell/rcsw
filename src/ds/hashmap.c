@@ -36,7 +36,7 @@ BEGIN_C_DECLS
  */
 static size_t hashmap_bucket_index(const struct hashmap* const map,
                                    const struct darray* const  bucket) {
-  return (size_t)(bucket - map->space.buckets) % map->n_buckets;
+  return (size_t)(bucket - map->space.buckets) % map->cfg.n_buckets;
 }
 
 /**
@@ -55,8 +55,8 @@ static struct darray* hashmap_query(const struct hashmap* const map,
   RCSW_FPC_NV(NULL, map != NULL, key != NULL);
 
   uint32_t hash = 0;
-  map->hash(key, RCSW_HASHMAP_KEYSIZE, &hash);
-  uint32_t bucket_n = (uint32_t)(hash % map->n_buckets);
+  map->cfg.hash(key, map->cfg.key_len, &hash);
+  uint32_t bucket_n = (uint32_t)(hash % map->cfg.n_buckets);
 
   if (hash_out != NULL) {
     *hash_out = hash;
@@ -76,7 +76,7 @@ static dptr_t* hashmap_db_alloc(const struct hashmap* const map) {
   int alloc_idx = allocm_alloc(map->space.db_map);
   RCSW_CHECK(-1 != alloc_idx);
   dptr_t* datablock = (void*)((uint8_t*)map->space.datablocks +
-                              ((size_t)alloc_idx * map->elt_size));
+                              ((size_t)alloc_idx * map->cfg.elt_size));
 
   ER_TRACE("Allocated data block %d/%zu", alloc_idx, map->max_elts);
 
@@ -100,7 +100,7 @@ static void hashmap_db_dealloc(const struct hashmap* const map,
   }
   size_t block_index =
     (size_t)((const uint8_t*)datablock - (uint8_t*)map->space.datablocks) /
-    (map->elt_size);
+    (map->cfg.elt_size);
 
   allocm_free(map->space.db_map, block_index);
 
@@ -110,8 +110,9 @@ static void hashmap_db_dealloc(const struct hashmap* const map,
 /**
  * \brief Locate the hashnode for a key.
  *
- * Looks in the bucket the key hashes to and, if linear probing is enabled,
- * in every other bucket (a key may have overflowed into any of them).
+ * Looks in the bucket the key hashes to and, if linear probing is enabled, in
+ * the next max_probe buckets: no node has ever been placed further from its
+ * home bucket than that.
  *
  * \param map The hashmap handle.
  * \param node A hashnode carrying the (zero-padded) key.
@@ -124,10 +125,10 @@ static void hashmap_find(const struct hashmap* const  map,
                          size_t                       home,
                          int*                         bucket_index,
                          int*                         node_index) {
-  size_t n_probe = (map->flags & RCSW_DS_HASHMAP_LINPROB) ? map->n_buckets : 1;
+  size_t n_probe = map->max_probe + 1; /* max_probe is 0 without LINPROB */
 
   for (size_t k = 0; k < n_probe; ++k) {
-    size_t b   = (home + k) % map->n_buckets;
+    size_t b   = (home + k) % map->cfg.n_buckets;
     int    idx = darray_idx_query(map->space.buckets + b, node);
     if (-1 != idx) {
       *bucket_index = (int)b;
@@ -140,16 +141,39 @@ static void hashmap_find(const struct hashmap* const  map,
 } /* hashmap_find() */
 
 /**
- * \brief Build the lookup hashnode for \p key (the full
- * RCSW_HASHMAP_KEYSIZE bytes are compared).
+ * \brief Build the lookup hashnode for \p key.
+ *
+ * Only key_len bytes are read from \p key; the rest of the stored key is
+ * zeroed, so comparing the full RCSW_HASHMAP_KEYSIZE bytes is exact.
  */
-static void hashmap_make_node(struct hashnode* node,
-                              const void*      key,
-                              uint32_t         hash) {
+static void hashmap_make_node(const struct hashmap* const map,
+                              struct hashnode*            node,
+                              const void*                 key,
+                              uint32_t                    hash) {
   memset(node, 0, sizeof(*node));
-  memcpy(node->key, key, RCSW_HASHMAP_KEYSIZE);
+  memcpy(node->key, key, map->cfg.key_len);
   node->hash = hash;
 } /* hashmap_make_node() */
+
+/**
+ * \brief Release everything a (possibly partially) initialized hashmap owns.
+ *
+ * \param map The hashmap handle, or NULL.
+ * \param n_buckets_init How many buckets were successfully initialized.
+ */
+static void hashmap_teardown(struct hashmap* const map, size_t n_buckets_init) {
+  if (NULL == map) {
+    return;
+  }
+  if (NULL != map->space.buckets) {
+    for (size_t i = 0; i < n_buckets_init; i++) {
+      darray_destroy(map->space.buckets + i);
+    } /* for(i..) */
+  }
+  rcsw_free(map->space.elements, map->cfg.flags & RCSW_NOALLOC_DATA);
+  rcsw_free(map->space.buckets, map->cfg.flags & RCSW_NOALLOC_META);
+  rcsw_free(map, map->cfg.flags & RCSW_NOALLOC_HANDLE);
+} /* hashmap_teardown() */
 
 /**
  * \brief Compare hashnodes for equality
@@ -161,8 +185,8 @@ static void hashmap_make_node(struct hashnode* node,
  */
 static int hashnode_cmp(const void* const n1, const void* const n2) {
   /*
-   * Compare the key bytes by offset: hashnodes live in byte-addressed bucket
-   * storage, so they need not be aligned for a struct pointer dereference.
+   * Compare the key bytes by offset rather than through struct pointers, so
+   * this does not depend on how the bucket storage is laid out.
    */
   return memcmp((const uint8_t*)n1 + offsetof(struct hashnode, key),
                 (const uint8_t*)n2 + offsetof(struct hashnode, key),
@@ -172,35 +196,36 @@ static int hashnode_cmp(const void* const n1, const void* const n2) {
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+/* NOLINTNEXTLINE(readability-function-size) */
 struct hashmap* hashmap_init(struct hashmap*                    map_in,
                              const struct hashmap_config* const params) {
   RCSW_FPC_NV(NULL,
               params != NULL,
               params->elt_size > 0,
-              params->sort_thresh != 0,
               params->n_buckets > 0,
               params->hash != NULL,
-              params->bsize > 0);
+              params->bsize > 0,
+              params->key_len <= RCSW_HASHMAP_KEYSIZE);
   /* Every operation hashes a key */
   ER_ASSERT(NULL != params->hash, "hashmap requires hash()");
   RCSW_ER_MODULE_INIT();
 
+  size_t          n_buckets_init = 0;
   struct hashmap* map =
     rcsw_alloc(map_in,
                sizeof(struct hashmap),
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(map);
 
-  map->flags              = params->flags;
-  map->hash               = params->hash;
-  map->n_buckets          = params->n_buckets;
-  map->elt_size           = params->elt_size;
+  map->cfg = *params;
+  map->cfg.key_len =
+    (0 == params->key_len) ? RCSW_HASHMAP_KEYSIZE : params->key_len;
   map->max_elts           = params->bsize * params->n_buckets;
   map->stats.n_nodes      = 0;
   map->stats.n_collisions = 0;
   map->stats.n_adds       = 0;
   map->stats.n_addfails   = 0;
-  map->sort_thresh        = params->sort_thresh;
+  map->max_probe          = 0;
   map->sorted             = false;
   map->space.elements     = NULL;
   map->space.buckets      = NULL;
@@ -215,7 +240,7 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
 
   /* Allocate space for hashnodes+datablocks+datablock alloc map */
   size_t element_bytes =
-    hashmap_element_space(map->n_buckets, params->bsize, map->elt_size);
+    hashmap_element_space(map->cfg.n_buckets, params->bsize, map->cfg.elt_size);
   map->space.elements =
     rcsw_alloc(params->elements,
                element_bytes,
@@ -241,17 +266,22 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
     bucket_params.flags |= RCSW_DS_SORTED;
   }
 
-  map->space.datablocks = (void*)((uint8_t*)map->space.elements +
-                                  ds_meta_space(map->n_buckets * params->bsize));
+  map->space.datablocks =
+    (void*)((uint8_t*)map->space.elements +
+            ds_meta_space(map->cfg.n_buckets * params->bsize));
   size_t db_space_per_bucket =
     darray_element_space(params->bsize, params->elt_size);
-  map->space.hashnodes = (void*)((uint8_t*)map->space.datablocks +
-                                 (db_space_per_bucket * map->n_buckets));
+  /* padded so the hashnodes start dptr_t-aligned, matching
+   * hashmap_element_space() */
+  map->space.hashnodes =
+    (void*)((uint8_t*)map->space.datablocks +
+            utils_align_size(db_space_per_bucket * map->cfg.n_buckets,
+                             sizeof(dptr_t)));
 
   size_t hn_space_per_bucket =
     darray_element_space(params->bsize, sizeof(struct hashnode));
 
-  for (size_t i = 0; i < map->n_buckets; i++) {
+  for (size_t i = 0; i < map->cfg.n_buckets; i++) {
     /*
      * Each bucket is given a bsize chunk of the allocated space for
      * hashnodes
@@ -259,35 +289,29 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
     bucket_params.elements =
       (void*)((uint8_t*)map->space.hashnodes + (i * hn_space_per_bucket));
     RCSW_CHECK(darray_init(map->space.buckets + i, &bucket_params) != NULL);
+    ++n_buckets_init;
   } /* for() */
 
-  ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu sort_thresh=%d flags=0x%08x",
+  ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu flags=0x%08x",
            map->max_elts,
-           map->n_buckets,
+           map->cfg.n_buckets,
            params->bsize,
-           map->sort_thresh,
-           map->flags);
+           map->cfg.flags);
   return map;
 
 error:
-  hashmap_destroy(map);
+  /* Only undo what was set up: buckets may be NULL or partially initialized */
+  hashmap_teardown(map, n_buckets_init);
   errno = ENOMEM;
   return NULL;
 } /* hashmap_init() */
 
 void hashmap_destroy(struct hashmap* map) {
   RCSW_FPC_V(NULL != map);
-  if (map->flags & RCSW_NOALLOC_DATA) {
+  if (map->cfg.flags & RCSW_NOALLOC_DATA) {
     allocm_init(map->space.db_map, map->max_elts);
   }
-
-  for (size_t i = 0; i < map->n_buckets; i++) {
-    darray_destroy(map->space.buckets + i);
-  } /* for(j..) */
-
-  rcsw_free(map->space.elements, map->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(map->space.buckets, map->flags & RCSW_NOALLOC_META);
-  rcsw_free(map, map->flags & RCSW_NOALLOC_HANDLE);
+  hashmap_teardown(map, map->cfg.n_buckets);
 } /* hashmap_destroy() */
 
 void* hashmap_data_get(struct hashmap* const map, const void* const key) {
@@ -296,8 +320,7 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   uint32_t        hash   = 0;
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
-  map->last_used = bucket;
+  hashmap_make_node(map, &node, key, hash);
 
   int bucket_index = -1;
   int node_index   = -1;
@@ -311,8 +334,8 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   }
 
   /*
-   * Copy the hashnode out rather than dereferencing it in place: buckets are
-   * byte arrays, so the node may not be aligned for a direct pointer load.
+   * Copy the hashnode out rather than dereferencing it in place, so this does
+   * not depend on how the bucket storage is laid out.
    */
   darray_idx_serve(map->space.buckets + bucket_index, &node, (size_t)node_index);
   return node.data;
@@ -327,8 +350,7 @@ status_t hashmap_add(struct hashmap* const map,
   struct darray*  bucket = hashmap_query(map, key, &hash);
   size_t          home   = hashmap_bucket_index(map, bucket);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
-  map->last_used = bucket;
+  hashmap_make_node(map, &node, key, hash);
 
   /* Reject duplicates in every bucket the key could occupy */
   int found_bucket = -1;
@@ -344,13 +366,14 @@ status_t hashmap_add(struct hashmap* const map,
 
   if (darray_isfull(bucket)) {
     bucket = NULL;
-    if (map->flags & RCSW_DS_HASHMAP_LINPROB) {
+    if (map->cfg.flags & RCSW_DS_HASHMAP_LINPROB) {
       /* Linear probe for the next bucket with space */
-      for (size_t k = 1; k < map->n_buckets; ++k) {
+      for (size_t k = 1; k < map->cfg.n_buckets; ++k) {
         struct darray* candidate =
-          map->space.buckets + ((home + k) % map->n_buckets);
+          map->space.buckets + ((home + k) % map->cfg.n_buckets);
         if (!darray_isfull(candidate)) {
-          bucket = candidate;
+          bucket         = candidate;
+          map->max_probe = RCSW_MAX(map->max_probe, k);
           break;
         }
       } /* for(k..) */
@@ -367,7 +390,7 @@ status_t hashmap_add(struct hashmap* const map,
     goto error;
   }
   node.data = datablock;
-  memcpy(datablock, data, map->elt_size);
+  memcpy(datablock, data, map->cfg.elt_size);
 
   if (darray_insert(bucket, &node, bucket->current) != OK) {
     ER_ERR("Bucket insertion failed!");
@@ -378,17 +401,6 @@ status_t hashmap_add(struct hashmap* const map,
   map->stats.n_collisions += (bucket->current != 1);
   map->stats.n_nodes++;
   map->stats.n_adds++;
-
-  /*
-   * Sort the hashmap if the following are met:
-   *
-   * - RCSW_DS_SORTED was passed
-   * - The sort threshold has been reached
-   */
-  if ((map->flags & RCSW_DS_SORTED) && map->sort_thresh != -1 &&
-      (map->stats.n_adds % (size_t)map->sort_thresh) == 0) {
-    RCSW_CHECK(OK == hashmap_sort(map));
-  }
   map->sorted = bucket->sorted;
   return OK;
 
@@ -403,8 +415,7 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
   uint32_t        hash   = 0;
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
-  map->last_used = bucket;
+  hashmap_make_node(map, &node, key, hash);
 
   int bucket_index = -1;
   int node_index   = -1;
@@ -438,7 +449,7 @@ error:
 status_t hashmap_sort(struct hashmap* const map) {
   RCSW_FPC_NV(ERROR, map != NULL);
 
-  for (size_t i = 0; i < map->n_buckets; i++) {
+  for (size_t i = 0; i < map->cfg.n_buckets; i++) {
     RCSW_CHECK(OK == darray_sort(&map->space.buckets[i], EXEC_ITER));
   } /* for() */
 
@@ -452,7 +463,7 @@ error:
 status_t hashmap_map(struct hashmap* const map, void (*f)(void* e)) {
   RCSW_FPC_NV(ERROR, map != NULL, f != NULL);
 
-  for (size_t i = 0; i < map->n_buckets; i++) {
+  for (size_t i = 0; i < map->cfg.n_buckets; i++) {
     darray_map(&map->space.buckets[i], f);
   }
   return OK;
@@ -463,7 +474,7 @@ status_t hashmap_inject(struct hashmap* const map,
                         void* result) {
   RCSW_FPC_NV(ERROR, map != NULL, f != NULL, result != NULL);
 
-  for (size_t i = 0; i < map->n_buckets; i++) {
+  for (size_t i = 0; i < map->cfg.n_buckets; i++) {
     darray_inject(&map->space.buckets[i], f, result);
   }
   return OK;
@@ -472,17 +483,70 @@ status_t hashmap_inject(struct hashmap* const map,
 status_t hashmap_clear(struct hashmap* const map) {
   RCSW_FPC_NV(ERROR, map != NULL);
 
-  for (size_t i = 0; i < map->n_buckets; ++i) {
+  for (size_t i = 0; i < map->cfg.n_buckets; ++i) {
     RCSW_CHECK(darray_clear(map->space.buckets + i) == OK);
   }
   allocm_init(map->space.db_map, map->max_elts);
   map->stats.n_nodes = 0;
+  map->max_probe     = 0;
   map->sorted        = false;
   return OK;
 
 error:
   return ERROR;
 } /* hashmap_clear() */
+
+/**
+ * \brief Expected lookup cost of the current keys relative to a random hash.
+ *
+ * With b_j keys hashing to bucket j, n keys and m buckets, this is
+ *
+ *   sum_j b_j (b_j + 1) / 2  /  ((n / 2m) (n + 2m - 1))
+ *
+ * The numerator is the total number of comparisons needed to look up every
+ * key in a chained table; the denominator is its expected value for a
+ * uniformly random hash. The keys' home buckets are counted, not where linear
+ * probing placed them, so the counts are recomputed from the stored hashes in
+ * windows of a fixed number of buckets to avoid allocating.
+ */
+static double hashmap_hash_quality(const struct hashmap* const map) {
+  double n = (double)map->stats.n_nodes;
+  double m = (double)map->cfg.n_buckets;
+  if (0 == map->stats.n_nodes) {
+    return 0.0;
+  }
+  double sum = 0.0;
+
+  if (!(map->cfg.flags & RCSW_DS_HASHMAP_LINPROB)) {
+    /* Every key is in its home bucket */
+    for (size_t j = 0; j < map->cfg.n_buckets; ++j) {
+      double b = (double)darray_size(&map->space.buckets[j]);
+      sum += b * (b + 1.0) / 2.0;
+    } /* for(j..) */
+  } else {
+    size_t counts[256];
+    for (size_t base = 0; base < map->cfg.n_buckets;
+         base += RCSW_ARRAY_ELTS(counts)) {
+      size_t width = RCSW_MIN(RCSW_ARRAY_ELTS(counts), map->cfg.n_buckets - base);
+      memset(counts, 0, sizeof(counts));
+      for (size_t i = 0; i < map->cfg.n_buckets; ++i) {
+        const struct darray* bucket = &map->space.buckets[i];
+        for (size_t k = 0; k < darray_size(bucket); ++k) {
+          const struct hashnode* node = darray_data_get(bucket, k);
+          size_t                 home = node->hash % map->cfg.n_buckets;
+          if (home >= base && home < base + width) {
+            ++counts[home - base];
+          }
+        } /* for(k..) */
+      } /* for(i..) */
+      for (size_t j = 0; j < width; ++j) {
+        double b = (double)counts[j];
+        sum += b * (b + 1.0) / 2.0;
+      } /* for(j..) */
+    } /* for(base..) */
+  }
+  return sum / ((n / (2.0 * m)) * (n + 2.0 * m - 1.0));
+} /* hashmap_hash_quality() */
 
 status_t hashmap_gather(const struct hashmap* const map,
                         struct hashmap_stats* const stats) {
@@ -491,7 +555,6 @@ status_t hashmap_gather(const struct hashmap* const map,
   /* copy over all current stats */
   *stats = map->stats;
 
-  stats->n_buckets = map->n_buckets;
   stats->collision_ratio =
     (0 == map->stats.n_adds)
       ? 0.0
@@ -504,16 +567,17 @@ status_t hashmap_gather(const struct hashmap* const map,
   double average = 0;
   double bsize   = (double)map->space.buckets[0].max_elts;
 
-  for (size_t i = 0; i < map->n_buckets; i++) {
+  for (size_t i = 0; i < map->cfg.n_buckets; i++) {
     size_t n = map->space.buckets[i].current;
     max      = RCSW_MAX(n, max);
     min      = RCSW_MIN(n, min);
     average += (double)n / bsize;
   } /* for(i..) */
 
-  stats->average_util = average / (double)map->n_buckets;
+  stats->average_util = average / (double)map->cfg.n_buckets;
   stats->max_util     = (double)max / bsize;
   stats->min_util     = (double)min / bsize;
+  stats->hash_quality = hashmap_hash_quality(map);
   return OK;
 } /* hashmap_gather() */
 
@@ -527,7 +591,7 @@ void hashmap_print(const struct hashmap* const map) {
   RCSW_CHECK(hashmap_gather(map, &stats) == OK);
 
   DPRINTF("\n******************** Hashmap Print ********************\n");
-  DPRINTF("Total buckets   : %zu\n", stats.n_buckets);
+  DPRINTF("Total buckets   : %zu\n", map->cfg.n_buckets);
   DPRINTF("Bucket capacity : %d\n", map->space.buckets[0].max_elts);
   DPRINTF("Total nodes     : %zu\n", stats.n_nodes);
   DPRINTF("Successful adds : %zu\n", stats.n_adds);
@@ -539,50 +603,11 @@ void hashmap_print(const struct hashmap* const map) {
   DPRINTF("Max bucket utilization     : %.8f\n", stats.max_util);
   DPRINTF("Min bucket utilization     : %.8f\n", stats.min_util);
   DPRINTF("Average bucket utilization : %.8f\n", stats.average_util);
+  DPRINTF("Hash quality (1.0 = random) : %.4f\n", stats.hash_quality);
   DPRINTF("\n");
 
 error:
   return;
 } /* hashmap_print() */
-
-void hashmap_print_dist(const struct hashmap* const map) {
-  if (NULL == map) {
-    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
-    return;
-  }
-  DPRINTF("\n----------------------------------------\n");
-  DPRINTF("Hashmap Utilization Distribution");
-  DPRINTF("\n----------------------------------------\n\n");
-
-  /* get maximum bucket node count */
-  size_t max_node_count = 0;
-  for (size_t i = 0; i < map->n_buckets; ++i) {
-    max_node_count =
-      RCSW_MAX(darray_size(&map->space.buckets[i]), max_node_count);
-  }
-  if (max_node_count == 0) {
-    DPRINTF(RCSW_ER_MODNAME " : < empty >\n");
-    return;
-  }
-  size_t xmax = RCSW_MIN(max_node_count, (size_t)80);
-
-  for (size_t i = 0; i < map->n_buckets; ++i) {
-    DPRINTF("Bucket %-4zu| ", i);
-    if (darray_size(&map->space.buckets[i]) == 0) {
-      DPRINTF("\n");
-      continue;
-    }
-
-    size_t size  = darray_size(&map->space.buckets[i]);
-    double scale = (double)size / (double)max_node_count;
-    size_t fill  = (size_t)(scale * (double)xmax);
-    for (size_t j = 0; j < fill; ++j) {
-      DPRINTF("*");
-    } /* for(j..) */
-
-    DPRINTF("\n");
-  }
-  DPRINTF("\nHistogram normalized w.r.t. max bucket fill.\n");
-} /* hashmap_print_dist() */
 
 END_C_DECLS

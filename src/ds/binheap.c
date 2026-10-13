@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/binheap.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.binheap"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "binheap")
 #define RCSW_ER_MODID LOG4CL_DS_BINHEAP
 #include <string.h>
 
@@ -58,8 +58,8 @@ static void binheap_swap(struct binheap* const heap, size_t i1, size_t i2) {
  */
 static void binheap_sift_down(struct binheap* const heap, size_t m) {
   RCSW_FPC_V(NULL != heap);
-  size_t l_child = RCSW_BINHEAP_LCHILD(m);
-  size_t r_child = RCSW_BINHEAP_RCHILD(m);
+  size_t l_child = binheap_lchild(m);
+  size_t r_child = binheap_rchild(m);
   size_t n_elts  = binheap_size(heap);
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
@@ -120,21 +120,20 @@ static void binheap_sift_up(struct binheap* const heap, size_t i) {
   /*
    *  While child has higher priority than parent, replace child with parent.
    *  Set child index to parent.  Get next parent, and repeat until top of
-   *  heap is reached.
+   *  heap is reached. The heap is 1-indexed: index 1 is the top and slot 0 is
+   *  scratch space, so stop at 1 rather than comparing against slot 0.
    */
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
-    while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
-                          darray_data_get(&heap->arr, i)) > 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
+    while (i > 1 && heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
+                                   darray_data_get(&heap->arr, i)) > 0) {
+      binheap_swap(heap, i, binheap_parent(i));
+      i = binheap_parent(i);
     } /* while() */
   } else {
-    while (i != 0 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
-                          darray_data_get(&heap->arr, i)) < 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
+    while (i > 1 && heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
+                                   darray_data_get(&heap->arr, i)) < 0) {
+      binheap_swap(heap, i, binheap_parent(i));
+      i = binheap_parent(i);
     } /* while() */
   }
 }

@@ -45,15 +45,15 @@ enum minimon_help_type {
 BEGIN_C_DECLS
 
 /**
- * \brief Optional interrupt-related callbacks invoked around command
- * execution.
+ * \brief Optional interrupt-related callbacks.
  *
- * If provided, \c mask_all is called before a command executes and \c
- * clear_all is called after.
+ * Used only by the \c jump command: before branching, it calls \c clear_all
+ * and then \c mask_all (each if non-NULL), so the jump target starts with no
+ * interrupts pending or enabled.
  */
 struct minimon_irq_callbacks {
-  void (*clear_all)(void);  ///< Unmask interrupts after a command.
-  void (*mask_all)(void);   ///< Mask interrupts before a command.
+  void (*clear_all)(void);  ///< Clear all pending interrupts.
+  void (*mask_all)(void);   ///< Mask (disable) all interrupts.
 };
 
 /**
@@ -165,12 +165,17 @@ struct minimon_cmd {
   /**
    * \brief Command implementation function.
    *
-   * Called by the monitor with the matched command name and any parsed
-   * arguments (in the order defined by \ref minimon_cmd.config). Retrieve
-   * arguments with \c va_start() / \c va_arg(). The same hook may be registered
-   * for multiple commands; use \p cmdname to distinguish them.
+   * Called by the monitor with the matched command name and an array of
+   * \ref MINIMON_CMD_MAX_ARGS arguments, in the order defined by \ref
+   * minimon_cmd.config. Read \c args[i].num for a \ref MINIMON_PARAM_UINT32
+   * parameter and \c args[i].s for a \ref MINIMON_PARAM_STR parameter.
+   * Omitted optional arguments hold their \ref minimon_cmd_param.dflt, and
+   * unused slots are zeroed. Addresses are 32-bit numbers; convert with \c
+   * (T*)(uintptr_t)num. The same hook may be registered for multiple
+   * commands; use \p cmdname to distinguish them. \p args is only valid
+   * for the duration of the call.
    */
-  void (*hook)(const char* cmdname, ...);
+  void (*hook)(const char* cmdname, const union minimon_cmd_arg* args);
 
   /**
    * \brief Array of parameter definitions for the command.
@@ -209,27 +214,25 @@ struct minimon_cmd {
  * Each \ref minimon_cmd specifies a name, an optional short alias, a help
  * string, a \ref minimon_cmd.hook function pointer, and up to \ref
  * MINIMON_CMD_MAX_ARGS parameter descriptors. The hook receives the
- * command name and any parsed arguments via variadic arguments; retrieve
- * them with \c va_start() / \c va_arg().
+ * command name and the parsed arguments as an array of \ref
+ * minimon_cmd_arg; see \ref minimon_cmd.hook.
  *
  * \note The struct itself is the monitor's internal state (one instance,
  * inside RCSW); applications configure it through \ref minimon_init().
  */
 struct minimon {
+  /**
+   * The configuration passed to \ref minimon_init() (or the defaults, if NULL
+   * was passed). \ref minimon_config.cmds is used in place; \ref
+   * minimon_config.n_cmds is 0 if it is NULL.
+   */
+  struct minimon_config cfg;
+
+  /** Always \ref stdio_putchar() / \ref stdio_getchar(). */
   struct minimon_stream_callbacks stream0;
-  struct minimon_stream_callbacks stream1;
 
   /** Built-ins in use: all of them, or just HELP. */
   size_t n_builtin_cmds;
-
-  /** The caller's commands, used in place (\ref minimon_config.cmds). */
-  const struct minimon_cmd* user_cmds;
-
-  /** # entries in \c user_cmds. */
-  size_t n_user_cmds;
-
-  struct minimon_irq_callbacks irqcb;
-  bool_t                       help_on_start;
 };
 
 /** \brief Pointer to a \c void(void) function, e.g. a \c jump target. */

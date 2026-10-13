@@ -20,11 +20,18 @@
 #include "rcsw/core/core.h"
 #include "rcsw/ds/darray.h"
 #include "rcsw/ds/ds.h"
+#include "rcsw/utils/align.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-/** Size of keys for hashmap */
+/**
+ * \brief Size of the key storage in each \ref hashnode, in bytes.
+ *
+ * Keys are stored zero-padded to this size, and two keys are equal if all
+ * \ref RCSW_HASHMAP_KEYSIZE bytes are equal. The maximum value of
+ * \ref hashmap_config.key_len.
+ */
 #define RCSW_HASHMAP_KEYSIZE 64
 
 /*******************************************************************************
@@ -54,12 +61,31 @@ struct hashmap_config {
   size_t elt_size;
 
   /**
-   * Configuration flags. See \ref hashmap.flags for valid flags.
+   * Run time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE.
+   * - \ref RCSW_NOALLOC_DATA.
+   * - \ref RCSW_NOALLOC_META.
+   * - \ref RCSW_DS_HASHMAP_LINPROB
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 
   /** Hashing function to use. Must be non-NULL. */
   status_t (*hash)(const void* const key, size_t len, uint32_t* out);
+
+  /**
+   * Length of every key in bytes, at most \ref RCSW_HASHMAP_KEYSIZE. All
+   * hashmap functions read exactly this many bytes from the keys passed to
+   * them, and only these bytes are hashed; the hashmap zero-pads the stored copy.
+   *
+   * 0 means \ref RCSW_HASHMAP_KEYSIZE, so that every key must point to that many
+   * readable bytes, with any unused bytes zeroed by the caller.
+   */
+  size_t key_len;
 
   /**
    * Initial size of hash buckets; passed to \ref darray_init() as \ref
@@ -72,12 +98,6 @@ struct hashmap_config {
    * Number of buckets for hashmap.
    */
   size_t n_buckets;
-
-  /**
-   * Number of inserts before automatically sorting. -1 = do not automatically
-   * sort.
-   */
-  int sort_thresh;
 };
 
 /**
@@ -86,16 +106,33 @@ struct hashmap_config {
  * Provides detailed info about how well the hashmap is working.
  */
 struct hashmap_stats {
-  size_t n_buckets;   ///< Number of buckets in hashmap
   size_t n_nodes;     ///< Number of hashnodes in hashmap. Updated on add/remove.
   size_t n_adds;      ///< Number of adds to hashmap since last reset
   size_t n_addfails;  ///< Number of failures to add to hashmap since last reset
   size_t n_collisions;     ///< Number of collisions when adding since last reset
-  double collision_ratio;  ///< Ratio of colliding/non-colliding adds
+  double collision_ratio;  ///< Colliding adds / total successful adds
   bool_t sorted;           ///< Is the hashmap sorted?
   double max_util;         ///< Max bucket utilization
   double min_util;         ///< Min bucket utilization
   double average_util;     ///< Average bucket utilization
+
+  /**
+   * How evenly the hash function spreads the current keys over the buckets,
+   * relative to an ideal random hash: the expected number of key comparisons
+   * for a lookup, divided by what a uniformly random hash would give for the
+   * same number of keys and buckets.
+   *
+   * - About 1.0: as good as random (0.95-1.05 is normal sampling noise).
+   * - Above 1.0: keys cluster in some buckets; e.g. 2.0 means lookups do
+   *   twice the work of a random hash. Try another hash function, or a
+   *   prime number of buckets if the keys share low-order bit patterns.
+   * - Below 1.0: better than random (possible for structured keys).
+   *
+   * Uses the bucket each key hashes to (its home bucket), so the result is
+   * the same with or without \ref RCSW_DS_HASHMAP_LINPROB. 0 if the hashmap
+   * is empty. Collect a representative set of keys before reading it.
+   */
+  double hash_quality;
 };
 
 /**
@@ -103,8 +140,9 @@ struct hashmap_stats {
  *
  * Element space is chunked into 3 parts (in order):
  *
- * - An allocation map of data blocks (array of max_elts ints)
- * - Datablock array (max_elts * elt_size)
+ * - An allocation map of data blocks (see \ref allocm_map_bytes())
+ * - Datablock array (max_elts * elt_size, padded to a multiple of
+ *   sizeof(\ref dptr_t) so the hashnodes after it stay aligned)
  * - Metadata array of \ref hashnode
  *
  * Meta space from \ref hashmap_config.meta is used for the \ref darray handles
@@ -139,14 +177,13 @@ struct hashmap_space_mgmt {
  */
 struct hashmap {
   /**
-   * Hashing function. Can't be NULL (duh).
+   * The configuration the hashmap was initialized with. \ref
+   * hashmap_config.key_len is the key length in use (\ref RCSW_HASHMAP_KEYSIZE
+   * if 0 was passed). \ref hashmap_config.meta and \ref
+   * hashmap_config.elements are as passed (NULL unless caller-provided memory
+   * is used); \ref hashmap.space holds the views into them.
    */
-  status_t (*hash)(const void* const key, size_t len, uint32_t* out);
-
-  /**
-   * Last bucket that was added to/removed from.
-   */
-  struct darray* last_used;
+  struct hashmap_config cfg;
 
   /**
    * Management of all node and element space for the hashmap.
@@ -154,19 +191,10 @@ struct hashmap {
   struct hashmap_space_mgmt space;
 
   /**
-   * Size of data elements for hashmap.
-   */
-  size_t elt_size;
-
-  /**
-   * Max number of of elements allowed in the hashmap.
+   * Max number of of elements allowed in the hashmap: \ref
+   * hashmap_config.bsize x \ref hashmap_config.n_buckets.
    */
   size_t max_elts;
-
-  /**
-   * Number of of buckets in the hashmap. Does not change after initialization.
-   */
-  size_t n_buckets;
 
   /**
    * Current hashmap statistics
@@ -174,30 +202,17 @@ struct hashmap {
   struct hashmap_stats stats;
 
   /**
-   * Number of of successful adds to wait before automatically sorting
-   * hashmap. -1 = do not automatically sort hashmap (sorting must be done
-   * manually) via \ref hashmap_sort().
+   * Only used with \ref RCSW_DS_HASHMAP_LINPROB. The furthest past its home
+   * bucket any node has been placed since init or the last \ref hashmap_clear().
+   * Lookups probe only this many buckets after the home bucket. Never decreases
+   * on remove, so it is always an upper bound. Always 0 without linear probing.
    */
-  int sort_thresh;
+  size_t max_probe;
 
   /**
    * Is the hashmap currently sorted?
    */
   bool_t sorted;
-
-  /**
-   * Run time configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE.
-   * - \ref RCSW_NOALLOC_DATA.
-   * - \ref RCSW_NOALLOC_META.
-   * - \ref RCSW_DS_HASHMAP_LINPROB
-   * - \ref RCSW_DS_SORTED
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
 };
 
 /**
@@ -206,10 +221,11 @@ struct hashmap {
  * As you woulde xpect for an associative array element, this is a key-value
  * pair
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref hashnode.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) hashnode {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) hashnode {
   /**
    * Key for key-value pair.
    */
@@ -254,8 +270,9 @@ static inline size_t hashmap_element_space(size_t n_buckets,
                                            size_t elt_size) {
   size_t max_elts = n_buckets * bucket_size;
   return ds_meta_space(max_elts) +
-         darray_element_space(max_elts, sizeof(struct hashnode)) +
-         ds_elt_space_simple(max_elts, elt_size);
+         utils_align_size(ds_elt_space_simple(max_elts, elt_size),
+                          sizeof(dptr_t)) +
+         darray_element_space(max_elts, sizeof(struct hashnode));
 }
 
 /**
@@ -294,9 +311,9 @@ RCSW_API void hashmap_destroy(struct hashmap* map);
 /**
  * \brief Sort a hashmap
  *
- * Sorts each bucket in. This function only needs to be called if \ref
- * RCSW_DS_SORTED was not passed during initialization AND sort_threshold was
- * set to -1.
+ * Sorts every bucket, so that lookups in it use binary search. Not needed if
+ * \ref RCSW_DS_SORTED was passed during initialization: the buckets are then
+ * kept sorted on every insertion.
  *
  * \param map The hashmap handle.
  *
@@ -317,7 +334,8 @@ RCSW_API status_t hashmap_clear(struct hashmap* map);
  * \brief Returns the data from the hashmap corresponding to the given key.
  *
  * \param map The hashmap handle.
- * \param key Key to match with
+ * \param key Key to match with. Must point to \ref
+ *            hashmap_config.key_len readable bytes.
  *
  * \return The data, or NULL if an error occurred or the data was not found.
  */
@@ -329,11 +347,17 @@ RCSW_API void* hashmap_data_get(struct hashmap* map, const void* key);
  * This function takes the key and data for the new node, calculates the hash
  * for it, and then adds it to the correct bucket. If the bucket is currently
  * full, it returns failure, unless \ref RCSW_DS_HASHMAP_LINPROB was passed
- * during initialization. If the node already exists in the bucket, failure is
- * returned (no duplicates are allowed).
+ * during initialization, in which case the node goes into the next bucket with
+ * space. If the key already exists, failure is returned (no duplicates are
+ * allowed).
+ *
+ * With linear probing, the duplicate check (and every lookup of an absent key)
+ * looks at the home bucket plus \ref hashmap.max_probe buckets after it, so it
+ * stays as cheap as without probing until nodes start to spill.
  *
  * \param map The hashmap handle.
- * \param key The key to add.
+ * \param key The key to add. Must point to \ref hashmap_config.key_len readable
+ *            bytes.
  * \param data The data to add.
  *
  * \return \ref status_t
@@ -346,11 +370,12 @@ RCSW_API status_t hashmap_add(struct hashmap* map,
  * \brief Remove a node from a hashmap
  *
  * This function searches the hashmap for the specified key. If it is found, it
- * is removed from the appropriate bucket. If it is not found, no operation is
- * performed, and success is returned.
+ * is removed from the appropriate bucket. If it is not found, nothing is
+ * changed and ERROR is returned with errno=ENOENT.
  *
  * \param map The hashmap handle.
- * \param key The key for the data to remove.
+ * \param key The key for the data to remove. Must point to \ref
+ *            hashmap_config.key_len readable bytes.
  *
  * \return \ref status_t
  */
@@ -397,6 +422,11 @@ RCSW_API void hashmap_print(const struct hashmap* map);
 /**
  * \brief Gather statistics about current state of hashmap.
  *
+ * Takes O(n_nodes) time without \ref RCSW_DS_HASHMAP_LINPROB. With it, the
+ * \ref hashmap_stats.hash_quality computation rescans the nodes once for every
+ * 256 buckets (no memory is allocated), so this is meant for diagnostics, not
+ * for hot paths.
+ *
  * \param map The hashmap handle.
  * \param stats The statistics to be filled.
  *
@@ -404,15 +434,5 @@ RCSW_API void hashmap_print(const struct hashmap* map);
  */
 RCSW_API status_t hashmap_gather(const struct hashmap* map,
                                  struct hashmap_stats* stats);
-
-/**
- * \brief Print the hashmap distribution.
- *
- * The function provides a visual representation of how many elements are in
- * the hashmap and what their distribution is across the buckets.
- *
- * \param map The hashmap handle.
- */
-RCSW_API void hashmap_print_dist(const struct hashmap* map);
 
 END_C_DECLS

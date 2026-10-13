@@ -74,8 +74,10 @@ Higher-Level Constructs
      - Thread-safe fixed-size block allocator. Used by threads to
        request/release memory chunks of a specified size. Reference-counted;
        a block is returned to the pool only when all holders have released
-       it. Particularly useful in publisher-subscriber settings
-       (e.g., :c:struct:`swbus`).
+       it. :c:func:`mpool_req` blocks until a chunk is free;
+       :c:func:`mpool_tryreq` fails at once with ``ENOSPC`` instead.
+       Particularly useful in publisher-subscriber settings (e.g.,
+       :c:struct:`swbus`).
      - :c:struct:`mpool`
 
    * - Producer-consumer queue

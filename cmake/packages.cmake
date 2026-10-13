@@ -34,6 +34,16 @@ set(LIBRA_TEST_HARNESS_LIBS Catch2::Catch2WithMain printf::printf)
 set(LIBRA_ANALYSIS_LANGUAGE C)
 set(LIBRA_CLANG_EXTRA_ARGS -fcomment-block-commands=rcswdoc)
 set(LIBRA_SPHINXDOC_COMMAND "uv run sphinx-build")
+set(LIBRA_CLANG_TIDY_CATEGORIES
+    clang-analyzer-core
+    readability
+    bugprone
+    cert
+    performance
+    portability
+    concurrency
+    misc
+    google)
 
 # rcsw needs printf's source tree (see _rcsw_apply_includes() in targets.cmake).
 # CPM leaves printf_SOURCE_DIR unset when it uses an installed printf package

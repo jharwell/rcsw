@@ -42,7 +42,8 @@ static void run_test(inttree_test_t test) {
   /* Each flag in isolation */
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
     for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
-      config.flags = flags[i] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
+      config.flags =
+        flags[i] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT | th::kForcedFlags;
       test(m, &config);
     }
   }
@@ -53,7 +54,7 @@ static void run_test(inttree_test_t test) {
       uint32_t applied =
         flags[i] | flags[j] | RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
       for (int m = 1; m <= TH_NUM_ITEMS; ++m) {
-        config.flags = applied;
+        config.flags = applied | th::kForcedFlags;
         test(m, &config);
       }
     }
@@ -134,8 +135,7 @@ static void remove_test(int len, struct bstree_config* config) {
     g_n_elements = (int)tree->current;
     if (tree->current > 0) {
       CATCH_REQUIRE(bstree_traverse(tree,
-                                    reinterpret_cast<th::bst::bst_verify_cb>(
-                                      th::bst::verify_nodes_int),
+                                    th::bst::verify_nodes_int,
                                     TRAVERSE_INORDER) == OK);
     }
   }
@@ -198,7 +198,7 @@ static void overlap_test(int len, struct bstree_config* config) {
   for (int i = 0; i < len; ++i) {
     struct interval_data* result =
       (interval_data*)inttree_overlap_search(tree,
-                                             RCSW_INTTREE_ROOT(tree),
+                                             inttree_root(tree),
                                              &search_arr[i]);
 
     if (overlap_arr[i]) {
@@ -211,12 +211,13 @@ static void overlap_test(int len, struct bstree_config* config) {
   bstree_destroy(tree);
 }
 
-struct bstree* make_inttree(struct bstree_config* c) {
+struct bstree* make_inttree(struct bstree_config* c, th::bst::tree_storage& s) {
   memset(c, 0, sizeof(*c));
   c->elt_size = sizeof(struct interval_data);
   c->max_elts = -1;
   c->flags    = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
-  return inttree_init(nullptr, c);
+  return inttree_init(th::bst::with_storage(s, c, th::bst::tree_kind::inttree),
+                      c);
 }
 
 /*******************************************************************************
@@ -238,7 +239,9 @@ CATCH_TEST_CASE("inttree_init does not modify the caller's config",
   c.elt_size = sizeof(struct interval_data);
   c.max_elts = -1;
   c.flags    = RCSW_DS_BSTREE_RB | RCSW_DS_BSTREE_INT;
-  struct bstree* t = inttree_init(nullptr, &c);
+  th::bst::tree_storage s;
+  struct bstree*        t = inttree_init(
+    th::bst::with_storage(s, &c, th::bst::tree_kind::inttree), &c);
   CATCH_REQUIRE(nullptr != t);
   CATCH_REQUIRE(c.cmpkey == th::cmp_int);
   bstree_destroy(t);
@@ -246,8 +249,9 @@ CATCH_TEST_CASE("inttree_init does not modify the caller's config",
 
 CATCH_TEST_CASE("inttree orders keys correctly across the full int32 range",
                 "[ds][inttree]") {
-  struct bstree_config c;
-  struct bstree*       t = make_inttree(&c);
+  struct bstree_config  c;
+  th::bst::tree_storage s;
+  struct bstree*        t = make_inttree(&c, s);
   for (int32_t low : {2000000000, -2000000000, 0, -1, 1}) {
     struct interval_data d;
     d.low  = low;
@@ -266,8 +270,9 @@ CATCH_TEST_CASE(
   "inttree keeps max_high correct at every node, including the "
   "root, across inserts and removes",
   "[ds][inttree]") {
-  struct bstree_config c;
-  struct bstree*       t = make_inttree(&c);
+  struct bstree_config  c;
+  th::bst::tree_storage s;
+  struct bstree*        t = make_inttree(&c, s);
   std::mt19937         rng(1234);
   std::vector<int32_t> lows;
   for (int32_t i = 0; i < 64; ++i) {
@@ -281,13 +286,13 @@ CATCH_TEST_CASE(
     d.high = low + static_cast<int32_t>(rng() % 500);
     CATCH_REQUIRE(OK == inttree_insert(t, &d));
     int32_t m;
-    CATCH_REQUIRE(th::bst::max_high_ok(t, RCSW_INTTREE_ROOT(t), &m));
+    CATCH_REQUIRE(th::bst::max_high_ok(t, inttree_root(t), &m));
   }
   std::shuffle(lows.begin(), lows.end(), rng);
   for (size_t i = 0; i < lows.size() / 2; ++i) {
     CATCH_REQUIRE(OK == inttree_remove(t, &lows[i]));
     int32_t m;
-    CATCH_REQUIRE(th::bst::max_high_ok(t, RCSW_INTTREE_ROOT(t), &m));
+    CATCH_REQUIRE(th::bst::max_high_ok(t, inttree_root(t), &m));
   }
   bstree_destroy(t);
 }
@@ -299,13 +304,92 @@ CATCH_TEST_CASE("inttree rejects a second interval with the same low endpoint",
    * second interval with the same low is a duplicate (EEXIST). Documented
    * limitation; change this test if duplicate lows become supported.
    */
-  struct bstree_config c;
-  struct bstree*       t = make_inttree(&c);
+  struct bstree_config  c;
+  th::bst::tree_storage s;
+  struct bstree*        t = make_inttree(&c, s);
   struct interval_data a = {.high = 10, .low = 0};
   struct interval_data b = {.high = 20, .low = 0};
   CATCH_REQUIRE(OK == inttree_insert(t, &a));
   errno = 0;
   CATCH_REQUIRE(ERROR == inttree_insert(t, &b));
   CATCH_REQUIRE(EEXIST == errno);
+  bstree_destroy(t);
+}
+
+CATCH_TEST_CASE("inttree_init needs no flags or element size from the caller",
+                "[ds][inttree]") {
+  struct bstree_config c;
+  memset(&c, 0, sizeof(c));
+  c.max_elts       = -1;
+  th::bst::tree_storage s;
+  struct bstree*        t = inttree_init(
+    th::bst::with_storage(s, &c, th::bst::tree_kind::inttree), &c);
+  CATCH_REQUIRE(nullptr != t);
+  /* the caller's config is untouched (beyond any storage it was given) */
+  CATCH_REQUIRE((RCSW_NONE | th::kForcedFlags) == c.flags);
+  CATCH_REQUIRE(0 == c.elt_size);
+  CATCH_REQUIRE(sizeof(struct interval_data) == t->cfg.elt_size);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_INT);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_RB);
+
+  struct interval_data iv[] = {{.high = 20, .low = 10},
+                               {.high = 40, .low = 30},
+                               {.high = 60, .low = 50}};
+  for (auto& d : iv) {
+    CATCH_REQUIRE(OK == inttree_insert(t, &d));
+  }
+  struct interval_data hit_q  = {.high = 36, .low = 35};
+  struct interval_data miss_q = {.high = 49, .low = 41};
+  struct inttree_node* hit =
+    inttree_overlap_search(t, inttree_root(t), &hit_q);
+  CATCH_REQUIRE(nullptr != hit);
+  CATCH_REQUIRE(30 == reinterpret_cast<struct interval_data*>(hit->data)->low);
+  CATCH_REQUIRE(nullptr ==
+                inttree_overlap_search(t, inttree_root(t), &miss_q));
+  bstree_destroy(t);
+}
+
+CATCH_TEST_CASE("inttree_overlap_search agrees with a brute-force scan",
+                "[ds][inttree]") {
+  struct bstree_config  c;
+  th::bst::tree_storage s;
+  struct bstree*        t = make_inttree(&c, s);
+
+  std::uniform_int_distribution<int32_t> low_dist(0, 999);
+  std::uniform_int_distribution<int32_t> len_dist(0, 29);
+  std::uniform_int_distribution<int32_t> qlen_dist(0, 19);
+  std::vector<struct interval_data>      present;
+  for (int i = 0; i < 100; ++i) {
+    struct interval_data d;
+    d.low  = low_dist(th::make_rng());
+    d.high = d.low + len_dist(th::make_rng());
+    if (OK == inttree_insert(t, &d)) { /* duplicate lows are rejected */
+      present.push_back(d);
+    }
+  }
+
+  auto check = [&]() {
+    for (int q = 0; q < 2000; ++q) {
+      struct interval_data query;
+      query.low  = low_dist(th::make_rng());
+      query.high = query.low + qlen_dist(th::make_rng());
+      bool expected = std::any_of(
+        present.begin(), present.end(), [&](const struct interval_data& d) {
+          return d.low <= query.high && query.low <= d.high;
+        });
+      bool found = nullptr !=
+                   inttree_overlap_search(t, inttree_root(t), &query);
+      CATCH_REQUIRE(expected == found);
+    }
+  };
+  check();
+
+  /* again after removing half of the intervals */
+  size_t half = present.size() / 2;
+  for (size_t i = 0; i < half; ++i) {
+    CATCH_REQUIRE(OK == inttree_remove(t, &present[i].low));
+  }
+  present.erase(present.begin(), present.begin() + half);
+  check();
   bstree_destroy(t);
 }

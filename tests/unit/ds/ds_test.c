@@ -13,6 +13,8 @@
  ******************************************************************************/
 #include "tests/unit/ds/ds_test.h"
 
+#include <stdio.h>
+
 #include "rcsw/ds/hashmap.h"
 
 /*******************************************************************************
@@ -41,6 +43,11 @@ void th_printn(const void* node) {
           *(int*)hashnode->data);
 }
 
-int RCSW_WEAK th_putchar(int c) { return c; }
+/*
+ * Default for test builds that route stdio through th_putchar
+ * (RCSW_CONFIG_STDIO_PUTCHAR=th_putchar). It must really print: tests such as
+ * minimon-utest capture stdout and check it. stdio-utest overrides it.
+ */
+int RCSW_WEAK th_putchar(int c) { return putchar(c); }
 
 END_C_DECLS

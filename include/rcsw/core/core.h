@@ -30,16 +30,6 @@
 /** 1E3 */
 #define RCSW_E3 1000
 
-/**
- * \brief For comparison with 0.0 for floats which gives reasonable results.
- */
-#define RCSW_FLOAT_TOL 0.00000001
-
-/**
- * \brief For comparison with 0.0 for doubles which gives reasonable results.
- */
-#define RCSW_DOUBLE_TOL 0.00000000001
-
 /******************************************************************************
  * Types
  ******************************************************************************/
@@ -204,27 +194,6 @@ typedef enum {
 /* clang-format on */
 
 /**
- * \def RCSW_IS_BETWEENO(n, low, high)
- *
- * Readability macro for determining if something is between an upper and lower
- * bound (open=exclusive).
- *
- * You can obviously do this without a macro, but this is (1) more self
- * documenting, and (2) less error prone.
- */
-/* clang-format off */
-#define RCSW_IS_BETWEENO(n, low, high)         \
-  ({                                           \
-    typeof(n)    _n  = (n);                    \
-    typeof(low)  _lo = (low);                  \
-    typeof(high) _hi = (high);                 \
-    (void)(&_n == &_lo); /* type-same check */ \
-    (void)(&_n == &_hi);                       \
-    _n > _lo && _n < _hi;                      \
-  })
-/* clang-format on */
-
-/**
  * \def RCSW_IS_BETWEENHO(n, low, high)
  *
  * Readability macro for determining if something is between an upper and lower
@@ -315,10 +284,12 @@ typedef enum {
  * function has cleanup work to do on failure (freeing memory, closing handles,
  * etc.).
  */
-#define RCSW_CHECK(cond)        \
-  if (RCSW_UNLIKELY(!(cond))) { \
-    goto error;                 \
-  }
+#define RCSW_CHECK(cond)          \
+  do {                            \
+    if (RCSW_UNLIKELY(!(cond))) { \
+      goto error;                 \
+    }                             \
+  } while (0)
 
 /**
  * \def RCSW_CHECK_PTR(ptr) Check a pointer \c ptr in a function.
@@ -420,20 +391,17 @@ typedef enum {
 /*******************************************************************************
  * Other Macros
  ******************************************************************************/
-#ifndef __cplusplus
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-
 /**
- * \def RCSW_STATIC_ASSERT Compile time asserts for size, alignment, etc.
+ * \def RCSW_STATIC_ASSERT
+ *
+ * Compile time asserts for size, alignment, etc.
+ *
+ * RCSW requires C11 (or C++11), which provide static assertions natively.
  */
+#if defined(__cplusplus)
+#define RCSW_STATIC_ASSERT(...) static_assert(__VA_ARGS__)
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #define RCSW_STATIC_ASSERT(...) _Static_assert(__VA_ARGS__)
 #else
-
-#define RCSW_STATIC_ASSERT(expr, msg)                                  \
-  enum { RCSW_JOIN(RCSW_STATIC_ASSERT, __LINE__) = (1 / (!!(expr))) }; \
-  (void)(sizeof(msg))
-
-#endif /* __STDC_VERSION__ */
-
-#endif /* __cplusplus */
+#error "RCSW requires C11 or later"
+#endif

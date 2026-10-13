@@ -27,12 +27,17 @@ BEGIN_C_DECLS
 /**
  * \brief Get the monotonic system time.
  *
+ * \note Bare metal has no system clock: this stub always returns {0, 0}.
+ * Code needing time (e.g., grind) must be given a clock of its own.
+ *
  * \return The time.
  */
 RCSW_API struct timespec clock_monotime(void);
 
 /**
  * \brief Get the real system time.
+ *
+ * \note Bare metal has no system clock: this stub always returns {0, 0}.
  *
  * \return The time.
  */

@@ -52,7 +52,22 @@ int cmp_int(const void* const a, const void* const b) {
 /* Compares only the first int of an 80-byte element */
 int cmp_big(const void* const a, const void* const b) { return cmp_int(a, b); }
 
-struct darray* make_int_array(int max_elts, size_t init_size, uint32_t flags) {
+/*
+ * Storage for one int darray made by make_int_array(). Heap builds let the
+ * library allocate (so growth is exercised). Under RCSW_CONFIG_NOALLOC there is
+ * no heap: the array gets this handle and space instead, and an unbounded
+ * max_elts becomes kIntArrayElts.
+ */
+constexpr int kIntArrayElts = 64;
+struct int_array_storage {
+  struct darray handle;
+  dptr_t        space[(kIntArrayElts * sizeof(int)) / sizeof(dptr_t)];
+};
+
+struct darray* make_int_array(int_array_storage* s,
+                              int                max_elts,
+                              size_t             init_size,
+                              uint32_t           flags) {
   struct darray_config c;
   memset(&c, 0, sizeof(c));
   c.cmpe      = cmp_int;
@@ -60,7 +75,19 @@ struct darray* make_int_array(int max_elts, size_t init_size, uint32_t flags) {
   c.max_elts  = max_elts;
   c.init_size = init_size;
   c.flags     = flags;
+#if defined(RCSW_CONFIG_NOALLOC)
+  if (-1 == c.max_elts) {
+    c.max_elts = kIntArrayElts;
+  }
+  CATCH_REQUIRE(darray_element_space(c.max_elts, sizeof(int)) <=
+                sizeof(s->space));
+  c.elements = s->space;
+  c.flags |= RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+  return darray_init(&s->handle, &c);
+#else
+  (void)s;
   return darray_init(nullptr, &c);
+#endif
 }
 
 void append(struct darray* arr, int v) {
@@ -413,12 +440,14 @@ CATCH_TEST_CASE("darray Sort Test", "[ds][darray]") {
   run_test<element2>(sort_test<element2>);
   run_test<element1>(sort_test<element1>);
 }
+#if !defined(RCSW_CONFIG_NOALLOC) /* darray_copy()/darray_filter() always allocate the new handle */
 CATCH_TEST_CASE("darray Copy Test", "[ds][darray]") {
   run_test<element8>(copy_test<element8>);
   run_test<element4>(copy_test<element4>);
   run_test<element2>(copy_test<element2>);
   run_test<element1>(copy_test<element1>);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 CATCH_TEST_CASE("darray Map Test", "[ds][darray]") {
   run_test<element8>(map_test<element8>);
   run_test<element4>(map_test<element4>);
@@ -437,12 +466,14 @@ CATCH_TEST_CASE("darray Iterator Test", "[ds][darray]") {
   run_test<element2>(iter_test<element2>);
   run_test<element1>(iter_test<element1>);
 }
+#if !defined(RCSW_CONFIG_NOALLOC) /* darray_copy()/darray_filter() always allocate the new handle */
 CATCH_TEST_CASE("darray Filter Test", "[ds][darray]") {
   run_test<element8>(filter_test<element8>);
   run_test<element4>(filter_test<element4>);
   run_test<element2>(filter_test<element2>);
   run_test<element1>(filter_test<element1>);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 CATCH_TEST_CASE("darray Binary Search Test", "[ds][darray]") {
   run_test<element8>(binarysearch_test<element8>);
   run_test<element4>(binarysearch_test<element4>);
@@ -458,7 +489,9 @@ CATCH_TEST_CASE("darray Print Test", "[ds][darray]") {
   config.elt_size = sizeof(element4);
   config.max_elts = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
-  struct darray* arr = darray_init(nullptr, &config);
+  config.flags = RCSW_NOALLOC_HANDLE | th::kForcedFlags;
+  struct darray  myarr;
+  struct darray* arr = darray_init(&myarr, &config);
   CATCH_REQUIRE(arr != nullptr);
   darray_print(nullptr); /* must not crash */
   darray_print(arr);     /* empty */
@@ -472,7 +505,8 @@ CATCH_TEST_CASE("darray Print Test", "[ds][darray]") {
 
 CATCH_TEST_CASE("darray_idx_query returns the FIRST matching index",
                 "[ds][darray]") {
-  struct darray* arr = make_int_array(-1, 4, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, -1, 4, RCSW_NONE);
   for (int v : {5, 7, 5}) {
     append(arr, v);
   }
@@ -485,7 +519,8 @@ CATCH_TEST_CASE(
   "darray: unsorted insert after darray_sort() invalidates "
   "the cached sorted state",
   "[ds][darray]") {
-  struct darray* arr = make_int_array(-1, 4, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, -1, 4, RCSW_NONE);
   for (int v : {5, 7, 5}) {
     append(arr, v);
   }
@@ -506,7 +541,8 @@ CATCH_TEST_CASE(
   "darray: unordered remove after darray_sort() invalidates "
   "the cached sorted state",
   "[ds][darray]") {
-  struct darray* arr = make_int_array(-1, 8, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, -1, 8, RCSW_NONE);
   for (int v : {1, 2, 3, 4, 5, 6}) {
     append(arr, v);
   }
@@ -522,7 +558,8 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("darray_remove preserves relative order with RCSW_DS_ORDERED",
                 "[ds][darray]") {
-  struct darray* arr = make_int_array(-1, 8, RCSW_DS_ORDERED);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, -1, 8, RCSW_DS_ORDERED);
   for (int v : {10, 20, 30, 40, 50}) {
     append(arr, v);
   }
@@ -535,11 +572,13 @@ CATCH_TEST_CASE("darray_remove preserves relative order with RCSW_DS_ORDERED",
   darray_destroy(arr);
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises heap growth */
 CATCH_TEST_CASE(
   "darray_resize to exactly the current size keeps every "
   "element",
   "[ds][darray]") {
-  struct darray* arr = make_int_array(-1, 4, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, -1, 4, RCSW_NONE);
   for (int v : {0, 1, 2, 3}) {
     append(arr, v);
   }
@@ -554,7 +593,8 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("darray_resize rejects sizes whose byte count overflows",
                 "[ds][darray]") {
-  struct darray* arr     = make_int_array(-1, 4, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr     = make_int_array(&arr_s, -1, 4, RCSW_NONE);
   size_t         old_cap = darray_capacity(arr);
   /* (SIZE_MAX/4 + 2) * sizeof(int) wraps around to a tiny allocation */
   size_t bad_size = (SIZE_MAX / sizeof(int)) + 2;
@@ -562,6 +602,7 @@ CATCH_TEST_CASE("darray_resize rejects sizes whose byte count overflows",
   CATCH_REQUIRE(old_cap == darray_capacity(arr));
   darray_destroy(arr);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE("darray_sort sorts elements larger than 64 bytes",
                 "[ds][darray]") {
@@ -572,7 +613,16 @@ CATCH_TEST_CASE("darray_sort sorts elements larger than 64 bytes",
     c.elt_size         = 80;
     c.max_elts         = -1;
     c.init_size        = 4;
+#if defined(RCSW_CONFIG_NOALLOC)
+    static dptr_t        space[(4 * 80) / sizeof(dptr_t)];
+    static struct darray handle;
+    c.max_elts         = 4;
+    c.elements         = space;
+    c.flags            = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+    struct darray* arr = darray_init(&handle, &c);
+#else
     struct darray* arr = darray_init(nullptr, &c);
+#endif
     CATCH_REQUIRE(nullptr != arr);
 
     unsigned char buf[80];
@@ -589,8 +639,10 @@ CATCH_TEST_CASE("darray_sort sorts elements larger than 64 bytes",
   }
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* darray_copy()/darray_filter() always allocate the new handle */
 CATCH_TEST_CASE("darray_copy of a full, bounded array succeeds", "[ds][darray]") {
-  struct darray* arr = make_int_array(4, 2, RCSW_NONE);
+  int_array_storage arr_s{};
+  struct darray* arr = make_int_array(&arr_s, 4, 2, RCSW_NONE);
   for (int v : {0, 1, 2, 3}) {
     append(arr, v);
   }
@@ -605,6 +657,7 @@ CATCH_TEST_CASE("darray_copy of a full, bounded array succeeds", "[ds][darray]")
   darray_destroy(copy);
   darray_destroy(arr);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE(
   "darray_init rejects RCSW_NOALLOC_DATA with an unbounded "
@@ -624,7 +677,8 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("darray honors RCSW_ZALLOC for caller-provided element space",
                 "[ds][darray]") {
-  static dptr_t space[16];
+  /* sized in bytes: dptr_t is RCSW_CONFIG_PTR_ALIGN bytes */
+  static dptr_t space[(16 * sizeof(int)) / sizeof(dptr_t)];
   memset(space, 0xAB, sizeof(space));
 
   struct darray_config c;
@@ -634,8 +688,9 @@ CATCH_TEST_CASE("darray honors RCSW_ZALLOC for caller-provided element space",
   c.max_elts         = 16;
   c.init_size        = 16;
   c.elements         = space;
-  c.flags            = RCSW_NOALLOC_DATA | RCSW_ZALLOC;
-  struct darray* arr = darray_init(nullptr, &c);
+  c.flags            = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA | RCSW_ZALLOC;
+  static struct darray handle;
+  struct darray*       arr = darray_init(&handle, &c);
   CATCH_REQUIRE(nullptr != arr);
 
   const unsigned char* bytes = reinterpret_cast<const unsigned char*>(space);
@@ -667,8 +722,9 @@ CATCH_TEST_CASE(
   c.max_elts         = 8;
   c.init_size        = 8;
   c.elements         = base;
-  c.flags            = RCSW_NOALLOC_DATA;
-  struct darray* arr = darray_init(nullptr, &c);
+  c.flags            = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+  static struct darray handle;
+  struct darray*       arr = darray_init(&handle, &c);
   CATCH_REQUIRE(nullptr != arr);
 
   uint64_t v = 0x1122334455667788ULL;
@@ -680,3 +736,60 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(out == v);
   darray_destroy(arr);
 }
+
+CATCH_TEST_CASE("RCSW_DS_SORTED darray stays sorted across inserts and removes",
+                "[ds][darray]") {
+  std::uniform_int_distribution<int> len_dist(0, 50);
+  std::uniform_int_distribution<int> val_dist(0, 29);
+  for (int trial = 0; trial < 300; ++trial) {
+    int_array_storage arr_s{};
+    struct darray* arr = make_int_array(&arr_s, -1, 1, RCSW_DS_SORTED);
+    int            len = len_dist(th::make_rng());
+    for (int i = 0; i < len; ++i) {
+      int v = val_dist(th::make_rng());
+      /* the index is ignored: sorted arrays insert in order */
+      CATCH_REQUIRE(OK == darray_insert(arr, &v, 0));
+      if (i % 3 == 0 && darray_size(arr) > 1) {
+        std::uniform_int_distribution<size_t> idx(0, darray_size(arr) - 1);
+        CATCH_REQUIRE(OK == darray_remove(arr, nullptr, idx(th::make_rng())));
+      }
+    }
+    for (size_t i = 1; i < darray_size(arr); ++i) {
+      CATCH_REQUIRE(at(arr, i - 1) <= at(arr, i));
+    }
+    darray_destroy(arr);
+  }
+}
+
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises heap growth */
+CATCH_TEST_CASE("darray_data_copy replaces the destination's contents",
+                "[ds][darray]") {
+  int_array_storage src_s{};
+  struct darray* src = make_int_array(&src_s, -1, 1, RCSW_NONE);
+  int_array_storage dst_s{};
+  struct darray* dst = make_int_array(&dst_s, -1, 1, RCSW_NONE);
+  for (int i = 0; i < 10; ++i) {
+    append(src, i);
+  }
+  append(dst, 99);
+
+  /* the heap-backed destination grows to fit */
+  CATCH_REQUIRE(OK == darray_data_copy(dst, src));
+  CATCH_REQUIRE(10 == darray_size(dst));
+  for (int i = 0; i < 10; ++i) {
+    CATCH_REQUIRE(at(dst, i) == i);
+  }
+
+  /* a destination too small for the source is left alone */
+  int_array_storage small_s{};
+  struct darray* small = make_int_array(&small_s, 5, 1, RCSW_NONE);
+  errno                = 0;
+  CATCH_REQUIRE(ERROR == darray_data_copy(small, src));
+  CATCH_REQUIRE(ENOSPC == errno);
+  CATCH_REQUIRE(0 == darray_size(small));
+
+  darray_destroy(small);
+  darray_destroy(dst);
+  darray_destroy(src);
+}
+#endif /* !RCSW_CONFIG_NOALLOC */

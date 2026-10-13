@@ -11,6 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #include "ds/inttree_node.h"
@@ -29,6 +30,37 @@ _Static_assert(sizeof(struct inttree_node) == sizeof(struct bstree_node),
                "inttree_node must be the same size as bstree_node");
 _Static_assert(sizeof(struct ostree_node) == sizeof(struct bstree_node),
                "ostree_node must be the same size as bstree_node");
+
+/*
+ * The generic bstree code accesses ostree/inttree nodes through a
+ * struct bstree_node*, so every member they share must be at the same offset,
+ * and the variant-specific trailing member (count/max_high) must overlay
+ * bstree_node.tmp. With natural alignment (no packing) the layout follows from
+ * the platform ABI; these checks make any mismatch a build error instead of
+ * silent corruption.
+ */
+#define BSTREE_NODE_SAME_OFFSET(TYPE, MEMBER, BST_MEMBER)                      \
+  _Static_assert(                                                              \
+    offsetof(struct TYPE, MEMBER) == offsetof(struct bstree_node, BST_MEMBER), \
+    #TYPE "." #MEMBER " must overlay bstree_node." #BST_MEMBER)
+
+BSTREE_NODE_SAME_OFFSET(ostree_node, key, key);
+BSTREE_NODE_SAME_OFFSET(ostree_node, data, data);
+BSTREE_NODE_SAME_OFFSET(ostree_node, left, left);
+BSTREE_NODE_SAME_OFFSET(ostree_node, right, right);
+BSTREE_NODE_SAME_OFFSET(ostree_node, parent, parent);
+BSTREE_NODE_SAME_OFFSET(ostree_node, red, red);
+BSTREE_NODE_SAME_OFFSET(ostree_node, count, tmp);
+
+BSTREE_NODE_SAME_OFFSET(inttree_node, key, key);
+BSTREE_NODE_SAME_OFFSET(inttree_node, data, data);
+BSTREE_NODE_SAME_OFFSET(inttree_node, left, left);
+BSTREE_NODE_SAME_OFFSET(inttree_node, right, right);
+BSTREE_NODE_SAME_OFFSET(inttree_node, parent, parent);
+BSTREE_NODE_SAME_OFFSET(inttree_node, red, red);
+BSTREE_NODE_SAME_OFFSET(inttree_node, max_high, tmp);
+
+#undef BSTREE_NODE_SAME_OFFSET
 
 /*******************************************************************************
  * Public API
@@ -50,7 +82,7 @@ struct bstree_node* bstree_node_create(const struct bstree* const tree,
    * Data may be NULL if creating the dummy root node
    */
   if (NULL != data_in) {
-    ds_elt_copy(node->data, data_in, tree->elt_size);
+    ds_elt_copy(node->data, data_in, tree->cfg.elt_size);
   }
 
   /*
@@ -93,10 +125,10 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree,
   if (datablock == NULL) {
     return;
   }
-  if (tree->flags & RCSW_NOALLOC_DATA) {
+  if (tree->cfg.flags & RCSW_NOALLOC_DATA) {
     size_t idx =
       (size_t)((uint8_t*)datablock - (uint8_t*)tree->space.datablocks) /
-      tree->elt_size;
+      tree->cfg.elt_size;
 
     allocm_free(tree->space.db_map, idx);
   } else {
@@ -107,13 +139,13 @@ void bstree_node_datablock_dealloc(const struct bstree* const tree,
 void* bstree_node_datablock_alloc(const struct bstree* const tree) {
   void* datablock = NULL;
 
-  if (tree->flags & RCSW_NOALLOC_DATA) {
+  if (tree->cfg.flags & RCSW_NOALLOC_DATA) {
     int alloc_idx = allocm_alloc(tree->space.db_map);
     RCSW_CHECK(-1 != alloc_idx);
     datablock =
-      (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->elt_size);
+      (uint8_t*)tree->space.datablocks + ((size_t)alloc_idx * tree->cfg.elt_size);
   } else {
-    datablock = rcsw_alloc(NULL, tree->elt_size, RCSW_NONE);
+    datablock = rcsw_alloc(NULL, tree->cfg.elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
   }
 
@@ -127,7 +159,7 @@ struct bstree_node* bstree_node_alloc(const struct bstree* const tree,
                                       size_t                     node_size) {
   struct bstree_node* node = NULL;
 
-  if (tree->flags & RCSW_NOALLOC_META) {
+  if (tree->cfg.flags & RCSW_NOALLOC_META) {
     int alloc_idx = allocm_alloc(tree->space.node_map);
     RCSW_CHECK(-1 != alloc_idx);
     node = tree->space.nodes + alloc_idx;
@@ -144,7 +176,7 @@ error:
 
 void bstree_node_dealloc(const struct bstree* const tree,
                          struct bstree_node*        node) {
-  if (tree->flags & RCSW_NOALLOC_META) {
+  if (tree->cfg.flags & RCSW_NOALLOC_META) {
     ptrdiff_t idx = node - tree->space.nodes;
     allocm_free(tree->space.node_map, (size_t)idx);
   } else {
@@ -217,9 +249,9 @@ error:
   return rc;
 } /* bstree_traverse_nodes_postorder() */
 
-int bstree_node_print(const struct bstree* const      tree, /* parent tree */
-                      const struct bstree_node* const node) {
-  tree->printe(node->data);
+int bstree_node_print(const struct bstree* const tree, /* parent tree */
+                      struct bstree_node* const  node) {
+  tree->cfg.printe(node->data);
   return 0;
 } /* bstree_node_print() */
 
@@ -252,10 +284,10 @@ void bstree_node_rotate_left(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & RCSW_DS_BSTREE_INT) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_INT) {
     inttree_node_update_max((struct inttree_node*)node);
     inttree_node_update_max((struct inttree_node*)child);
-  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
+  } else if (tree->cfg.flags & RCSW_DS_BSTREE_OS) {
     ostree_node_update_count((struct ostree_node*)node);
     ostree_node_update_count((struct ostree_node*)child);
   }
@@ -291,10 +323,10 @@ void bstree_node_rotate_right(struct bstree* const tree,
    * tree, to maintain the auxiliary fields properly for nodes that have been
    * rotated.
    */
-  if (tree->flags & RCSW_DS_BSTREE_INT) {
+  if (tree->cfg.flags & RCSW_DS_BSTREE_INT) {
     inttree_node_update_max((struct inttree_node*)node);
     inttree_node_update_max((struct inttree_node*)child);
-  } else if (tree->flags & RCSW_DS_BSTREE_OS) {
+  } else if (tree->cfg.flags & RCSW_DS_BSTREE_OS) {
     ostree_node_update_count((struct ostree_node*)node);
     ostree_node_update_count((struct ostree_node*)child);
   }

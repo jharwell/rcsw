@@ -26,6 +26,7 @@ static bool_t char_cmpe(const void* const e1, const void* const e2) {
   return (bool_t)(*((const char*)e1) == *((const char*)e2));
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* edit_dist_init() allocates its table internally */
 /**
  * Run both iterative and recursive edit_dist_find on fresh finders, verify
  * they agree and match the expected distance.
@@ -58,6 +59,7 @@ static void check_edit_dist(const char* a, const char* b, int expected) {
   /* both agree */
   CATCH_REQUIRE(dist_iter == dist_rec);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 /*******************************************************************************
  * Test Cases
@@ -88,6 +90,7 @@ CATCH_TEST_CASE("Edit Distance - NULL Input Rejected",
   edit_dist_destroy(nullptr); /* must not crash */
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* edit_dist_init() allocates its table internally */
 CATCH_TEST_CASE("Edit Distance - Equal Strings", "[alg][edit_dist]") {
   /* distance from a string to itself is 0 */
   check_edit_dist("ABCDE", "ABCDE", 0);
@@ -151,3 +154,19 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(1 == edit_dist_find(&f, EXEC_REC));
   edit_dist_destroy(&f);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("edit_dist_init fails cleanly without a heap",
+                "[alg][edit_dist][noalloc]") {
+  char                    a[] = "ABC";
+  char                    b[] = "AC";
+  struct edit_dist_finder f;
+  CATCH_REQUIRE(ERROR == edit_dist_init(&f,
+                                        a,
+                                        b,
+                                        sizeof(char),
+                                        char_cmpe,
+                                        (size_t (*)(const void*))strlen));
+}
+#endif /* RCSW_CONFIG_NOALLOC */

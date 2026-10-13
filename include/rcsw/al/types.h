@@ -44,21 +44,11 @@
  */
 #if defined(RCSW_PLATFORM_POSIX)
 
-#if defined(DOXYGEN_DOCUMENTATION_BUILD)
-
-#undef true
-#undef false
-
 /**
- * \brief A C boolean type.
- *
- * In linux, this is the same as bool; on embedded/baremetal platforms it maybe
- * defined differently.
+ * \brief A C boolean type: the same as \c bool (from \c <stdbool.h>) on all
+ * supported platforms.
  */
-typedef enum { false = 0, true = 1 } bool_t;
-#else
 #define bool_t bool
-#endif
 
 /*
  * For bare-metal applications with no OS (can still use stdlib)
@@ -98,15 +88,21 @@ typedef enum { false = 0, true = 1 } bool_t;
  * (struct mystruct*)node->data
  * \endcode
  *
- * work as intended on all targets. On some embedded targets (e.g., ARM), if
+ * work as intended on all targets, provided the data structure's \c elt_size is
+ * \c sizeof(struct mystruct): element \c i of a pool is at \c i * \c elt_size
+ * from a base aligned to \c RCSW_CONFIG_PTR_ALIGN, exactly like a C array of
+ * that type, so each element has its type's alignment. (An \c elt_size that is
+ * not a multiple of \c RCSW_CONFIG_PTR_ALIGN does not give every element that
+ * stronger alignment.) On some embedded targets (e.g., ARM), if
  * \c node->data points to a stack address with alignment 1, casting to a
  * struct with alignment > 1 can cause a hardware trap because the compiler
  * generates load/store instructions that assume the required alignment.
  *
  * \par Choosing a value
  * Use the alignment of the most strictly aligned type stored in RCSW-managed
- * memory. On 64-bit targets which store pointers (or structs containing them)
- * in caller-provided data structure memory, that is 8.
+ * memory. The library itself stores pointers and \c int32_t there, so it must
+ * be at least the target's alignment of both (checked when the library is
+ * built): e.g., 8 on 64-bit targets, 4 on most 32-bit ones.
  *
  * \par Implementation
  * Alignment is enforced by choosing an integer typedef whose natural alignment
@@ -116,8 +112,8 @@ typedef enum { false = 0, true = 1 } bool_t;
  *
  * \note A C11 \c _Alignas approach was considered but rejected: \c _Alignas
  * is not permitted on a \c typedef (C11 §6.7.5), and placing it on a
- * single-member struct wrapper breaks call-site transparency between the C11
- * and pre-C11 paths. The integer-width trick is already sufficient — \c
+ * single-member struct wrapper would change how \c dptr_t is used at every
+ * call site. The integer-width trick is already sufficient — \c
  * _Alignof(uint32_t)==4 guarantees 4-byte-aligned array elements just as
  * reliably as \c _Alignas(4) would.
  *

@@ -12,6 +12,7 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <cerrno>
 #include <cstring>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -89,7 +90,8 @@ static void child_test(int len, struct multififo_config* config) {
 
   struct fifo* child = &multififo->children.fifos[0];
   uint8_t      assembled_elt[sizeof(element8)];
-  size_t       child_fifo_size = multififo->root.rb.elt_size / child->rb.elt_size;
+  size_t       child_fifo_size =
+    multififo->root.rb.cfg.elt_size / child->rb.cfg.elt_size;
 
   size_t n_elts = multififo_size(multififo);
   while (!multififo_isempty(multififo)) {
@@ -99,7 +101,7 @@ static void child_test(int len, struct multififo_config* config) {
     for (size_t j = 0; j < child_fifo_size; ++j) {
       CATCH_REQUIRE(OK == fifo_remove(child, next));
       CATCH_REQUIRE(fifo_size(child) == child_fifo_size - j - 1);
-      next += child->rb.elt_size;
+      next += child->rb.cfg.elt_size;
     } /* for(j..) */
     T e;
     CATCH_REQUIRE(multififo_remove(multififo, &e) == OK);
@@ -110,6 +112,38 @@ static void child_test(int len, struct multififo_config* config) {
   multififo_destroy(multififo);
 } /* child_test() */
 
+namespace {
+/*
+ * Caller-owned storage for one multififo of four 8-byte elements with
+ * children whose element sizes divide 8. with_storage() hands it to \p c under
+ * RCSW_CONFIG_NOALLOC, where the library cannot allocate, and returns the
+ * handle to pass to multififo_init(); in heap builds it returns NULL.
+ */
+struct mfifo_storage {
+  struct multififo handle;
+  /* sized in bytes: dptr_t is RCSW_CONFIG_PTR_ALIGN bytes */
+  dptr_t           elements[512 / sizeof(dptr_t)];
+  dptr_t           meta[512 / sizeof(dptr_t)];
+};
+
+struct multififo* with_storage(mfifo_storage& s, struct multififo_config* c) {
+#if defined(RCSW_CONFIG_NOALLOC)
+  CATCH_REQUIRE(multififo_element_space(c->max_elts, c->elt_size) <=
+                sizeof(s.elements));
+  CATCH_REQUIRE(multififo_meta_space(c->elt_size, c->n_children) <=
+                sizeof(s.meta));
+  c->elements = s.elements;
+  c->meta     = s.meta;
+  c->flags |= RCSW_NOALLOC_ALL;
+  return &s.handle;
+#else
+  (void)s;
+  (void)c;
+  return nullptr;
+#endif
+}
+} /* namespace */
+
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
@@ -118,6 +152,7 @@ CATCH_TEST_CASE("CHILD Test", "[ds][multififo][noalloc]") {
   run_test<element4>(child_test<element4>);
   run_test<element2>(child_test<element2>);
 }
+#if !defined(RCSW_CONFIG_NOALLOC) /* child space comes from the heap */
 CATCH_TEST_CASE(
   "multififo: RCSW_NOALLOC_DATA without RCSW_NOALLOC_META "
   "allocates child space from the heap",
@@ -139,6 +174,7 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(OK == multififo_add(f, &v));
   multififo_destroy(f);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE(
   "multififo_init rejects more children than front_refmask "
@@ -180,7 +216,8 @@ CATCH_TEST_CASE(
   c.max_elts          = 4;
   c.n_children        = 1;
   c.children          = children;
-  struct multififo* f = multififo_init(nullptr, &c);
+  mfifo_storage     s;
+  struct multififo* f = multififo_init(with_storage(s, &c), &c);
   CATCH_REQUIRE(nullptr != f);
 
   uint64_t v = 7;
@@ -200,5 +237,71 @@ CATCH_TEST_CASE(
   f->locked = false;
   CATCH_REQUIRE(OK == multififo_add(f, &v));
   CATCH_REQUIRE(2 == multififo_size(f));
+  multififo_destroy(f);
+}
+
+namespace {
+/*
+ * Drain child 0 of \p f, which holds 4-byte pieces of the 8-byte root
+ * elements. Returns the first byte of each piece.
+ */
+std::string drain_child(struct multififo* f) {
+  std::string   firsts;
+  unsigned char piece[4];
+  while (!fifo_isempty(&f->children.fifos[0])) {
+    CATCH_REQUIRE(OK == fifo_remove(&f->children.fifos[0], piece));
+    firsts.push_back(static_cast<char>(piece[0]));
+  }
+  return firsts;
+}
+} /* namespace */
+
+CATCH_TEST_CASE("multififo feeds each element to the children exactly once",
+                "[ds][multififo]") {
+  size_t                  children[] = {4};
+  struct multififo_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size          = 8;
+  c.max_elts          = 4;
+  c.n_children        = 1;
+  c.children          = children;
+  mfifo_storage     s;
+  struct multififo* f = multififo_init(with_storage(s, &c), &c);
+  CATCH_REQUIRE(nullptr != f);
+
+  unsigned char a[8], b[8], cc[8], out[8];
+  memset(a, 'A', sizeof(a));
+  memset(b, 'B', sizeof(b));
+  memset(cc, 'C', sizeof(cc));
+
+  /* A becomes the front and is fed; B and C wait behind it */
+  CATCH_REQUIRE(OK == multififo_add(f, a));
+  CATCH_REQUIRE("AA" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_add(f, b));
+  CATCH_REQUIRE(OK == multififo_add(f, cc));
+  CATCH_REQUIRE(drain_child(f).empty());
+
+  /* retiring the front feeds the next element */
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('A' == out[0]);
+  /* the children have not consumed B yet */
+  CATCH_REQUIRE(ERROR == multififo_remove(f, out));
+  CATCH_REQUIRE("BB" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('B' == out[0]);
+  CATCH_REQUIRE("CC" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('C' == out[0]);
+  CATCH_REQUIRE(multififo_isempty(f));
+
+  /* empty again: the next element is fed immediately */
+  CATCH_REQUIRE(OK == multififo_add(f, a));
+  CATCH_REQUIRE("AA" == drain_child(f));
+
+  /* clear resets the feed state too */
+  CATCH_REQUIRE(OK == multififo_add(f, b));
+  CATCH_REQUIRE(OK == multififo_clear(f));
+  CATCH_REQUIRE(OK == multififo_add(f, cc));
+  CATCH_REQUIRE("CC" == drain_child(f));
   multififo_destroy(f);
 }

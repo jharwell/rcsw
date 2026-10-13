@@ -43,12 +43,14 @@ CATCH_TEST_CASE("cvm_init succeeds with a caller-provided handle",
   cvm_destroy(p);
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* exercises the library-allocated handle */
 CATCH_TEST_CASE("cvm_init succeeds with a library-allocated handle",
                 "[multithread][cvm]") {
   struct cvm* p = cvm_init(nullptr, RCSW_NONE);
   CATCH_REQUIRE(nullptr != p);
   cvm_destroy(p);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 CATCH_TEST_CASE("cvm_timedwait times out after the RELATIVE timeout",
                 "[multithread][cvm][noalloc]") {

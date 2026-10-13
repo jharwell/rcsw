@@ -22,14 +22,13 @@
  * Test Helper Functions
  ******************************************************************************/
 /*
- * The adjmatrix element type is always double (edge weights) or boolean
- * (unweighted); the T parameter is only used to vary elt_size for coverage.
+ * The adjmatrix element type is always double (edge weights) or int
+ * (unweighted), set from is_weighted; the T parameter is unused.
  */
 template <typename T>
 static void run_test(void (*test)(struct adjmatrix_config*)) {
   struct adjmatrix_config config;
   memset(&config, 0, sizeof(adjmatrix_config));
-  config.elt_size   = sizeof(T);
   config.n_vertices = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
@@ -80,14 +79,30 @@ static void run_test(void (*test)(struct adjmatrix_config*)) {
   th::ds_shutdown(&config);
 }
 
-static struct adjmatrix* make_adj(bool directed, bool weighted) {
+/*
+ * Caller-owned storage for one 4-vertex graph made by make_adj(): used under
+ * RCSW_CONFIG_NOALLOC, where the library cannot allocate.
+ */
+struct adj_storage {
+  struct adjmatrix handle;
+  dptr_t           space[(4 * 4 * sizeof(double)) / sizeof(dptr_t) + 1];
+};
+
+static struct adjmatrix* make_adj(adj_storage* s, bool directed, bool weighted) {
   struct adjmatrix_config c;
   memset(&c, 0, sizeof(c));
   c.n_vertices  = 4;
   c.is_directed = directed;
   c.is_weighted = weighted;
-  c.elt_size    = weighted ? sizeof(double) : sizeof(int);
+#if defined(RCSW_CONFIG_NOALLOC)
+  CATCH_REQUIRE(adjmatrix_element_space(4, weighted) <= sizeof(s->space));
+  c.elements = s->space;
+  c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_DATA;
+  return adjmatrix_init(&s->handle, &c);
+#else
+  (void)s;
   return adjmatrix_init(nullptr, &c);
+#endif
 }
 
 /*******************************************************************************
@@ -253,7 +268,8 @@ CATCH_TEST_CASE(
   "adjmatrix: removing a non-existent edge leaves n_edges "
   "unchanged",
   "[ds][adjmatrix]") {
-  struct adjmatrix* m = make_adj(true, false);
+  adj_storage       s{};
+  struct adjmatrix* m = make_adj(&s, true, false);
   adjmatrix_edge_remove(m, 0, 1);
   CATCH_REQUIRE(0 == adjmatrix_n_edges(m));
   adjmatrix_destroy(m);
@@ -261,7 +277,8 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("adjmatrix: re-adding an existing edge does not double-count",
                 "[ds][adjmatrix]") {
-  struct adjmatrix* m = make_adj(true, false);
+  adj_storage       s{};
+  struct adjmatrix* m = make_adj(&s, true, false);
   CATCH_REQUIRE(OK == adjmatrix_edge_addd(m, 0, 1, nullptr));
   adjmatrix_edge_addd(m, 0, 1, nullptr);
   CATCH_REQUIRE(1 == adjmatrix_n_edges(m));
@@ -270,5 +287,6 @@ CATCH_TEST_CASE("adjmatrix: re-adding an existing edge does not double-count",
 
 CATCH_TEST_CASE("adjmatrix_init rejects an undirected, weighted graph",
                 "[ds][adjmatrix][noalloc]") {
-  CATCH_REQUIRE(nullptr == make_adj(false, true));
+  adj_storage s{};
+  CATCH_REQUIRE(nullptr == make_adj(&s, false, true));
 }

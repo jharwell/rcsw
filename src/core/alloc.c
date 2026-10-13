@@ -27,6 +27,19 @@ BEGIN_C_DECLS
 _Static_assert(_Alignof(dptr_t) == RCSW_CONFIG_PTR_ALIGN,
                "RCSW_CONFIG_PTR_ALIGN is not supported by this target's ABI");
 
+/*
+ * The library itself keeps pointer-holding nodes and handles, and 32-bit
+ * allocation map entries, in caller-provided memory, which is only laid out to
+ * RCSW_CONFIG_PTR_ALIGN. Anything weaker than those types' alignment on this
+ * target would misalign them.
+ */
+#ifndef RCSW_CONFIG_PTR_ALIGN_NO_CHECK
+_Static_assert(RCSW_CONFIG_PTR_ALIGN >= _Alignof(void*),
+               "RCSW_CONFIG_PTR_ALIGN is below this target's pointer alignment");
+_Static_assert(RCSW_CONFIG_PTR_ALIGN >= _Alignof(int32_t),
+               "RCSW_CONFIG_PTR_ALIGN is below this target's int32_t alignment");
+#endif
+
 void* rcsw_alloc(void* ptr, size_t n_bytes, uint32_t flags) {
   void* ret = NULL;
 
@@ -99,6 +112,7 @@ void rcsw_free(void* ptr, uint32_t flags) {
 
 #if defined(RCSW_CONFIG_NOALLOC)
   /* memory allocation is disabled entirely--nothing to do */
+  (void)flags;
   return;
 #else
   /*

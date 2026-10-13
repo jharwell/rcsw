@@ -22,14 +22,6 @@
 #include "rcsw/ds/ds.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * \copydoc RCSW_BSTREE_ROOT()
- */
-#define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 /**
@@ -40,10 +32,11 @@
  * functions which are shared between bstree and ostree, things won't work
  * because of differing alignments/packing under optimizations.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref ostree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) ostree_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) ostree_node {
   uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
   dptr_t*             data;
   struct ostree_node* left;
@@ -61,6 +54,15 @@ struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) ostree_node {
  * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of an order-statistic tree.
+ *
+ * As \ref bstree_root(), typed as a \c struct \c ostree_node*.
+ */
+static inline struct ostree_node* ostree_root(const struct bstree* const tree) {
+  return (struct ostree_node*)bstree_root(tree);
+}
+
 /**
  * \brief Initialize the order-statistic tree specific bits of a BST.
  *
@@ -140,7 +142,8 @@ static inline struct ostree_node* ostree_node_query(
  *
  * \param tree The ostree handle.
  *
- * \param node_in The node to start searching at (should probably be the root).
+ * \param node_in The node to start searching at (usually
+ * <tt>ostree_root(tree)</tt>).
  *
  * \param i The element rank to select.
  *
@@ -164,6 +167,9 @@ RCSW_API int ostree_rank(const struct bstree*      tree,
 
 /**
  * \brief Initialize an order statistics tree.
+ *
+ * \ref RCSW_DS_BSTREE_OS and \ref RCSW_DS_BSTREE_RB are added to
+ * \p params->flags; \p params itself is not modified.
  *
  * \param tree_in Caller storage for the handle, used only if \ref
  *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)

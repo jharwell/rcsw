@@ -16,9 +16,12 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <list>
 #include <map>
 #include <mutex>
+#include <random>
 #include <thread>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -61,13 +64,20 @@ static void run_test(swbus_test test, size_t n_threads = 1) {
     CATCH_REQUIRE(nullptr != bus_config.pools[i].meta);
     bus_config.pools[i].max_elts = TH_RXQ_SIZE;
     bus_config.pools[i].elt_size = TH_MAX_BUFSIZE / (TH_MAX_POOLS - i);
-    bus_config.pools[i].flags    = RCSW_NONE;
+    bus_config.pools[i].flags    = RCSW_NONE | TH_FORCED_FLAGS;
   } /* for() */
 
+#if defined(RCSW_CONFIG_NOALLOC)
+  /* no heap: the bus keeps its tables in caller-provided metadata space */
+  std::vector<dptr_t> meta(
+    swbus_meta_space(TH_MAX_POOLS, TH_MAX_RXQS, TH_MAX_SUBS) / sizeof(dptr_t) +
+    1);
+  bus_config.meta = meta.data();
+#endif
   uint32_t flags[] = {RCSW_NONE, RCSW_NOALLOC_HANDLE, RCSW_SWBUS_ASYNC};
 
   for (size_t i = 0; i < RCSW_ARRAY_ELTS(flags); ++i) {
-    bus_config.flags = flags[i];
+    bus_config.flags = flags[i] | TH_FORCED_FLAGS;
     test(&bus_config, n_threads);
   } /* for(i..) */
 
@@ -80,10 +90,63 @@ static void run_test(swbus_test test, size_t n_threads = 1) {
   RCSW_ER_DEINIT();
 } /* test_runner() */
 
+/*
+ * Caller-owned memory for one bus and its RXQs; declare it before the bus so it
+ * outlives it. Under RCSW_CONFIG_NOALLOC, where the library cannot allocate,
+ * with_storage() gives a config (and each of its pools) whatever memory it does
+ * not already have and returns the handle to pass to swbus_init(), and rxq()
+ * returns space for an RXQ. In heap builds both return NULL, so the library
+ * allocates.
+ */
+struct bus_storage {
+  struct swbus                   handle;
+  std::list<std::vector<dptr_t>> bufs;
+
+  dptr_t* take(size_t bytes) {
+    bufs.emplace_back(bytes / sizeof(dptr_t) + 1);
+    return bufs.back().data();
+  }
+  void* rxq(size_t n_entries) {
+#if defined(RCSW_CONFIG_NOALLOC)
+    return take(fifo_element_space(n_entries, sizeof(struct swbus_rxq_ent)));
+#else
+    (void)n_entries;
+    return nullptr;
+#endif
+  }
+};
+
+struct swbus* with_storage(bus_storage& s, struct swbus_config* c) {
+#if defined(RCSW_CONFIG_NOALLOC)
+  if (!(c->flags & RCSW_NOALLOC_META)) {
+    c->meta = s.take(swbus_meta_space(c->max_pools, c->max_rxqs, c->max_subs));
+  }
+  for (size_t i = 0; i < c->max_pools; ++i) {
+    struct mpool_config* pool = &c->pools[i];
+    if (!(pool->flags & RCSW_NOALLOC_DATA)) {
+      pool->elements =
+        s.take(mpool_element_space(pool->max_elts, pool->elt_size));
+    }
+    if (!(pool->flags & RCSW_NOALLOC_META)) {
+      pool->meta = s.take(mpool_meta_space(pool->max_elts));
+    }
+    pool->flags |= RCSW_NOALLOC_ALL;
+  }
+  c->flags |= RCSW_NOALLOC_ALL;
+  return &s.handle;
+#else
+  (void)s;
+  (void)c;
+  return nullptr;
+#endif
+}
+
 struct swbus*   g_bus;
 struct pcqueue* g_rxq;
 
-struct swbus* make_bus(struct mpool_config* pool, uint32_t flags) {
+struct swbus* make_bus(bus_storage&         mem,
+                       struct mpool_config* pool,
+                       uint32_t             flags) {
   memset(pool, 0, sizeof(*pool));
   pool->elt_size = 64;
   pool->max_elts = 8;
@@ -96,7 +159,7 @@ struct swbus* make_bus(struct mpool_config* pool, uint32_t flags) {
   c.max_subs  = 4;
   c.flags     = flags;
   strcpy(c.name, "test");
-  return swbus_init(nullptr, &c);
+  return swbus_init(with_storage(mem, &c), &c);
 }
 
 void* slow_subscriber(void*) {
@@ -109,10 +172,11 @@ void* slow_subscriber(void*) {
 }
 
 void fast_publisher_slow_subscriber(uint32_t flags) {
+  bus_storage mem;
   struct mpool_config pool;
-  g_bus = make_bus(&pool, flags);
+  g_bus = make_bus(mem, &pool, flags);
   CATCH_REQUIRE(nullptr != g_bus);
-  g_rxq = swbus_rxq_init(g_bus, nullptr, 1);
+  g_rxq = swbus_rxq_init(g_bus, mem.rxq(1), 1);
   CATCH_REQUIRE(nullptr != g_rxq);
   CATCH_REQUIRE(OK == swbus_subscribe(g_bus, g_rxq, 1));
 
@@ -185,14 +249,15 @@ static void subscribe_test(const struct swbus_config* config, size_t) {
 
 // NOLINTNEXTLINE(readability-function-size)
 static void serial_stress_test(const struct swbus_config* config, size_t) {
+  bus_storage mem;
   struct swbus  myswbus;
   struct swbus* swbus;
 
   swbus = swbus_init(&myswbus, config);
   CATCH_REQUIRE(nullptr != swbus);
   uint8_t*        buf  = (uint8_t*)malloc(TH_RXQ_SIZE);
-  struct pcqueue* rxq  = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
-  struct pcqueue* rxq2 = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
+  struct pcqueue* rxq  = swbus_rxq_init(swbus, mem.rxq(TH_RXQ_SIZE), TH_RXQ_SIZE);
+  struct pcqueue* rxq2 = swbus_rxq_init(swbus, mem.rxq(TH_RXQ_SIZE), TH_RXQ_SIZE);
   CATCH_REQUIRE(nullptr != rxq);
   CATCH_REQUIRE(nullptr != rxq2);
 
@@ -263,6 +328,7 @@ static void serial_stress_test(const struct swbus_config* config, size_t) {
 // NOLINTNEXTLINE(readability-function-size)
 static void concurrent_stress_test(const struct swbus_config* config,
                                    size_t                     n_threads) {
+  bus_storage mem;
   struct swbus  myswbus;
   struct swbus* swbus;
 
@@ -274,7 +340,7 @@ static void concurrent_stress_test(const struct swbus_config* config,
   struct pcqueue* rxqs[10];
 
   for (size_t i = 0; i < n_consumers; ++i) {
-    rxqs[i] = swbus_rxq_init(swbus, nullptr, TH_RXQ_SIZE);
+    rxqs[i] = swbus_rxq_init(swbus, mem.rxq(TH_RXQ_SIZE), TH_RXQ_SIZE);
     CATCH_REQUIRE(nullptr != rxqs[i]);
   } /* for(i..) */
 
@@ -304,11 +370,17 @@ static void concurrent_stress_test(const struct swbus_config* config,
   std::mutex        mtx;
 
   auto dist   = std::uniform_int_distribution<size_t>(0, config->max_pools - 1);
-  auto pub_cb = [&]() {
+  /*
+   * Each thread gets its own engine: th::make_rng() is a single shared
+   * engine, and drawing from it in several threads at once is a data race.
+   */
+  auto pub_cb = [&](size_t id) {
+    std::mt19937 rng{Catch::getSeed() + 1000U + static_cast<uint32_t>(id)};
+    auto         pick = dist;
     for (size_t i = 0; i < TH_RXQ_SIZE * 2 / n_threads; ++i) {
       status_t rval = swbus_publish(swbus,
                                     i % TH_MAX_PID,
-                                    config->pools[dist(th::make_rng())].elt_size,
+                                    config->pools[pick(rng)].elt_size,
                                     buf);
       mtx.lock();
       checks.push_back(rval == OK);
@@ -317,9 +389,11 @@ static void concurrent_stress_test(const struct swbus_config* config,
   };
   auto dist2  = std::uniform_int_distribution<size_t>(0, 1000);
   auto sub_cb = [&](size_t id) {
+    std::mt19937    rng{Catch::getSeed() + static_cast<uint32_t>(id)};
+    auto            pick  = dist2;
     size_t          count = 0;
     status_t        rval;
-    struct timespec to = {.tv_sec = 0, .tv_nsec = (int64_t)dist2(th::make_rng())};
+    struct timespec to = {.tv_sec = 0, .tv_nsec = (int64_t)pick(rng)};
     auto&           subs = subscriptions[id];
     while (count < 100) {
       struct swbus_rxq_ent* ent = swbus_rxq_timedwait(swbus, rxqs[id], &to);
@@ -350,7 +424,7 @@ static void concurrent_stress_test(const struct swbus_config* config,
   } /* for(i..) */
 
   for (size_t i = 0; i < n_publishers; ++i) {
-    publishers.push_back(std::thread(pub_cb));
+    publishers.push_back(std::thread(pub_cb, i));
   } /* for(i..) */
 
   for (size_t i = 0; i < n_consumers; ++i) {
@@ -413,10 +487,11 @@ CATCH_TEST_CASE(
   "swbus_publish to a full RXQ returns ERROR instead of "
   "blocking",
   "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
-  struct pcqueue* rxq = swbus_rxq_init(bus, nullptr, 1);
+  struct pcqueue* rxq = swbus_rxq_init(bus, mem.rxq(1), 1);
   CATCH_REQUIRE(nullptr != rxq);
   CATCH_REQUIRE(OK == swbus_subscribe(bus, rxq, 1));
 
@@ -431,10 +506,12 @@ CATCH_TEST_CASE(
 
 CATCH_TEST_CASE("swbus_init does not modify the caller's pool configs",
                 "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
-  CATCH_REQUIRE(RCSW_NONE == pool.flags);
+  /* the caller's pool config is untouched (beyond any storage it was given) */
+  CATCH_REQUIRE((RCSW_NONE | TH_FORCED_FLAGS) == pool.flags);
   swbus_destroy(bus);
 }
 
@@ -442,6 +519,7 @@ CATCH_TEST_CASE(
   "swbus with RCSW_NOALLOC_META keeps its metadata in the "
   "caller's buffer",
   "[swbus]") {
+  bus_storage mem;
   if (RCSW_CONFIG_PTR_ALIGN < alignof(void*)) {
     CATCH_SKIP("RCSW_CONFIG_PTR_ALIGN is below pointer alignment on this host");
   }
@@ -464,7 +542,7 @@ CATCH_TEST_CASE(
   uint8_t* meta  = static_cast<uint8_t*>(malloc(bytes));
   c.meta         = reinterpret_cast<dptr_t*>(meta);
 
-  struct swbus* bus = swbus_init(nullptr, &c);
+  struct swbus* bus = swbus_init(with_storage(mem, &c), &c);
   CATCH_REQUIRE(nullptr != bus);
   auto inside = [&](const void* p) {
     auto* b = static_cast<const uint8_t*>(p);
@@ -474,8 +552,8 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(inside(bus->rxqs));
   CATCH_REQUIRE(inside(bus->subscribers));
 
-  struct pcqueue* q0 = swbus_rxq_init(bus, nullptr, 4);
-  struct pcqueue* q1 = swbus_rxq_init(bus, nullptr, 4);
+  struct pcqueue* q0 = swbus_rxq_init(bus, mem.rxq(4), 4);
+  struct pcqueue* q1 = swbus_rxq_init(bus, mem.rxq(4), 4);
   CATCH_REQUIRE(nullptr != q0);
   CATCH_REQUIRE(nullptr != q1);
   for (uint32_t pid = 1; pid <= 2; ++pid) {
@@ -500,8 +578,9 @@ CATCH_TEST_CASE(
   "swbus_publish_reserve records the size, and fails with "
   "ENOSPC when nothing fits",
   "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
 
   struct swbus_rsrvn res;
@@ -518,10 +597,11 @@ CATCH_TEST_CASE(
 }
 
 CATCH_TEST_CASE("swbus_rxq_front does not wait on an empty RXQ", "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
-  struct pcqueue* rxq = swbus_rxq_init(bus, nullptr, 4);
+  struct pcqueue* rxq = swbus_rxq_init(bus, mem.rxq(4), 4);
   CATCH_REQUIRE(nullptr != rxq);
 
   errno = 0;
@@ -532,10 +612,11 @@ CATCH_TEST_CASE("swbus_rxq_front does not wait on an empty RXQ", "[swbus]") {
 
 CATCH_TEST_CASE("swbus_publish_release publishes the reservation's pkt_size",
                 "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
-  struct pcqueue* rxq = swbus_rxq_init(bus, nullptr, 4);
+  struct pcqueue* rxq = swbus_rxq_init(bus, mem.rxq(4), 4);
   CATCH_REQUIRE(nullptr != rxq);
   CATCH_REQUIRE(OK == swbus_subscribe(bus, rxq, 1));
 
@@ -558,10 +639,11 @@ CATCH_TEST_CASE("swbus_publish_release publishes the reservation's pkt_size",
 CATCH_TEST_CASE("swbus_publish_release accepts an application-built "
                 "reservation",
                 "[swbus]") {
+  bus_storage mem;
   struct mpool_config pool;
-  struct swbus*       bus = make_bus(&pool, RCSW_NONE);
+  struct swbus*       bus = make_bus(mem, &pool, RCSW_NONE);
   CATCH_REQUIRE(nullptr != bus);
-  struct pcqueue* q0 = swbus_rxq_init(bus, nullptr, 4);
+  struct pcqueue* q0 = swbus_rxq_init(bus, mem.rxq(4), 4);
   CATCH_REQUIRE(nullptr != q0);
   CATCH_REQUIRE(OK == swbus_subscribe(bus, q0, 1));
 
@@ -580,5 +662,42 @@ CATCH_TEST_CASE("swbus_publish_release accepts an application-built "
   CATCH_REQUIRE(nullptr == e->bp);
   CATCH_REQUIRE(OK == swbus_rxq_pop_front(q0, e));
   CATCH_REQUIRE(mpool_isempty(&bus->pools[0])); /* the pool was not touched */
+  swbus_destroy(bus);
+}
+
+CATCH_TEST_CASE(
+  "swbus_publish_reserve moves on to the next pool when one is "
+  "full, and never blocks",
+  "[swbus]") {
+  bus_storage mem;
+  struct mpool_config pools[2];
+  memset(pools, 0, sizeof(pools));
+  pools[0].elt_size = 16;
+  pools[0].max_elts = 1;
+  pools[1].elt_size = 64;
+  pools[1].max_elts = 1;
+
+  struct swbus_config c;
+  memset(&c, 0, sizeof(c));
+  c.pools     = pools;
+  c.max_pools = 2;
+  c.max_rxqs  = 1;
+  c.max_subs  = 4;
+  strcpy(c.name, "pools");
+  struct swbus* bus = swbus_init(with_storage(mem, &c), &c);
+  CATCH_REQUIRE(nullptr != bus);
+
+  struct swbus_rsrvn a, b, d;
+  CATCH_REQUIRE(OK == swbus_publish_reserve(bus, &a, 8));
+  CATCH_REQUIRE(16 == a.bp->cfg.elt_size); /* the smallest pool that fits */
+  CATCH_REQUIRE(OK == swbus_publish_reserve(bus, &b, 8));
+  CATCH_REQUIRE(64 == b.bp->cfg.elt_size); /* the first one is full */
+
+  errno = 0;
+  CATCH_REQUIRE(ERROR == swbus_publish_reserve(bus, &d, 8)); /* all full */
+  CATCH_REQUIRE(ENOSPC == errno);
+
+  CATCH_REQUIRE(OK == mpool_release(a.bp, a.data));
+  CATCH_REQUIRE(OK == mpool_release(b.bp, b.data));
   swbus_destroy(bus);
 }

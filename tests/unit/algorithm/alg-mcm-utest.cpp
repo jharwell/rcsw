@@ -15,6 +15,7 @@
 #include "rcsw/al/types.h"
 #include "rcsw/algorithm/mcm_opt.h"
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* mcm_opt_init() allocates its tables internally */
 /*******************************************************************************
  * Test Helpers
  ******************************************************************************/
@@ -43,6 +44,7 @@ static void check_mcm(const uint64_t* p,
 
   mcm_opt_destroy(&mcm);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
 /*******************************************************************************
  * Test Cases
@@ -58,6 +60,7 @@ CATCH_TEST_CASE("MCM - NULL Input Rejected", "[alg][mcm][noalloc]") {
   mcm_opt_destroy(nullptr); /* must not crash */
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* mcm_opt_init() allocates its tables internally */
 CATCH_TEST_CASE("MCM - Two Matrices", "[alg][mcm]") {
   /* A(10x20) * B(20x30): only one way, cost = 10*20*30 = 6000 */
   uint64_t       p[]   = {10, 20, 30};
@@ -110,12 +113,14 @@ CATCH_TEST_CASE("MCM - Optimize Called Twice", "[alg][mcm]") {
   CATCH_REQUIRE(mcm.min_mults == first);
   mcm_opt_destroy(&mcm);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
 
-CATCH_TEST_CASE("MCM - NULL Args to Report/Print Rejected", "[alg][mcm]") {
+CATCH_TEST_CASE("MCM - NULL Args to Report/Print Rejected", "[alg][mcm][noalloc]") {
   CATCH_REQUIRE(ERROR == mcm_opt_report(nullptr, nullptr));
   CATCH_REQUIRE(ERROR == mcm_opt_print(nullptr));
 }
 
+#if !defined(RCSW_CONFIG_NOALLOC) /* mcm_opt_init() allocates its tables internally */
 CATCH_TEST_CASE("mcm_opt handles costs larger than INT_MAX", "[algorithm][mcm]") {
   /* Two 100000x100000 matrices: 10^15 scalar multiplications */
   uint64_t             dims[] = {100000, 100000, 100000};
@@ -125,3 +130,13 @@ CATCH_TEST_CASE("mcm_opt handles costs larger than INT_MAX", "[algorithm][mcm]")
   CATCH_REQUIRE(1000000000000000ULL == mcm.min_mults);
   mcm_opt_destroy(&mcm);
 }
+#endif /* !RCSW_CONFIG_NOALLOC */
+
+#if defined(RCSW_CONFIG_NOALLOC)
+CATCH_TEST_CASE("mcm_opt_init fails cleanly without a heap",
+                "[alg][mcm][noalloc]") {
+  const uint64_t        p[] = {10, 20, 30};
+  struct mcm_optimizer mcm;
+  CATCH_REQUIRE(ERROR == mcm_opt_init(&mcm, p, 3));
+}
+#endif /* RCSW_CONFIG_NOALLOC */
