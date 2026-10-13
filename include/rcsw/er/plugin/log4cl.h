@@ -128,12 +128,16 @@ struct log4cl_plugin {
 BEGIN_C_DECLS
 
 /**
- * \brief Check if a module with the specified ID is currently loaded.
+ * \brief Get the module to report through for the specified ID.
  *
  * \param id The module ID.
  *
- * \return The module, or NULL if not found. The pointer stays valid until the
- * module is removed or the plugin is shut down.
+ * \return The installed module with that ID. If none is installed, a shared
+ * default module whose level is the plugin's default level (see \ref
+ * log4cl_default_lvl_set()), so reports from unregistered modules are filtered
+ * rather than dropped. NULL if the plugin is not initialized, or when called
+ * from inside LOG4CL itself (which suppresses those reports). The pointer
+ * stays valid until the module is removed or the plugin is shut down.
  */
 RCSW_API struct log4cl_module* log4cl_mod_query(int64_t id);
 
@@ -170,7 +174,9 @@ RCSW_API void log4cl_deinit(void);
  * \brief Add a module to the active list of debug printing modules.
  *
  * If a module with the same ID is already loaded, nothing is done and OK is
- * returned.
+ * returned. Safe to call before \ref log4cl_init() (for example from a
+ * library module's *_init() function): it then does nothing and returns ERROR
+ * with errno=EAGAIN.
  *
  * \param id The ID of the module to install.
  *
@@ -214,7 +220,8 @@ RCSW_API status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
  * \brief Set the default reporting level for the plugin.
  *
  * All modules installed after calling this function will have the specified
- * level set by default.
+ * level set by default. It also applies immediately to every module ID that is
+ * not installed (see \ref log4cl_mod_query()).
  *
  * \param lvl The new default level.
  */

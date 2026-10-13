@@ -31,6 +31,18 @@ BEGIN_C_DECLS
 static struct log4cl_plugin g_log4cl;
 
 /*
+ * Stands in for every module ID that has not been installed, so that reports
+ * from unregistered translation units (or modules created before their *_init()
+ * ran after log4cl_init()) are filtered at the default level instead of being
+ * silently dropped. Its level tracks g_log4cl.default_lvl.
+ */
+static struct log4cl_module s_log4cl_default_mod = {
+  .id   = -1,
+  .lvl  = RCSW_ERL_INFO,
+  .name = "default",
+};
+
+/*
  * The module list is read on every report and modified by insmod/rmmod, which
  * library modules call from their *_init() functions--possibly concurrently.
  * On POSIX it is protected by a reader/writer lock; on bare metal there is no
@@ -127,8 +139,9 @@ status_t log4cl_init(void) {
     if (NULL == g_log4cl.modules) {
       rstat = ERROR;
     } else {
-      g_log4cl.default_lvl = RCSW_ERL_INFO;
-      g_log4cl.initialized = true;
+      g_log4cl.default_lvl     = RCSW_ERL_INFO;
+      s_log4cl_default_mod.lvl = RCSW_ERL_INFO;
+      g_log4cl.initialized     = true;
     }
   }
   LOG4CL_UNLOCK();
@@ -136,7 +149,18 @@ status_t log4cl_init(void) {
 } /* log4cl_init() */
 
 status_t log4cl_insmod(int64_t id, const char* const name) {
-  RCSW_FPC_NV(ERROR, g_log4cl.initialized, NULL != name);
+  RCSW_FPC_NV(ERROR, NULL != name);
+
+  /*
+   * Registration is best-effort, so neither of these is a precondition
+   * violation: library modules register from their *_init() functions, which
+   * may run before log4cl_init(), and log4cl_init() itself creates an llist
+   * whose init registers the llist module while we hold the lock.
+   */
+  if (s_log4cl_busy) {
+    errno = EAGAIN; /* re-entered from inside log4cl: skip, don't deadlock */
+    return ERROR;
+  }
 
   struct log4cl_module mod;
   memset(&mod, 0, sizeof(mod));
@@ -145,11 +169,16 @@ status_t log4cl_insmod(int64_t id, const char* const name) {
 
   status_t rstat = OK;
   LOG4CL_WRLOCK();
-  mod.lvl = g_log4cl.default_lvl;
-  /* the comparator takes a struct log4cl_module, not a bare ID */
-  if (NULL == llist_data_query(g_log4cl.modules, &mod)) {
-    rstat = llist_append(g_log4cl.modules, &mod);
-  } /* else already installed */
+  if (!g_log4cl.initialized) {
+    errno = EAGAIN; /* not initialized yet: nothing to register with */
+    rstat = ERROR;
+  } else {
+    mod.lvl = g_log4cl.default_lvl;
+    /* the comparator takes a struct log4cl_module, not a bare ID */
+    if (NULL == llist_data_query(g_log4cl.modules, &mod)) {
+      rstat = llist_append(g_log4cl.modules, &mod);
+    } /* else already installed */
+  }
   LOG4CL_UNLOCK();
   return rstat;
 } /* log4cl_insmod() */
@@ -160,9 +189,12 @@ struct log4cl_module* log4cl_mod_query(int64_t id) {
   }
   struct log4cl_module* mod = NULL;
   LOG4CL_RDLOCK();
-  if (NULL != g_log4cl.modules) {
+  if (g_log4cl.initialized) {
     struct log4cl_module key = {.id = id};
     mod                      = llist_data_query(g_log4cl.modules, &key);
+    if (NULL == mod) {
+      mod = &s_log4cl_default_mod; /* not installed: use the default level */
+    }
   }
   LOG4CL_UNLOCK();
   return mod;
@@ -220,7 +252,8 @@ status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl) {
 
 void log4cl_default_lvl_set(uint8_t lvl) {
   LOG4CL_WRLOCK();
-  g_log4cl.default_lvl = lvl;
+  g_log4cl.default_lvl     = lvl;
+  s_log4cl_default_mod.lvl = lvl;
   LOG4CL_UNLOCK();
 } /* log4cl_default_lvl_set() */
 

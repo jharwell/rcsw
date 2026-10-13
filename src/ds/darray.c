@@ -160,6 +160,7 @@ static const struct ds_ops darray_iter_ops = {
 struct darray* darray_init(struct darray*                    arr_in,
                            const struct darray_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->elt_size > 0, params->max_elts != 0);
+  RCSW_ER_MODULE_INIT();
 
   /* Sorted arrays cannot be maintained without a comparator */
   ER_ASSERT(!(params->flags & RCSW_DS_SORTED) || NULL != params->cmpe,

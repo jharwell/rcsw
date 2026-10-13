@@ -108,7 +108,8 @@
  *
  * If not specified, defined as 0xFFFFFFFF. That value is above every ID RCSW
  * uses internally, so it cannot collide with them; all translation units which
- * do not define their own ID share it (and therefore share one LOG4CL module).
+ * do not define their own ID share it. With LOG4CL, an ID that is never
+ * installed reports at the plugin's default level.
  */
 #if !defined(RCSW_ER_MODID)
 #define RCSW_ER_MODID (0xFFFFFFFF)
