@@ -55,7 +55,7 @@ static struct darray* hashmap_query(const struct hashmap* const map,
   RCSW_FPC_NV(NULL, map != NULL, key != NULL);
 
   uint32_t hash = 0;
-  map->hash(key, RCSW_HASHMAP_KEYSIZE, &hash);
+  map->hash(key, map->key_len, &hash);
   uint32_t bucket_n = (uint32_t)(hash % map->n_buckets);
 
   if (hash_out != NULL) {
@@ -140,16 +140,39 @@ static void hashmap_find(const struct hashmap* const  map,
 } /* hashmap_find() */
 
 /**
- * \brief Build the lookup hashnode for \p key (the full
- * RCSW_HASHMAP_KEYSIZE bytes are compared).
+ * \brief Build the lookup hashnode for \p key.
+ *
+ * Only key_len bytes are read from \p key; the rest of the stored key is
+ * zeroed, so comparing the full RCSW_HASHMAP_KEYSIZE bytes is exact.
  */
-static void hashmap_make_node(struct hashnode* node,
-                              const void*      key,
-                              uint32_t         hash) {
+static void hashmap_make_node(const struct hashmap* const map,
+                              struct hashnode*            node,
+                              const void*                 key,
+                              uint32_t                    hash) {
   memset(node, 0, sizeof(*node));
-  memcpy(node->key, key, RCSW_HASHMAP_KEYSIZE);
+  memcpy(node->key, key, map->key_len);
   node->hash = hash;
 } /* hashmap_make_node() */
+
+/**
+ * \brief Release everything a (possibly partially) initialized hashmap owns.
+ *
+ * \param map The hashmap handle, or NULL.
+ * \param n_buckets_init How many buckets were successfully initialized.
+ */
+static void hashmap_teardown(struct hashmap* const map, size_t n_buckets_init) {
+  if (NULL == map) {
+    return;
+  }
+  if (NULL != map->space.buckets) {
+    for (size_t i = 0; i < n_buckets_init; i++) {
+      darray_destroy(map->space.buckets + i);
+    } /* for(i..) */
+  }
+  rcsw_free(map->space.elements, map->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(map->space.buckets, map->flags & RCSW_NOALLOC_META);
+  rcsw_free(map, map->flags & RCSW_NOALLOC_HANDLE);
+} /* hashmap_teardown() */
 
 /**
  * \brief Compare hashnodes for equality
@@ -177,14 +200,15 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
   RCSW_FPC_NV(NULL,
               params != NULL,
               params->elt_size > 0,
-              params->sort_thresh != 0,
               params->n_buckets > 0,
               params->hash != NULL,
-              params->bsize > 0);
+              params->bsize > 0,
+              params->key_len <= RCSW_HASHMAP_KEYSIZE);
   /* Every operation hashes a key */
   ER_ASSERT(NULL != params->hash, "hashmap requires hash()");
   RCSW_ER_MODULE_INIT();
 
+  size_t          n_buckets_init = 0;
   struct hashmap* map =
     rcsw_alloc(map_in,
                sizeof(struct hashmap),
@@ -195,12 +219,13 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
   map->hash               = params->hash;
   map->n_buckets          = params->n_buckets;
   map->elt_size           = params->elt_size;
+  map->key_len =
+    (0 == params->key_len) ? RCSW_HASHMAP_KEYSIZE : params->key_len;
   map->max_elts           = params->bsize * params->n_buckets;
   map->stats.n_nodes      = 0;
   map->stats.n_collisions = 0;
   map->stats.n_adds       = 0;
   map->stats.n_addfails   = 0;
-  map->sort_thresh        = params->sort_thresh;
   map->sorted             = false;
   map->space.elements     = NULL;
   map->space.buckets      = NULL;
@@ -259,18 +284,19 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
     bucket_params.elements =
       (void*)((uint8_t*)map->space.hashnodes + (i * hn_space_per_bucket));
     RCSW_CHECK(darray_init(map->space.buckets + i, &bucket_params) != NULL);
+    ++n_buckets_init;
   } /* for() */
 
-  ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu sort_thresh=%d flags=0x%08x",
+  ER_DEBUG("max_elts=%zu n_buckets=%zu bsize=%zu flags=0x%08x",
            map->max_elts,
            map->n_buckets,
            params->bsize,
-           map->sort_thresh,
            map->flags);
   return map;
 
 error:
-  hashmap_destroy(map);
+  /* Only undo what was set up: buckets may be NULL or partially initialized */
+  hashmap_teardown(map, n_buckets_init);
   errno = ENOMEM;
   return NULL;
 } /* hashmap_init() */
@@ -280,14 +306,7 @@ void hashmap_destroy(struct hashmap* map) {
   if (map->flags & RCSW_NOALLOC_DATA) {
     allocm_init(map->space.db_map, map->max_elts);
   }
-
-  for (size_t i = 0; i < map->n_buckets; i++) {
-    darray_destroy(map->space.buckets + i);
-  } /* for(j..) */
-
-  rcsw_free(map->space.elements, map->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(map->space.buckets, map->flags & RCSW_NOALLOC_META);
-  rcsw_free(map, map->flags & RCSW_NOALLOC_HANDLE);
+  hashmap_teardown(map, map->n_buckets);
 } /* hashmap_destroy() */
 
 void* hashmap_data_get(struct hashmap* const map, const void* const key) {
@@ -296,7 +315,7 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   uint32_t        hash   = 0;
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
+  hashmap_make_node(map, &node, key, hash);
   map->last_used = bucket;
 
   int bucket_index = -1;
@@ -327,7 +346,7 @@ status_t hashmap_add(struct hashmap* const map,
   struct darray*  bucket = hashmap_query(map, key, &hash);
   size_t          home   = hashmap_bucket_index(map, bucket);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
+  hashmap_make_node(map, &node, key, hash);
   map->last_used = bucket;
 
   /* Reject duplicates in every bucket the key could occupy */
@@ -378,17 +397,6 @@ status_t hashmap_add(struct hashmap* const map,
   map->stats.n_collisions += (bucket->current != 1);
   map->stats.n_nodes++;
   map->stats.n_adds++;
-
-  /*
-   * Sort the hashmap if the following are met:
-   *
-   * - RCSW_DS_SORTED was passed
-   * - The sort threshold has been reached
-   */
-  if ((map->flags & RCSW_DS_SORTED) && map->sort_thresh != -1 &&
-      (map->stats.n_adds % (size_t)map->sort_thresh) == 0) {
-    RCSW_CHECK(OK == hashmap_sort(map));
-  }
   map->sorted = bucket->sorted;
   return OK;
 
@@ -403,7 +411,7 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
   uint32_t        hash   = 0;
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
-  hashmap_make_node(&node, key, hash);
+  hashmap_make_node(map, &node, key, hash);
   map->last_used = bucket;
 
   int bucket_index = -1;

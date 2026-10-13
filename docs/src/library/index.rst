@@ -6,9 +6,9 @@
 Library
 =======
 
-RCSW (Robot Control Software) is a portable C library of foundational
-building blocks — data structures, synchronization primitives, logging, and
-IPC — designed for use from bare-metal embedded targets up to Linux/POSIX
+RCSW (Reusable C Software) is a portable C library of foundational building
+blocks — data structures, synchronization primitives, logging, and IPC —
+designed for use from bare-metal embedded targets up to Linux/POSIX
 environments.
 
 All modules come with a thorough test suite; the tests also serve as

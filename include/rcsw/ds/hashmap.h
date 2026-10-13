@@ -24,7 +24,13 @@
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-/** Size of keys for hashmap */
+/**
+ * \brief Size of the key storage in each \ref hashnode, in bytes.
+ *
+ * Keys are stored zero-padded to this size, and two keys are equal if all
+ * \ref RCSW_HASHMAP_KEYSIZE bytes are equal. The maximum value of
+ * \ref hashmap_config.key_len.
+ */
 #define RCSW_HASHMAP_KEYSIZE 64
 
 /*******************************************************************************
@@ -62,6 +68,16 @@ struct hashmap_config {
   status_t (*hash)(const void* const key, size_t len, uint32_t* out);
 
   /**
+   * Length of every key in bytes, at most \ref RCSW_HASHMAP_KEYSIZE. All
+   * hashmap functions read exactly this many bytes from the keys passed to
+   * them, and only these bytes are hashed; the hashmap zero-pads the stored copy.
+   *
+   * 0 means \ref RCSW_HASHMAP_KEYSIZE, so that every key must point to that many
+   * readable bytes, with any unused bytes zeroed by the caller.
+   */
+  size_t key_len;
+
+  /**
    * Initial size of hash buckets; passed to \ref darray_init() as \ref
    * darray_config.init_size; this is also used as \ref darray_config.max_elts ;
    * that is, fixed size hash buckets.
@@ -72,12 +88,6 @@ struct hashmap_config {
    * Number of buckets for hashmap.
    */
   size_t n_buckets;
-
-  /**
-   * Number of inserts before automatically sorting. -1 = do not automatically
-   * sort.
-   */
-  int sort_thresh;
 };
 
 /**
@@ -91,7 +101,7 @@ struct hashmap_stats {
   size_t n_adds;      ///< Number of adds to hashmap since last reset
   size_t n_addfails;  ///< Number of failures to add to hashmap since last reset
   size_t n_collisions;     ///< Number of collisions when adding since last reset
-  double collision_ratio;  ///< Ratio of colliding/non-colliding adds
+  double collision_ratio;  ///< Colliding adds / total successful adds
   bool_t sorted;           ///< Is the hashmap sorted?
   double max_util;         ///< Max bucket utilization
   double min_util;         ///< Min bucket utilization
@@ -159,6 +169,12 @@ struct hashmap {
   size_t elt_size;
 
   /**
+   * Length of keys in bytes (1 to \ref RCSW_HASHMAP_KEYSIZE). See \ref
+   * hashmap_config.key_len.
+   */
+  size_t key_len;
+
+  /**
    * Max number of of elements allowed in the hashmap.
    */
   size_t max_elts;
@@ -172,13 +188,6 @@ struct hashmap {
    * Current hashmap statistics
    */
   struct hashmap_stats stats;
-
-  /**
-   * Number of of successful adds to wait before automatically sorting
-   * hashmap. -1 = do not automatically sort hashmap (sorting must be done
-   * manually) via \ref hashmap_sort().
-   */
-  int sort_thresh;
 
   /**
    * Is the hashmap currently sorted?
@@ -294,9 +303,9 @@ RCSW_API void hashmap_destroy(struct hashmap* map);
 /**
  * \brief Sort a hashmap
  *
- * Sorts each bucket in. This function only needs to be called if \ref
- * RCSW_DS_SORTED was not passed during initialization AND sort_threshold was
- * set to -1.
+ * Sorts every bucket, so that lookups in it use binary search. Not needed if
+ * \ref RCSW_DS_SORTED was passed during initialization: the buckets are then
+ * kept sorted on every insertion.
  *
  * \param map The hashmap handle.
  *
@@ -317,7 +326,8 @@ RCSW_API status_t hashmap_clear(struct hashmap* map);
  * \brief Returns the data from the hashmap corresponding to the given key.
  *
  * \param map The hashmap handle.
- * \param key Key to match with
+ * \param key Key to match with. Must point to \ref hashmap.key_len readable
+ *            bytes.
  *
  * \return The data, or NULL if an error occurred or the data was not found.
  */
@@ -333,7 +343,8 @@ RCSW_API void* hashmap_data_get(struct hashmap* map, const void* key);
  * returned (no duplicates are allowed).
  *
  * \param map The hashmap handle.
- * \param key The key to add.
+ * \param key The key to add. Must point to \ref hashmap.key_len readable
+ *            bytes.
  * \param data The data to add.
  *
  * \return \ref status_t
@@ -346,11 +357,12 @@ RCSW_API status_t hashmap_add(struct hashmap* map,
  * \brief Remove a node from a hashmap
  *
  * This function searches the hashmap for the specified key. If it is found, it
- * is removed from the appropriate bucket. If it is not found, no operation is
- * performed, and success is returned.
+ * is removed from the appropriate bucket. If it is not found, nothing is
+ * changed and ERROR is returned with errno=ENOENT.
  *
  * \param map The hashmap handle.
- * \param key The key for the data to remove.
+ * \param key The key for the data to remove. Must point to \ref
+ *            hashmap.key_len readable bytes.
  *
  * \return \ref status_t
  */
