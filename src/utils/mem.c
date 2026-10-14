@@ -21,44 +21,41 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/*
+ * Accesses are exactly 32 bits wide and need only 32-bit alignment, whatever
+ * the pointer width of the target (uintptr_t is 64 bits on 64-bit targets).
+ */
 status_t utils_mem_write32(uintptr_t addr, uint32_t wval) {
-  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t)));
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)));
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-  *((volatile uintptr_t*)addr) = wval;
+  *((volatile uint32_t*)addr) = wval;
   return OK;
 }
 
 uint32_t utils_mem_read32(uintptr_t addr) {
   /* 0xFFFFFFFF on misalignment, as documented */
-  RCSW_FPC_NV(0xFFFFFFFF, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t))));
+  RCSW_FPC_NV(0xFFFFFFFF, (RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t))));
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-  return *((volatile uintptr_t*)addr);
+  return *((volatile uint32_t*)addr);
 }
 
 status_t utils_mem_rmwr32(uintptr_t addr, uint32_t wval, uint32_t mask) {
-  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uintptr_t)));
-
-  volatile uint32_t curr_val = 0;
+  /* A mask of 0 would write nothing: almost certainly a caller bug */
+  RCSW_FPC_NV(ERROR, RCSW_IS_MEM_ALIGNED(addr, sizeof(uint32_t)), 0 != mask);
 
   /*
-   * If some bits masked, read the memory address, mask off all bits
-   * NOT in mask in the result. OR this value with all bits in wval that
-   * ARE in the mask.
+   * Read the location, keep the bits outside the mask, and take the bits
+   * inside the mask from wval. A full mask needs no read, which matters for
+   * registers where reads have side effects.
    */
-  if (mask != 0) {
-    curr_val = utils_mem_read32(addr);
-    wval     = (curr_val & ~mask) | (wval & mask);
+  if (0xFFFFFFFFU != mask) {
+    uint32_t curr_val = utils_mem_read32(addr);
+    wval              = (curr_val & ~mask) | (wval & mask);
   }
+  RCSW_CHECK(OK == utils_mem_write32(addr, wval));
 
-  /*
-   * Write masked off bits back to memory/register, or just write wval to
-   * memory, if mask was 0.
-   */
-  utils_mem_write32(addr, wval);
-
-  /* read & compare */
-  curr_val = utils_mem_read32(addr);
-  RCSW_CHECK((curr_val & mask) == (wval & mask));
+  /* Read back and verify every bit that was written */
+  RCSW_CHECK((utils_mem_read32(addr) & mask) == (wval & mask));
 
   return OK;
 

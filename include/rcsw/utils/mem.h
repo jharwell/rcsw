@@ -31,9 +31,10 @@
 BEGIN_C_DECLS
 
 /**
- * \brief Write a memory location
+ * \brief Write a 32-bit register/memory location with a single 32-bit access.
  *
- * \param addr The address of register/memory location to write
+ * \param addr The address of register/memory location to write. Must be 32-bit
+ *             aligned.
  * \param wval The value to write
  *
  * \return \ref status_t
@@ -45,7 +46,8 @@ RCSW_API status_t utils_mem_write32(uintptr_t addr, uint32_t wval);
  *
  * \param addr The address of register/memory location to read from
  *
- * \return The value of the register, or 0xFFFFFFFF if non word-aligned.
+ * \return The value of the register, or 0xFFFFFFFF if \p addr is not 32-bit
+ * aligned.
  */
 RCSW_API uint32_t utils_mem_read32(uintptr_t addr);
 
@@ -58,8 +60,10 @@ RCSW_API uint32_t utils_mem_read32(uintptr_t addr);
  *
  * \param wval The 32-bit value to write.
  *
- * \param mask The 32-bit insert mask. Bits that are 0 will not be altered,
- * regardless of the value written.
+ * \param mask The 32-bit insert mask. Only bits that are 1 are taken from
+ * \p wval; bits that are 0 keep their current value. Pass 0xFFFFFFFF to write
+ * all 32 bits (the location is then not read first). Must not be 0. Every
+ * written bit is verified on readback.
  *
  * \return \ref status_t
  */

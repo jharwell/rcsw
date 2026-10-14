@@ -14,12 +14,12 @@
 #include "rcsw/core/fpc.h"
 #include "rcsw/er/client.h"
 #include "rcsw/utils/align.h"
-#include "rcsw/utils/bit.h"
 
 /*******************************************************************************
  * Constant Definitions
  ******************************************************************************/
-#define CRC32_ETH_POLYNOMIAL 0x04C11DB7U
+/* 0x04C11DB7 bit-reversed, for the LSB-first (reflected) computation */
+#define CRC32_ETH_POLYNOMIAL_REFLECTED 0xEDB88320U
 #define CRC32_ETH_INITIAL_REMAINDER 0xFFFFFFFFUL
 
 /*******************************************************************************
@@ -206,7 +206,7 @@ uint32_t utils_crc32_eth(const uint8_t* const buf, size_t n_bytes) {
   int      j;
   uint32_t crc;
   uint32_t mask;
-  uint32_t poly = RCSW_REV32(CRC32_ETH_POLYNOMIAL);
+  uint32_t poly = CRC32_ETH_POLYNOMIAL_REFLECTED;
 
   i   = 0;
   crc = CRC32_ETH_INITIAL_REMAINDER;

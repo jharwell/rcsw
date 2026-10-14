@@ -7,8 +7,7 @@
  *
  * \ingroup utils
  *
- * \brief Bit manipulation macros (masking, reversal, reflection,
- * endianness swapping), and related helpers.
+ * \brief Bit manipulation macros (masking, binary literals, widths).
  */
 
 #pragma once
@@ -47,60 +46,6 @@
  */
 #define RCSW_BITS_LO64(v) (((uint64_t)((v) & 0x00000000FFFFFFFF)))
 
-/**
- * \name Bit reversal (shift-based)
- *
- * Reverse the bit order of an 8, 16, or 32-bit value (MSB becomes LSB and vice
- * versa). This is not endianness swapping.
- * @{
- */
-/** \brief Reverse a 8-bit value. */
-#define RCSW_REV8(v)                                                          \
-  ((uint8_t)(((((v) * 0x0802LU & 0x22110LU) | ((v) * 0x8020LU & 0x88440LU)) * \
-                0x10101LU >>                                                  \
-              16)))
-/** \brief Reverse a 16-bit value. */
-#define RCSW_REV16(v) \
-  ((uint16_t)((RCSW_REV8(((v) & 0xFF)) << 8) | RCSW_REV8((((v) >> 8) & 0xFF))))
-/** \brief Reverse a 32-bit value. */
-#define RCSW_REV32(v)                                        \
-  ((uint32_t)(((uint32_t)RCSW_REV16(((v) & 0xFFFF)) << 16) | \
-              (uint32_t)RCSW_REV16((((v) >> 16) & 0xFFFF))))
-/** @} */
-
-/**
- * \name Bit reversal (table-based)
- *
- * Same results as the shift-based reversal macros, using the lookup table
- * \ref rcsw_util_revtable.
- * @{
- */
-/** \brief Reverse a 8-bit value. */
-#define RCSW_REVTBL8(v) ((uint8_t)(rcsw_util_revtable[v]))
-/** \brief Reverse a 16-bit value. */
-#define RCSW_REVTBL16(v)                          \
-  ((uint16_t)((RCSW_REVTBL8(((v) & 0xFF)) << 8) | \
-              RCSW_REVTBL8((((v) >> 8) & 0xFF))))
-/** \brief Reverse a 32-bit value. */
-#define RCSW_REVTBL32(v)                                        \
-  ((uint32_t)(((uint32_t)RCSW_REVTBL16(((v) & 0xFFFF)) << 16) | \
-              (uint32_t)RCSW_REVTBL16((((v) >> 16) & 0xFFFF))))
-/** @} */
-
-/**
- * \name Bit reflection
- *
- * Mirror an 8, 16, or 32-bit value about its center, via \ref utils_reflect32().
- * @{
- */
-/** \brief Reflect a 8-bit value. */
-#define RCSW_REFLECT8(v) ((uint8_t)utils_reflect32(((v)), 8))
-/** \brief Reflect a 16-bit value. */
-#define RCSW_REFLECT16(v) ((uint16_t)utils_reflect32(((v)), 16))
-/** \brief Reflect a 32-bit value. */
-#define RCSW_REFLECT32(v) ((uint32_t)utils_reflect32(((v)), 32))
-/** @} */
-
 /* \cond INTERNAL */
 
 /*
@@ -137,15 +82,21 @@
  */
 #define RCSW_BIN8(b) ((uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b)))
 
-#define RCSW_BIN16(b1, b0)                                      \
-  (((uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b1)) << 8) | \
-   (uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b0)))
+/*
+ * Each byte is widened to the unsigned result type before shifting: uint8_t
+ * promotes to (signed) int, and shifting a set top bit into int's sign bit is
+ * undefined.
+ */
+#define RCSW_BIN16(b1, b0)                                                  \
+  ((uint16_t)(((uint16_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b1)) \
+               << 8) |                                                      \
+              (uint16_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b0))))
 
-#define RCSW_BIN32(b3, b2, b1, b0)                               \
-  (((uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b3)) << 24) | \
-   ((uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b2)) << 16) | \
-   ((uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b1)) << 8) |  \
-   (uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b0)))
+#define RCSW_BIN32(b3, b2, b1, b0)                                         \
+  (((uint32_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b3)) << 24) | \
+   ((uint32_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b2)) << 16) | \
+   ((uint32_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b1)) << 8) |  \
+   (uint32_t)(uint8_t)RCSW_BIN_DECODE(RCSW_BIN_MAKE_LITERAL(b0)))
 
 /** @} */
 
@@ -155,37 +106,16 @@
  */
 #define RCSW_BIT_WIDTH(t) (sizeof(t) * CHAR_BIT)
 
-/** \brief Value with only the top bit of type \p t set. */
-#define RCSW_TOPBIT(t) (1U << (RCSW_BIT_WIDTH(t) - 1))
+/**
+ * \brief Value with only the top bit of type \p t set, as a \c uintmax_t.
+ *
+ * Works for any integer type up to the width of \c uintmax_t (a plain
+ * \c 1U shift is undefined for types wider than \c unsigned \c int).
+ */
+#define RCSW_TOPBIT(t) ((uintmax_t)1 << (RCSW_BIT_WIDTH(t) - 1))
 
 /** Generate a 32-bit bitmask based on \p shift */
 #define RCSW_GEN_M32(name, shift) name = (1U << (shift))
 
 /** Generate a 64-bit bitmask based on \p shift */
 #define RCSW_GEN_M64(name, shift) name = (1ULL << (shift))
-
-/******************************************************************************
- * Global Variables
- ******************************************************************************/
-BEGIN_C_DECLS
-
-/** \brief Lookup table for 8-bit bit-reversal. Used by \ref RCSW_REVTBL8(). */
-RCSW_API extern const uint8_t rcsw_util_revtable[];
-
-/******************************************************************************
- * Public API
- ******************************************************************************/
-/**
- * \brief Reflect the lowest \p n_bits bits of \p data about their center.
- *
- * Bit 0 swaps with bit n_bits-1, bit 1 with bit n_bits-2, and so on.
- * Used internally by CRC computation routines.
- *
- * \param data   The value whose bits are to be reflected.
- * \param n_bits Number of bits to reflect (counted from LSB).
- *
- * \return The reflected value.
- */
-RCSW_API uint32_t utils_reflect32(uint32_t data, uint8_t n_bits) RCSW_CONST;
-
-END_C_DECLS
