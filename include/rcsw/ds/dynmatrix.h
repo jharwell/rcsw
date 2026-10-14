@@ -220,6 +220,11 @@ RCSW_API void dynmatrix_print(const struct dynmatrix* matrix);
 /**
  * \brief Resize a dynamic matrix manually.
  *
+ * Existing elements inside the new bounds keep their values; new elements are
+ * zero. The resize is all-or-nothing: if it fails (e.g., out of memory), the
+ * matrix keeps its old dimensions and contents, though some memory reserved
+ * along the way may not be released until a later resize or destroy.
+ *
  * \param matrix The matrix handle.
  * \param u The desired # of rows. Can be <,>,= the current #. If =, no action
  *          is performed.

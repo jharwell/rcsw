@@ -24,6 +24,25 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/**
+ * \brief Release a (possibly partially initialized) dynmatrix.
+ *
+ * Only the first matrix->n_rows rows are destroyed, so n_rows must count the
+ * rows that have actually been initialized.
+ */
+static void dynmatrix_teardown(struct dynmatrix* const matrix) {
+  if (NULL == matrix) {
+    return;
+  }
+  if (NULL != matrix->rows) {
+    for (size_t i = 0; i < matrix->n_rows; ++i) {
+      darray_destroy(darray_data_get(matrix->rows, i));
+    } /* for(i..) */
+    darray_destroy(matrix->rows);
+  }
+  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
+} /* dynmatrix_teardown() */
+
 struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
                                  const struct dynmatrix_config* const params) {
   RCSW_FPC_NV(NULL,
@@ -42,10 +61,12 @@ struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
   matrix->flags    = params->flags;
   matrix->elt_size = params->elt_size;
   matrix->printe   = params->printe;
-  matrix->n_rows   = params->n_rows;
-  matrix->n_cols   = params->n_cols;
+  matrix->rows     = NULL;
+  /* counts initialized rows, so a failure part way through can be undone */
+  matrix->n_rows = 0;
+  matrix->n_cols = params->n_cols;
 
-  struct darray_config handle_params = {.init_size = matrix->n_rows,
+  struct darray_config handle_params = {.init_size = params->n_rows,
                                         .cmpe      = NULL,
                                         .printe    = NULL,
                                         .elements  = NULL,
@@ -59,7 +80,7 @@ struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
    * Pre-mark all row slots accessible so darray_data_get() bounds checks
    * pass during the init loop below and all subsequent dynmatrix operations.
    */
-  matrix->rows->current = matrix->n_rows;
+  matrix->rows->current = params->n_rows;
 
   struct darray_config row_params = {.init_size = matrix->n_cols,
                                      .cmpe      = NULL,
@@ -69,29 +90,28 @@ struct dynmatrix* dynmatrix_init(struct dynmatrix* const              matrix_in,
                                      .max_elts  = -1,
                                      .flags = RCSW_NOALLOC_HANDLE | RCSW_ZALLOC};
 
-  for (size_t i = 0; i < matrix->n_rows; ++i) {
+  for (size_t i = 0; i < params->n_rows; ++i) {
     struct darray* row = (struct darray*)darray_data_get(matrix->rows, i);
     RCSW_CHECK_PTR(darray_init(row, &row_params));
     /* Same: pre-mark all column slots accessible. */
     row->current = matrix->n_cols;
+    matrix->n_rows++;
   } /* for(i..) */
 
   return matrix;
 
 error:
-  dynmatrix_destroy(matrix);
+  /*
+   * Rows past n_rows were never initialized: they are zero-filled, and
+   * destroying one would free() a pointer into the middle of the row array.
+   */
+  dynmatrix_teardown(matrix);
   return NULL;
 } /* dynmatrix_init() */
 
 void dynmatrix_destroy(struct dynmatrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
-
-  for (size_t i = 0; i < matrix->n_rows; ++i) {
-    darray_destroy(darray_data_get(matrix->rows, i));
-  } /* for(i..) */
-  darray_destroy(matrix->rows);
-
-  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
+  dynmatrix_teardown(matrix);
 } /* dynmatrix_destroy() */
 
 status_t dynmatrix_set(struct dynmatrix* const matrix,
@@ -111,27 +131,6 @@ error:
   return ERROR;
 } /* dynmatrix_set() */
 
-/**
- * \brief Resize one row to exactly \p n_cols columns, zeroing new cells.
- */
-static status_t dynmatrix_row_resize(struct dynmatrix* const matrix,
-                                     struct darray* const    row,
-                                     size_t                  n_cols) {
-  size_t old_cols = darray_size(row);
-  if (n_cols > darray_capacity(row) || n_cols < old_cols) {
-    RCSW_CHECK(OK == darray_resize(row, n_cols));
-  }
-  if (n_cols > old_cols) {
-    memset(row->elements + (old_cols * matrix->elt_size),
-           0,
-           (n_cols - old_cols) * matrix->elt_size);
-  }
-  return darray_set_size(row, n_cols);
-
-error:
-  return ERROR;
-} /* dynmatrix_row_resize() */
-
 status_t dynmatrix_resize(struct dynmatrix* const matrix, size_t u, size_t v) {
   RCSW_FPC_NV(ERROR, NULL != matrix, u > 0, v > 0);
 
@@ -141,24 +140,26 @@ status_t dynmatrix_resize(struct dynmatrix* const matrix, size_t u, size_t v) {
            u,
            v);
 
-  /* Rows going away */
-  for (size_t i = u; i < matrix->n_rows; ++i) {
-    darray_destroy(darray_data_get(matrix->rows, i));
-  } /* for(i..) */
-  size_t kept_rows = RCSW_MIN(u, matrix->n_rows);
-  if (u > darray_capacity(matrix->rows) || u < matrix->n_rows) {
+  size_t old_rows  = matrix->n_rows;
+  size_t kept_rows = RCSW_MIN(u, old_rows);
+  size_t n_new     = 0; /* new rows initialized so far */
+
+  /*
+   * Phase 1: every step that can fail. Until phase 2 the matrix's contents and
+   * dimensions are unchanged; a failure here leaves at most some extra
+   * capacity reserved, so nothing needs to be undone except new rows.
+   */
+  if (u > darray_capacity(matrix->rows)) {
     RCSW_CHECK(OK == darray_resize(matrix->rows, u));
   }
-  RCSW_CHECK(OK == darray_set_size(matrix->rows, u));
-  matrix->n_rows = kept_rows;
-
-  /* Surviving rows: adjust the column count */
   for (size_t i = 0; i < kept_rows; ++i) {
-    RCSW_CHECK(OK ==
-               dynmatrix_row_resize(matrix, darray_data_get(matrix->rows, i), v));
+    struct darray* row = darray_data_get(matrix->rows, i);
+    if (v > darray_capacity(row)) {
+      RCSW_CHECK(OK == darray_resize(row, v));
+    }
   } /* for(i..) */
 
-  /* New rows: zero-filled, v columns */
+  /* New rows: zero-filled, v columns, in slots the row array already has */
   struct darray_config row_params = {.init_size = v,
                                      .cmpe      = NULL,
                                      .printe    = NULL,
@@ -166,16 +167,62 @@ status_t dynmatrix_resize(struct dynmatrix* const matrix, size_t u, size_t v) {
                                      .elt_size  = matrix->elt_size,
                                      .max_elts  = -1,
                                      .flags = RCSW_NOALLOC_HANDLE | RCSW_ZALLOC};
-  for (size_t i = kept_rows; i < u; ++i) {
-    struct darray* row = darray_data_get(matrix->rows, i);
-    RCSW_CHECK_PTR(darray_init(row, &row_params));
-    RCSW_CHECK(OK == darray_set_size(row, v));
-    matrix->n_rows = i + 1;
+  if (u > old_rows) {
+    /* within capacity, so cannot fail; makes the new slots addressable */
+    darray_set_size(matrix->rows, u);
+    for (size_t i = old_rows; i < u; ++i) {
+      struct darray* row = darray_data_get(matrix->rows, i);
+      if (NULL == darray_init(row, &row_params)) {
+        goto undo_new_rows;
+      }
+      darray_set_size(row, v); /* within capacity */
+      ++n_new;
+    } /* for(i..) */
+  }
+
+  /*
+   * Phase 2: commit. Nothing here can fail: every size set is within the
+   * capacity reserved above.
+   */
+  for (size_t i = 0; i < kept_rows; ++i) {
+    struct darray* row      = darray_data_get(matrix->rows, i);
+    size_t         old_cols = darray_size(row);
+    if (v > old_cols) {
+      memset(row->elements + (old_cols * matrix->elt_size),
+             0,
+             (v - old_cols) * matrix->elt_size);
+    }
+    darray_set_size(row, v);
   } /* for(i..) */
 
+  /* Rows going away are destroyed only now, so a failure above loses no data */
+  for (size_t i = u; i < old_rows; ++i) {
+    darray_destroy(darray_data_get(matrix->rows, i));
+  } /* for(i..) */
+  darray_set_size(matrix->rows, u);
   matrix->n_rows = u;
   matrix->n_cols = v;
+
+  /*
+   * Best effort: give back capacity that is no longer needed. A failed shrink
+   * leaves the array as it was, so the result can be ignored.
+   */
+  for (size_t i = 0; i < kept_rows; ++i) {
+    struct darray* row = darray_data_get(matrix->rows, i);
+    if (darray_capacity(row) > v) {
+      (void)darray_resize(row, v);
+    }
+  } /* for(i..) */
+  if (darray_capacity(matrix->rows) > u) {
+    (void)darray_resize(matrix->rows, u);
+  }
   return OK;
+
+undo_new_rows:
+  for (size_t i = old_rows; i < old_rows + n_new; ++i) {
+    darray_destroy(darray_data_get(matrix->rows, i));
+  } /* for(i..) */
+  darray_set_size(matrix->rows, old_rows);
 
 error:
   return ERROR;

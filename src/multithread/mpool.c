@@ -42,8 +42,10 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
     rcsw_alloc(pool_in,
                sizeof(struct mpool),
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
-
-  RCSW_CHECK_PTR(the_pool);
+  if (NULL == the_pool) {
+    errno = ENOMEM;
+    return NULL;
+  }
   memset(the_pool, 0, sizeof(*the_pool));
 
   the_pool->flags    = params->flags;
@@ -54,18 +56,29 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
           the_pool->max_elts,
           the_pool->elt_size);
 
+  /*
+   * Each step is undone in reverse on failure. The embedded llists, csem and
+   * mutex are only zero-filled until their *_init() succeeds, and destroying
+   * one before then is undefined (a zeroed llist would even free() its own
+   * handle, which lives inside the pool), so mpool_destroy() can't be used.
+   */
+
   /* allocate space for pool elements */
   the_pool->elements =
     rcsw_alloc(params->elements,
                params->max_elts * params->elt_size,
                params->flags & (RCSW_NOALLOC_DATA | RCSW_ZALLOC));
-  RCSW_CHECK_PTR(the_pool->elements);
+  if (NULL == the_pool->elements) {
+    goto free_pool;
+  }
 
   /* allocate space for free/alloc list nodes */
   the_pool->meta = rcsw_alloc(params->meta,
                               llist_meta_space(params->max_elts) * 2,
                               params->flags & (RCSW_NOALLOC_META | RCSW_ZALLOC));
-  RCSW_CHECK_PTR(the_pool->meta);
+  if (NULL == the_pool->meta) {
+    goto free_elements;
+  }
 
   struct llist_config llist_config = {
     .max_elts = (int)params->max_elts,
@@ -77,12 +90,15 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   };
 
   /* initialize free/alloc lists */
-  RCSW_CHECK_PTR(llist_init(&the_pool->free, &llist_config));
+  if (NULL == llist_init(&the_pool->free, &llist_config)) {
+    goto free_meta;
+  }
   for (size_t i = 0; i < the_pool->max_elts; ++i) {
-    RCSW_CHECK(OK == llist_append(
-                       &the_pool->free,
-                       (uint8_t*)the_pool->elements + (i * the_pool->elt_size)));
-
+    if (OK != llist_append(&the_pool->free,
+                           (uint8_t*)the_pool->elements +
+                             (i * the_pool->elt_size))) {
+      goto destroy_free;
+    }
   } /* for() */
   size_t llist_meta_bytes = llist_meta_space(params->max_elts);
 
@@ -92,35 +108,49 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
    * the math to work.
    */
   llist_config.meta = (void*)((uint8_t*)the_pool->meta + llist_meta_bytes);
-  RCSW_CHECK_PTR(llist_init(&the_pool->alloc, &llist_config));
+  if (NULL == llist_init(&the_pool->alloc, &llist_config)) {
+    goto destroy_free;
+  }
 
   /* initialize reference counting */
   if (params->flags & RCSW_NOALLOC_META) {
     the_pool->refs = (void*)((uint8_t*)the_pool->meta + (llist_meta_bytes * 2));
-    memset((uint8_t*)the_pool->meta + (llist_meta_bytes * 2),
-           0,
-           params->max_elts * sizeof(int));
   } else {
-    the_pool->refs =
-      rcsw_alloc(NULL, params->max_elts * sizeof(int), RCSW_ZALLOC);
+    the_pool->refs = rcsw_alloc(NULL, params->max_elts * sizeof(int), RCSW_NONE);
   }
-
-  RCSW_CHECK_PTR(the_pool->refs);
+  if (NULL == the_pool->refs) {
+    goto destroy_alloc;
+  }
   /* Every chunk starts free (see MPOOL_REF_FREE) */
   for (size_t i = 0; i < params->max_elts; ++i) {
     the_pool->refs[i] = MPOOL_REF_FREE;
   } /* for(i..) */
 
   /* initialize locks */
-  RCSW_CHECK_PTR(
-    csem_init(&the_pool->slots_avail, the_pool->max_elts, RCSW_NOALLOC_HANDLE));
-  RCSW_CHECK_PTR(mutex_init(&the_pool->mutex, RCSW_NOALLOC_HANDLE));
-
+  if (NULL ==
+      csem_init(&the_pool->slots_avail, the_pool->max_elts, RCSW_NOALLOC_HANDLE)) {
+    goto free_refs;
+  }
+  if (NULL == mutex_init(&the_pool->mutex, RCSW_NOALLOC_HANDLE)) {
+    goto destroy_csem;
+  }
   return the_pool;
 
-error:
-  mpool_destroy(the_pool);
-  errno = EAGAIN;
+destroy_csem:
+  csem_destroy(&the_pool->slots_avail);
+free_refs:
+  rcsw_free(the_pool->refs, the_pool->flags & RCSW_NOALLOC_META);
+destroy_alloc:
+  llist_destroy(&the_pool->alloc);
+destroy_free:
+  llist_destroy(&the_pool->free);
+free_meta:
+  rcsw_free(the_pool->meta, the_pool->flags & RCSW_NOALLOC_META);
+free_elements:
+  rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
+free_pool:
+  rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
+  errno = ENOMEM;
   return NULL;
 } /* mpool_init() */
 
