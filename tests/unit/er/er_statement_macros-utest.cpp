@@ -82,9 +82,9 @@ status_t unbraced(int x) {
     ER_TRACE("not three");
 
   if (x == 4)
-    DPRINT_TOK(x);
+    DPRINTF("four\n");
   else
-    DPRINT_TOKD(x);
+    DPRINTF("x=%d\n", x);
 
   if (x == 2)
     ER_ASSERT(x == 2, "two");

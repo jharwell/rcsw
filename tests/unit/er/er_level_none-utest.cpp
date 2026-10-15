@@ -52,16 +52,12 @@ static void silence_test() {
 
 static void dprintf_silence_test() {
   /*
-   * DPRINTF and DPRINT_TOK* are gated by ERL >= FATAL; at ERL_NONE they
+   * DPRINTF is gated by ERL >= FATAL; at ERL_NONE it
    * must never execute.
    */
   int         x   = 42;
   std::string out = capture_stdout([&] {
-    DPRINTF("must not appear\n");
-    DPRINT_TOKD(x);
-    DPRINT_TOKX(x);
-    DPRINT_TOKF(x);
-    DPRINT_TOK(x);
+    DPRINTF("must not appear: %d\n", x);
   });
   CATCH_REQUIRE(out.empty());
 }
@@ -79,11 +75,7 @@ static void syntax_test() {
   ER_DEBUG("d");
   ER_TRACE("t");
   int x = 1;
-  DPRINTF("dp\n");
-  DPRINT_TOKD(x);
-  DPRINT_TOKX(x);
-  DPRINT_TOKF(x);
-  DPRINT_TOK(x);
+  DPRINTF("dp %d\n", x);
 
   RCSW_ER_INIT();
   RCSW_ER_MODULE_INIT();
@@ -131,7 +123,7 @@ static int report_only_values_test(int x) {
   ER_ERR("value %d", only_reported);
   ER_DEBUG("value %d", set_then_reported);
   int only_dprinted = x - 1;
-  DPRINT_TOKD(only_dprinted);
+  DPRINTF("%d\n", only_dprinted);
   int only_asserted = x;
   ER_ASSERT(only_asserted >= 0, "negative: %d", only_asserted);
   return x;

@@ -155,19 +155,6 @@ enum exec_type {
 BEGIN_C_DECLS
 
 /**
- * \brief Utility function to swap two non-overlapping elements of any size.
- *
- * Works on raw bytes, so elements need no particular alignment.
- *
- * \param elt1 Element #1.
- * \param elt2 Element #2.
- * \param elt_size Size of elements in bytes.
- *
- * \return \ref status_t
- */
-RCSW_LOCAL status_t ds_elt_swap(void* elt1, void* elt2, size_t elt_size);
-
-/**
  * \brief Calculate how large the chunk of memory for the metadata for a data
  * structure needs to be, given a max # of elements.
  *

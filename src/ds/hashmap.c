@@ -319,7 +319,6 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
   hashmap_make_node(map, &node, key, hash);
-  map->last_used = bucket;
 
   int bucket_index = -1;
   int node_index   = -1;
@@ -350,7 +349,6 @@ status_t hashmap_add(struct hashmap* const map,
   size_t          home   = hashmap_bucket_index(map, bucket);
   struct hashnode node;
   hashmap_make_node(map, &node, key, hash);
-  map->last_used = bucket;
 
   /* Reject duplicates in every bucket the key could occupy */
   int found_bucket = -1;
@@ -415,7 +413,6 @@ status_t hashmap_remove(struct hashmap* const map, const void* const key) {
   struct darray*  bucket = hashmap_query(map, key, &hash);
   struct hashnode node;
   hashmap_make_node(map, &node, key, hash);
-  map->last_used = bucket;
 
   int bucket_index = -1;
   int node_index   = -1;
@@ -495,6 +492,57 @@ error:
   return ERROR;
 } /* hashmap_clear() */
 
+/**
+ * \brief Expected lookup cost of the current keys relative to a random hash.
+ *
+ * With b_j keys hashing to bucket j, n keys and m buckets, this is
+ *
+ *   sum_j b_j (b_j + 1) / 2  /  ((n / 2m) (n + 2m - 1))
+ *
+ * The numerator is the total number of comparisons needed to look up every
+ * key in a chained table; the denominator is its expected value for a
+ * uniformly random hash. The keys' home buckets are counted, not where linear
+ * probing placed them, so the counts are recomputed from the stored hashes in
+ * windows of a fixed number of buckets to avoid allocating.
+ */
+static double hashmap_hash_quality(const struct hashmap* const map) {
+  double n = (double)map->stats.n_nodes;
+  double m = (double)map->n_buckets;
+  if (0 == map->stats.n_nodes) {
+    return 0.0;
+  }
+  double sum = 0.0;
+
+  if (!(map->flags & RCSW_DS_HASHMAP_LINPROB)) {
+    /* Every key is in its home bucket */
+    for (size_t j = 0; j < map->n_buckets; ++j) {
+      double b = (double)darray_size(&map->space.buckets[j]);
+      sum += b * (b + 1.0) / 2.0;
+    } /* for(j..) */
+  } else {
+    size_t counts[256];
+    for (size_t base = 0; base < map->n_buckets; base += RCSW_ARRAY_ELTS(counts)) {
+      size_t width = RCSW_MIN(RCSW_ARRAY_ELTS(counts), map->n_buckets - base);
+      memset(counts, 0, sizeof(counts));
+      for (size_t i = 0; i < map->n_buckets; ++i) {
+        const struct darray* bucket = &map->space.buckets[i];
+        for (size_t k = 0; k < darray_size(bucket); ++k) {
+          const struct hashnode* node = darray_data_get(bucket, k);
+          size_t                 home = node->hash % map->n_buckets;
+          if (home >= base && home < base + width) {
+            ++counts[home - base];
+          }
+        } /* for(k..) */
+      } /* for(i..) */
+      for (size_t j = 0; j < width; ++j) {
+        double b = (double)counts[j];
+        sum += b * (b + 1.0) / 2.0;
+      } /* for(j..) */
+    } /* for(base..) */
+  }
+  return sum / ((n / (2.0 * m)) * (n + 2.0 * m - 1.0));
+} /* hashmap_hash_quality() */
+
 status_t hashmap_gather(const struct hashmap* const map,
                         struct hashmap_stats* const stats) {
   RCSW_FPC_NV(ERROR, map != NULL, stats != NULL);
@@ -525,6 +573,7 @@ status_t hashmap_gather(const struct hashmap* const map,
   stats->average_util = average / (double)map->n_buckets;
   stats->max_util     = (double)max / bsize;
   stats->min_util     = (double)min / bsize;
+  stats->hash_quality = hashmap_hash_quality(map);
   return OK;
 } /* hashmap_gather() */
 
@@ -550,50 +599,11 @@ void hashmap_print(const struct hashmap* const map) {
   DPRINTF("Max bucket utilization     : %.8f\n", stats.max_util);
   DPRINTF("Min bucket utilization     : %.8f\n", stats.min_util);
   DPRINTF("Average bucket utilization : %.8f\n", stats.average_util);
+  DPRINTF("Hash quality (1.0 = random) : %.4f\n", stats.hash_quality);
   DPRINTF("\n");
 
 error:
   return;
 } /* hashmap_print() */
-
-void hashmap_print_dist(const struct hashmap* const map) {
-  if (NULL == map) {
-    DPRINTF(RCSW_ER_MODNAME " : < NULL >\n");
-    return;
-  }
-  DPRINTF("\n----------------------------------------\n");
-  DPRINTF("Hashmap Utilization Distribution");
-  DPRINTF("\n----------------------------------------\n\n");
-
-  /* get maximum bucket node count */
-  size_t max_node_count = 0;
-  for (size_t i = 0; i < map->n_buckets; ++i) {
-    max_node_count =
-      RCSW_MAX(darray_size(&map->space.buckets[i]), max_node_count);
-  }
-  if (max_node_count == 0) {
-    DPRINTF(RCSW_ER_MODNAME " : < empty >\n");
-    return;
-  }
-  size_t xmax = RCSW_MIN(max_node_count, (size_t)80);
-
-  for (size_t i = 0; i < map->n_buckets; ++i) {
-    DPRINTF("Bucket %-4zu| ", i);
-    if (darray_size(&map->space.buckets[i]) == 0) {
-      DPRINTF("\n");
-      continue;
-    }
-
-    size_t size  = darray_size(&map->space.buckets[i]);
-    double scale = (double)size / (double)max_node_count;
-    size_t fill  = (size_t)(scale * (double)xmax);
-    for (size_t j = 0; j < fill; ++j) {
-      DPRINTF("*");
-    } /* for(j..) */
-
-    DPRINTF("\n");
-  }
-  DPRINTF("\nHistogram normalized w.r.t. max bucket fill.\n");
-} /* hashmap_print_dist() */
 
 END_C_DECLS

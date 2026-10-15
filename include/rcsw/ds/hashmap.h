@@ -107,6 +107,24 @@ struct hashmap_stats {
   double max_util;         ///< Max bucket utilization
   double min_util;         ///< Min bucket utilization
   double average_util;     ///< Average bucket utilization
+
+  /**
+   * How evenly the hash function spreads the current keys over the buckets,
+   * relative to an ideal random hash: the expected number of key comparisons
+   * for a lookup, divided by what a uniformly random hash would give for the
+   * same number of keys and buckets.
+   *
+   * - About 1.0: as good as random (0.95-1.05 is normal sampling noise).
+   * - Above 1.0: keys cluster in some buckets; e.g. 2.0 means lookups do
+   *   twice the work of a random hash. Try another hash function, or a
+   *   prime number of buckets if the keys share low-order bit patterns.
+   * - Below 1.0: better than random (possible for structured keys).
+   *
+   * Uses the bucket each key hashes to (its home bucket), so the result is
+   * the same with or without \ref RCSW_DS_HASHMAP_LINPROB. 0 if the hashmap
+   * is empty. Collect a representative set of keys before reading it.
+   */
+  double hash_quality;
 };
 
 /**
@@ -154,11 +172,6 @@ struct hashmap {
    * Hashing function. Can't be NULL (duh).
    */
   status_t (*hash)(const void* const key, size_t len, uint32_t* out);
-
-  /**
-   * Last bucket that was added to/removed from.
-   */
-  struct darray* last_used;
 
   /**
    * Management of all node and element space for the hashmap.
@@ -413,6 +426,11 @@ RCSW_API void hashmap_print(const struct hashmap* map);
 /**
  * \brief Gather statistics about current state of hashmap.
  *
+ * Takes O(n_nodes) time without \ref RCSW_DS_HASHMAP_LINPROB. With it, the
+ * \ref hashmap_stats.hash_quality computation rescans the nodes once for every
+ * 256 buckets (no memory is allocated), so this is meant for diagnostics, not
+ * for hot paths.
+ *
  * \param map The hashmap handle.
  * \param stats The statistics to be filled.
  *
@@ -420,15 +438,5 @@ RCSW_API void hashmap_print(const struct hashmap* map);
  */
 RCSW_API status_t hashmap_gather(const struct hashmap* map,
                                  struct hashmap_stats* stats);
-
-/**
- * \brief Print the hashmap distribution.
- *
- * The function provides a visual representation of how many elements are in
- * the hashmap and what their distribution is across the buckets.
- *
- * \param map The hashmap handle.
- */
-RCSW_API void hashmap_print_dist(const struct hashmap* map);
 
 END_C_DECLS

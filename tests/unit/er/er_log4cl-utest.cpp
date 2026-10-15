@@ -141,8 +141,15 @@ CATCH_TEST_CASE("log4cl can be shut down and initialized again",
   log4cl_deinit();
 }
 
-#if RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4CL && \
-    RCSW_ERL >= RCSW_ERL_ERROR
+/*
+ * Only meaningful if the library itself reports through LOG4CL. That is a
+ * property of how the library was built, which this TU can only see if the
+ * build defines RCSW_CONFIG_ER_PLUGIN for the tests too (an undefined value
+ * would compare equal to RCSW_ER_PLUGIN_LOG4CL, which is 0).
+ */
+#if defined(RCSW_CONFIG_ER_PLUGIN) &&                   \
+  RCSW_CONFIG_ER_PLUGIN == RCSW_ER_PLUGIN_LOG4CL && \
+  RCSW_ERL >= RCSW_ERL_ERROR
 CATCH_TEST_CASE("library modules register with log4cl when initialized",
                 "[er][log4cl]") {
   /* a data structure created before the plugin is up still works */

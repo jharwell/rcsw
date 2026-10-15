@@ -10,9 +10,8 @@
  * Checksum coverage:
  *   - utils_xchks8/16/32  (XOR-rotate)
  *   - utils_achks8/16/32  (add-ignore-carry)
- *   - utils_crc32_eth     (IEEE 802.3 direct)
- *   - utils_crc32_ethl    (IEEE 802.3 lookup-table)
- *   - utils_crc32_brown   (Gary S. Brown CRC32)
+ *   - utils_crc32         (CRC-32, lookup table)
+ *   - utils_crc32_bitwise (CRC-32, no table)
  */
 
 /*******************************************************************************
@@ -92,47 +91,43 @@ static void achks_test() {
   CATCH_REQUIRE(utils_achks8(buf8, 100, 0u) == utils_achks8(buf8, 100, 0u));
 }
 
-// NOLINTNEXTLINE(readability-function-size)
-static void crc32_eth_test() {
+static void crc32_test() {
   /* Known CRC32 value for the canonical 8-byte Ethernet frame */
-  uint32_t crc = utils_crc32_eth(crcframe, sizeof(crcframe));
+  uint32_t crc = utils_crc32(crcframe, sizeof(crcframe), 0);
   CATCH_REQUIRE(RCSW_BSWAP32(crc) == 0x0b5e0332u);
-
-  /* Deterministic: computing twice gives the same result */
-  CATCH_REQUIRE(utils_crc32_eth(crcframe, sizeof(crcframe)) == crc);
 
   /* Different data must produce a different CRC */
   uint8_t alt[] = {0x4d, 0x54, 0x30, 0x30, 0x01, 0x02, 0x03, 0x05};
-  CATCH_REQUIRE(utils_crc32_eth(alt, sizeof(alt)) != crc);
+  CATCH_REQUIRE(utils_crc32(alt, sizeof(alt), 0) != crc);
 }
 
-static void crc32_ethl_test() {
-  /* Table variant must agree with the direct variant on the same frame */
-  uint32_t crc_direct = utils_crc32_eth(crcframe, sizeof(crcframe));
-  uint32_t crc_table  = utils_crc32_ethl(crcframe, sizeof(crcframe));
-  CATCH_REQUIRE(crc_direct == crc_table);
-
-  /* Known value check (same expected result as the direct version) */
-  CATCH_REQUIRE(RCSW_BSWAP32(crc_table) == 0x0b5e0332u);
+static void crc32_bitwise_test() {
+  /* The table-free version must agree with the table version */
+  uint8_t buf[300];
+  for (size_t i = 0; i < sizeof(buf); ++i) {
+    buf[i] = static_cast<uint8_t>(i * 7 + 1);
+  }
+  for (size_t n = 0; n <= sizeof(buf); n += 13) {
+    CATCH_REQUIRE(utils_crc32(buf, n, 0) == utils_crc32_bitwise(buf, n, 0));
+  }
+  CATCH_REQUIRE(RCSW_BSWAP32(utils_crc32_bitwise(crcframe, sizeof(crcframe), 0)) ==
+                0x0b5e0332u);
 }
 
-static void crc32_brown_test() {
-  /* Non-trivial data must produce a non-zero CRC */
+static void crc32_continue_test() {
+  /* Passing a previous result back in continues the CRC across buffers */
   uint8_t buf[100];
   for (int i = 0; i < 100; ++i) {
-    buf[i] = (uint8_t)(i + 1);
+    buf[i] = static_cast<uint8_t>(i + 1);
   }
-  CATCH_REQUIRE(utils_crc32_brown(buf, sizeof(buf), 0) != 0u);
-
-  /* Known vector: the original test checks > 0 after a data_gen; here we
-     verify determinism directly. */
-  uint32_t a = utils_crc32_brown(buf, sizeof(buf), 0);
-  uint32_t b = utils_crc32_brown(buf, sizeof(buf), 0);
-  CATCH_REQUIRE(a == b);
-
-  /* Changing the buffer must change the CRC */
-  buf[0] ^= 0xFFu;
-  CATCH_REQUIRE(utils_crc32_brown(buf, sizeof(buf), 0) != a);
+  uint32_t whole = utils_crc32(buf, sizeof(buf), 0);
+  for (size_t split : {0UL, 1UL, 37UL, 99UL, 100UL}) {
+    uint32_t part = utils_crc32(buf, split, 0);
+    CATCH_REQUIRE(whole == utils_crc32(buf + split, sizeof(buf) - split, part));
+    part = utils_crc32_bitwise(buf, split, 0);
+    CATCH_REQUIRE(whole ==
+                  utils_crc32_bitwise(buf + split, sizeof(buf) - split, part));
+  }
 }
 
 /*******************************************************************************
@@ -144,15 +139,15 @@ CATCH_TEST_CASE("Checksum XOR-Rotate Test", "[utils][checksum][noalloc]") {
 CATCH_TEST_CASE("Checksum Add-Ignore-Carry Test", "[utils][checksum][noalloc]") {
   achks_test();
 }
-CATCH_TEST_CASE("Checksum CRC32 Ethernet Test", "[utils][checksum][noalloc]") {
-  crc32_eth_test();
+CATCH_TEST_CASE("Checksum CRC32 Test", "[utils][checksum][noalloc]") {
+  crc32_test();
 }
-CATCH_TEST_CASE("Checksum CRC32 Ethernet Lookup-Table Test",
+CATCH_TEST_CASE("Checksum CRC32 Bitwise Test", "[utils][checksum][noalloc]") {
+  crc32_bitwise_test();
+}
+CATCH_TEST_CASE("Checksum CRC32 Continuation Test",
                 "[utils][checksum][noalloc]") {
-  crc32_ethl_test();
-}
-CATCH_TEST_CASE("Checksum CRC32 Brown Test", "[utils][checksum][noalloc]") {
-  crc32_brown_test();
+  crc32_continue_test();
 }
 
 CATCH_TEST_CASE(
@@ -170,22 +165,21 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(0xDEADBEEF == utils_xchks32(b32, 0, 0xDEADBEEF));
   CATCH_REQUIRE(0xDEADBEEF == utils_achks32(b32, 0, 0xDEADBEEF));
 
-  /* CRC-32 of the empty message is 0 */
-  CATCH_REQUIRE(0 == utils_crc32_eth(b8, 0));
-  CATCH_REQUIRE(0 == utils_crc32_ethl(b8, 0));
-  /* Brown's CRC continues from the passed CRC; empty input leaves it alone */
-  CATCH_REQUIRE(0x12345678 == utils_crc32_brown(b8, 0, 0x12345678));
+  /* CRC-32 of the empty message is 0; empty input continues unchanged */
+  CATCH_REQUIRE(0 == utils_crc32(b8, 0, 0));
+  CATCH_REQUIRE(0 == utils_crc32_bitwise(b8, 0, 0));
+  CATCH_REQUIRE(0x12345678 == utils_crc32(b8, 0, 0x12345678));
+  CATCH_REQUIRE(0x12345678 == utils_crc32_bitwise(b8, 0, 0x12345678));
 }
 
 CATCH_TEST_CASE(
-  "utils_crc32_ethl needs no initialization and matches "
-  "utils_crc32_eth",
+  "utils_crc32 and utils_crc32_bitwise give the standard CRC-32 check "
+  "value",
   "[utils][checksum][noalloc]") {
   const uint8_t msg[] = "123456789";
   /* standard CRC-32 check value */
-  CATCH_REQUIRE(0xCBF43926U == utils_crc32_ethl(msg, 9));
-  CATCH_REQUIRE(utils_crc32_eth(msg, 9) == utils_crc32_ethl(msg, 9));
-  CATCH_REQUIRE(utils_crc32_brown(msg, 9, 0) == utils_crc32_ethl(msg, 9));
+  CATCH_REQUIRE(0xCBF43926U == utils_crc32(msg, 9, 0));
+  CATCH_REQUIRE(0xCBF43926U == utils_crc32_bitwise(msg, 9, 0));
 }
 
 CATCH_TEST_CASE("16/32-bit checksums fail with -1 on misaligned input",

@@ -883,24 +883,6 @@ status_t llist_inject(struct llist* const list,
   return OK;
 } /* llist_inject() */
 
-size_t llist_heap_footprint(const struct llist* const list) {
-  RCSW_FPC_NV(0, NULL != list);
-
-  /* Count only what this list allocated from the heap */
-  size_t size = 0;
-  if (!(list->flags & RCSW_NOALLOC_HANDLE)) {
-    size += sizeof(struct llist);
-  }
-  if (!(list->flags & RCSW_NOALLOC_META)) {
-    size += list->current * sizeof(struct llist_node);
-  }
-  if (!(list->flags &
-        (RCSW_NOALLOC_DATA | RCSW_DS_LLIST_DB_PTR | RCSW_DS_LLIST_DB_DISOWN))) {
-    size += list->current * list->elt_size;
-  }
-  return size;
-} /* llist_heap_footprint() */
-
 struct ds_iterator* llist_iter_init(struct ds_iterator* iter,
                                     struct llist*       list,
                                     enum ds_iter_type   type,

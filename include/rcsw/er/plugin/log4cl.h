@@ -116,6 +116,22 @@ struct RCSW_ATTR(aligned(sizeof(dptr_t))) log4cl_module {
  * initialized from multiple threads concurrently. Reports issued from inside
  * LOG4CL itself (e.g., by the \ref llist that holds the modules) are
  * suppressed.
+ *
+ * \par Configure modules before reporting concurrently
+ *
+ * A report looks up its module under the lock, then checks the module's level
+ * after releasing it. Installing modules (\ref log4cl_insmod()) is safe at
+ * any time, but the following must only be called while no other thread can
+ * be reporting, i.e. during startup or shutdown:
+ *
+ * - \ref log4cl_rmmod() and \ref log4cl_rmmod2(): a concurrent report may
+ *   still use the removed module (use after free).
+ * - \ref log4cl_mod_lvl_set() and \ref log4cl_default_lvl_set(): a
+ *   concurrent report reads the level while it is written (a data race).
+ * - \ref log4cl_deinit().
+ *
+ * In short: install modules and set levels before starting the threads that
+ * report, and do not reconfigure LOG4CL while they run.
  */
 struct log4cl_plugin {
   struct llist* modules;      ///< The installed \ref log4cl_module objects.
@@ -191,6 +207,9 @@ RCSW_API status_t log4cl_insmod(int64_t id, const char* name);
 /**
  * \brief Remove a module from the active list by ID.
  *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
+ *
  * \param id The ID of the module to remove.
  *
  * \return \ref status_t. ERROR with errno=ENOENT if no such module is loaded.
@@ -200,6 +219,9 @@ RCSW_API status_t log4cl_rmmod(int64_t id);
 /**
  * \brief Remove a module from the active list by name.
  *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
+ *
  * \param name The name of the module to remove.
  *
  * \return \ref status_t. ERROR with errno=ENOENT if no such module is loaded.
@@ -208,6 +230,9 @@ RCSW_API status_t log4cl_rmmod2(const char* name);
 
 /**
  * \brief Set the reporting level for a module.
+ *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
  *
  * \param id The module ID.
  * \param lvl The new level (an \c RCSW_ERL_* value). See
@@ -219,6 +244,9 @@ RCSW_API status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl);
 
 /**
  * \brief Set the default reporting level for the plugin.
+ *
+ * \warning Not safe while other threads may be reporting; see \ref
+ * log4cl_plugin.
  *
  * All modules installed after calling this function will have the specified
  * level set by default. It also applies immediately to every module ID that is

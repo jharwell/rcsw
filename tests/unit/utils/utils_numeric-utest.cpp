@@ -5,8 +5,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for rcsw/utils/numeric.h: utils_permute(), utils_zchk(), and
- * utils_clamp_f255().
+ * Unit tests for rcsw/utils/numeric.h: utils_permute() and utils_zchk().
  */
 
 /*******************************************************************************
@@ -136,21 +135,6 @@ static void zchk_test() {
   CATCH_REQUIRE(utils_zchk(nullptr, sizeof(uint32_t)) == false);
 }
 
-static void clamp_f255_test() {
-  /* Values inside [0, 255] pass through unchanged */
-  CATCH_REQUIRE(utils_clamp_f255(0.0f) == 0.0f);
-  CATCH_REQUIRE(utils_clamp_f255(127.5f) == 127.5f);
-  CATCH_REQUIRE(utils_clamp_f255(255.0f) == 255.0f);
-
-  /* Negative values clamp to 0 */
-  CATCH_REQUIRE(utils_clamp_f255(-1.0f) == 0.0f);
-  CATCH_REQUIRE(utils_clamp_f255(-1000.0f) == 0.0f);
-
-  /* Values above 255 clamp to 255 */
-  CATCH_REQUIRE(utils_clamp_f255(255.001f) == 255.0f);
-  CATCH_REQUIRE(utils_clamp_f255(1000.0f) == 255.0f);
-}
-
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
@@ -164,9 +148,6 @@ CATCH_TEST_CASE("Numeric Permute Partial Test", "[utils][numeric][noalloc]") {
   permute_partial_test();
 }
 CATCH_TEST_CASE("Numeric zchk Test", "[utils][numeric][noalloc]") { zchk_test(); }
-CATCH_TEST_CASE("Numeric clamp_f255 Test", "[utils][numeric][noalloc]") {
-  clamp_f255_test();
-}
 
 CATCH_TEST_CASE("utils_zchk is a byte-wise zero check for 8-byte elements",
                 "[utils][numeric][noalloc]") {

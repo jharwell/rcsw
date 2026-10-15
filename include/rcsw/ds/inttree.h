@@ -77,17 +77,6 @@ struct RCSW_ATTR(aligned(sizeof(dptr_t))) inttree_node {
  */
 RCSW_LOCAL void inttree_init_helper(const struct bstree* tree);
 
-/**
- * \brief Fixup high field for all nodes above target node after an
- * insertion/deletion
- *
- * \param tree The interval tree handle.
- * \param node The leaf node to propagate fixes up the tree for.
- */
-
-RCSW_LOCAL void inttree_high_fixup(const struct bstree* tree,
-                                   struct inttree_node* node);
-
 /*******************************************************************************
  * Public API
  *

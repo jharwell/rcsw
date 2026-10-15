@@ -26,21 +26,4 @@ void ostree_node_update_count(struct ostree_node* const node) {
   }
 } /* ostree_node_update_count() */
 
-void ostree_count_fixup(const struct bstree* const tree,
-                        struct ostree_node*        node,
-                        enum ostree_fixup_type     type) {
-  /*
-   * Deletion: decrement the counter of the parent node by 1.
-   * Insertion: No action; seamlessly handled by update_count().
-   */
-  if (type == OSTREE_FIXUP_DELETE) {
-    node = node->parent;
-    node->count--;
-  }
-  while (node != (struct ostree_node*)tree->root) {
-    ostree_node_update_count(node);
-    node = node->parent;
-  } /* while() */
-} /* ostree_count_fixup() */
-
 END_C_DECLS

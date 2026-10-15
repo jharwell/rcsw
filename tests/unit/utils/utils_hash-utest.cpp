@@ -146,11 +146,11 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(0xDEADBEEF == utils_xchks32(b32, 0, 0xDEADBEEF));
   CATCH_REQUIRE(0xDEADBEEF == utils_achks32(b32, 0, 0xDEADBEEF));
 
-  /* CRC-32 of the empty message is 0 */
-  CATCH_REQUIRE(0 == utils_crc32_eth(b8, 0));
-  CATCH_REQUIRE(0 == utils_crc32_ethl(b8, 0));
-  /* Brown's CRC continues from the passed CRC; empty input leaves it alone */
-  CATCH_REQUIRE(0x12345678 == utils_crc32_brown(b8, 0, 0x12345678));
+  /* CRC-32 of the empty message is 0; empty input continues unchanged */
+  CATCH_REQUIRE(0 == utils_crc32(b8, 0, 0));
+  CATCH_REQUIRE(0 == utils_crc32_bitwise(b8, 0, 0));
+  CATCH_REQUIRE(0x12345678 == utils_crc32(b8, 0, 0x12345678));
+  CATCH_REQUIRE(0x12345678 == utils_crc32_bitwise(b8, 0, 0x12345678));
 }
 
 CATCH_TEST_CASE("utils_hash_djb rejects a NULL output pointer",

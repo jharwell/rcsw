@@ -15,6 +15,7 @@
 #define RCSW_ER_MODID LOG4CL_DS_MATRIX
 #include "rcsw/core/alloc.h"
 #include "rcsw/er/client.h"
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * Public API
@@ -71,9 +72,9 @@ status_t matrix_transpose(struct matrix* const matrix) {
   ER_DEBUG("Transpose %zu x %zu matrix", matrix->n_rows, matrix->n_cols);
   for (size_t i = 1; i < matrix->n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
-      ds_elt_swap(matrix_access(matrix, i, j),
+      utils_elt_swap(matrix_access(matrix, i, j),
                   matrix_access(matrix, j, i),
-                  matrix->elt_size);
+                     matrix->elt_size);
     } /* for(j..) */
   } /* for(i..) */
   return OK;

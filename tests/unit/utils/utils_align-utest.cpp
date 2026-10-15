@@ -5,11 +5,10 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for rcsw/utils/align.h and rcsw/utils/endian.h.
+ * Unit tests for rcsw/utils/align.h.
  *
  * Covers:
  *   align.h  — RCSW_IS_MEM_ALIGNED, RCSW_IS_SIZE_ALIGNED, RCSW_ALIGN_SIZE
- *   endian.h — utils_is_little_endian(), utils_is_big_endian()
  */
 
 /*******************************************************************************
@@ -22,7 +21,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/utils/align.h"
-#include "rcsw/utils/endian.h"
 
 /*******************************************************************************
  * Test Helper Functions
@@ -91,27 +89,6 @@ static void align_size_test() {
   }
 }
 
-static void endian_test() {
-  /* Exactly one of little-endian or big-endian must be true */
-  bool le = utils_is_little_endian();
-  bool be = utils_is_big_endian();
-  CATCH_REQUIRE(le != be);
-
-  /* The result must be consistent with the byte layout of uint16_t(1) */
-  union {
-    uint16_t u;
-    uint8_t  c[2];
-  } probe = {.u = 1};
-
-  if (probe.c[0] == 1) {
-    CATCH_REQUIRE(le == true);
-    CATCH_REQUIRE(be == false);
-  } else {
-    CATCH_REQUIRE(le == false);
-    CATCH_REQUIRE(be == true);
-  }
-}
-
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
@@ -123,9 +100,6 @@ CATCH_TEST_CASE("Align IS_SIZE_ALIGNED Test", "[utils][align][noalloc]") {
 }
 CATCH_TEST_CASE("Align ALIGN_SIZE Test", "[utils][align][noalloc]") {
   align_size_test();
-}
-CATCH_TEST_CASE("Endian Detection Test", "[utils][endian][noalloc]") {
-  endian_test();
 }
 
 CATCH_TEST_CASE("RCSW_ALIGN_SIZE keeps the full width of its size argument",

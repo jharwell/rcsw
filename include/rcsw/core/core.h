@@ -30,16 +30,6 @@
 /** 1E3 */
 #define RCSW_E3 1000
 
-/**
- * \brief For comparison with 0.0 for floats which gives reasonable results.
- */
-#define RCSW_FLOAT_TOL 0.00000001
-
-/**
- * \brief For comparison with 0.0 for doubles which gives reasonable results.
- */
-#define RCSW_DOUBLE_TOL 0.00000000001
-
 /******************************************************************************
  * Types
  ******************************************************************************/

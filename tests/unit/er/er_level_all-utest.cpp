@@ -128,13 +128,6 @@ static void modname_prefix_test() {
 static void dprintf_macros_test() {
   /* DPRINTF passes arguments through verbatim with no extra decoration. */
   CATCH_REQUIRE(capture_stdout([] { DPRINTF("val=%d\n", 7); }) == "val=7\n");
-
-  /* DPRINT_TOK* stringify the token name followed by its formatted value. */
-  int x = 42;
-  CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOKD(x); }) == "x: 42\n");
-  CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOKX(x); }) == "x: 0x2a\n");
-  CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOKF(x); }) == "x: 42.00000000\n");
-  CATCH_REQUIRE(capture_stdout([&] { DPRINT_TOK(x); }) == "x: 42/0x2a\n");
 }
 
 // NOLINTNEXTLINE(readability-function-size)

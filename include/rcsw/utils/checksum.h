@@ -120,88 +120,33 @@ RCSW_API uint32_t utils_achks32(const uint32_t* buf,
                                 uint32_t        seed) RCSW_PURE;
 
 /**
- * \brief Compute a 32-bit CRC using the work of Gary S. Brown
+ * \brief Compute the standard CRC-32 (IEEE 802.3 / Ethernet, zlib, PNG) of a
+ * buffer, using a 256-entry lookup table.
  *
- *  COPYRIGHT (C) 1986 Gary S. Brown.  You may use this program, or
- *  code or tables extracted from it, as desired without restriction.
+ * Polynomial 0x04C11DB7, reflected input and output, initial value and final
+ * XOR 0xFFFFFFFF: the CRC of "123456789" is 0xCBF43926. Derived from Gary S.
+ * Brown's public-domain table-driven implementation (1986).
  *
- *  First, the polynomial itself and its table of feedback terms.  The
- *  polynomial is
- *  X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X^1+X^0
+ * The table is 1 KiB of constant data. Where that is too much, use \ref
+ * utils_crc32_bitwise(), which returns the same values without a table and is
+ * several times slower. The two are in separate object files, so only the one
+ * used is linked in.
  *
- *  Note that we take it "backwards" and put the highest-order term in
- *  the lowest-order bit.  The X^32 term is "implied"; the LSB is the
- *  X^31 term, etc.  The X^0 term (usually shown as "+1") results in
- *  the MSB being 1
+ * \param buf Buffer to compute over. May be NULL if \p n_bytes is 0.
+ * \param n_bytes # bytes in buffer.
+ * \param crc 0 to start a new CRC, or the result of a previous call to
+ *            continue it over another buffer.
  *
- *  Note that the usual hardware shift register implementation, which
- *  is what we're using (we're merely optimizing it by doing eight-bit
- *  chunks at a time) shifts bits into the lowest-order term.  In our
- *  implementation, that means shifting towards the right.  Why do we
- *  do it this way?  Because the calculated CRC must be transmitted in
- *  order from highest-order term to lowest-order term.  UARTs transmit
- *  characters in order from LSB to MSB.  By storing the CRC this way
- *  we hand it to the UART in the order low-byte to high-byte; the UART
- *  sends each low-bit to hight-bit; and the result is transmission bit
- *  by bit from highest- to lowest-order term without requiring any bit
- *  shuffling on our part.  Reception works similarly
- *
- *  The feedback terms table consists of 256, 32-bit entries.  Notes
- *
- *      The table can be generated at runtime if desired; code to do so
- *      is shown later.  It might not be obvious, but the feedback
- *      terms simply represent the results of eight shift/xor opera
- *      tions for all combinations of data and CRC register values
- *
- *      The values must be right-shifted by eight bits by the "updcrc
- *      logic; the shift must be size_t (bring in zeroes).  On some
- *      hardware you could probably optimize the shift in assembler by
- *      using byte-swap instructions
- *      polynomial $edb88320
- *
- * \param buf Buffer to compute over
- * \param size # bytes in buffer
- * \param crc Starting value for crc
- *
- * \return The CRC
+ * \return The CRC.
  */
-RCSW_API uint32_t utils_crc32_brown(const uint8_t* buf,
-                                    size_t         size,
-                                    uint32_t       crc);
+RCSW_API uint32_t utils_crc32(const uint8_t* buf, size_t n_bytes, uint32_t crc);
 
 /**
- *
- * \brief 32 bit CRC according to IEEE 802.3 Ethernet standard
- *
- * Same as crc32_eth(), but uses a precomputed lookup table
- *
- * \param buf Buffer to compute over
- * \param n_bytes # bytes in buffer
- *
- * The lookup table is a compile-time constant, so this function is
- * reentrant and needs no initialization.
- *
- * \return CRC of data
- *
+ * \brief Same as \ref utils_crc32(), computed bit by bit without a lookup
+ * table: smaller, but slower.
  */
-RCSW_API uint32_t utils_crc32_ethl(const uint8_t* buf, size_t n_bytes);
-
-/**
- *
- * \brief 32 bit CRC according to IEEE 802.3 Ethernet standard
- *
- * According to the standard, the CRC is:
- * - 32 bits
- * - The polynomial used to build lookup table is 0x04C11DB7,
- * - Initial remainder 0xFFFFFFFF
- * - 8 bit reflected input at EACH stage of the CRC calculation,
- * - Final 32 bit remainder reflected and THEN XORed with 0xFFFFFFFF
- *
- * \param buf Buffer to compute over
- * \param n_bytes # bytes in buffer
- *
- * \return CRC of data
- */
-RCSW_API uint32_t utils_crc32_eth(const uint8_t* buf, size_t n_bytes) RCSW_PURE;
+RCSW_API uint32_t utils_crc32_bitwise(const uint8_t* buf,
+                                      size_t         n_bytes,
+                                      uint32_t       crc);
 
 END_C_DECLS

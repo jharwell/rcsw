@@ -268,7 +268,6 @@ CATCH_TEST_CASE("hashmap Print Test", "[ds][hashmap][noalloc]") {
   struct hashmap* map = hashmap_init(&mymap, &config);
   CATCH_REQUIRE(map != nullptr);
   hashmap_print(map);
-  hashmap_print_dist(map);
   hashmap_destroy(map);
   th::ds_shutdown(&config);
 }
@@ -513,4 +512,73 @@ CATCH_TEST_CASE("hashmap_element_space is enough for any element size",
       free(elements);
     }
   }
+}
+
+namespace {
+/* Every key hashes to the same value: the worst possible hash function */
+status_t constant_hash(const void*, size_t, uint32_t* out) {
+  *out = 7;
+  return OK;
+}
+
+struct hashmap* make_int_map(size_t n_buckets,
+                             size_t bsize,
+                             uint32_t flags,
+                             status_t (*hash)(const void*, size_t, uint32_t*)) {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.n_buckets = n_buckets;
+  c.bsize     = bsize;
+  c.key_len   = sizeof(uint32_t);
+  c.hash      = hash;
+  c.flags     = flags;
+  return hashmap_init(nullptr, &c);
+}
+} /* namespace */
+
+CATCH_TEST_CASE("hashmap_gather rates a good hash function close to random",
+                "[ds][hashmap]") {
+  constexpr size_t kBuckets = 101;
+  constexpr size_t kKeys    = 2000;
+  std::uniform_int_distribution<uint32_t> dist;
+  for (uint32_t flags :
+       {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_HASHMAP_LINPROB}) {
+    struct hashmap* m = make_int_map(kBuckets, 64, flags, utils_hash_fnv1a);
+    CATCH_REQUIRE(nullptr != m);
+    struct hashmap_stats stats;
+    CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+    CATCH_REQUIRE(0.0 == stats.hash_quality); /* empty */
+
+    int v = 1;
+    for (size_t i = 0; i < kKeys; ++i) {
+      uint32_t k = dist(th::make_rng());
+      (void)hashmap_add(m, &k, &v); /* a rare duplicate key is fine */
+    }
+    CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+    CATCH_REQUIRE(stats.hash_quality > 0.85);
+    CATCH_REQUIRE(stats.hash_quality < 1.15);
+    hashmap_destroy(m);
+  }
+}
+
+CATCH_TEST_CASE("hashmap_gather exposes a degenerate hash function",
+                "[ds][hashmap]") {
+  /* Linear probing still stores every key, but each one's home is bucket 7 */
+  constexpr size_t kBuckets = 16;
+  struct hashmap*  m =
+    make_int_map(kBuckets, 4, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < 40; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  struct hashmap_stats stats;
+  CATCH_REQUIRE(OK == hashmap_gather(m, &stats));
+  /* all n keys in one bucket: (n+1)m/(n+2m-1) times worse than random */
+  double n        = 40;
+  double expected = (n * (n + 1) / 2) / ((n / (2 * kBuckets)) * (n + 2 * kBuckets - 1));
+  CATCH_REQUIRE(stats.hash_quality > 5.0);
+  CATCH_REQUIRE(std::fabs(stats.hash_quality - expected) < 1e-9);
+  hashmap_destroy(m);
 }

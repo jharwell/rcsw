@@ -39,28 +39,6 @@ status_t ds_elt_copy(void* const elt1, const void* const elt2, size_t elt_size) 
   return OK;
 } /* ds_elt_copy() */
 
-status_t ds_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
-  RCSW_FPC_NV(ERROR, NULL != elt1, NULL != elt2, elt_size > 0);
-
-  if (elt1 == elt2) {
-    return OK;
-  }
-  /* Swap through a small bounce buffer, so there is no element size limit */
-  uint8_t* a = elt1;
-  uint8_t* b = elt2;
-  uint8_t  chunk[32];
-  while (elt_size > 0) {
-    size_t n = RCSW_MIN(elt_size, sizeof(chunk));
-    memcpy(chunk, a, n);
-    memcpy(a, b, n);
-    memcpy(b, chunk, n);
-    a += n;
-    b += n;
-    elt_size -= n;
-  } /* while() */
-  return OK;
-} /* ds_elt_swap() */
-
 status_t ds_elt_clear(void* const elt, size_t elt_size) {
   RCSW_FPC_NV(ERROR, NULL != elt, elt_size > 0);
 

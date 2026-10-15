@@ -36,14 +36,9 @@
    (((uint32_t)(w32) & 0x000000FFU) << 24))
 
 /** \brief Swap the byte order of a 64-bit value. */
-#define RCSW_BSWAP64(w64)                                \
-  (((uint64_t)RCSW_BSWAP32(RCSW_BITS_LO64(w64)) << 32) | \
-   ((uint64_t)(RCSW_BSWAP32(RCSW_BITS_HI64(w64) >> 32))))
-
-/** \brief Swap the two 16-bit halves of a 32-bit value (word swap). */
-#define RCSW_WSWAP32(w32)                    \
-  ((((uint32_t)(w32) & 0xFFFF0000U) >> 16) | \
-   (((uint32_t)(w32) & 0x0000FFFFU) << 16))
+#define RCSW_BSWAP64(w64)                                            \
+  (((uint64_t)RCSW_BSWAP32((uint64_t)(w64) & 0xFFFFFFFFU) << 32) | \
+   (uint64_t)RCSW_BSWAP32((uint64_t)(w64) >> 32))
 
 /*******************************************************************************
  * Public API
@@ -58,14 +53,17 @@ BEGIN_C_DECLS
 RCSW_API void utils_arr8_reverse(void* arr, size_t size);
 
 /**
- * \brief Swap two elements of any size in an array.
+ * \brief Swap two elements of any size.
  *
- * \param arr Array containing the elements.
+ * Works on raw bytes through a small fixed-size buffer, so the elements need
+ * no particular alignment and there is no limit on their size. Swapping an
+ * element with itself does nothing; otherwise the elements must not overlap.
+ *
+ * \param elt1 The first element.
+ * \param elt2 The second element.
  * \param elt_size Size of each element in bytes.
- * \param i Index of the first element.
- * \param j Index of the second element.
  */
-RCSW_API void utils_elt_swap(void* arr, size_t elt_size, size_t i, size_t j);
+RCSW_API void utils_elt_swap(void* elt1, void* elt2, size_t elt_size);
 
 /**
  * \brief Fill \p buf with a random printable ASCII string.

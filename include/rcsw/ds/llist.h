@@ -562,14 +562,6 @@ RCSW_API status_t llist_inject(struct llist* list,
                                void (*f)(void* e, void* res),
                                void* result);
 
-/**
- * \brief Get # of bytes occupied on the heap by a \ref llist.
- *
- * \param list The linked list handle.
- *
- * \return # of bytes occupied.
- */
-RCSW_API size_t llist_heap_footprint(const struct llist* list);
 
 /**
  * \brief Vtable of traversal operations for \ref llist.

@@ -452,33 +452,6 @@ CATCH_TEST_CASE("llist_filter places nodes in the nodes buffer and data in "
   free(nodes);
 }
 
-CATCH_TEST_CASE("llist_heap_footprint counts heap memory, not caller memory",
-                "[ds][llist]") {
-  struct llist *heap = make_list(8);
-  for (int i = 0; i < 6; ++i) {
-    kv e = {i, i};
-    llist_append(heap, &e);
-  }
-  CATCH_REQUIRE(llist_heap_footprint(heap) > 0);
-  llist_destroy(heap);
-
-  static dptr_t elements[512];
-  static dptr_t nodes[512];
-  struct llist handle;
-  struct llist_config c;
-  memset(&c, 0, sizeof(c));
-  c.cmpe = cmp_key;
-  c.elt_size = sizeof(kv);
-  c.max_elts = 8;
-  c.elements = elements;
-  c.meta = nodes;
-  c.flags = RCSW_NOALLOC_ALL;
-  struct llist *caller = llist_init(&handle, &c);
-  CATCH_REQUIRE(nullptr != caller);
-  CATCH_REQUIRE(0 == llist_heap_footprint(caller));
-  llist_destroy(caller);
-}
-
 CATCH_TEST_CASE("llist: append after llist_sort() invalidates the cached "
                 "sorted state",
                 "[ds][llist]") {

@@ -69,17 +69,6 @@ void inttree_init_helper(const struct bstree* tree) {
   ((struct inttree_node*)tree->root)->max_high = INT_MIN;
 } /* inttree_init_helper() */
 
-void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
-  struct interval_data* data = (struct interval_data*)node->data;
-  node->max_high             = data->high;
-
-  /* walk up through the real root (tree->root is the sentinel above it) */
-  while (node != (struct inttree_node*)tree->root) {
-    inttree_node_update_max(node);
-    node = node->parent;
-  } /* while() */
-} /* inttree_high_fixup() */
-
 /*******************************************************************************
  * Public API
  ******************************************************************************/

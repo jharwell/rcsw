@@ -505,23 +505,3 @@
 #define DPRINTF(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
-/**
- * \brief Print a token and its value in decimal/hexadecimal.
- */
-#define DPRINT_TOK(tok) \
-  DPRINTF(RCSW_XSTR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok))
-
-/**
- * \brief Print a token and its value in decimal.
- */
-#define DPRINT_TOKD(tok) DPRINTF(RCSW_XSTR(tok) ": %d\n", (int)(tok))
-
-/**
- * \brief Print a token and its value in hexadecimal.
- */
-#define DPRINT_TOKX(tok) DPRINTF(RCSW_XSTR(tok) ": 0x%x\n", (int)(tok))
-
-/**
- * \brief Print a token and its value in floating point.
- */
-#define DPRINT_TOKF(tok) DPRINTF(RCSW_XSTR(tok) ": %.8f\n", (float)(tok))
