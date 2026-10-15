@@ -28,10 +28,8 @@ static void run_test(void (*test)(struct hashmap_config* config)) {
   struct hashmap_config config;
   memset(&config, 0, sizeof(hashmap_config));
   config.hash        = utils_hash_default;
-  config.sort_thresh = -1;
   config.elt_size    = sizeof(T);
   CATCH_REQUIRE(th::ds_init(&config) == OK);
-  config.sort_thresh = -1;
 
   uint32_t flags[] = {
     RCSW_ZALLOC,
@@ -74,10 +72,6 @@ static void build_test(struct hashmap_config* config) {
   struct hashmap mymap;
   size_t         attempts     = config->n_buckets * config->bsize;
   int            failed_count = 0;
-
-  if (config->flags & RCSW_DS_SORTED) {
-    config->sort_thresh = RCSW_MAX(attempts / 2, (size_t)1);
-  }
 
   struct hashmap* map = hashmap_init(&mymap, config);
   CATCH_REQUIRE(nullptr != map);
@@ -212,7 +206,6 @@ struct hashmap* make_map(size_t n_buckets, size_t bsize, uint32_t flags) {
   c.elt_size    = sizeof(int);
   c.n_buckets   = n_buckets;
   c.bsize       = bsize;
-  c.sort_thresh = -1;
   c.hash        = utils_hash_fnv1a;
   c.flags       = flags;
   return hashmap_init(nullptr, &c);
@@ -264,7 +257,6 @@ CATCH_TEST_CASE("hashmap Print Test", "[ds][hashmap][noalloc]") {
   struct hashmap_config config;
   memset(&config, 0, sizeof(hashmap_config));
   config.hash        = utils_hash_default;
-  config.sort_thresh = -1;
   config.elt_size    = sizeof(element4);
   config.bsize       = TH_NUM_ITEMS;
   config.n_buckets   = TH_NUM_BUCKETS;
@@ -388,4 +380,137 @@ CATCH_TEST_CASE("hashmap_gather reports sane utilization", "[ds][hashmap]") {
   CATCH_REQUIRE(stats.min_util >= 0.0);
   CATCH_REQUIRE(stats.min_util <= stats.max_util);
   hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: key_len selects short keys", "[ds][hashmap]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 2;
+  c.key_len   = sizeof(int);
+  c.flags     = RCSW_DS_HASHMAP_LINPROB; /* fill every slot, via probing */
+
+  struct hashmap* m = hashmap_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(sizeof(int) == m->key_len);
+
+  /* plain ints as keys: no padding to RCSW_HASHMAP_KEYSIZE needed */
+  for (int k = 0; k < 8; ++k) {
+    int v = k * 10;
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  int dup = 3;
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &dup, &dup));
+  for (int k = 0; k < 8; ++k) {
+    auto* v = static_cast<int*>(hashmap_data_get(m, &k));
+    CATCH_REQUIRE(nullptr != v);
+    CATCH_REQUIRE(k * 10 == *v);
+  }
+
+  int gone = 5;
+  CATCH_REQUIRE(OK == hashmap_remove(m, &gone));
+  CATCH_REQUIRE(nullptr == hashmap_data_get(m, &gone));
+  errno = 0;
+  CATCH_REQUIRE(ERROR == hashmap_remove(m, &gone));
+  CATCH_REQUIRE(ENOENT == errno);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: key_len 0 means RCSW_HASHMAP_KEYSIZE-byte keys",
+                "[ds][hashmap]") {
+  struct hashmap* m = make_map(4, 4, RCSW_NONE); /* key_len left 0 */
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(RCSW_HASHMAP_KEYSIZE == m->key_len);
+
+  key_buf k = make_key("abc");
+  int     v = 7;
+  CATCH_REQUIRE(OK == hashmap_add(m, k.bytes, &v));
+  CATCH_REQUIRE(7 == *static_cast<int*>(hashmap_data_get(m, k.bytes)));
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap_init rejects key_len above RCSW_HASHMAP_KEYSIZE",
+                "[ds][hashmap]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 4;
+  c.key_len   = RCSW_HASHMAP_KEYSIZE + 1;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+}
+
+CATCH_TEST_CASE("hashmap_init fails cleanly without promised caller memory",
+                "[ds][hashmap]") {
+  struct hashmap_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size  = sizeof(int);
+  c.hash      = utils_hash_fnv1a;
+  c.n_buckets = 4;
+  c.bsize     = 4;
+  c.key_len   = sizeof(int);
+
+  /* no bucket memory: fails before anything is initialized */
+  c.flags = RCSW_NOALLOC_META;
+  c.meta  = nullptr;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+
+  /* no element memory: fails after the buckets are allocated */
+  c.flags    = RCSW_NOALLOC_DATA;
+  c.elements = nullptr;
+  CATCH_REQUIRE(nullptr == hashmap_init(nullptr, &c));
+}
+
+CATCH_TEST_CASE("hashmap_element_space is enough for any element size",
+                "[ds][hashmap][noalloc]") {
+  /* 12 bytes: the datablocks do not end on a dptr_t boundary */
+  struct rec {
+    char tag[12];
+  };
+  for (size_t n_buckets = 1; n_buckets <= 5; ++n_buckets) {
+    for (size_t bsize = 1; bsize <= 3; ++bsize) {
+      size_t n = n_buckets * bsize;
+      /* exactly the reported size, so ASAN flags any overrun */
+      size_t bytes = hashmap_element_space(n_buckets, bsize, sizeof(rec));
+      auto*  elements = static_cast<dptr_t*>(malloc(bytes));
+
+      struct hashmap_config c;
+      memset(&c, 0, sizeof(c));
+      c.elt_size  = sizeof(rec);
+      c.hash      = utils_hash_fnv1a;
+      c.n_buckets = n_buckets;
+      c.bsize     = bsize;
+      c.key_len   = sizeof(int);
+      c.elements  = elements;
+      c.flags     = RCSW_NOALLOC_DATA | RCSW_DS_HASHMAP_LINPROB;
+      struct hashmap* m = hashmap_init(nullptr, &c);
+      CATCH_REQUIRE(nullptr != m);
+      /* the hashnode array after the datablocks is still aligned */
+      CATCH_REQUIRE(0 ==
+                    reinterpret_cast<uintptr_t>(m->space.hashnodes) %
+                      sizeof(dptr_t));
+
+      for (int k = 0; k < static_cast<int>(n); ++k) {
+        rec r;
+        snprintf(r.tag, sizeof(r.tag), "k%d", k);
+        CATCH_REQUIRE(OK == hashmap_add(m, &k, &r));
+      }
+      int full = static_cast<int>(n);
+      rec r    = {"x"};
+      CATCH_REQUIRE(ERROR == hashmap_add(m, &full, &r));
+
+      for (int k = 0; k < static_cast<int>(n); ++k) {
+        char want[12];
+        snprintf(want, sizeof(want), "k%d", k);
+        auto* got = static_cast<rec*>(hashmap_data_get(m, &k));
+        CATCH_REQUIRE(nullptr != got);
+        CATCH_REQUIRE(0 == strcmp(want, got->tag));
+      }
+      hashmap_destroy(m);
+      free(elements);
+    }
+  }
 }

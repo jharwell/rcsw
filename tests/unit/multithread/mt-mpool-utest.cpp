@@ -316,3 +316,69 @@ CATCH_TEST_CASE("mpool_req survives EINTR while waiting for a chunk",
   CATCH_REQUIRE(OK == mpool_release(g_eintr_pool, got));
   mpool_destroy(g_eintr_pool);
 }
+
+CATCH_TEST_CASE("mpool_element_space is exactly the chunk storage",
+                "[multithread][mpool][noalloc]") {
+  constexpr size_t kChunks = 8;
+  constexpr size_t kSize   = 16;
+  CATCH_REQUIRE(kChunks * kSize == mpool_element_space(kChunks, kSize));
+
+  /* and that is enough for caller-provided storage */
+  dptr_t              elements[kChunks * kSize / sizeof(dptr_t)];
+  struct mpool_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size      = kSize;
+  c.max_elts      = kChunks;
+  c.elements      = elements;
+  c.flags         = RCSW_NOALLOC_DATA;
+  struct mpool* p = mpool_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != p);
+
+  auto* lo = reinterpret_cast<uint8_t*>(elements);
+  auto* hi = lo + sizeof(elements);
+  void* chunks[kChunks];
+  for (auto& chunk : chunks) {
+    chunk   = mpool_req(p);
+    auto* b = static_cast<uint8_t*>(chunk);
+    CATCH_REQUIRE(b >= lo);
+    CATCH_REQUIRE(b + kSize <= hi);
+  }
+  CATCH_REQUIRE(mpool_isfull(p));
+  for (auto* chunk : chunks) {
+    CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  }
+  mpool_destroy(p);
+}
+
+CATCH_TEST_CASE("an mpool chunk with an extra reference survives one release",
+                "[multithread][mpool]") {
+  struct mpool* p = make_pool(4);
+  void*         chunks[4];
+  for (auto& chunk : chunks) {
+    chunk = mpool_req(p);
+    CATCH_REQUIRE(nullptr != chunk);
+  }
+  CATCH_REQUIRE(mpool_isfull(p));
+
+  CATCH_REQUIRE(OK == mpool_ref_add(p, chunks[1]));
+  CATCH_REQUIRE(OK == mpool_release(p, chunks[1]));
+  CATCH_REQUIRE(1 == mpool_ref_count(p, chunks[1]));
+
+  for (auto* chunk : chunks) {
+    CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  }
+  CATCH_REQUIRE(mpool_isempty(p));
+  mpool_destroy(p);
+}
+
+CATCH_TEST_CASE("mpool_init with RCSW_NOALLOC_META needs the meta memory",
+                "[multithread][mpool]") {
+  struct mpool        pool;
+  struct mpool_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size = 16;
+  c.max_elts = 8;
+  c.meta     = nullptr; /* promised, but not provided */
+  c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META;
+  CATCH_REQUIRE(nullptr == mpool_init(&pool, &c));
+}

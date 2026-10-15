@@ -221,3 +221,61 @@ CATCH_TEST_CASE(
   }
   bstree_destroy(t);
 }
+
+CATCH_TEST_CASE("ostree_init needs no flags from the caller", "[ds][ostree]") {
+  struct bstree_config c;
+  memset(&c, 0, sizeof(c));
+  c.cmpkey   = th::cmp_int;
+  c.elt_size = sizeof(int32_t);
+  c.max_elts = -1;
+  c.flags    = RCSW_NONE;
+  struct bstree* t = ostree_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != t);
+  CATCH_REQUIRE(RCSW_NONE == c.flags); /* the caller's config is untouched */
+  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_OS);
+  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_RB);
+
+  for (int32_t i = 0; i < 50; ++i) {
+    int32_t k = ((i * 17) % 50) * 3; /* 0, 3, ..., 147 in scrambled order */
+    CATCH_REQUIRE(OK == ostree_insert(t, &k, &k));
+  }
+  for (int32_t r = 0; r < 50; ++r) {
+    struct ostree_node* n = ostree_select(t, RCSW_OSTREE_ROOT(t), r);
+    CATCH_REQUIRE(nullptr != n);
+    CATCH_REQUIRE(r * 3 == *reinterpret_cast<int32_t*>(n->key));
+    CATCH_REQUIRE(r == ostree_rank(t, n));
+  }
+  ostree_destroy(t);
+}
+
+CATCH_TEST_CASE("ostree nodes in caller-provided storage are aligned",
+                "[ds][ostree][noalloc]") {
+  constexpr size_t     kN = 20;
+  std::vector<dptr_t>  meta(ostree_meta_space(kN) / sizeof(dptr_t));
+  std::vector<dptr_t>  elements(ostree_element_space(kN, sizeof(int32_t)) /
+                               sizeof(dptr_t));
+  struct bstree_config c;
+  memset(&c, 0, sizeof(c));
+  c.cmpkey   = th::cmp_int;
+  c.elt_size = sizeof(int32_t);
+  c.max_elts = kN;
+  c.meta     = meta.data();
+  c.elements = elements.data();
+  c.flags    = RCSW_NOALLOC_META | RCSW_NOALLOC_DATA;
+  struct bstree* t = ostree_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != t);
+
+  for (int32_t i = 0; i < static_cast<int32_t>(kN); ++i) {
+    int32_t v = (i * 7) % static_cast<int32_t>(kN);
+    CATCH_REQUIRE(OK == ostree_insert(t, &v, &v));
+  }
+  for (int32_t r = 0; r < static_cast<int32_t>(kN); ++r) {
+    struct ostree_node* n = ostree_select(t, RCSW_OSTREE_ROOT(t), r);
+    CATCH_REQUIRE(nullptr != n);
+    CATCH_REQUIRE(r == *reinterpret_cast<int32_t*>(n->data));
+    /* the pointer members are naturally aligned in every node */
+    CATCH_REQUIRE(0 == reinterpret_cast<uintptr_t>(&n->left) % alignof(void*));
+    CATCH_REQUIRE(0 == reinterpret_cast<uintptr_t>(&n->data) % alignof(void*));
+  }
+  ostree_destroy(t);
+}

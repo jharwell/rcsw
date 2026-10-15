@@ -9,8 +9,10 @@
  *
  * \brief Event reporting macros (ER_DEBUG(), ER_WARN(), ...).
  *
- * Each \c ER_<LEVEL>() macro expands to nothing when \ref RCSW_ERL is below
- * that level, so disabled events cost nothing. See
+ * When \ref RCSW_ERL is below a level, its \c ER_<LEVEL>() macro becomes a
+ * statement that is never executed and generates no code, so disabled events
+ * cost nothing. Its arguments are still type-checked against the format
+ * string and count as used. See
  * \rcswdoc{concepts/event-reporting/levels}.
  */
 
@@ -66,27 +68,6 @@
  * regardless of module levels.
  */
 #define DPRINTF(...) PRINTF(__VA_ARGS__)
-/**
- * \brief Print a token and its value in decimal/hexadecimal.
- */
-#define DPRINT_TOK(tok) \
-  DPRINTF(RCSW_XSTR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok))
-
-/**
- * \brief Print a token and its value in decimal.
- */
-#define DPRINT_TOKD(tok) DPRINTF(RCSW_XSTR(tok) ": %d\n", (int)(tok))
-
-/**
- * \brief Print a token and its value in hexadecimal.
- */
-#define DPRINT_TOKX(tok) DPRINTF(RCSW_XSTR(tok) ": 0x%x\n", (int)(tok))
-
-/**
- * \brief Print a token and its value in floating point.
- */
-#define DPRINT_TOKF(tok) DPRINTF(RCSW_XSTR(tok) ": %.8f\n", (float)(tok))
-
 #endif /* RCSW_ERL >= RCSW_ERL_FATAL */
 
 /*******************************************************************************
@@ -455,40 +436,47 @@
  * Depending on compile-time level, one or more of these macros may be
  * undefined, so make sure everything is defined so things build cleanly.
  ******************************************************************************/
-#ifndef ER_FATAL
-#define ER_FATAL(...) \
-  do {             \
+/*
+ * Disabled reporting macros keep their arguments: the call is placed in an
+ * if (0) block, so it is never executed (and is removed by the compiler at any
+ * optimization level), but its arguments still count as used and the format
+ * string is still checked. This avoids unused-variable warnings for values
+ * computed only to be reported, and keeps format errors from hiding in builds
+ * where reporting is compiled out. The plugin's print function must therefore
+ * be declared even when reporting is disabled; every built-in plugin header
+ * does this.
+ */
+/** \cond INTERNAL */
+#define RCSW_ER_DISCARD_(...)                \
+  do {                                       \
+    if (0) {                                 \
+      RCSW_ER_PLUGIN_PRINTF(__VA_ARGS__);    \
+    }                                        \
   } while (0)
+/** \endcond */
+
+#ifndef ER_FATAL
+#define ER_FATAL(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_ERR
-#define ER_ERR(...) \
-  do {             \
-  } while (0)
+#define ER_ERR(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_WARN
-#define ER_WARN(...) \
-  do {             \
-  } while (0)
+#define ER_WARN(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_INFO
-#define ER_INFO(...) \
-  do {             \
-  } while (0)
+#define ER_INFO(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_DEBUG
-#define ER_DEBUG(...) \
-  do {             \
-  } while (0)
+#define ER_DEBUG(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef ER_TRACE
-#define ER_TRACE(...) \
-  do {             \
-  } while (0)
+#define ER_TRACE(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 /** \cond INTERNAL */
@@ -510,37 +498,30 @@
 #endif
 
 #ifndef ER_REPORT
-#define ER_REPORT(...) \
-  do {             \
-  } while (0)
+#define ER_REPORT(lvl, handle, ...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
 #ifndef DPRINTF
-#define DPRINTF(...) \
-  do {             \
-  } while (0)
+#define DPRINTF(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
 
-#ifndef DPRINT_TOK
-#define DPRINT_TOK(...) \
-  do {             \
-  } while (0)
-#endif
+/**
+ * \brief Print a token and its value in decimal/hexadecimal.
+ */
+#define DPRINT_TOK(tok) \
+  DPRINTF(RCSW_XSTR(tok) ": %d/0x%x\n", (int)(tok), (int)(tok))
 
-#ifndef DPRINT_TOKD
-#define DPRINT_TOKD(...) \
-  do {             \
-  } while (0)
-#endif
+/**
+ * \brief Print a token and its value in decimal.
+ */
+#define DPRINT_TOKD(tok) DPRINTF(RCSW_XSTR(tok) ": %d\n", (int)(tok))
 
-#ifndef DPRINT_TOKX
-#define DPRINT_TOKX(...) \
-  do {             \
-  } while (0)
-#endif
+/**
+ * \brief Print a token and its value in hexadecimal.
+ */
+#define DPRINT_TOKX(tok) DPRINTF(RCSW_XSTR(tok) ": 0x%x\n", (int)(tok))
 
-#ifndef DPRINT_TOKF
-#define DPRINT_TOKF(...) \
-  do {             \
-  } while (0)
-#endif
+/**
+ * \brief Print a token and its value in floating point.
+ */
+#define DPRINT_TOKF(tok) DPRINTF(RCSW_XSTR(tok) ": %.8f\n", (float)(tok))

@@ -88,28 +88,13 @@
  * value of \ref RCSW_FPC.
  */
 /* NOLINTBEGIN(misc-include-cleaner) */
-#define RCSW_FPC_RET_NV(X, v) \
-  do {                        \
-    RCSW_FPC_RET_NV_(X, v)    \
-  } while (0)
-
-/* \cond INTERNAL */
-/*
- * Per-condition bodies, which RCSW_FPC_NV()/RCSW_FPC_V() juxtapose for each
- * condition inside a single do { } while (0). Each is a complete statement.
- */
-#define RCSW_FPC_RET_NV_(X, v) \
-  if (RCSW_UNLIKELY(!(X))) {   \
-    errno = EINVAL;            \
-    return v;                  \
+#define RCSW_FPC_RET_NV(X, v)  \
+  {                            \
+    if (RCSW_UNLIKELY(!(X))) { \
+      errno = EINVAL;          \
+      return v;                \
+    }                          \
   }
-#define RCSW_FPC_RET_V_(X)   \
-  if (RCSW_UNLIKELY(!(X))) { \
-    errno = EINVAL;          \
-    return;                  \
-  }
-#define RCSW_FPC_ASSERT_(X) assert(X);
-/* \endcond */
 /* NOLINTEND(misc-include-cleaner) */
 
 /**
@@ -122,10 +107,13 @@
  * rather than the behavior of \ref RCSW_FPC_NV, which is dependent on the
  * value of \ref RCSW_FPC.
  */
-#define RCSW_FPC_RET_V(X) \
-  do {                    \
-    RCSW_FPC_RET_V_(X)    \
-  } while (0)
+#define RCSW_FPC_RET_V(X)      \
+  {                            \
+    if (RCSW_UNLIKELY(!(X))) { \
+      errno = EINVAL;          \
+      return;                  \
+    }                          \
+  }
 
 /**
  * \def RCSW_FPC_ASSERT(X)
@@ -135,9 +123,9 @@
  * defined.
  */
 #define RCSW_FPC_ASSERT(X) \
-  do {                     \
+  {                        \
     assert(X);             \
-  } while (0)
+  }
 
 /**
  * \def RCSW_FPC_ABORT_NV(X)
@@ -174,10 +162,7 @@
  * \a ... is a list of conditions that need to be met before the function can
  * execute/must be true when the function returns.
  */
-#define RCSW_FPC_NV(v, ...)                              \
-  do {                                                   \
-    RCSW_XFOR_EACH2(RCSW_FPC_RET_NV_, v, __VA_ARGS__)    \
-  } while (0)
+#define RCSW_FPC_NV(v, ...) RCSW_XFOR_EACH2(RCSW_FPC_RET_NV, v, __VA_ARGS__)
 
 /**
  * \def RCSW_FPC_V(...)
@@ -191,31 +176,18 @@
  * \a ... is a list of conditions that need to be met before the function can
  * execute/must be true when the function returns.
  */
-#define RCSW_FPC_V(...)                          \
-  do {                                           \
-    RCSW_XFOR_EACH1(RCSW_FPC_RET_V_, __VA_ARGS__) \
-  } while (0)
+#define RCSW_FPC_V(...) RCSW_XFOR_EACH1(RCSW_FPC_RET_V, __VA_ARGS__)
 
 #elif (RCSW_FPC == RCSW_FPC_ABORT)
 
 /* The return value is unused in ABORT mode; only the conditions are checked. */
-#define RCSW_FPC_NV(v, ...)                          \
-  do {                                               \
-    RCSW_XFOR_EACH1(RCSW_FPC_ASSERT_, __VA_ARGS__)   \
-  } while (0)
+#define RCSW_FPC_NV(v, ...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_NV, __VA_ARGS__)
 
-#define RCSW_FPC_V(...)                              \
-  do {                                               \
-    RCSW_XFOR_EACH1(RCSW_FPC_ASSERT_, __VA_ARGS__)   \
-  } while (0)
+#define RCSW_FPC_V(...) RCSW_XFOR_EACH1(RCSW_FPC_ABORT_V, __VA_ARGS__)
 
 #else
 
-#define RCSW_FPC_NV(v, ...) \
-  do {                      \
-  } while (0)
-#define RCSW_FPC_V(...) \
-  do {                  \
-  } while (0)
+#define RCSW_FPC_NV(v, ...)
+#define RCSW_FPC_V(...)
 
 #endif /* RCSW_FPC */

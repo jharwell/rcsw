@@ -394,9 +394,6 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
   return OK;
 }
 
-/* Monotonic: wall-clock steps (NTP, manual changes) must not skew timings */
-static struct timespec grind_gettime(void) { return clock_monotime(); }
-
 /*******************************************************************************
  * Public API
  ******************************************************************************/
@@ -423,8 +420,9 @@ struct grinder* grind_init(struct grinder*                  grind_in,
   the_grinder->res      = config->res;
   the_grinder->avail    = 0;
   the_grinder->mode     = config->mode;
+  /* Monotonic: wall-clock steps (NTP, manual changes) must not skew timings */
   the_grinder->gettime =
-    (NULL != config->gettime) ? config->gettime : grind_gettime;
+    (NULL != config->gettime) ? config->gettime : clock_monotime;
   the_grinder->in_interval    = false;
   the_grinder->interval_start = (struct timespec){.tv_sec = 0, .tv_nsec = 0};
 

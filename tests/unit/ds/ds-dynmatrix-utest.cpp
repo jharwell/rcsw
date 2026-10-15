@@ -230,3 +230,34 @@ CATCH_TEST_CASE("dynmatrix_resize can shrink the matrix", "[ds][dynmatrix]") {
   CATCH_REQUIRE(3 == m->n_cols);
   dynmatrix_destroy(m);
 }
+
+CATCH_TEST_CASE("dynmatrix_resize keeps the overlap and zeroes new cells",
+                "[ds][dynmatrix]") {
+  struct dynmatrix* m = make_dyn(3, 3);
+  CATCH_REQUIRE(nullptr != m);
+  for (size_t i = 0; i < 3; ++i) {
+    for (size_t j = 0; j < 3; ++j) {
+      int v = static_cast<int>(i * 10 + j + 1);
+      CATCH_REQUIRE(OK == dynmatrix_set(m, i, j, &v));
+    }
+  }
+  auto cell = [&](size_t i, size_t j) {
+    return *static_cast<int*>(dynmatrix_access(m, i, j));
+  };
+
+  /* more rows, fewer columns */
+  CATCH_REQUIRE(OK == dynmatrix_resize(m, 5, 2));
+  for (size_t i = 0; i < 5; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      CATCH_REQUIRE(cell(i, j) == (i < 3 ? static_cast<int>(i * 10 + j + 1) : 0));
+    }
+  }
+
+  /* fewer rows, more columns: the dropped column comes back zeroed */
+  CATCH_REQUIRE(OK == dynmatrix_resize(m, 1, 4));
+  CATCH_REQUIRE(1 == cell(0, 0));
+  CATCH_REQUIRE(2 == cell(0, 1));
+  CATCH_REQUIRE(0 == cell(0, 2));
+  CATCH_REQUIRE(0 == cell(0, 3));
+  dynmatrix_destroy(m);
+}

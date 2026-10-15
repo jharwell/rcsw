@@ -54,9 +54,6 @@ union word_buf {
 /** \brief Words shown per line by the \c read command. */
 #define MINIMON_READ_WORDS_PER_LINE 4
 
-/* The typed hook dispatch in mini_dispatch() handles exactly 4 arguments */
-_Static_assert(MINIMON_CMD_MAX_ARGS == 4, "update mini_hook_call()");
-
 static struct minimon g_minimon;
 
 /*******************************************************************************
@@ -66,14 +63,16 @@ static struct minimon g_minimon;
  * \brief Displays the help message for minimon showing valid commands and what
  * the syntax for each is.
  */
-static void mini_cmd_help_all(const char*, ...);
+static void mini_cmd_help_all(const char* cmdname,
+                              const union minimon_cmd_arg* args);
 
 /**
  * \brief Read 1 or more words of memory, starting at the specified address. The
  * contents of memory are printed to the serial terminal. The address is not
  * checked for alignment.
  */
-static void mini_cmd_read(const char*, ...);
+static void mini_cmd_read(const char* cmdname,
+                          const union minimon_cmd_arg* args);
 
 /**
  * \brief Writes 1 or more words of memory, starting at the specified
@@ -82,7 +81,8 @@ static void mini_cmd_read(const char*, ...);
  ** For large writes, the progress is printed to the serial terminal. The
  * starting address is not checked for word-alignment.
  */
-static void mini_cmd_write(const char* cmdname, ...);
+static void mini_cmd_write(const char* cmdname,
+                           const union minimon_cmd_arg* args);
 
 /**
  * \brief Jump to another memory location and begin execution there. The
@@ -91,19 +91,22 @@ static void mini_cmd_write(const char* cmdname, ...);
  * This function only applies to the CPU that minimon is running on;
  * multiprocessing jumps not supported.
  */
-static void mini_cmd_jump(const char* cmdname, ...);
+static void mini_cmd_jump(const char* cmdname,
+                          const union minimon_cmd_arg* args);
 
 /**
  * \brief Receives a program byte by byte through the serial terminal
  * and then writes it to the specified memory location.
  */
-static void mini_cmd_load(const char* cmdname, ...);
+static void mini_cmd_load(const char* cmdname,
+                          const union minimon_cmd_arg* args);
 
 /**
  * \brief Send bytes from a specified memory location through the serial
  * terminal.
  */
-static void mini_cmd_send(const char* cmdname, ...);
+static void mini_cmd_send(const char* cmdname,
+                          const union minimon_cmd_arg* args);
 
 /*******************************************************************************
  * Private Functions
@@ -112,22 +115,6 @@ static void mini_cmd_send(const char* cmdname, ...);
  * \brief Unused command/parameter table entries have NULL or empty names.
  */
 static bool_t mini_str_empty(const char* s) { return NULL == s || '\0' == *s; }
-
-/**
- * \brief Report an error to the user on stream0.
- *
- * Errors are part of the monitor's interface, so they are printed directly
- * rather than through the ER plugin, which may filter them or be compiled out.
- */
-static void mini_error(const char* fmt, ...) RCSW_ATTR_PRINTF(1, 2);
-static void mini_error(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  stdio_printf("error: ");
-  stdio_vprintf(fmt, args);
-  va_end(args);
-  stdio_printf("\r\n");
-}
 
 /** \brief Case-insensitive string equality. */
 static bool_t mini_streq_nocase(const char* a, const char* b) {
@@ -334,7 +321,7 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
   size_t length     = stdio_strlen(digits);
   size_t max_digits = is_hex ? 8 : 10;
   if (length == 0 || length > max_digits) {
-    mini_error("'%s': expected 1-%zu %s digits",
+    ER_ERR("'%s': expected 1-%zu %s digits",
                numstr,
                max_digits,
                is_hex ? "hex" : "decimal");
@@ -345,12 +332,12 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
   for (size_t i = 0; i < length; i++) {
     bool_t ok = is_hex ? RCSW_STDIO_ISHEX(digits[i]) : RCSW_STDIO_ISDIGIT(digits[i]);
     if (!ok) {
-      mini_error("'%s': invalid character '%c'", numstr, digits[i]);
+      ER_ERR("'%s': invalid character '%c'", numstr, digits[i]);
       return ERROR;
     }
   } /* for(i..) */
   if (!is_hex && length == 10 && stdio_strcmp(digits, "4294967295") > 0) {
-    mini_error("'%s': larger than 32 bits", numstr);
+    ER_ERR("'%s': larger than 32 bits", numstr);
     return ERROR;
   }
   ER_TRACE("Token '%s' is %s", numstr, is_hex ? "hexadecimal" : "decimal");
@@ -395,11 +382,11 @@ static status_t mini_validate_args(uint32_t                        argc,
 
   /* validate parameter count */
   if ((argc - 1) < min_config) {
-    mini_error("Too few arguments--type 'help %s' for help", argv[0]);
+    ER_ERR("Too few arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
   if ((argc - 1) > max_config) {
-    mini_error("Too many arguments--type 'help %s' for help", argv[0]);
+    ER_ERR("Too many arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
 
@@ -418,7 +405,7 @@ static status_t mini_validate_args(uint32_t                        argc,
     } /* switch() */
 
     if (OK != rstat) {
-      mini_error("Invalid argument %" PRIu32 ": '%s'", (i + 1), argv[i + 1]);
+      ER_ERR("Invalid argument %" PRIu32 ": '%s'", (i + 1), argv[i + 1]);
     }
   }
 
@@ -463,54 +450,6 @@ static void mini_readline(char* buf, size_t size) {
   } /* for(;;) */
   buf[i] = '\0';
 } /* mini_readline() */
-
-/* \cond INTERNAL */
-/*
- * Call a hook with each argument passed as its declared type, so the hook's
- * va_arg(args, uint32_t) / va_arg(args, char*) read exactly what was passed.
- * Bit i of the case label is 1 if argument i is a string.
- */
-#define MINI_ARG_0(i) args[i].num
-#define MINI_ARG_1(i) args[i].s
-#define MINI_HOOK_CASE(b3, b2, b1, b0)              \
-  case (((b3) << 3) | ((b2) << 2) | ((b1) << 1) | (b0)): \
-    cmd->hook(cmd->name,                          \
-              MINI_ARG_##b0(0),                   \
-              MINI_ARG_##b1(1),                   \
-              MINI_ARG_##b2(2),                   \
-              MINI_ARG_##b3(3));                  \
-    break;
-/* \endcond */
-
-static void mini_hook_call(const struct minimon_cmd*    cmd,
-                           const union minimon_cmd_arg* args) {
-  unsigned str_mask = 0;
-  for (unsigned i = 0; i < MINIMON_CMD_MAX_ARGS; ++i) {
-    if (MINIMON_PARAM_STR == cmd->config[i].type) {
-      str_mask |= 1U << i;
-    }
-  } /* for(i..) */
-  switch (str_mask) {
-    MINI_HOOK_CASE(0, 0, 0, 0)
-    MINI_HOOK_CASE(0, 0, 0, 1)
-    MINI_HOOK_CASE(0, 0, 1, 0)
-    MINI_HOOK_CASE(0, 0, 1, 1)
-    MINI_HOOK_CASE(0, 1, 0, 0)
-    MINI_HOOK_CASE(0, 1, 0, 1)
-    MINI_HOOK_CASE(0, 1, 1, 0)
-    MINI_HOOK_CASE(0, 1, 1, 1)
-    MINI_HOOK_CASE(1, 0, 0, 0)
-    MINI_HOOK_CASE(1, 0, 0, 1)
-    MINI_HOOK_CASE(1, 0, 1, 0)
-    MINI_HOOK_CASE(1, 0, 1, 1)
-    MINI_HOOK_CASE(1, 1, 0, 0)
-    MINI_HOOK_CASE(1, 1, 0, 1)
-    MINI_HOOK_CASE(1, 1, 1, 0)
-    MINI_HOOK_CASE(1, 1, 1, 1)
-    default:
-      break;
-  } /* switch() */
-} /* mini_hook_call() */
 
 /**
  * \brief Parse the command string into cmd + a set of arguments.
@@ -610,7 +549,7 @@ static void mini_dispatch(int argc, char** argv) {
 
       /* call command handler */
       if (OK == status) {
-        mini_hook_call(cmd, args);
+        cmd->hook(cmd->name, args);
       }
 
       cmd_found = true;
@@ -619,7 +558,7 @@ static void mini_dispatch(int argc, char** argv) {
   }
 
   if (!cmd_found) {
-    mini_error("Unknown command '%s'--type 'help' for a list", argv[0]);
+    ER_ERR("Unknown command '%s'--type 'help' for a list", argv[0]);
   }
 } /* mini_dispatch() */
 
@@ -679,12 +618,9 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
   } /* for(j..) */
 } /* mini_cmd_help() */
 
-static void mini_cmd_help_all(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-
-  va_start(args, cmdname);
-  char* target = va_arg(args, char*);
-  va_end(args);
+static void mini_cmd_help_all(RCSW_UNUSED const char*         cmdname,
+                              const union minimon_cmd_arg* args) {
+  const char* target = args[0].s;
 
   if (NULL == target) {
     stdio_printf("AVAILABLE COMMANDS:\r\n");
@@ -714,13 +650,10 @@ static void mini_cmd_help_all(RCSW_UNUSED const char* cmdname, ...) {
   }
 } /* mini_cmd_help() */
 
-static void mini_cmd_read(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-
-  va_start(args, cmdname);
-  uint32_t addr = va_arg(args, uint32_t);
-  uint32_t size = va_arg(args, uint32_t);
-  va_end(args);
+static void mini_cmd_read(RCSW_UNUSED const char*         cmdname,
+                          const union minimon_cmd_arg* args) {
+  uint32_t addr = args[0].num;
+  uint32_t size = args[1].num;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
   const volatile uint32_t* addrp = (const volatile uint32_t*)(uintptr_t)addr;
@@ -735,14 +668,11 @@ static void mini_cmd_read(RCSW_UNUSED const char* cmdname, ...) {
   }
 } /* mini_cmd_read() */
 
-static void mini_cmd_write(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-
-  va_start(args, cmdname);
-  uint32_t addr  = va_arg(args, uint32_t);
-  uint32_t value = va_arg(args, uint32_t);
-  uint32_t size  = va_arg(args, uint32_t);
-  va_end(args);
+static void mini_cmd_write(RCSW_UNUSED const char*         cmdname,
+                           const union minimon_cmd_arg* args) {
+  uint32_t addr  = args[0].num;
+  uint32_t value = args[1].num;
+  uint32_t size  = args[2].num;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
   volatile uint32_t* addrp = (volatile uint32_t*)(uintptr_t)addr;
@@ -751,11 +681,9 @@ static void mini_cmd_write(RCSW_UNUSED const char* cmdname, ...) {
   }
 } /* mini_cmd_write() */
 
-static void mini_cmd_jump(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-  va_start(args, cmdname);
-  uint32_t addr = va_arg(args, uint32_t);
-  va_end(args);
+static void mini_cmd_jump(RCSW_UNUSED const char*         cmdname,
+                          const union minimon_cmd_arg* args) {
+  uint32_t addr = args[0].num;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
   vfp_t func = (vfp_t)(uintptr_t)addr;
@@ -773,13 +701,10 @@ static void mini_cmd_jump(RCSW_UNUSED const char* cmdname, ...) {
   asm volatile("nop ; nop ; nop");
 } /* mini_cmd_jump() */
 
-static void mini_cmd_load(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-
-  va_start(args, cmdname);
-  uint32_t addr = va_arg(args, uint32_t);
-  uint32_t size = va_arg(args, uint32_t);
-  va_end(args);
+static void mini_cmd_load(RCSW_UNUSED const char*         cmdname,
+                          const union minimon_cmd_arg* args) {
+  uint32_t addr = args[0].num;
+  uint32_t size = args[1].num;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
   volatile uint32_t* addrp      = (volatile uint32_t*)(uintptr_t)addr;
@@ -886,14 +811,11 @@ static void mini_cmd_send_raw(const volatile uint32_t* addrp,
   } /* while(...) */
 }
 
-static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
-  va_list args;
-
-  va_start(args, cmdname);
-  uint32_t    addr      = va_arg(args, uint32_t);
-  uint32_t    size      = va_arg(args, uint32_t);
-  const char* protocolp = va_arg(args, char*);
-  va_end(args);
+static void mini_cmd_send(RCSW_UNUSED const char*         cmdname,
+                          const union minimon_cmd_arg* args) {
+  uint32_t    addr      = args[0].num;
+  uint32_t    size      = args[1].num;
+  const char* protocolp = args[2].s;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
   const volatile uint32_t* addrp = (const volatile uint32_t*)(uintptr_t)addr;
@@ -903,7 +825,7 @@ static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
   } else if (mini_streq_nocase(protocolp, "nmea")) {
     mini_cmd_send_nmea(addrp, size, progress);
   } else {
-    mini_error("Bad protocol '%s': must be raw or nmea", protocolp);
+    ER_ERR("Bad protocol '%s': must be raw or nmea", protocolp);
   }
 } /* mini_cmd_send() */
 
@@ -974,7 +896,8 @@ void minimon_start(void) {
 
   /* display the monitor tag line */
   if (g_minimon.help_on_start) {
-    mini_cmd_help_all("help", (char*)NULL);
+    const union minimon_cmd_arg no_args[MINIMON_CMD_MAX_ARGS] = {{.s = NULL}};
+    mini_cmd_help_all("help", no_args);
   } else {
     stdio_printf("Type 'help' for a list of available cmds\r\n");
   }

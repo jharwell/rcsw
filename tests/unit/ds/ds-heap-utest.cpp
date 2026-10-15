@@ -441,3 +441,32 @@ CATCH_TEST_CASE("binheap_insert into a full heap reports ENOSPC",
   CATCH_REQUIRE(ENOSPC == errno);
   binheap_destroy(h);
 }
+
+CATCH_TEST_CASE("binheap extracts in order with duplicates and growth",
+                "[ds][binheap]") {
+  std::uniform_int_distribution<int> len_dist(0, 50);
+  std::uniform_int_distribution<int> val_dist(0, 99);
+  for (uint32_t flags : {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_BINHEAP_MIN}) {
+    bool min_heap = flags & RCSW_DS_BINHEAP_MIN;
+    for (int trial = 0; trial < 150; ++trial) {
+      /* starts at 4 elements, so inserts grow the storage */
+      struct binheap* h = make_heap(64, flags);
+      int             n = len_dist(th::make_rng());
+      for (int i = 0; i < n; ++i) {
+        int v = val_dist(th::make_rng());
+        CATCH_REQUIRE(OK == binheap_insert(h, &v));
+      }
+      int prev = min_heap ? INT_MIN : INT_MAX;
+      int count = 0;
+      while (!binheap_isempty(h)) {
+        int v = 0;
+        CATCH_REQUIRE(OK == binheap_extract(h, &v));
+        CATCH_REQUIRE((min_heap ? v >= prev : v <= prev));
+        prev = v;
+        ++count;
+      }
+      CATCH_REQUIRE(n == count);
+      binheap_destroy(h);
+    }
+  }
+}

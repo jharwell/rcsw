@@ -11,6 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/bstree_node.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #include "ds/inttree_node.h"
@@ -29,6 +30,37 @@ _Static_assert(sizeof(struct inttree_node) == sizeof(struct bstree_node),
                "inttree_node must be the same size as bstree_node");
 _Static_assert(sizeof(struct ostree_node) == sizeof(struct bstree_node),
                "ostree_node must be the same size as bstree_node");
+
+/*
+ * The generic bstree code accesses ostree/inttree nodes through a
+ * struct bstree_node*, so every member they share must be at the same offset,
+ * and the variant-specific trailing member (count/max_high) must overlay
+ * bstree_node.tmp. With natural alignment (no packing) the layout follows from
+ * the platform ABI; these checks make any mismatch a build error instead of
+ * silent corruption.
+ */
+#define BSTREE_NODE_SAME_OFFSET(TYPE, MEMBER, BST_MEMBER)          \
+  _Static_assert(offsetof(struct TYPE, MEMBER) ==                  \
+                     offsetof(struct bstree_node, BST_MEMBER),     \
+                 #TYPE "." #MEMBER " must overlay bstree_node." #BST_MEMBER)
+
+BSTREE_NODE_SAME_OFFSET(ostree_node, key, key);
+BSTREE_NODE_SAME_OFFSET(ostree_node, data, data);
+BSTREE_NODE_SAME_OFFSET(ostree_node, left, left);
+BSTREE_NODE_SAME_OFFSET(ostree_node, right, right);
+BSTREE_NODE_SAME_OFFSET(ostree_node, parent, parent);
+BSTREE_NODE_SAME_OFFSET(ostree_node, red, red);
+BSTREE_NODE_SAME_OFFSET(ostree_node, count, tmp);
+
+BSTREE_NODE_SAME_OFFSET(inttree_node, key, key);
+BSTREE_NODE_SAME_OFFSET(inttree_node, data, data);
+BSTREE_NODE_SAME_OFFSET(inttree_node, left, left);
+BSTREE_NODE_SAME_OFFSET(inttree_node, right, right);
+BSTREE_NODE_SAME_OFFSET(inttree_node, parent, parent);
+BSTREE_NODE_SAME_OFFSET(inttree_node, red, red);
+BSTREE_NODE_SAME_OFFSET(inttree_node, max_high, tmp);
+
+#undef BSTREE_NODE_SAME_OFFSET
 
 /*******************************************************************************
  * Public API

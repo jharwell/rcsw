@@ -165,16 +165,17 @@ struct minimon_cmd {
   /**
    * \brief Command implementation function.
    *
-   * Called by the monitor with the matched command name followed by
+   * Called by the monitor with the matched command name and an array of
    * \ref MINIMON_CMD_MAX_ARGS arguments, in the order defined by \ref
-   * minimon_cmd.config. Each is passed as its parameter's type, so retrieve it
-   * with \c va_arg(args, uint32_t) for \ref MINIMON_PARAM_UINT32 and \c
-   * va_arg(args, char*) for \ref MINIMON_PARAM_STR. Unused slots are passed as
-   * \c uint32_t 0. Addresses are 32-bit numbers; convert with \c
+   * minimon_cmd.config. Read \c args[i].num for a \ref MINIMON_PARAM_UINT32
+   * parameter and \c args[i].s for a \ref MINIMON_PARAM_STR parameter.
+   * Omitted optional arguments hold their \ref minimon_cmd_param.dflt, and
+   * unused slots are zeroed. Addresses are 32-bit numbers; convert with \c
    * (T*)(uintptr_t)num. The same hook may be registered for multiple
-   * commands; use \p cmdname to distinguish them.
+   * commands; use \p cmdname to distinguish them. \p args is only valid
+   * for the duration of the call.
    */
-  void (*hook)(const char* cmdname, ...);
+  void (*hook)(const char* cmdname, const union minimon_cmd_arg* args);
 
   /**
    * \brief Array of parameter definitions for the command.
@@ -213,8 +214,8 @@ struct minimon_cmd {
  * Each \ref minimon_cmd specifies a name, an optional short alias, a help
  * string, a \ref minimon_cmd.hook function pointer, and up to \ref
  * MINIMON_CMD_MAX_ARGS parameter descriptors. The hook receives the
- * command name and any parsed arguments via variadic arguments; retrieve
- * them with \c va_start() / \c va_arg().
+ * command name and the parsed arguments as an array of \ref
+ * minimon_cmd_arg; see \ref minimon_cmd.hook.
  *
  * \note The struct itself is the monitor's internal state (one instance,
  * inside RCSW); applications configure it through \ref minimon_init().

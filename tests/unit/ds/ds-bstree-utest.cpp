@@ -12,6 +12,9 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
+#include <cstddef>
+#include <vector>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "rcsw/ds/bstree.h"
@@ -325,4 +328,76 @@ CATCH_TEST_CASE("bstree_insert enforces max_elts when nodes are heap-allocated",
   CATCH_REQUIRE(ERROR == bstree_insert(t, &k, &k));
   CATCH_REQUIRE(4 == bstree_size(t));
   bstree_destroy(t);
+}
+
+namespace {
+/*
+ * Check the red-black properties of the subtree at \p n: no red node has a red
+ * child, and every path down has the same number of black nodes. Returns that
+ * black height.
+ */
+int rb_black_height(const struct bstree* t, const struct bstree_node* n) {
+  if (n == t->nil) {
+    return 1;
+  }
+  int l = rb_black_height(t, n->left);
+  int r = rb_black_height(t, n->right);
+  CATCH_REQUIRE(l == r);
+  CATCH_REQUIRE(!(n->red && (n->left->red || n->right->red)));
+  return l + (n->red ? 0 : 1);
+}
+} /* namespace */
+
+CATCH_TEST_CASE("rbtree keeps its invariants and sentinel after every removal",
+                "[ds][rbtree]") {
+  std::uniform_int_distribution<int32_t> key_dist(0, 999);
+  for (int trial = 0; trial < 20; ++trial) {
+    struct bstree_config c;
+    memset(&c, 0, sizeof(c));
+    c.cmpkey         = th::cmp_int;
+    c.elt_size       = sizeof(int32_t);
+    c.max_elts       = -1;
+    c.flags          = RCSW_DS_BSTREE_RB;
+    struct bstree* t = bstree_init(nullptr, &c);
+    CATCH_REQUIRE(nullptr != t);
+
+    std::vector<int32_t> keys;
+    for (int i = 0; i < 200; ++i) {
+      int32_t k = key_dist(th::make_rng());
+      if (OK == bstree_insert(t, &k, &k)) { /* duplicates are rejected */
+        keys.push_back(k);
+      }
+    }
+    rb_black_height(t, t->root->left);
+
+    for (size_t i = 0; i < keys.size(); ++i) {
+      CATCH_REQUIRE(OK == bstree_remove(t, &keys[i]));
+      rb_black_height(t, t->root->left);
+      CATCH_REQUIRE_FALSE(t->root->red);
+      /* removal may borrow the sentinel's links, but must not leave it dirty */
+      CATCH_REQUIRE_FALSE(t->nil->red);
+      CATCH_REQUIRE(t->nil == t->nil->left);
+      CATCH_REQUIRE(keys.size() - i - 1 == bstree_size(t));
+    }
+    bstree_destroy(t);
+  }
+}
+
+CATCH_TEST_CASE("tree nodes are naturally aligned and pack into arrays",
+                "[ds][bstree][noalloc]") {
+  /*
+   * Nodes are not packed: every pointer member is at a naturally aligned
+   * offset, so nodes carved out of caller-provided storage can be accessed
+   * directly on strict-alignment targets.
+   */
+  static_assert(0 == offsetof(struct bstree_node, data) % alignof(void*));
+  static_assert(0 == offsetof(struct bstree_node, left) % alignof(void*));
+  static_assert(0 == offsetof(struct bstree_node, right) % alignof(void*));
+  static_assert(0 == offsetof(struct bstree_node, parent) % alignof(void*));
+
+  /* an array of nodes keeps every element aligned */
+  static_assert(0 == sizeof(struct bstree_node) % sizeof(dptr_t));
+  static_assert(sizeof(struct bstree_node) == sizeof(struct ostree_node));
+  static_assert(sizeof(struct bstree_node) == sizeof(struct inttree_node));
+  CATCH_SUCCEED();
 }

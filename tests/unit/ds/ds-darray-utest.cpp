@@ -680,3 +680,54 @@ CATCH_TEST_CASE(
   CATCH_REQUIRE(out == v);
   darray_destroy(arr);
 }
+
+CATCH_TEST_CASE("RCSW_DS_SORTED darray stays sorted across inserts and removes",
+                "[ds][darray]") {
+  std::uniform_int_distribution<int> len_dist(0, 50);
+  std::uniform_int_distribution<int> val_dist(0, 29);
+  for (int trial = 0; trial < 300; ++trial) {
+    struct darray* arr = make_int_array(-1, 1, RCSW_DS_SORTED);
+    int            len = len_dist(th::make_rng());
+    for (int i = 0; i < len; ++i) {
+      int v = val_dist(th::make_rng());
+      /* the index is ignored: sorted arrays insert in order */
+      CATCH_REQUIRE(OK == darray_insert(arr, &v, 0));
+      if (i % 3 == 0 && darray_size(arr) > 1) {
+        std::uniform_int_distribution<size_t> idx(0, darray_size(arr) - 1);
+        CATCH_REQUIRE(OK == darray_remove(arr, nullptr, idx(th::make_rng())));
+      }
+    }
+    for (size_t i = 1; i < darray_size(arr); ++i) {
+      CATCH_REQUIRE(at(arr, i - 1) <= at(arr, i));
+    }
+    darray_destroy(arr);
+  }
+}
+
+CATCH_TEST_CASE("darray_data_copy replaces the destination's contents",
+                "[ds][darray]") {
+  struct darray* src = make_int_array(-1, 1, RCSW_NONE);
+  struct darray* dst = make_int_array(-1, 1, RCSW_NONE);
+  for (int i = 0; i < 10; ++i) {
+    append(src, i);
+  }
+  append(dst, 99);
+
+  /* the heap-backed destination grows to fit */
+  CATCH_REQUIRE(OK == darray_data_copy(dst, src));
+  CATCH_REQUIRE(10 == darray_size(dst));
+  for (int i = 0; i < 10; ++i) {
+    CATCH_REQUIRE(at(dst, i) == i);
+  }
+
+  /* a destination too small for the source is left alone */
+  struct darray* small = make_int_array(5, 1, RCSW_NONE);
+  errno                = 0;
+  CATCH_REQUIRE(ERROR == darray_data_copy(small, src));
+  CATCH_REQUIRE(ENOSPC == errno);
+  CATCH_REQUIRE(0 == darray_size(small));
+
+  darray_destroy(small);
+  darray_destroy(dst);
+  darray_destroy(src);
+}

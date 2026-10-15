@@ -61,7 +61,6 @@ struct hashmap *make_map(size_t n_buckets, size_t bsize, uint32_t flags) {
   c.elt_size = sizeof(int);
   c.n_buckets = n_buckets;
   c.bsize = bsize;
-  c.sort_thresh = -1;
   c.hash = utils_hash_fnv1a;
   c.flags = flags;
   return hashmap_init(nullptr, &c);
@@ -658,4 +657,220 @@ CATCH_TEST_CASE("RCSW_DS_EXTFLAGS_SHIFT is past every ds flag",
   static_assert(0 == (kAll & (RCSW_MODFLAGS_BASE - 1)),
                 "a ds flag overlaps the common flags");
   CATCH_SUCCEED();
+}
+
+namespace {
+/*
+ * The keys of \p l in order, front to back. Fails the test if the prev links,
+ * the last pointer, or the size disagree with the next links.
+ */
+std::vector<int> keys_of(const struct llist *l) {
+  std::vector<int> keys;
+  const struct llist_node *prev = nullptr;
+  for (const struct llist_node *n = l->first; n != nullptr; n = n->next) {
+    CATCH_REQUIRE(prev == n->prev);
+    keys.push_back(reinterpret_cast<const kv *>(n->data)->key);
+    prev = n;
+  }
+  CATCH_REQUIRE(prev == l->last);
+  CATCH_REQUIRE(keys.size() == llist_size(l));
+  return keys;
+}
+
+struct llist *list_of(std::initializer_list<int> keys,
+                      uint32_t flags = RCSW_NONE,
+                      int max_elts = -1) {
+  struct llist *l = make_list(max_elts, flags);
+  CATCH_REQUIRE(nullptr != l);
+  for (int k : keys) {
+    kv e = {k, 0};
+    CATCH_REQUIRE(OK == llist_append(l, &e));
+  }
+  return l;
+}
+} /* namespace */
+
+CATCH_TEST_CASE("llist_sort keeps the prev links and last pointer consistent",
+                "[ds][llist]") {
+  std::uniform_int_distribution<int> len_dist(0, 50);
+  std::uniform_int_distribution<int> key_dist(0, 19); /* plenty of ties */
+  for (int trial = 0; trial < 200; ++trial) {
+    for (exec_type how : {EXEC_REC, EXEC_ITER}) {
+      struct llist *l = make_list(-1);
+      int len = len_dist(th::make_rng());
+      for (int i = 0; i < len; ++i) {
+        kv e = {key_dist(th::make_rng()), i};
+        CATCH_REQUIRE(OK == llist_append(l, &e));
+      }
+      CATCH_REQUIRE(OK == llist_sort(l, how));
+      std::vector<int> keys = keys_of(l);
+      CATCH_REQUIRE(std::is_sorted(keys.begin(), keys.end()));
+      CATCH_REQUIRE(len == static_cast<int>(keys.size()));
+      llist_destroy(l);
+    }
+  }
+}
+
+CATCH_TEST_CASE("llist_splice inserts list2 before the given node",
+                "[ds][llist]") {
+  struct llist *l1 = list_of({1, 2, 3});
+
+  /* before a middle node */
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({7, 8}), l1->first->next));
+  CATCH_REQUIRE(std::vector<int>({1, 7, 8, 2, 3}) == keys_of(l1));
+
+  /* before the first node: prepend */
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({5}), l1->first));
+  CATCH_REQUIRE(std::vector<int>({5, 1, 7, 8, 2, 3}) == keys_of(l1));
+
+  /* NULL: append */
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({9, 4}), nullptr));
+  CATCH_REQUIRE(std::vector<int>({5, 1, 7, 8, 2, 3, 9, 4}) == keys_of(l1));
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_splice into a one-element list: first and NULL differ",
+                "[ds][llist]") {
+  struct llist *l1 = list_of({1});
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({7, 8}), l1->first));
+  CATCH_REQUIRE(std::vector<int>({7, 8, 1}) == keys_of(l1));
+  llist_destroy(l1);
+
+  l1 = list_of({1});
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({7, 8}), nullptr));
+  CATCH_REQUIRE(std::vector<int>({1, 7, 8}) == keys_of(l1));
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_splice accepts empty lists", "[ds][llist]") {
+  struct llist *l1 = list_of({});
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({7, 8}), nullptr));
+  CATCH_REQUIRE(std::vector<int>({7, 8}) == keys_of(l1));
+
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({}), nullptr));
+  CATCH_REQUIRE(std::vector<int>({7, 8}) == keys_of(l1));
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_splice refuses a node that is not in list1",
+                "[ds][llist]") {
+  struct llist *l1 = list_of({1, 2, 3});
+  struct llist *l2 = list_of({7, 8});
+  struct llist *other = list_of({7, 8});
+
+  errno = 0;
+  CATCH_REQUIRE(ERROR == llist_splice(l1, l2, other->first));
+  CATCH_REQUIRE(ENOENT == errno);
+
+  /* neither list changed */
+  CATCH_REQUIRE(std::vector<int>({1, 2, 3}) == keys_of(l1));
+  CATCH_REQUIRE(std::vector<int>({7, 8}) == keys_of(l2));
+  llist_destroy(other);
+  llist_destroy(l2);
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_splice refuses lists that disagree on data ownership",
+                "[ds][llist]") {
+  struct llist *owning = list_of({1, 2, 3});
+
+  /* a list storing pointers to caller-owned data */
+  std::vector<kv> store = {{7, 0}, {8, 0}};
+  struct llist *ptrs = make_list(-1, RCSW_DS_LLIST_DB_DISOWN);
+  for (auto &e : store) {
+    CATCH_REQUIRE(OK == llist_append(ptrs, &e));
+  }
+
+  /* list1 would free (or fail to free) list2's datablocks */
+  errno = 0;
+  CATCH_REQUIRE(ERROR == llist_splice(owning, ptrs, nullptr));
+  CATCH_REQUIRE(EINVAL == errno);
+  errno = 0;
+  CATCH_REQUIRE(ERROR == llist_splice(ptrs, owning, nullptr));
+  CATCH_REQUIRE(EINVAL == errno);
+
+  CATCH_REQUIRE(std::vector<int>({1, 2, 3}) == keys_of(owning));
+  CATCH_REQUIRE(std::vector<int>({7, 8}) == keys_of(ptrs));
+  llist_destroy(ptrs);
+  llist_destroy(owning);
+}
+
+CATCH_TEST_CASE("llist_splice keeps a sorted list1 sorted", "[ds][llist]") {
+  struct llist *l1 = list_of({1, 4, 6}, RCSW_DS_SORTED);
+  CATCH_REQUIRE(OK == llist_splice(l1, list_of({5, 2}), l1->first));
+  CATCH_REQUIRE(std::vector<int>({1, 2, 4, 5, 6}) == keys_of(l1));
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_splice respects list1's max_elts", "[ds][llist]") {
+  struct llist *l1 = list_of({1, 2, 3}, RCSW_NONE, 4);
+  struct llist *l2 = list_of({7, 8});
+
+  errno = 0;
+  CATCH_REQUIRE(ERROR == llist_splice(l1, l2, nullptr));
+  CATCH_REQUIRE(ENOSPC == errno);
+  CATCH_REQUIRE(std::vector<int>({1, 2, 3}) == keys_of(l1));
+  CATCH_REQUIRE(std::vector<int>({7, 8}) == keys_of(l2));
+  llist_destroy(l2);
+  llist_destroy(l1);
+}
+
+CATCH_TEST_CASE("llist_filter refuses a pointer-storing result for a list "
+                "that owns its data",
+                "[ds][llist]") {
+  struct llist *src = list_of({1, 2, 3, 4});
+
+  /* the result would point at datablocks src frees as it removes them */
+  errno = 0;
+  CATCH_REQUIRE(nullptr == llist_filter(src,
+                                        key_is_even,
+                                        RCSW_DS_LLIST_DB_DISOWN,
+                                        nullptr,
+                                        nullptr));
+  CATCH_REQUIRE(EINVAL == errno);
+  CATCH_REQUIRE(std::vector<int>({1, 2, 3, 4}) == keys_of(src));
+
+  /* a copying result is fine */
+  struct llist *out =
+      llist_filter(src, key_is_even, RCSW_NONE, nullptr, nullptr);
+  CATCH_REQUIRE(nullptr != out);
+  CATCH_REQUIRE(std::vector<int>({2, 4}) == keys_of(out));
+  CATCH_REQUIRE(std::vector<int>({1, 3}) == keys_of(src));
+  llist_destroy(out);
+  llist_destroy(src);
+}
+
+CATCH_TEST_CASE("llist_filter between pointer-storing lists moves the pointers",
+                "[ds][llist]") {
+  std::vector<kv> store = {{1, 0}, {2, 0}, {3, 0}, {4, 0}};
+  struct llist *src = make_list(-1, RCSW_DS_LLIST_DB_DISOWN);
+  for (auto &e : store) {
+    CATCH_REQUIRE(OK == llist_append(src, &e));
+  }
+  struct llist *out = llist_filter(src,
+                                   key_is_even,
+                                   RCSW_DS_LLIST_DB_DISOWN,
+                                   nullptr,
+                                   nullptr);
+  CATCH_REQUIRE(nullptr != out);
+  CATCH_REQUIRE(reinterpret_cast<dptr_t *>(&store[1]) == out->first->data);
+  CATCH_REQUIRE(reinterpret_cast<dptr_t *>(&store[3]) == out->last->data);
+  llist_destroy(out);
+  llist_destroy(src);
+}
+
+CATCH_TEST_CASE("LLIST_FOREACH scopes its variable to the loop",
+                "[ds][llist]") {
+  struct llist *l = list_of({1, 2, 3, 4});
+  int sum = 0;
+  int digits = 0;
+  /* the same variable name twice in one block: each loop declares its own */
+  LLIST_FOREACH(l, next, node) { sum += reinterpret_cast<kv *>(node->data)->key; }
+  LLIST_FOREACH(l, prev, node) { (void)node; }
+  LLIST_ITER(l, l->last, prev, node) {
+    digits = digits * 10 + reinterpret_cast<kv *>(node->data)->key;
+  }
+  CATCH_REQUIRE(10 == sum);
+  CATCH_REQUIRE(4321 == digits);
+  llist_destroy(l);
 }

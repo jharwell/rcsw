@@ -12,6 +12,7 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <cerrno>
 #include <cstring>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -200,5 +201,70 @@ CATCH_TEST_CASE(
   f->locked = false;
   CATCH_REQUIRE(OK == multififo_add(f, &v));
   CATCH_REQUIRE(2 == multififo_size(f));
+  multififo_destroy(f);
+}
+
+namespace {
+/*
+ * Drain child 0 of \p f, which holds 4-byte pieces of the 8-byte root
+ * elements. Returns the first byte of each piece.
+ */
+std::string drain_child(struct multififo* f) {
+  std::string   firsts;
+  unsigned char piece[4];
+  while (!fifo_isempty(&f->children.fifos[0])) {
+    CATCH_REQUIRE(OK == fifo_remove(&f->children.fifos[0], piece));
+    firsts.push_back(static_cast<char>(piece[0]));
+  }
+  return firsts;
+}
+} /* namespace */
+
+CATCH_TEST_CASE("multififo feeds each element to the children exactly once",
+                "[ds][multififo]") {
+  size_t                  children[] = {4};
+  struct multififo_config c;
+  memset(&c, 0, sizeof(c));
+  c.elt_size          = 8;
+  c.max_elts          = 4;
+  c.n_children        = 1;
+  c.children          = children;
+  struct multififo* f = multififo_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != f);
+
+  unsigned char a[8], b[8], cc[8], out[8];
+  memset(a, 'A', sizeof(a));
+  memset(b, 'B', sizeof(b));
+  memset(cc, 'C', sizeof(cc));
+
+  /* A becomes the front and is fed; B and C wait behind it */
+  CATCH_REQUIRE(OK == multififo_add(f, a));
+  CATCH_REQUIRE("AA" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_add(f, b));
+  CATCH_REQUIRE(OK == multififo_add(f, cc));
+  CATCH_REQUIRE(drain_child(f).empty());
+
+  /* retiring the front feeds the next element */
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('A' == out[0]);
+  /* the children have not consumed B yet */
+  CATCH_REQUIRE(ERROR == multififo_remove(f, out));
+  CATCH_REQUIRE("BB" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('B' == out[0]);
+  CATCH_REQUIRE("CC" == drain_child(f));
+  CATCH_REQUIRE(OK == multififo_remove(f, out));
+  CATCH_REQUIRE('C' == out[0]);
+  CATCH_REQUIRE(multififo_isempty(f));
+
+  /* empty again: the next element is fed immediately */
+  CATCH_REQUIRE(OK == multififo_add(f, a));
+  CATCH_REQUIRE("AA" == drain_child(f));
+
+  /* clear resets the feed state too */
+  CATCH_REQUIRE(OK == multififo_add(f, b));
+  CATCH_REQUIRE(OK == multififo_clear(f));
+  CATCH_REQUIRE(OK == multififo_add(f, cc));
+  CATCH_REQUIRE("CC" == drain_child(f));
   multififo_destroy(f);
 }

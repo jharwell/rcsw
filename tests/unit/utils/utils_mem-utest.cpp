@@ -126,15 +126,52 @@ CATCH_TEST_CASE("mem_dump Coverage Test", "[utils][mem][noalloc]") {
   mem_dump_coverage_test();
 }
 
-CATCH_TEST_CASE("utils_mem_rmwr32 is callable and writes only masked bits",
-                "[utils][mem]") {
-  alignas(4) uint32_t word = 0xFFFF0000U;
-  auto addr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&word));
-  if (reinterpret_cast<uintptr_t>(&word) > UINT32_MAX) {
-    CATCH_SKIP("utils_mem_rmwr32 takes a 32-bit address");
-  }
-  CATCH_REQUIRE(OK == utils_mem_rmwr32(addr, 0x0000ABCDU, 0x0000FFFFU));
-  CATCH_REQUIRE(0xFFFFABCDU == word);
+CATCH_TEST_CASE("utils_mem_rmwr32 writes only the masked bits",
+                "[utils][mem][noalloc]") {
+  alignas(8) uint32_t w[3] = {0xAAAAAAAAU, 0xFFFF0000U, 0xCCCCCCCCU};
+  auto addr = reinterpret_cast<uintptr_t>(&w[1]);
+
+  CATCH_REQUIRE(OK == utils_mem_rmwr32(addr, 0x00001234U, 0x0000FFFFU));
+  CATCH_REQUIRE(0xFFFF1234U == w[1]);
+
+  /* an all-ones mask writes the whole word */
+  CATCH_REQUIRE(OK == utils_mem_rmwr32(addr, 0x0000ABCDU, 0xFFFFFFFFU));
+  CATCH_REQUIRE(0x0000ABCDU == w[1]);
+
+  /* bits outside the mask are kept even when wval sets them */
+  CATCH_REQUIRE(OK == utils_mem_rmwr32(addr, 0xFFFFFFFFU, 0x80000000U));
+  CATCH_REQUIRE(0x8000ABCDU == w[1]);
+
+  /* neighbours untouched */
+  CATCH_REQUIRE(0xAAAAAAAAU == w[0]);
+  CATCH_REQUIRE(0xCCCCCCCCU == w[2]);
+}
+
+CATCH_TEST_CASE("utils_mem_rmwr32 rejects an empty mask",
+                "[utils][mem][noalloc]") {
+  alignas(4) uint32_t word = 0x0000ABCDU;
+  /* a zero mask writes nothing, so it is a caller error, not "everything" */
+  CATCH_REQUIRE(ERROR ==
+                utils_mem_rmwr32(reinterpret_cast<uintptr_t>(&word),
+                                 0x12345678U,
+                                 0));
+  CATCH_REQUIRE(0x0000ABCDU == word);
+}
+
+CATCH_TEST_CASE("utils_mem_write32/read32 need only 4-byte alignment",
+                "[utils][mem][noalloc]") {
+  alignas(8) uint32_t w[3] = {0xAAAAAAAAU, 0xBBBBBBBBU, 0xCCCCCCCCU};
+  auto addr = reinterpret_cast<uintptr_t>(&w[1]); /* 4- but not 8-aligned */
+
+  CATCH_REQUIRE(OK == utils_mem_write32(addr, 0x11223344U));
+  CATCH_REQUIRE(0x11223344U == w[1]);
+  CATCH_REQUIRE(0x11223344U == utils_mem_read32(addr));
+  CATCH_REQUIRE(0xAAAAAAAAU == w[0]);
+  CATCH_REQUIRE(0xCCCCCCCCU == w[2]);
+
+  /* misaligned addresses are rejected */
+  CATCH_REQUIRE(ERROR == utils_mem_write32(addr + 2, 1));
+  CATCH_REQUIRE(0x11223344U == w[1]);
 }
 
 CATCH_TEST_CASE(

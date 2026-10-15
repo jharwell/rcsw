@@ -309,3 +309,78 @@ CATCH_TEST_CASE("inttree rejects a second interval with the same low endpoint",
   CATCH_REQUIRE(EEXIST == errno);
   bstree_destroy(t);
 }
+
+CATCH_TEST_CASE("inttree_init needs no flags or element size from the caller",
+                "[ds][inttree]") {
+  struct bstree_config c;
+  memset(&c, 0, sizeof(c));
+  c.max_elts       = -1;
+  struct bstree* t = inttree_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != t);
+  /* the caller's config is untouched */
+  CATCH_REQUIRE(RCSW_NONE == c.flags);
+  CATCH_REQUIRE(0 == c.elt_size);
+  CATCH_REQUIRE(sizeof(struct interval_data) == t->elt_size);
+  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_INT);
+  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_RB);
+
+  struct interval_data iv[] = {{.high = 20, .low = 10},
+                               {.high = 40, .low = 30},
+                               {.high = 60, .low = 50}};
+  for (auto& d : iv) {
+    CATCH_REQUIRE(OK == inttree_insert(t, &d));
+  }
+  struct interval_data hit_q  = {.high = 36, .low = 35};
+  struct interval_data miss_q = {.high = 49, .low = 41};
+  struct inttree_node* hit =
+    inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &hit_q);
+  CATCH_REQUIRE(nullptr != hit);
+  CATCH_REQUIRE(30 == reinterpret_cast<struct interval_data*>(hit->data)->low);
+  CATCH_REQUIRE(nullptr ==
+                inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &miss_q));
+  bstree_destroy(t);
+}
+
+CATCH_TEST_CASE("inttree_overlap_search agrees with a brute-force scan",
+                "[ds][inttree]") {
+  struct bstree_config c;
+  struct bstree*       t = make_inttree(&c);
+
+  std::uniform_int_distribution<int32_t> low_dist(0, 999);
+  std::uniform_int_distribution<int32_t> len_dist(0, 29);
+  std::uniform_int_distribution<int32_t> qlen_dist(0, 19);
+  std::vector<struct interval_data>      present;
+  for (int i = 0; i < 100; ++i) {
+    struct interval_data d;
+    d.low  = low_dist(th::make_rng());
+    d.high = d.low + len_dist(th::make_rng());
+    if (OK == inttree_insert(t, &d)) { /* duplicate lows are rejected */
+      present.push_back(d);
+    }
+  }
+
+  auto check = [&]() {
+    for (int q = 0; q < 2000; ++q) {
+      struct interval_data query;
+      query.low  = low_dist(th::make_rng());
+      query.high = query.low + qlen_dist(th::make_rng());
+      bool expected = std::any_of(
+        present.begin(), present.end(), [&](const struct interval_data& d) {
+          return d.low <= query.high && query.low <= d.high;
+        });
+      bool found = nullptr !=
+                   inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &query);
+      CATCH_REQUIRE(expected == found);
+    }
+  };
+  check();
+
+  /* again after removing half of the intervals */
+  size_t half = present.size() / 2;
+  for (size_t i = 0; i < half; ++i) {
+    CATCH_REQUIRE(OK == inttree_remove(t, &present[i].low));
+  }
+  present.erase(present.begin(), present.begin() + half);
+  check();
+  bstree_destroy(t);
+}

@@ -127,3 +127,12 @@ CATCH_TEST_CASE("Align ALIGN_SIZE Test", "[utils][align][noalloc]") {
 CATCH_TEST_CASE("Endian Detection Test", "[utils][endian][noalloc]") {
   endian_test();
 }
+
+CATCH_TEST_CASE("RCSW_ALIGN_SIZE keeps the full width of its size argument",
+                "[utils][align][noalloc]") {
+  /* a 32-bit alignment must not truncate a 64-bit size */
+  uint64_t big = 0x100000005ULL;
+  CATCH_REQUIRE(0x100000008ULL == RCSW_ALIGN_SIZE(big, 8U));
+  CATCH_REQUIRE(8U == RCSW_ALIGN_SIZE(5U, 8));
+  CATCH_REQUIRE(16U == RCSW_ALIGN_SIZE(static_cast<size_t>(13), 4));
+}

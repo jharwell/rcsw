@@ -20,6 +20,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "rcsw/al/clock.h"
 #include "rcsw/tool/grind.h"
 
 /*******************************************************************************
@@ -165,5 +166,15 @@ CATCH_TEST_CASE("grind captures on an unknown grindee are ENOENT",
   errno = 0;
   CATCH_REQUIRE(ERROR == grind_capture_count(g, "nope"));
   CATCH_REQUIRE(ENOENT == errno);
+  grind_destroy(g);
+}
+
+CATCH_TEST_CASE("grind_init defaults to the monotonic clock", "[tool][grind]") {
+  /* wall-clock steps (NTP, manual changes) must not skew timings */
+  struct grind_config c = base_config(RCSW_GRIND_MODE_DURATION, RCSW_NONE);
+  c.gettime             = nullptr;
+  struct grinder* g     = grind_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != g);
+  CATCH_REQUIRE(clock_monotime == g->gettime);
   grind_destroy(g);
 }
