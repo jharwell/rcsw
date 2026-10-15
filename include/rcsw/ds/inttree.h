@@ -182,8 +182,10 @@ RCSW_API status_t inttree_insert(struct bstree*        tree,
 /**
  * \brief Initialize an interval tree.
  *
- * \p params->elt_size must be \c sizeof(struct interval_data); it is not set
- * automatically.
+ * \ref RCSW_DS_BSTREE_INT and \ref RCSW_DS_BSTREE_RB are added to
+ * \p params->flags, \p params->elt_size is set to
+ * \c sizeof(struct interval_data), and \p params->cmpkey is ignored (intervals
+ * are keyed on their low end). \p params itself is not modified.
  *
  * \param tree_in Caller storage for the handle, used only if \ref
  *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
@@ -192,8 +194,8 @@ RCSW_API status_t inttree_insert(struct bstree*        tree,
  *
  * \return The initialized tree, or NULL if an error occurred.
  */
-RCSW_API struct bstree* inttree_init(struct bstree*        tree_in,
-                                     struct bstree_config* params);
+RCSW_API struct bstree* inttree_init(struct bstree*              tree_in,
+                                     const struct bstree_config* params);
 
 /**
  * \brief Determine if the given interval overlaps any in the interval tree.

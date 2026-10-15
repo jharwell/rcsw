@@ -23,7 +23,12 @@ BEGIN_C_DECLS
  ******************************************************************************/
 struct bstree* ostree_init(struct bstree*              tree_in,
                            const struct bstree_config* params) {
-  return bstree_init_internal(tree_in, params, sizeof(struct ostree_node));
+  RCSW_FPC_NV(NULL, NULL != params);
+  /* Don't modify the caller's config: an OS-tree is always a red-black tree
+   * maintaining subtree counts */
+  struct bstree_config config = *params;
+  config.flags |= RCSW_DS_BSTREE_OS | RCSW_DS_BSTREE_RB;
+  return bstree_init_internal(tree_in, &config, sizeof(struct ostree_node));
 }
 
 status_t ostree_insert(struct bstree* tree, void* const key, void* const data) {

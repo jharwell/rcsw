@@ -76,9 +76,9 @@ struct multififo_config {
  */
 struct multififo_children_mgmt {
   /**
-   * Child shadow FIFOs containing references to the data in \ref
-   * multififo.root. Implicitly uses \ref RCSW_NOALLOC_DATA, \ref
-   * RCSW_NOALLOC_HANDLE.
+   * Child shadow FIFOs, each holding a copy of the root FIFO's front element
+   * split into child-sized pieces. Implicitly uses \ref RCSW_NOALLOC_DATA,
+   * \ref RCSW_NOALLOC_HANDLE.
    */
   struct fifo* fifos;
 
@@ -104,7 +104,10 @@ struct multififo_children_mgmt {
  * this data structure and a say 1ms "tick" ISR which pulls data out of a child
  * FIFO as it becomes available.
  *
- * All data lives in the "root" FIFO; no copies are made to child FIFOs.
+ * Elements are stored in the "root" FIFO. When an element becomes the front of
+ * the root FIFO, it is copied into the child FIFOs, split into pieces of each
+ * child's element size. It stays at the front until every child has been
+ * drained and \ref multififo_remove() is called.
  *
  * NOT thread safe in general. \ref multififo_add() and \ref
  * multififo_remove() hold an internal busy flag (taken with an atomic
@@ -126,6 +129,14 @@ struct multififo {
    * sets bit <tt>1 << i</tt>, so there can be at most 8 children.
    */
   uint8_t front_refmask;
+
+  /**
+   * Whether the current front element of \ref multififo.root has been copied
+   * into the child FIFOs. Each front element is fed to the children exactly
+   * once; \ref multififo.front_refmask alone can't tell "not fed yet" from
+   * "fed and fully consumed".
+   */
+  bool_t front_fed;
 
   /**
    * Atomic busy flag held by \ref multififo_add() and \ref
@@ -289,10 +300,11 @@ RCSW_API void multififo_destroy(struct multififo* fifo);
  *
  * 1. Copy the element into an available slot in the root FIFO.
  *
- * 2. If the ref count for the front/head element in the root FIFO is 0, then
- *    add an appropriate number of elements to each child shadow FIFO pointing
- *    inside the front element in the root FIFO (which might not be the one just
- *    added).
+ * 2. If the root FIFO's front element has not been fed to the child FIFOs yet
+ *    (i.e., the root FIFO was empty, so the new element is the front), copy it
+ *    into each child FIFO, split into child-sized pieces. Otherwise the
+ *    children are not touched: the next element is fed to them by \ref
+ *    multififo_remove().
  *
  * \param fifo The multi-FIFO handle.
  *
@@ -319,11 +331,10 @@ static inline void* multififo_front(const struct multififo* const fifo) {
 /**
  * \brief Dequeue an element from the multi-FIFO.
  *
- * If the ref count for the front/head element in the root FIFO is 0, then the
- * element will be dequeued into \p e (assuming it is non-NULL). Otherwise, no
- * effect. If a remove is performed, an appropriate number of elements are added
- * to each child shadow FIFO pointing inside the new front element in the root
- * FIFO.
+ * If every child FIFO has been drained of the root FIFO's front element, the
+ * element is dequeued into \p e (if non-NULL). Otherwise, no effect. If a
+ * remove is performed and the root FIFO is not empty afterwards, the new front
+ * element is copied into the child FIFOs.
  *
  * \param fifo The multi-FIFO handle.
  *

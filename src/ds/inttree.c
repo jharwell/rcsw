@@ -83,13 +83,18 @@ void inttree_high_fixup(const struct bstree* tree, struct inttree_node* node) {
 /*******************************************************************************
  * Public API
  ******************************************************************************/
-struct bstree* inttree_init(struct bstree* const        tree_in,
-                            struct bstree_config* const params) {
+struct bstree* inttree_init(struct bstree* const              tree_in,
+                            const struct bstree_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
 
-  /* Don't modify the caller's config: interval trees always key on low */
+  /*
+   * Don't modify the caller's config: interval trees always key on low, store
+   * struct interval_data, and are red-black trees maintaining max_high.
+   */
   struct bstree_config config = *params;
   config.cmpkey               = inttree_cmp_key;
+  config.elt_size             = sizeof(struct interval_data);
+  config.flags |= RCSW_DS_BSTREE_INT | RCSW_DS_BSTREE_RB;
   return bstree_init_internal(tree_in, &config, sizeof(struct inttree_node));
 }
 

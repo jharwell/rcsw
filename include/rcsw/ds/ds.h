@@ -117,11 +117,9 @@ enum exec_type {
 
 /**
  * \brief Indicate that a \ref bstree should function as an interval tree.
- * tree.
  *
- * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed. You
- * must also specify the correct element size for an interval during
- * initialization (this is not done automatically).
+ * Set automatically by \ref inttree_init(), which also sets
+ * \ref RCSW_DS_BSTREE_RB and the element size; there is no need to pass it.
  */
 #define RCSW_DS_BSTREE_INT (1 << (RCSW_MODFLAGS_SHIFT + 7))
 
@@ -129,7 +127,8 @@ enum exec_type {
  * \brief Indicate that a \ref bstree should function as an Order
  * Statistics Tree.
  *
- * It has no effect unless the \ref RCSW_DS_BSTREE_RB flag is also passed.
+ * Set automatically by \ref ostree_init(), which also sets
+ * \ref RCSW_DS_BSTREE_RB; there is no need to pass it.
  */
 #define RCSW_DS_BSTREE_OS (1 << (RCSW_MODFLAGS_SHIFT + 8))
 

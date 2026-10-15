@@ -165,6 +165,9 @@ RCSW_API int ostree_rank(const struct bstree*      tree,
 /**
  * \brief Initialize an order statistics tree.
  *
+ * \ref RCSW_DS_BSTREE_OS and \ref RCSW_DS_BSTREE_RB are added to
+ * \p params->flags; \p params itself is not modified.
+ *
  * \param tree_in Caller storage for the handle, used only if \ref
  *                RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
  *                otherwise. See \rcswdoc{concepts/memory-model}.
