@@ -432,6 +432,32 @@ status_t darray_data_set(struct darray* const arr,
   return OK;
 } /* darray_data_set() */
 
+status_t darray_data_copy(struct darray* const       arr1,
+                          const struct darray* const arr2) {
+  RCSW_FPC_NV(ERROR,
+              NULL != arr1,
+              NULL != arr2,
+              arr1 != arr2,
+              arr1->elt_size == arr2->elt_size);
+
+  if (arr2->current > arr1->capacity) {
+    if (-1 != arr1->max_elts && arr2->current > (size_t)arr1->max_elts) {
+      ER_ERR("Cannot copy %zu elements: max_elts=%d", arr2->current, arr1->max_elts);
+      errno = ENOSPC;
+      return ERROR;
+    }
+    if (OK != darray_extend(arr1, arr2->current)) {
+      return ERROR; /* errno set by darray_extend() */
+    }
+  }
+  if (arr2->current > 0) {
+    memcpy(arr1->elements, arr2->elements, arr2->current * arr2->elt_size);
+  }
+  arr1->current = arr2->current;
+  arr1->sorted  = arr2->sorted;
+  return OK;
+} /* darray_data_copy() */
+
 status_t darray_resize(struct darray* const arr, size_t size) {
   RCSW_FPC_NV(ERROR, NULL != arr);
   if (size > arr->capacity) {

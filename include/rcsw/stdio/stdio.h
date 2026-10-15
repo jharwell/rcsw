@@ -108,10 +108,10 @@ RCSW_API int stdio_getchar(void);
 /**
  * \brief Convert a string to an integer.
  *
- * Convert a string representing an integer in the specified base. Any leading
- * whitespace is stripped. If the string is a hex number, it must have a 0x
- * prefix. If the string represents a hex number but does not have a 0x prefix,
- * the result is undefined.
+ * Convert a string representing an integer in the specified base (2-16).
+ * Leading spaces (not other whitespace) are skipped, then an optional '+' or
+ * '-'. For base 16 an optional 0x/0X prefix is skipped. Conversion stops at the
+ * first character that is not a digit in \p base.
  *
  * \param s The string to convert
  * \param base The base the string is in (10, 16, etc.)

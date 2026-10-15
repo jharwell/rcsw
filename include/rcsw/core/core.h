@@ -315,10 +315,12 @@ typedef enum {
  * function has cleanup work to do on failure (freeing memory, closing handles,
  * etc.).
  */
-#define RCSW_CHECK(cond)        \
-  if (RCSW_UNLIKELY(!(cond))) { \
-    goto error;                 \
-  }
+#define RCSW_CHECK(cond)          \
+  do {                            \
+    if (RCSW_UNLIKELY(!(cond))) { \
+      goto error;                 \
+    }                             \
+  } while (0)
 
 /**
  * \def RCSW_CHECK_PTR(ptr) Check a pointer \c ptr in a function.

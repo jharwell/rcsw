@@ -277,8 +277,8 @@ struct grind_config {
   struct timespec interval;
 
   /**
-   * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref RCSW_GRIND_COUNT mode.
+   * Callback to return the current time for a \ref grindee. If NULL, \ref
+   * clock_monotime() is used. Not used in \ref RCSW_GRIND_MODE_COUNT mode.
    */
   struct timespec (*gettime)(void);
 };
@@ -335,8 +335,8 @@ struct grinder {
   struct timespec interval_start;
 
   /**
-   * Callback to return the current time for a \ref grindee. Can be NULL in
-   * \ref RCSW_GRIND_COUNT mode.
+   * Callback to return the current time for a \ref grindee. If NULL, \ref
+   * clock_monotime() is used. Not used in \ref RCSW_GRIND_MODE_COUNT mode.
    */
   struct timespec (*gettime)(void);
 };
@@ -370,7 +370,7 @@ RCSW_API void grind_destroy(struct grinder* the_grinder);
 /**
  * \brief Mark the start of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_MODE_DURATION.
  *
  * \return \ref status_t
  *
@@ -381,7 +381,7 @@ RCSW_API status_t grind_capture_start(struct grinder* the_grinder,
 /**
  * \brief Mark the end of a single [begin, end] datapoint for a \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_DURATION.
+ * Only valid with \ref RCSW_GRIND_MODE_DURATION.
  *
  * \return \ref status_t
  */
@@ -391,7 +391,7 @@ RCSW_API status_t grind_capture_end(struct grinder* the_grinder,
 /**
  * \brief Increment the execution count for the \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_COUNT.
+ * Only valid with \ref RCSW_GRIND_MODE_COUNT.
  *
  * \return \ref status_t
  */
@@ -401,7 +401,7 @@ RCSW_API status_t grind_capture_count(struct grinder* the_grinder,
 /**
  * \brief Capture the current time/tick for the \ref grindee.
  *
- * Only valid with \ref RCSW_GRIND_PERIOD.
+ * Only valid with \ref RCSW_GRIND_MODE_PERIOD.
  *
  * \return \ref status_t
  */

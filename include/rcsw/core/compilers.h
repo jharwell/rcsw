@@ -314,11 +314,10 @@
  * is useful and should be resolved structurally.
  */
 #if defined(NDEBUG)
-#define RCSW_UNUSED __attribute__((unused))
-#else
 #define RCSW_UNUSED
+#else
+#define RCSW_UNUSED __attribute__((unused))
 #endif /* NDEBUG */
-
 #endif /* RCSW_UNUSED */
 
 #if defined(RCSW_WUR)

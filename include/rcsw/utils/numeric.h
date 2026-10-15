@@ -61,8 +61,7 @@ RCSW_API void utils_permute(
 /**
  * \brief Test whether all bytes of an element are zero.
  *
- * Uses pointer comparisons for elements up to \c sizeof(double); falls
- * back to a byte loop for larger elements.
+ * Checks byte by byte, so the element needs no particular alignment.
  *
  * \param elt      Pointer to the element to test.
  * \param elt_size Size of the element in bytes.

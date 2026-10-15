@@ -7,7 +7,8 @@
  *
  * \ingroup er
  *
- * \brief A simple C debugging/logging framework which only uses RCSW internals.
+ * \brief A simple C debugging/logging framework which prints with RCSW's stdio
+ * component (\ref stdio_printf(), which wraps the bundled printf library).
  *
  * Prints every compiled-in report, prefixed with its module name; there is one
  * compile-time level for the whole build and no per-module control. Mainly

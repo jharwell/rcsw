@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "ds/llist_node.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.llist"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "llist")
 #define RCSW_ER_MODID LOG4CL_DS_LLIST
 #include "rcsw/core/alloc.h"
 #include "rcsw/core/fpc.h"

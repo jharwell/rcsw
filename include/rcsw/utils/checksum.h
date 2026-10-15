@@ -41,7 +41,9 @@ RCSW_API uint8_t utils_xchks8(const uint8_t* buf,
 /**
  * \brief Compute an 16-bit checksum (XOR, rotate)
  *
- * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
+ * buf must be 16-bit aligned and n_bytes a multiple of 2; otherwise
+ * 0xFFFF is returned (indistinguishable from a real checksum, so check
+ * alignment beforehand).
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
@@ -56,7 +58,9 @@ RCSW_API uint16_t utils_xchks16(const uint16_t* buf,
 /**
  * \brief Compute an 32-bit checksum (XOR, rotate)
  *
- * Both buf and n_bytes must be 32-bit aligned, or no action is performed.
+ * buf must be 32-bit aligned and n_bytes a multiple of 4; otherwise
+ * 0xFFFFFFFF is returned (indistinguishable from a real checksum, so check
+ * alignment beforehand).
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
@@ -84,7 +88,9 @@ RCSW_API uint8_t utils_achks8(const uint8_t* buf,
 /**
  * \brief Compute an 16-bit checksum (add-ignore-carry)
  *
- * Both buf and n_bytes must be 16-bit aligned, or no action is performed.
+ * buf must be 16-bit aligned and n_bytes a multiple of 2; otherwise
+ * 0xFFFF is returned (indistinguishable from a real checksum, so check
+ * alignment beforehand).
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer
@@ -99,7 +105,9 @@ RCSW_API uint16_t utils_achks16(const uint16_t* buf,
 /**
  * \brief Compute an 32-bit checksum (add-ignore-carry)
  *
- * Both buf and n_bytes must be 32-bit aligned, or no action is performed.
+ * buf must be 32-bit aligned and n_bytes a multiple of 4; otherwise
+ * 0xFFFFFFFF is returned (indistinguishable from a real checksum, so check
+ * alignment beforehand).
  *
  * \param buf Buffer to compute over
  * \param n_bytes # bytes in buffer

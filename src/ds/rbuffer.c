@@ -14,7 +14,7 @@
 #include <string.h>
 
 #define RCSW_ER_MODID LOG4CL_DS_RBUFFER
-#define RCSW_ER_MODNAME "rcsw.ds.rbuffer"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "rbuffer")
 #include "rcsw/core/alloc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/iter.h"
@@ -38,9 +38,9 @@ static void* rbuffer_slot(const struct rbuffer* const rb, size_t slot) {
 }
 
 /*
- * cursor stores the logical offset from rb->start (i.e. how many elements have
- * been consumed), cast to void*. This avoids storing a signed index and keeps
- * the wrap-around arithmetic in one place.
+ * cursor.idx is the logical offset from rb->start (i.e. how many elements have
+ * been consumed). This avoids storing a signed index and keeps the wrap-around
+ * arithmetic in one place.
  */
 static void* rbuffer_iter_next_impl(struct ds_iterator* iter) {
   struct rbuffer* rb  = iter->container;

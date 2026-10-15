@@ -44,21 +44,11 @@
  */
 #if defined(RCSW_PLATFORM_POSIX)
 
-#if defined(DOXYGEN_DOCUMENTATION_BUILD)
-
-#undef true
-#undef false
-
 /**
- * \brief A C boolean type.
- *
- * In linux, this is the same as bool; on embedded/baremetal platforms it maybe
- * defined differently.
+ * \brief A C boolean type: the same as \c bool (from \c <stdbool.h>) on all
+ * supported platforms.
  */
-typedef enum { false = 0, true = 1 } bool_t;
-#else
 #define bool_t bool
-#endif
 
 /*
  * For bare-metal applications with no OS (can still use stdlib)
@@ -98,7 +88,12 @@ typedef enum { false = 0, true = 1 } bool_t;
  * (struct mystruct*)node->data
  * \endcode
  *
- * work as intended on all targets. On some embedded targets (e.g., ARM), if
+ * work as intended on all targets, provided the data structure's \c elt_size is
+ * \c sizeof(struct mystruct): element \c i of a pool is at \c i * \c elt_size
+ * from a base aligned to \c RCSW_CONFIG_PTR_ALIGN, exactly like a C array of
+ * that type, so each element has its type's alignment. (An \c elt_size that is
+ * not a multiple of \c RCSW_CONFIG_PTR_ALIGN does not give every element that
+ * stronger alignment.) On some embedded targets (e.g., ARM), if
  * \c node->data points to a stack address with alignment 1, casting to a
  * struct with alignment > 1 can cause a hardware trap because the compiler
  * generates load/store instructions that assume the required alignment.

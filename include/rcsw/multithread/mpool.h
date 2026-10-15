@@ -139,7 +139,8 @@ static inline size_t mpool_meta_space(size_t max_elts) {
  * \return The # of bytes the application would need to allocate.
  */
 static inline size_t mpool_element_space(size_t max_elts, size_t elt_size) {
-  return ds_elt_space_with_meta(max_elts, elt_size);
+  /* just the chunks: their bookkeeping lives in the meta space */
+  return ds_elt_space_simple(max_elts, elt_size);
 }
 
 /**

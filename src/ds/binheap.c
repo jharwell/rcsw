@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/binheap.h"
 
-#define RCSW_ER_MODNAME "rcsw.ds.binheap"
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "binheap")
 #define RCSW_ER_MODID LOG4CL_DS_BINHEAP
 #include <string.h>
 

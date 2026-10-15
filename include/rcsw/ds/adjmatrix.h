@@ -39,7 +39,8 @@ struct adjmatrix_config {
   dptr_t* elements;
 
   /**
-   * Size of elements in bytes.
+   * Ignored: the element size is set from \ref adjmatrix_config.is_weighted
+   * (\c double if weighted, \c int if not).
    */
   size_t elt_size;
 

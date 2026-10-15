@@ -48,6 +48,17 @@ union word_buf {
   uint32_t word;
 };
 
+/** \brief Words of data per NMEA packet. */
+#define MINIMON_NMEA_WORDS_PER_PKT (MINIMON_NMEA_CHUNK_SIZE / sizeof(uint32_t))
+
+/** \brief Words shown per line by the \c read command. */
+#define MINIMON_READ_WORDS_PER_LINE 4
+
+/* The typed hook dispatch in mini_dispatch() handles exactly 4 arguments */
+_Static_assert(MINIMON_CMD_MAX_ARGS == 4, "update mini_hook_call()");
+
+static struct minimon g_minimon;
+
 /*******************************************************************************
  * Private API
  ******************************************************************************/
@@ -102,6 +113,46 @@ static void mini_cmd_send(const char* cmdname, ...);
  */
 static bool_t mini_str_empty(const char* s) { return NULL == s || '\0' == *s; }
 
+/**
+ * \brief Report an error to the user on stream0.
+ *
+ * Errors are part of the monitor's interface, so they are printed directly
+ * rather than through the ER plugin, which may filter them or be compiled out.
+ */
+static void mini_error(const char* fmt, ...) RCSW_ATTR_PRINTF(1, 2);
+static void mini_error(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  stdio_printf("error: ");
+  stdio_vprintf(fmt, args);
+  va_end(args);
+  stdio_printf("\r\n");
+}
+
+/** \brief Case-insensitive string equality. */
+static bool_t mini_streq_nocase(const char* a, const char* b) {
+  for (; *a != '\0' && *b != '\0'; ++a, ++b) {
+    if (stdio_tolower(*a) != stdio_tolower(*b)) {
+      return false;
+    }
+  } /* for(..) */
+  return *a == *b;
+}
+
+/**
+ * \brief Whether progress messages may be printed during a transfer.
+ *
+ * Only when the transfer's data uses stream1: on stream0 they would be mixed
+ * into the data (see \ref minimon_config.stream1).
+ *
+ * \param tx true for a transfer to the remote target (send), false for one
+ *           from it (load).
+ */
+static bool_t mini_progress_on(bool_t tx) {
+  return tx ? (NULL != g_minimon.stream1.putchar)
+            : (NULL != g_minimon.stream1.getchar);
+}
+
 static void mini_data_byte_put(char c, void* extra) {
   struct minimon* m = extra;
   if (NULL != m->stream1.putchar) {
@@ -154,7 +205,9 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
                .dflt       = {.num = 1}}}},
   {.name   = "load",
    .alias  = "l",
-   .help   = "Load bytes via stdio_getchar() from the remote target into memory",
+   .help =
+     "Load bytes from the remote target into memory, via stream1 if set (else "
+     "stdio_getchar())",
    .hook   = mini_cmd_load,
    .config = {{
                 .name       = "ADDR",
@@ -173,7 +226,8 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
               }}},
   {.name  = "send",
    .alias = "s",
-   .help  = "Send from memory via stdio_getchar() to the remote target",
+   .help  = "Send memory to the remote target, via stream1 if set (else "
+            "stdio_putchar())",
    .hook  = mini_cmd_send,
    .config =
      {{
@@ -181,7 +235,7 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
         .type       = MINIMON_PARAM_UINT32,
         .short_help = NULL,
         .long_help =
-          "The 32-bite source address in memory (alignment not checked)",
+          "The 32-bit source address in memory (alignment not checked)",
         .required = true,
       },
       {
@@ -194,28 +248,22 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
       {
         .name       = "PROTOCOL",
         .type       = MINIMON_PARAM_STR,
-        .short_help = "The protocol to use [raw, NMEA]",
+        .short_help = "The protocol to use [raw, nmea] (any case)",
         .long_help =
-          "The protocol to use. Options are:\r\n\r\n"
-          "\t\traw - What is sent is exactly what is in the source buffer.\r\n"
+          "The protocol to use (any case). Options are:\r\n\r\n"
+          "\t\traw - Exactly SIZE bytes of the source buffer.\r\n"
 
-          "\t\tNMEA - What is sent is first converted to ASCII, then placed\r\n"
-          "\t\t       in simple text packets. Each packet contains " RCSW_XSTR(
-            MINIMON_NMEA_CHUNK_SIZE) " bytes of data.\r\n"
-                                     "\t\t       Packets have the following "
-                                     "form:\r\n"
-                                     "\t\t\r\n"
-                                     "\t\t       $SEND,ID,X,Y,Z,...*C\r\n"
-                                     "\t\t\r\n"
-                                     "\t\t       ID is the 0-based index of the "
-                                     "chunk of data in the packet.\r\n"
-                                     "\t\t       X,Y,Z,... are the ASCII "
-                                     "representations of 32-bit\r\n"
-                                     "\t\t       WORDS (not bytes) of data, "
-                                     "followed by a '*'. C is a one byte\r\n"
-                                     "\t\t       rotating XOR checksum in hex. "
-                                     "See docs for more details.\r\n"
-                                     "\t\t\r\n",
+          "\t\tNMEA - The source buffer as 32-bit words (SIZE rounded up to\r\n"
+          "\t\t       whole words), in ASCII packets of " RCSW_XSTR(
+            MINIMON_NMEA_CHUNK_SIZE) " bytes:\r\n"
+          "\t\t\r\n"
+          "\t\t       $SEND,ID,X,Y,Z,...*CC\r\n"
+          "\t\t\r\n"
+          "\t\t       ID is the 0-based packet index. X,Y,Z,... are the\r\n"
+          "\t\t       words in unsigned decimal. CC is a one byte rotating\r\n"
+          "\t\t       XOR checksum of the characters between '$' and '*',\r\n"
+          "\t\t       in two hex digits. See docs for more details.\r\n"
+          "\t\t\r\n",
         .required = true,
       }}},
   {.name   = "write",
@@ -260,7 +308,6 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
      }},
 };
 
-static struct minimon g_minimon;
 
 /*******************************************************************************
  * Private Functions
@@ -277,38 +324,39 @@ static struct minimon g_minimon;
  * \param num Pointer to the parsed number, to be filled
  */
 static status_t mini_validate_int(char* numstr, uint32_t* num) {
-  size_t length;
-  bool_t is_hex = 0;
+  const char* digits = numstr;
+  bool_t      is_hex = false;
 
-  length = stdio_strlen(numstr);
-
-  /* validate string length */
-  if ((length == 0) || (length > 10)) {
-    ER_ERR("Token length %zu outside of permissible range [1-10]", length);
+  if (stdio_strncmp(numstr, "0X", 2) == 0 || stdio_strncmp(numstr, "0x", 2) == 0) {
+    is_hex = true;
+    digits += 2;
+  }
+  size_t length     = stdio_strlen(digits);
+  size_t max_digits = is_hex ? 8 : 10;
+  if (length == 0 || length > max_digits) {
+    mini_error("'%s': expected 1-%zu %s digits",
+               numstr,
+               max_digits,
+               is_hex ? "hex" : "decimal");
     return ERROR;
   }
-  if (stdio_strncmp(numstr, "0X", 2) == 0 ||
-      stdio_strncmp(numstr, "0x", 2) == 0) {
-    is_hex = true;
-    ER_TRACE("Token '%s' is hexadecimal", numstr);
-    numstr += 2;
-    length -= 2;
-  }
 
-  /* check string contents for illegal characters */
+  /* check string contents for characters not valid in this base */
   for (size_t i = 0; i < length; i++) {
-    if (!RCSW_STDIO_ISHEX(numstr[i])) {
-      ER_ERR("Token contains illegial char '%c' at idx=%zu", numstr[i], i);
+    bool_t ok = is_hex ? RCSW_STDIO_ISHEX(digits[i]) : RCSW_STDIO_ISDIGIT(digits[i]);
+    if (!ok) {
+      mini_error("'%s': invalid character '%c'", numstr, digits[i]);
       return ERROR;
     }
+  } /* for(i..) */
+  if (!is_hex && length == 10 && stdio_strcmp(digits, "4294967295") > 0) {
+    mini_error("'%s': larger than 32 bits", numstr);
+    return ERROR;
   }
+  ER_TRACE("Token '%s' is %s", numstr, is_hex ? "hexadecimal" : "decimal");
 
-  if (is_hex) {
-    numstr -= 2;
-    *num = (uint32_t)stdio_atoi(numstr, 16);
-  } else {
-    *num = (uint32_t)stdio_atoi(numstr, 10);
-  }
+  /* stdio_atoi() accumulates unsigned, so all 32 bits survive the cast */
+  *num = (uint32_t)stdio_atoi(digits, is_hex ? 16 : 10);
   return OK;
 } /* mini_validate_int() */
 
@@ -347,11 +395,11 @@ static status_t mini_validate_args(uint32_t                        argc,
 
   /* validate parameter count */
   if ((argc - 1) < min_config) {
-    ER_ERR("Too few arguments--type 'help %s' for help", argv[0]);
+    mini_error("Too few arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
   if ((argc - 1) > max_config) {
-    ER_ERR("Too many arguments--type 'help %s' for help", argv[0]);
+    mini_error("Too many arguments--type 'help %s' for help", argv[0]);
     return ERROR;
   }
 
@@ -370,7 +418,7 @@ static status_t mini_validate_args(uint32_t                        argc,
     } /* switch() */
 
     if (OK != rstat) {
-      ER_ERR("Invalid arg[%d] = '%s'", (i + 1), argv[i + 1]);
+      mini_error("Invalid argument %" PRIu32 ": '%s'", (i + 1), argv[i + 1]);
     }
   }
 
@@ -416,6 +464,54 @@ static void mini_readline(char* buf, size_t size) {
   buf[i] = '\0';
 } /* mini_readline() */
 
+/* \cond INTERNAL */
+/*
+ * Call a hook with each argument passed as its declared type, so the hook's
+ * va_arg(args, uint32_t) / va_arg(args, char*) read exactly what was passed.
+ * Bit i of the case label is 1 if argument i is a string.
+ */
+#define MINI_ARG_0(i) args[i].num
+#define MINI_ARG_1(i) args[i].s
+#define MINI_HOOK_CASE(b3, b2, b1, b0)              \
+  case (((b3) << 3) | ((b2) << 2) | ((b1) << 1) | (b0)): \
+    cmd->hook(cmd->name,                          \
+              MINI_ARG_##b0(0),                   \
+              MINI_ARG_##b1(1),                   \
+              MINI_ARG_##b2(2),                   \
+              MINI_ARG_##b3(3));                  \
+    break;
+/* \endcond */
+
+static void mini_hook_call(const struct minimon_cmd*    cmd,
+                           const union minimon_cmd_arg* args) {
+  unsigned str_mask = 0;
+  for (unsigned i = 0; i < MINIMON_CMD_MAX_ARGS; ++i) {
+    if (MINIMON_PARAM_STR == cmd->config[i].type) {
+      str_mask |= 1U << i;
+    }
+  } /* for(i..) */
+  switch (str_mask) {
+    MINI_HOOK_CASE(0, 0, 0, 0)
+    MINI_HOOK_CASE(0, 0, 0, 1)
+    MINI_HOOK_CASE(0, 0, 1, 0)
+    MINI_HOOK_CASE(0, 0, 1, 1)
+    MINI_HOOK_CASE(0, 1, 0, 0)
+    MINI_HOOK_CASE(0, 1, 0, 1)
+    MINI_HOOK_CASE(0, 1, 1, 0)
+    MINI_HOOK_CASE(0, 1, 1, 1)
+    MINI_HOOK_CASE(1, 0, 0, 0)
+    MINI_HOOK_CASE(1, 0, 0, 1)
+    MINI_HOOK_CASE(1, 0, 1, 0)
+    MINI_HOOK_CASE(1, 0, 1, 1)
+    MINI_HOOK_CASE(1, 1, 0, 0)
+    MINI_HOOK_CASE(1, 1, 0, 1)
+    MINI_HOOK_CASE(1, 1, 1, 0)
+    MINI_HOOK_CASE(1, 1, 1, 1)
+    default:
+      break;
+  } /* switch() */
+} /* mini_hook_call() */
+
 /**
  * \brief Parse the command string into cmd + a set of arguments.
  *
@@ -431,7 +527,11 @@ static uint32_t mini_parse(char* buffer, char** argv) {
    * counted, but only those that fit are stored, so an over-long line fails
    * argument validation ("Too many arguments").
    */
-  argv[j++] = &buffer[0]; /* argv[0] is cmd name */
+  /* skip leading delimiters, so argv[0] is the command name */
+  while (buffer[i] == ' ' || buffer[i] == ',') {
+    i++;
+  }
+  argv[j++] = &buffer[i]; /* argv[0] is cmd name */
 
   while (buffer[i]) {
     if ((buffer[i] == ' ') || (buffer[i] == ',')) {
@@ -510,7 +610,7 @@ static void mini_dispatch(int argc, char** argv) {
 
       /* call command handler */
       if (OK == status) {
-        (*cmd->hook)(cmd->name, args[0], args[1], args[2], args[3]);
+        mini_hook_call(cmd, args);
       }
 
       cmd_found = true;
@@ -519,7 +619,7 @@ static void mini_dispatch(int argc, char** argv) {
   }
 
   if (!cmd_found) {
-    ER_ERR("Unknown command '%s'", argv[0]);
+    mini_error("Unknown command '%s'--type 'help' for a list", argv[0]);
   }
 } /* mini_dispatch() */
 
@@ -618,18 +718,20 @@ static void mini_cmd_read(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
-  uint32_t* addrp = va_arg(args, uint32_t*);
-  uint32_t  size  = va_arg(args, uint32_t);
+  uint32_t addr = va_arg(args, uint32_t);
+  uint32_t size = va_arg(args, uint32_t);
   va_end(args);
 
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  const volatile uint32_t* addrp = (const volatile uint32_t*)(uintptr_t)addr;
   for (uint32_t i = 0; i < size; i++) {
-    if ((i % sizeof(uint32_t)) == 0) {
-      /* show starting address for next set of 4 words */
-      stdio_printf("\r\n0x%" PRIx64 ": ", (uintptr_t)(addrp + i));
+    if ((i % MINIMON_READ_WORDS_PER_LINE) == 0) {
+      /* show starting address for the next line of words */
+      stdio_printf("\r\n0x%08" PRIX32 ": ", addr + (i * (uint32_t)sizeof(uint32_t)));
     }
 
     /* do the actual read and display it */
-    stdio_printf("0x%8X ", addrp[i]);
+    stdio_printf("0x%08" PRIX32 " ", addrp[i]);
   }
 } /* mini_cmd_read() */
 
@@ -637,11 +739,13 @@ static void mini_cmd_write(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
-  uint32_t* addrp = va_arg(args, uint32_t*);
-  uint32_t  value = va_arg(args, uint32_t);
-  uint32_t  size  = va_arg(args, uint32_t);
+  uint32_t addr  = va_arg(args, uint32_t);
+  uint32_t value = va_arg(args, uint32_t);
+  uint32_t size  = va_arg(args, uint32_t);
   va_end(args);
 
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  volatile uint32_t* addrp = (volatile uint32_t*)(uintptr_t)addr;
   for (uint32_t i = 0; i < size; ++i) {
     addrp[i] = value;
   }
@@ -650,8 +754,11 @@ static void mini_cmd_write(RCSW_UNUSED const char* cmdname, ...) {
 static void mini_cmd_jump(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
   va_start(args, cmdname);
-  vfp_t func = va_arg(args, vfp_t);
+  uint32_t addr = va_arg(args, uint32_t);
   va_end(args);
+
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  vfp_t func = (vfp_t)(uintptr_t)addr;
 
   /* mask and clear interrupts */
   if (NULL != g_minimon.irqcb.clear_all) {
@@ -670,15 +777,20 @@ static void mini_cmd_load(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
-  uint32_t* addrp = va_arg(args, uint32_t*);
-  uint32_t  size  = va_arg(args, uint32_t);
+  uint32_t addr = va_arg(args, uint32_t);
+  uint32_t size = va_arg(args, uint32_t);
   va_end(args);
 
-  uint32_t       n_bytes_rx = 0;
-  union word_buf hold_buf;
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  volatile uint32_t* addrp      = (volatile uint32_t*)(uintptr_t)addr;
+  bool_t             progress   = mini_progress_on(false);
+  uint32_t           n_bytes_rx = 0;
+  union word_buf     hold_buf;
   hold_buf.word = 0;
 
-  stdio_printf("Receiving %d bytes...", size);
+  if (progress) {
+    stdio_printf("Receiving %" PRIu32 " bytes...", size);
+  }
 
   while (n_bytes_rx < size) {
     int c = mini_data_byte_get(&g_minimon);
@@ -694,8 +806,10 @@ static void mini_cmd_load(RCSW_UNUSED const char* cmdname, ...) {
     }
     ++n_bytes_rx;
 
-    if (0 == n_bytes_rx % MINIMON_DIAG_INTERVAL) {
-      stdio_printf("\rReceiving %d bytes...%d%%", size, n_bytes_rx * 100 / size);
+    if (progress && 0 == n_bytes_rx % MINIMON_DIAG_INTERVAL) {
+      stdio_printf("\rReceiving %" PRIu32 " bytes...%" PRIu32 "%%",
+                   size,
+                   (uint32_t)((uint64_t)n_bytes_rx * 100 / size));
     }
   }
 
@@ -705,89 +819,68 @@ static void mini_cmd_load(RCSW_UNUSED const char* cmdname, ...) {
   }
 } /* mini_cmd_load() */
 
-static void mini_cmd_send_nmea(uint32_t* addrp, uint32_t size) {
-  uint32_t n_bytes_tx    = 0;
-  uint32_t current_chunk = 0;
-  char     tmp[20];
-
-  const char* header = "$SEND";
-  int     n = stdio_snprintf(tmp, sizeof(tmp), "%s,%d", header, current_chunk);
-  uint8_t checksum = utils_xchks8((uint8_t*)tmp + 1, (size_t)(n - 1), 0);
-  stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
-
-  while (n_bytes_tx < size) {
-    if (0 == n_bytes_tx % MINIMON_DIAG_INTERVAL) {
-      stdio_printf("\rSending %d bytes from %p using protocol 'nmea'...%d%%",
-                   size,
-                   addrp,
-                   n_bytes_tx * 100 / size);
-    }
-
-    /* get next word */
-    n        = stdio_snprintf(tmp, sizeof(tmp), ",%d", addrp[n_bytes_tx]);
-    checksum = utils_xchks8((uint8_t*)tmp, (size_t)n, checksum);
-    stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
-
-    /*
-     * For this protocol, we send integer-sized chunks of stuff; this is the
-     * count of DATA bytes sent, NOT the count of total bytes.
-     */
-    n_bytes_tx += 4;
-
-    if (0 == n_bytes_tx % MINIMON_DIAG_INTERVAL) {
-      stdio_printf("\rSending %d bytes from %p using protocol 'nmea'...%d%%",
-                   size,
-                   addrp,
-                   n_bytes_tx * 100 / size);
-    }
-
-    /*
-     * If we have reached the end of our allowable chunk size for data bytes,
-     * end the sentence.
-     */
-    if (n_bytes_tx / MINIMON_NMEA_CHUNK_SIZE > current_chunk) {
-      current_chunk = n_bytes_tx / MINIMON_NMEA_CHUNK_SIZE;
-      stdio_usfprintf(mini_data_byte_put, &g_minimon, "*%X", checksum);
-
-      /*
-       * Still have more bytes to transmit--reset checksum and send
-       * header+current chunk again.
-       */
-      if (n_bytes_tx < size) {
-        int n1 = stdio_snprintf(tmp, sizeof(tmp), "%s", header);
-        int n2 = stdio_snprintf(tmp + n1,
-                                sizeof(tmp) - (size_t)n1,
-                                ",%d",
-                                current_chunk);
-        checksum =
-          utils_xchks8((uint8_t*)tmp + 1, (size_t)(n1 + n2 - 1), checksum);
-        stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
-      }
-    }
-  } /* while(...) */
+/** \brief Emit a string on the data stream, folding it into a checksum. */
+static uint8_t mini_nmea_emit(const char* str, size_t len, uint8_t checksum) {
+  stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", str);
+  return utils_xchks8((const uint8_t*)str, len, checksum);
 }
 
-static void mini_cmd_send_raw(uint32_t* addrp, uint32_t size) {
+static void mini_cmd_send_nmea(const volatile uint32_t* addrp,
+                               uint32_t                 size,
+                               bool_t                   progress) {
+  uint32_t n_words = (size + (uint32_t)sizeof(uint32_t) - 1) / sizeof(uint32_t);
+  char     tmp[24];
+
+  /*
+   * One packet per MINIMON_NMEA_CHUNK_SIZE bytes: $SEND,ID,X,Y,...*CC\r\n,
+   * with a fresh checksum over the characters between '$' and '*'.
+   */
+  for (uint32_t pkt = 0; pkt * MINIMON_NMEA_WORDS_PER_PKT < n_words; ++pkt) {
+    if (progress) {
+      stdio_printf("\rSending %" PRIu32 " bytes using protocol 'nmea'...%" PRIu32
+                   "%%",
+                   size,
+                   (uint32_t)((uint64_t)pkt * MINIMON_NMEA_CHUNK_SIZE * 100 /
+                              size));
+    }
+    mini_data_byte_put('$', &g_minimon);
+    int     n        = stdio_snprintf(tmp, sizeof(tmp), "SEND,%" PRIu32, pkt);
+    uint8_t checksum = mini_nmea_emit(tmp, (size_t)n, 0);
+
+    uint32_t first = pkt * (uint32_t)MINIMON_NMEA_WORDS_PER_PKT;
+    for (uint32_t w = first;
+         w < n_words && w < first + MINIMON_NMEA_WORDS_PER_PKT;
+         ++w) {
+      n        = stdio_snprintf(tmp, sizeof(tmp), ",%" PRIu32, addrp[w]);
+      checksum = mini_nmea_emit(tmp, (size_t)n, checksum);
+    } /* for(w..) */
+
+    stdio_snprintf(tmp, sizeof(tmp), "*%02X\r\n", checksum);
+    stdio_usfprintf(mini_data_byte_put, &g_minimon, "%s", tmp);
+  } /* for(pkt..) */
+}
+
+static void mini_cmd_send_raw(const volatile uint32_t* addrp,
+                              uint32_t                 size,
+                              bool_t                   progress) {
   uint32_t       n_bytes_tx = 0;
   union word_buf hold_buf;
 
   while (n_bytes_tx < size) {
-    if (0 == n_bytes_tx % MINIMON_DIAG_INTERVAL) {
-      stdio_printf("\rSending %d bytes from %p, using protocol 'raw'...%d%%",
+    if (progress && 0 == n_bytes_tx % MINIMON_DIAG_INTERVAL) {
+      stdio_printf("\rSending %" PRIu32 " bytes using protocol 'raw'...%" PRIu32
+                   "%%",
                    size,
-                   addrp,
-                   n_bytes_tx * 100 / size);
+                   (uint32_t)((uint64_t)n_bytes_tx * 100 / size));
     }
 
-    /* get next word */
+    /*
+     * Memory is read a whole word at a time (some targets only allow word
+     * access), but only the first SIZE bytes are sent.
+     */
     hold_buf.word = addrp[n_bytes_tx / sizeof(uint32_t)];
-    for (size_t i = 0; i < sizeof(uint32_t); ++i) {
+    for (size_t i = 0; i < sizeof(uint32_t) && n_bytes_tx < size; ++i) {
       mini_data_byte_put((char)hold_buf.byte[i], &g_minimon);
-
-      /*
-       * Each actual byte maps 1->1 to the bytes actually send, so this is
-       * in the transmission loop.
-       */
       ++n_bytes_tx;
     } /* for(i...) */
   } /* while(...) */
@@ -797,17 +890,20 @@ static void mini_cmd_send(RCSW_UNUSED const char* cmdname, ...) {
   va_list args;
 
   va_start(args, cmdname);
-  uint32_t* addrp     = va_arg(args, uint32_t*);
-  uint32_t  size      = va_arg(args, uint32_t);
-  char*     protocolp = va_arg(args, char*);
+  uint32_t    addr      = va_arg(args, uint32_t);
+  uint32_t    size      = va_arg(args, uint32_t);
+  const char* protocolp = va_arg(args, char*);
   va_end(args);
 
-  if (stdio_strncmp(protocolp, "raw", 3) == 0) {
-    mini_cmd_send_raw(addrp, size);
-  } else if (stdio_strncmp(protocolp, "nmea", 4) == 0) {
-    mini_cmd_send_nmea(addrp, size);
+  /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+  const volatile uint32_t* addrp = (const volatile uint32_t*)(uintptr_t)addr;
+  bool_t                   progress = mini_progress_on(true);
+  if (mini_streq_nocase(protocolp, "raw")) {
+    mini_cmd_send_raw(addrp, size, progress);
+  } else if (mini_streq_nocase(protocolp, "nmea")) {
+    mini_cmd_send_nmea(addrp, size, progress);
   } else {
-    ER_ERR("Bad protocol '%s': must be [raw,nmea]", protocolp);
+    mini_error("Bad protocol '%s': must be raw or nmea", protocolp);
   }
 } /* mini_cmd_send() */
 
@@ -878,7 +974,7 @@ void minimon_start(void) {
 
   /* display the monitor tag line */
   if (g_minimon.help_on_start) {
-    mini_cmd_help_all("help", NULL);
+    mini_cmd_help_all("help", (char*)NULL);
   } else {
     stdio_printf("Type 'help' for a list of available cmds\r\n");
   }

@@ -111,10 +111,11 @@ struct bstree_config {
  * bstree/bstree_node, and pass it to a function in the bstree class, and have
  * everything work as desired.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref bstree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) bstree_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) bstree_node {
   uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
   dptr_t*             data;
   struct bstree_node* left;
@@ -303,9 +304,14 @@ static inline size_t bstree_meta_space(size_t max_elts) {
 /**
  * \brief Insert an item into a \ref bstree
  *
+ * Keys are fixed-size: exactly \ref RCSW_BSTREE_NODE_KEYSIZE bytes are copied
+ * from \p key, and \ref bstree_config.cmpkey compares those copies. Duplicate
+ * keys are rejected (ERROR with errno=EEXIST).
+ *
  * \param tree The BST handle
-
- * \param key The key for the data to insert
+ *
+ * \param key The key for the data to insert. Must point to \ref
+ *            RCSW_BSTREE_NODE_KEYSIZE readable bytes.
  *
  * \param data The data to insert
  */

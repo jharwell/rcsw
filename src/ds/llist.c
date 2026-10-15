@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include "rcsw/ds/llist.h"
 
-#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "list")
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "ds", "llist")
 #define RCSW_ER_MODID LOG4CL_DS_LLIST
 #include "ds/llist_node.h"
 #include "rcsw/core/alloc.h"
@@ -678,6 +678,20 @@ struct llist* llist_filter(struct llist* list,
                            void*    nodes) {
   RCSW_FPC_NV(NULL, list != NULL, pred != NULL, !(flags & RCSW_NOALLOC_HANDLE));
 
+  /*
+   * Elements are moved: each one is added to the new list and then deleted
+   * from this one. A new list that stores pointers would keep a pointer to a
+   * datablock this list frees on the delete, unless this list doesn't own its
+   * datablocks either.
+   */
+  uint32_t ptr_flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR;
+  if ((flags & ptr_flags) && !(list->flags & ptr_flags)) {
+    ER_ERR("Cannot filter into a list storing pointers from a list owning its "
+           "data: the pointers would dangle");
+    errno = EINVAL;
+    return NULL;
+  }
+
   struct llist_config params = {
     .cmpe     = list->cmpe,
     .printe   = list->printe,
@@ -765,10 +779,10 @@ error:
   return ERROR;
 } /* llist_remove_if() */
 
-status_t llist_splice(struct llist*                  list1,
-                      struct llist*                  list2,
-                      const struct llist_node* const node) {
-  RCSW_FPC_NV(ERROR, list1 != NULL, list2 != NULL, node != NULL);
+status_t llist_splice(struct llist*      list1,
+                      struct llist*      list2,
+                      struct llist_node* node) {
+  RCSW_FPC_NV(ERROR, list1 != NULL, list2 != NULL, list1 != list2);
 
   if (list1->current + list2->current > (size_t)list1->max_elts &&
       list1->max_elts != -1) {
@@ -777,11 +791,6 @@ status_t llist_splice(struct llist*                  list1,
            list2->current,
            list1->max_elts);
     errno = ENOSPC;
-    return ERROR;
-  }
-  if (list1->current == 0 || list2->current == 0) {
-    ER_ERR("Cannot splice an empty list");
-    errno = EINVAL;
     return ERROR;
   }
   /*
@@ -799,54 +808,60 @@ status_t llist_splice(struct llist*                  list1,
     errno = EINVAL;
     return ERROR;
   }
-
-  size_t             count = list1->current;
-  struct llist_node* pos   = NULL;
-  status_t           rval  = ERROR;
-
-  LLIST_FOREACH(list1, next, curr) {
-    /* locate the llist_node to insert at */
-    if (curr != node) {
-      count--;
-      continue;
+  /*
+   * Both lists must agree on who owns the data: an owning list1 would later
+   * free() list2's caller pointers, and a non-owning list1 would leak list2's
+   * datablocks.
+   */
+  if ((list1->flags ^ list2->flags) &
+      (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
+    ER_ERR("Cannot splice: lists differ in RCSW_DS_LLIST_DB_DISOWN/DB_PTR");
+    errno = EINVAL;
+    return ERROR;
+  }
+  if (NULL != node) {
+    bool_t found = false;
+    LLIST_FOREACH(list1, next, curr) {
+      if (curr == node) {
+        found = true;
+        break;
+      }
     }
+    if (!found) {
+      ER_ERR("Could not splice: splice node not found in list1");
+      errno = ENOENT;
+      return ERROR;
+    }
+  }
 
-    if (curr == list1->first) { /* splice at start of list == prepend */
-      list1->first->prev = list2->last;
-      list2->last->next  = list1->first;
-      list1->first       = list2->first;
-      list1->current += list2->current;
-
-    } else if (curr == list1->last) { /* splice at end of list == append */
-      list1->last->next  = list2->first;
+  if (list2->current > 0) {
+    if (NULL == node) { /* append */
       list2->first->prev = list1->last;
-      list1->last        = list2->last;
-      list1->current += list2->current;
-
-    } else { /* general case: insert list2 into the middle of list1 */
-      pos                = curr;
-      curr               = curr->prev;
-      curr->next         = list2->first;
-      list2->first->prev = curr;
-      list2->last->next  = pos;
-      pos->prev          = list2->last;
-      list1->current += list2->current;
+      if (NULL != list1->last) {
+        list1->last->next = list2->first;
+      } else { /* list1 was empty */
+        list1->first = list2->first;
+      }
+      list1->last = list2->last;
+    } else { /* insert before node */
+      struct llist_node* prev = node->prev;
+      list2->first->prev      = prev;
+      list2->last->next       = node;
+      node->prev              = list2->last;
+      if (NULL != prev) {
+        prev->next = list2->first;
+      } else { /* node was first */
+        list1->first = list2->first;
+      }
     }
-
+    list1->current += list2->current;
     list1->sorted = false;
-    rcsw_free(list2, list2->flags & RCSW_NOALLOC_HANDLE);
-    break;
+    if (list1->flags & RCSW_DS_SORTED) { /* order was disturbed: re-sort */
+      llist_sort(list1, EXEC_REC);
+    }
   }
-
-  if (count == 0) {
-    ER_ERR("Could not splice: splice node not found in list1");
-    errno = ENOENT;
-    goto error;
-  }
-
-  rval = OK;
-error:
-  return rval;
+  rcsw_free(list2, list2->flags & RCSW_NOALLOC_HANDLE);
+  return OK;
 } /* llist_splice() */
 
 status_t llist_map(struct llist* list, void (*f)(void* e)) {

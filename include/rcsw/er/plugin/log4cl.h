@@ -83,10 +83,11 @@ enum log4cl_module_codes { RCSW_XTABLE_SEQ_ENUM(RCSW_LOG4CL_MODULES) };
  * A module is defined on a per file basis (multiple modules in the same file
  * are disallowed).
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref llist_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) log4cl_module {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) log4cl_module {
   /**
    * ID of the module, unique within the application. See \ref RCSW_ER_MODID.
    */

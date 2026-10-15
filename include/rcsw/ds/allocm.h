@@ -35,7 +35,7 @@ BEGIN_C_DECLS
  * the free list, or \ref RCSW_ALLOCM_INUSE. Allocation and deallocation are
  * O(1).
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) allocm_entry {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) allocm_entry {
   int32_t value;
 };
 

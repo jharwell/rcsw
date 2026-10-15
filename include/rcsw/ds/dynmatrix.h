@@ -46,7 +46,7 @@ struct dynmatrix_config {
 
   size_t  n_rows;  ///< # rows in matrix.
   size_t  n_cols;  ///< # columns in matrix.
-  dptr_t* rows;    ///< Ptr to space for vector-of-row-vectors.
+  dptr_t* rows;    ///< Unused: dynmatrix storage is always heap-allocated.
 };
 
 /**
@@ -93,10 +93,9 @@ struct dynmatrix {
   /**
    * Configuration flags. Valid flags are:
    *
-   * - \ref RCSW_ZALLOC
    * - \ref RCSW_NOALLOC_HANDLE
    *
-   * All other flags are ignored.
+   * All other flags are ignored. Elements are always zero-initialized.
    */
   uint32_t flags;
 

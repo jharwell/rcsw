@@ -74,10 +74,11 @@ struct llist_config {
 /**
  * \brief Linked list node for \ref llist.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref llist_node.data are same on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) llist_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) llist_node {
   /**
    * Next node in the list.
    */
@@ -164,8 +165,9 @@ struct llist {
  * To go forward, pass 'next' as the \p DIR field; to iterate through the list
  * backward, pass 'prev' in the \p DIR field.
  *
- * You cannot use this macro directly if you are manipulating the next/prev
- * fields. You cannot call this macro on a NULL/unitialized list.
+ * \p VAR is scoped to the loop, so the macro can be used more than once in the
+ * same block. Do not remove or relink the current node inside the loop. You
+ * cannot call this macro on a NULL/unitialized list.
  *
  * \param LIST The linked list
  *
@@ -176,17 +178,16 @@ struct llist {
  *            assigned to when iterating over the list.
  */
 #define LLIST_FOREACH(LIST, DIR, VAR) \
-  struct llist_node* _node = NULL;    \
-  struct llist_node*(VAR)  = NULL;    \
-  for ((VAR) = _node = (LIST)->first; _node != NULL; (VAR) = _node = _node->DIR)
+  for (struct llist_node*(VAR) = (LIST)->first; (VAR) != NULL; (VAR) = (VAR)->DIR)
 
 /**
  * \brief Same as \ref LLIST_FOREACH(). but the \p START parameter allows you to
  * start at an arbitrary location in the list. Pass list->first as the \p START
  * parameter to make it the same as \ref LLIST_FOREACH().
  *
- * You cannot use this macro directly if you are manipulating the next/prev
- * fields. You cannot call this macro on a NULL/unitialized list.
+ * \p VAR is scoped to the loop, so the macro can be used more than once in the
+ * same block. Do not remove or relink the current node inside the loop. You
+ * cannot call this macro on a NULL/unitialized list.
  *
  * \param LIST The \ref llist.
  *
@@ -200,9 +201,7 @@ struct llist {
  *            the list.
  */
 #define LLIST_ITER(LIST, START, DIR, VAR) \
-  struct llist_node* _node = NULL;        \
-  struct llist_node*(VAR)  = NULL;        \
-  for ((VAR) = _node = (START); _node != NULL; (VAR) = _node = _node->DIR)
+  for (struct llist_node*(VAR) = (START); (VAR) != NULL; (VAR) = (VAR)->DIR)
 
 /*******************************************************************************
  * Public API
@@ -392,10 +391,10 @@ RCSW_API struct llist_node* llist_node_query(struct llist* list, const void* e);
 /**
  * \brief Sort a \ref llist.
  *
- * Sorts a linked list using the sort type specified. The recursive sort option
- * is more memory intensive that the iterative one, but can run faster under
- * certain conditions. The iterative sort should be used under conditions where
- * memory is at a premium.
+ * Sorts a linked list with a stable mergesort, O(n log n) time and O(1) extra
+ * space. Both \ref exec_type values give the same result: \ref EXEC_REC
+ * merges bottom-up over the whole list; \ref EXEC_ITER splits the list in half
+ * first and merges the sorted halves. Neither recurses.
  *
  * \param list The linked list handle.
  * \param type \ref exec_type.
@@ -465,6 +464,11 @@ RCSW_API struct llist* llist_copy_if(struct llist* list,
  * original list). If no elements are found that fulfill the predicate, an empty
  * list is returned.
  *
+ * If \p flags contains \ref RCSW_DS_LLIST_DB_DISOWN or \ref
+ * RCSW_DS_LLIST_DB_PTR, \p list must have one of them too: otherwise the new
+ * list would point at datablocks \p list frees as the elements are removed,
+ * so NULL is returned with errno=EINVAL.
+ *
  * \param list The linked list handle
  *
  * \param flags Initialization flags for the new list.
@@ -508,25 +512,28 @@ RCSW_API status_t llist_remove_if(struct llist* list,
 /**
  * \brief Splice two \ref llist objects together.
  *
- * This function inserts the second list at the position of the specified node
- * in list1. To append list2 to list1, pass list1->last as the node. To prepend
- * list2 to list1, pass list1->first as the node. Any further use of the list2
- * pointer after this function is called is undefined.
+ * Moves every element of list2 into list1, immediately before \p node; pass
+ * NULL to append. To prepend, pass list1->first. Either list may be empty. On
+ * success list2's handle is released (unless it was caller-provided), and any
+ * further use of list2 is undefined; on failure neither list is changed.
  *
- * This works as expected except if list1 only has a single node, because its
- * first and last fields both point to the same node in that case. For this,
- * passing list->last (appending)produces the same result as passing list->first
- * (prepending).
+ * Both lists must use heap-allocated nodes and datablocks (neither \ref
+ * RCSW_NOALLOC_META nor \ref RCSW_NOALLOC_DATA), have the same element size,
+ * and agree on \ref RCSW_DS_LLIST_DB_DISOWN and \ref RCSW_DS_LLIST_DB_PTR (list1
+ * takes over freeing list2's datablocks, or not freeing them). If list1 has
+ * \ref RCSW_DS_SORTED, it is re-sorted afterwards.
  *
  * \param list1 The linked list handle for the splicer.
  * \param list2 The linked list handle for the splicee.
- * \param node The node in list1 to insert the 2nd list at.
+ * \param node The node in list1 to insert list2 before, or NULL to append.
  *
- * \return \ref status_t
+ * \return \ref status_t. ERROR with errno=ENOSPC if list1's max_elts would be
+ * exceeded, ENOENT if \p node is not in list1, EINVAL if the lists are not
+ * compatible.
  */
-RCSW_API status_t llist_splice(struct llist*            list1,
-                               struct llist*            list2,
-                               const struct llist_node* node);
+RCSW_API status_t llist_splice(struct llist*      list1,
+                               struct llist*      list2,
+                               struct llist_node* node);
 
 /**
  * \brief Apply a function to all elements in the \ref llist.

@@ -275,7 +275,7 @@ RCSW_API status_t darray_data_clear(struct darray* arr);
  *
  * \param arr The darray handle
  * \param e The element to insert
- * \param index The index to insert at. If so, this function behaves as a
+ * \param index The index to insert at. If 0, this function behaves as a
  * prepend function (very inefficient, but allowable). If equal to
  * \ref darray_size(), behaves as append function (efficient--use this).
  *
@@ -291,9 +291,10 @@ RCSW_API status_t darray_insert(struct darray* arr, const void* e, size_t index)
  * initialization, then the last element in the array is simply used to
  * overwrite the element to be removed, which is a much faster operation.
  *
- * If the darray was initialized with an unlimited capacity, then the darray is
- * shrunk to 1/2 its current size whenever the current deletion brought its
- * utilization down at or below 25% (for amortized O(1) deletions).
+ * If the darray's storage is heap-allocated (not \ref RCSW_NOALLOC_DATA),
+ * then it is shrunk to 1/2 its current capacity whenever the current deletion
+ * brought its utilization down at or below 25% (for amortized O(1)
+ * deletions).
  *
  * \param arr The darray handle
  * \param e To be filled with the removed element if non-NULL
@@ -319,8 +320,9 @@ RCSW_API status_t darray_idx_serve(const struct darray* arr,
 /**
  * \brief Find the index of an element
  *
- * Find the first occurrence of the element in the darray which is is equal to
- * e. A recursive implementation of binary search will be used if the darray is
+ * Find an element in the darray which is equal to e: the first one in a linear
+ * scan, or any one of several equal elements in a binary search. A recursive
+ * implementation of binary search will be used if the darray is
  * sorted, linear scan otherwise. This function can only be called if \ref
  * darray.cmpe was non-NULL during initialization.
  *
@@ -380,17 +382,18 @@ RCSW_API status_t darray_resize(struct darray* arr, size_t size);
 /**
  * \brief Copy the data from one darray to another.
  *
- * The element sizes for the two arrays must be the same. The capacities can be
- * different, but the destination must have enough space for the source. The
- * data from the source is placed starting at the beginning of the destination
- * array. The source and destination array cannot overlap.
+ * Afterwards the destination holds exactly the source's elements (its size
+ * becomes the source's size). The element sizes must be the same. The
+ * destination is extended if it is too small and can grow (heap storage, and
+ * its max_elts allows it); otherwise ERROR with errno=ENOSPC. The two arrays'
+ * storage cannot overlap.
  *
  * \param arr1 The destination.
  * \param arr2 The source.
  *
  * \return \ref status_t.
  */
-RCSW_API status_t darray_data_copy(const struct darray* arr1,
+RCSW_API status_t darray_data_copy(struct darray*       arr1,
                                    const struct darray* arr2);
 /**
  * \brief Sort a darray

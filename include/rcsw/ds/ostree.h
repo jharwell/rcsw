@@ -40,10 +40,11 @@
  * functions which are shared between bstree and ostree, things won't work
  * because of differing alignments/packing under optimizations.
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref ostree_node.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) ostree_node {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) ostree_node {
   uint8_t             key[RCSW_BSTREE_NODE_KEYSIZE];
   dptr_t*             data;
   struct ostree_node* left;

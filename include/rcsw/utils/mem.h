@@ -7,7 +7,10 @@
  *
  * \ingroup utils
  *
- * \brief Memory manipulation and dumping routines for use on emedded systems.
+ * \brief Memory manipulation and dumping routines for use on embedded systems.
+ *
+ * The dump functions print through \ref DPRINTF(), i.e. the configured ER
+ * plugin's print function, and print nothing when \ref RCSW_ERL is NONE.
  */
 
 #pragma once
@@ -23,10 +26,6 @@
 
 /*******************************************************************************
  * Public API
- *
- * Some of these functions are inlined, rather than prototyped, so that the
- * compiler can still optimize them as if it was just a direct memory assignment
- * without checks.
  ******************************************************************************/
 BEGIN_C_DECLS
 
@@ -86,7 +85,7 @@ RCSW_API void* utils_mem_cpy32(void* __restrict__ dest,
                                size_t n_bytes);
 
 /**
- * \brief Dump 4 byte words in memory to stdout in hexadecimal
+ * \brief Dump 4 byte words in memory in hexadecimal (see the file description)
  *
  * \param buf Address for start of dump. If this is not 32-bit aligned, ERROR is
  * returned.
@@ -97,7 +96,7 @@ RCSW_API void* utils_mem_cpy32(void* __restrict__ dest,
 RCSW_API status_t utils_mem_dump32(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 2 byte words in memory to stdout in hexadecimal
+ * \brief Dump 2 byte words in memory in hexadecimal (see the file description)
  *
  * \param buf Address for start of dump. If this is not 16-bit aligned, ERROR is
  * returned.
@@ -108,7 +107,7 @@ RCSW_API status_t utils_mem_dump32(const void* buf, size_t n_bytes);
 RCSW_API status_t utils_mem_dump16(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 1 byte words in memory to stdout in hexadecimal
+ * \brief Dump 1 byte words in memory in hexadecimal (see the file description)
  *
  * \param buf Address for start of dump
  * \param n_bytes How large of a dump to take, in bytes
@@ -117,7 +116,7 @@ RCSW_API status_t utils_mem_dump16(const void* buf, size_t n_bytes);
 RCSW_API void utils_mem_dump8(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 4 byte words in memory to stdout in hexadecimal, with offsets
+ * \brief Dump 4 byte words in memory in hexadecimal (see the file description), with offsets
  *
  * \param buf Address for start of dump. If this is not 32-bit aligned, ERROR is
  *            returned.
@@ -129,7 +128,7 @@ RCSW_API void utils_mem_dump8(const void* buf, size_t n_bytes);
 RCSW_API status_t utils_mem_dump32v(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 2 byte words in memory to stdout in hexadecimal, with offsets
+ * \brief Dump 2 byte words in memory in hexadecimal (see the file description), with offsets
  *
  * \param buf Address for start of dump. If this is not 16-bit aligned, ERROR is
  *            returned.
@@ -141,7 +140,7 @@ RCSW_API status_t utils_mem_dump32v(const void* buf, size_t n_bytes);
 RCSW_API status_t utils_mem_dump16v(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 1 byte words in memory to stdout in hexadecimal, with offsets
+ * \brief Dump 1 byte words in memory in hexadecimal (see the file description), with offsets
  *
  * \param buf Address for start of dump
  * \param n_bytes How large of a dump to take, in bytes
@@ -149,28 +148,27 @@ RCSW_API status_t utils_mem_dump16v(const void* buf, size_t n_bytes);
 RCSW_API void utils_mem_dump8v(const void* buf, size_t n_bytes);
 
 /**
- * \brief Byte swap memory in 1 byte chunks (upper 8/lower 8) in place.
+ * \brief Reverse the byte order of each 16-bit word in a buffer, in place.
  *
- * \param buf Memory to swap. Must be 16-bit aligned or no action is
- *            performed.
+ * \param buf Memory to swap. Must be 16-bit aligned.
  *
- * \param n_bytes # bytes to swap. Must be 16-bit aligned or no action is
- *                performed.
+ * \param n_bytes # bytes to swap. Must be a multiple of 2.
  *
- * \return \ref status_t
+ * \return \ref status_t. ERROR (nothing swapped) if an alignment
+ * requirement is not met.
  */
 RCSW_API status_t utils_mem_bswap16(uint16_t* buf, size_t n_bytes);
 
 /**
- * \brief Byte swap memory in 2 byte chunks (upper 16/lower 16) in place.
+ * \brief Reverse the byte order of each 32-bit word in a buffer, in place
+ * (0xAABBCCDD becomes 0xDDCCBBAA).
  *
- * \param buf Memory to swap. Must be 32-bit aligned or no action is
- *            performed.
+ * \param buf Memory to swap. Must be 32-bit aligned.
  *
- * \param n_bytes # bytes to swap. Must be 32-bit aligned or no action is
- *                performed.
+ * \param n_bytes # bytes to swap. Must be a multiple of 4.
  *
- * \return \ref status_t
+ * \return \ref status_t. ERROR (nothing swapped) if an alignment
+ * requirement is not met.
  */
 RCSW_API status_t utils_mem_bswap32(uint32_t* buf, size_t n_bytes);
 

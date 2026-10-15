@@ -394,7 +394,8 @@ static status_t grind_housekeeping_post_capture(struct grinder* const the_grinde
   return OK;
 }
 
-static struct timespec grind_gettime(void) { return clock_realtime(); }
+/* Monotonic: wall-clock steps (NTP, manual changes) must not skew timings */
+static struct timespec grind_gettime(void) { return clock_monotime(); }
 
 /*******************************************************************************
  * Public API

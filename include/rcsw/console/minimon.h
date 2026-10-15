@@ -45,15 +45,15 @@ enum minimon_help_type {
 BEGIN_C_DECLS
 
 /**
- * \brief Optional interrupt-related callbacks invoked around command
- * execution.
+ * \brief Optional interrupt-related callbacks.
  *
- * If provided, \c mask_all is called before a command executes and \c
- * clear_all is called after.
+ * Used only by the \c jump command: before branching, it calls \c clear_all
+ * and then \c mask_all (each if non-NULL), so the jump target starts with no
+ * interrupts pending or enabled.
  */
 struct minimon_irq_callbacks {
-  void (*clear_all)(void);  ///< Unmask interrupts after a command.
-  void (*mask_all)(void);   ///< Mask interrupts before a command.
+  void (*clear_all)(void);  ///< Clear all pending interrupts.
+  void (*mask_all)(void);   ///< Mask (disable) all interrupts.
 };
 
 /**
@@ -165,10 +165,14 @@ struct minimon_cmd {
   /**
    * \brief Command implementation function.
    *
-   * Called by the monitor with the matched command name and any parsed
-   * arguments (in the order defined by \ref minimon_cmd.config). Retrieve
-   * arguments with \c va_start() / \c va_arg(). The same hook may be registered
-   * for multiple commands; use \p cmdname to distinguish them.
+   * Called by the monitor with the matched command name followed by
+   * \ref MINIMON_CMD_MAX_ARGS arguments, in the order defined by \ref
+   * minimon_cmd.config. Each is passed as its parameter's type, so retrieve it
+   * with \c va_arg(args, uint32_t) for \ref MINIMON_PARAM_UINT32 and \c
+   * va_arg(args, char*) for \ref MINIMON_PARAM_STR. Unused slots are passed as
+   * \c uint32_t 0. Addresses are 32-bit numbers; convert with \c
+   * (T*)(uintptr_t)num. The same hook may be registered for multiple
+   * commands; use \p cmdname to distinguish them.
    */
   void (*hook)(const char* cmdname, ...);
 

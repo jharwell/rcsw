@@ -95,6 +95,10 @@ enum exec_type {
  *    \ref llist_filter()) copy the data, unless they are themselves created
  *    with \ref RCSW_DS_LLIST_DB_DISOWN or \ref RCSW_DS_LLIST_DB_PTR.
  *
+ * 3. \ref llist_filter() into a list with one of these flags is refused unless
+ *    the source list has one too, and \ref llist_splice() requires both lists
+ *    to agree on them.
+ *
  */
 #define RCSW_DS_LLIST_DB_DISOWN (1 << (RCSW_MODFLAGS_SHIFT + 4))
 
@@ -227,8 +231,8 @@ static inline size_t ds_elt_space_with_meta(size_t max_elts, size_t elt_size) {
 /**
  * \brief Utility function to clear an element.
  *
- * If the element is larger than a double, memcpy() is used. If it is < than the
- * size of a double, pointers are used.
+ * Zeroes the element's bytes with memset(), so the element needs no particular
+ * alignment.
  *
  * \param elt Element to clear.
  * \param elt_size Size of element in bytes.
@@ -240,8 +244,8 @@ RCSW_API status_t ds_elt_clear(void* elt, size_t elt_size);
 /**
  * \brief Utility function to copy elt2 into elt1, overwriting.
  *
- * If the element is larger than a double, memcpy() is used. If it is < than the
- * size of a double, pointers are used.
+ * Copies the element's bytes with memcpy(), so the elements need no particular
+ * alignment. Does nothing if \p elt1 and \p elt2 are the same.
  *
  * \param elt1 Destination.
  * \param elt2 Source.

@@ -19,6 +19,7 @@
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
 #include "rcsw/ds/darray.h"
+#include "rcsw/utils/align.h"
 #include "rcsw/ds/ds.h"
 
 /*******************************************************************************
@@ -113,8 +114,9 @@ struct hashmap_stats {
  *
  * Element space is chunked into 3 parts (in order):
  *
- * - An allocation map of data blocks (array of max_elts ints)
- * - Datablock array (max_elts * elt_size)
+ * - An allocation map of data blocks (see \ref allocm_map_bytes())
+ * - Datablock array (max_elts * elt_size, padded to a multiple of
+ *   sizeof(\ref dptr_t) so the hashnodes after it stay aligned)
  * - Metadata array of \ref hashnode
  *
  * Meta space from \ref hashmap_config.meta is used for the \ref darray handles
@@ -215,10 +217,11 @@ struct hashmap {
  * As you woulde xpect for an associative array element, this is a key-value
  * pair
  *
- * Must be packed and aligned to the same size as \ref dptr_t so that casts from
- * \ref hashnode.data are safe on all targets.
+ * Aligned to \ref dptr_t, so that arrays of these in caller-provided memory
+ * keep every member naturally aligned. (Not packed: packing would misalign
+ * the pointer members.)
  */
-struct RCSW_ATTR(packed, aligned(sizeof(dptr_t))) hashnode {
+struct RCSW_ATTR(aligned(sizeof(dptr_t))) hashnode {
   /**
    * Key for key-value pair.
    */
@@ -263,8 +266,9 @@ static inline size_t hashmap_element_space(size_t n_buckets,
                                            size_t elt_size) {
   size_t max_elts = n_buckets * bucket_size;
   return ds_meta_space(max_elts) +
-         darray_element_space(max_elts, sizeof(struct hashnode)) +
-         ds_elt_space_simple(max_elts, elt_size);
+         RCSW_ALIGN_SIZE(ds_elt_space_simple(max_elts, elt_size),
+                         sizeof(dptr_t)) +
+         darray_element_space(max_elts, sizeof(struct hashnode));
 }
 
 /**

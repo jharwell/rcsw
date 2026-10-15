@@ -74,11 +74,12 @@ struct ds_ops {
  *
  * Typical usage:
  *
+ * Initialize it with the data structure's own function, which sets the
+ * cursor (\ref ds_iter_init() alone does not):
+ *
  * \code
  * struct ds_iterator it;
- * ds_iter_init(&it, my_list, ITER_FORWARD,
- *              &llist_iter_ops,    // declared in llist.h
- *              NULL);              // no filter
+ * llist_iter_init(&it, my_list, ITER_FORWARD, NULL); // NULL: no filter
  * void* e;
  * while ((e = ds_iter_next(&it)) != NULL) {
  *     process(e);
@@ -88,7 +89,7 @@ struct ds_ops {
  * For a filtered iteration pass a classify callback:
  *
  * \code
- * ds_iter_init(&it, my_llist, ITER_FORWARD, &llist_iter_ops, my_pred);
+ * llist_iter_init(&it, my_list, ITER_FORWARD, my_pred);
  * \endcode
  */
 struct ds_iterator {
@@ -99,9 +100,9 @@ struct ds_iterator {
   void* container;
 
   /**
-   * DS-specific cursor. For indexed structures this is the current index cast
-   * to a pointer; for pointer-chased structures (llist) it is the current node
-   * pointer. Managed entirely by the ops callbacks.
+   * DS-specific cursor: \c idx for indexed structures (darray, rbuffer),
+   * \c node for pointer-chased ones (llist). Set by the DS's *_iter_init()
+   * function and then managed entirely by the ops callbacks.
    */
   union {
     void*  node;
@@ -126,6 +127,10 @@ BEGIN_C_DECLS
 
 /**
  * \brief Initialize an iterator.
+ *
+ * For implementing a DS's *_iter_init() function: this does not set the
+ * cursor, which the caller must do. Applications should call the DS's own
+ * function (e.g., \ref llist_iter_init()) instead.
  *
  * The caller is responsible for the storage of \p iter (stack or heap). No
  * allocation is performed by this function.

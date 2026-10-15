@@ -184,8 +184,8 @@ static void hashmap_teardown(struct hashmap* const map, size_t n_buckets_init) {
  */
 static int hashnode_cmp(const void* const n1, const void* const n2) {
   /*
-   * Compare the key bytes by offset: hashnodes live in byte-addressed bucket
-   * storage, so they need not be aligned for a struct pointer dereference.
+   * Compare the key bytes by offset rather than through struct pointers, so
+   * this does not depend on how the bucket storage is laid out.
    */
   return memcmp((const uint8_t*)n1 + offsetof(struct hashnode, key),
                 (const uint8_t*)n2 + offsetof(struct hashnode, key),
@@ -270,8 +270,11 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
                                   ds_meta_space(map->n_buckets * params->bsize));
   size_t db_space_per_bucket =
     darray_element_space(params->bsize, params->elt_size);
-  map->space.hashnodes = (void*)((uint8_t*)map->space.datablocks +
-                                 (db_space_per_bucket * map->n_buckets));
+  /* padded so the hashnodes start dptr_t-aligned, matching
+   * hashmap_element_space() */
+  map->space.hashnodes =
+    (void*)((uint8_t*)map->space.datablocks +
+            RCSW_ALIGN_SIZE(db_space_per_bucket * map->n_buckets, sizeof(dptr_t)));
 
   size_t hn_space_per_bucket =
     darray_element_space(params->bsize, sizeof(struct hashnode));
@@ -330,8 +333,8 @@ void* hashmap_data_get(struct hashmap* const map, const void* const key) {
   }
 
   /*
-   * Copy the hashnode out rather than dereferencing it in place: buckets are
-   * byte arrays, so the node may not be aligned for a direct pointer load.
+   * Copy the hashnode out rather than dereferencing it in place, so this does
+   * not depend on how the bucket storage is laid out.
    */
   darray_idx_serve(map->space.buckets + bucket_index, &node, (size_t)node_index);
   return node.data;
