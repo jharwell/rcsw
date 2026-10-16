@@ -51,7 +51,7 @@ struct fifo_config {
   size_t max_elts;
 
   /**
-   * Configuration flags. See \ref fifo.flags for valid flags.
+   * Configuration flags. See \ref fifo for valid flags.
    */
   uint32_t flags;
 };
@@ -59,28 +59,30 @@ struct fifo_config {
 /**
  * \brief General purpose FIFO.
  *
- * This implementation is more full-featured than \ref rawfifo, but is not safe
- * to use in ISRs.
+ * A thin, type-safe wrapper around a \ref rbuffer created with \ref
+ * RCSW_DS_RBUFFER_AS_FIFO; every fifo_*() function is static inline and
+ * forwards to the matching rbuffer_*() function. This implementation is more
+ * full-featured than \ref rawfifo, but is not safe to use in ISRs.
+ *
+ * Handle storage and the valid flags are as for \ref rbuffer: \ref
+ * RCSW_ZALLOC, \ref RCSW_NOALLOC_HANDLE and \ref RCSW_NOALLOC_DATA (in \ref
+ * fifo_config.flags); all other flags are ignored.
  */
 struct fifo {
   /**
-   * Underlying ringbuffer the FIFO is built on top of.
+   * Underlying ringbuffer. A \ref fifo is laid out exactly as a \ref rbuffer,
+   * so a handle the library allocates is a \ref rbuffer handle.
    */
   struct rbuffer rb;
-
-  /**
-   * \brief Run-time configuration flags.
-   *
-   * Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
 };
+
+#ifdef __cplusplus
+static_assert(sizeof(struct fifo) == sizeof(struct rbuffer),
+              "struct fifo must have the same layout as struct rbuffer");
+#else
+_Static_assert(sizeof(struct fifo) == sizeof(struct rbuffer),
+               "struct fifo must have the same layout as struct rbuffer");
+#endif
 
 /*******************************************************************************
  * Public API
@@ -167,10 +169,22 @@ static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
  *
  * \param params The initialization parameters.
  *
- * \return The initialized FIFO, or NULL if an error occurred.
+ * \return The initialized FIFO, or NULL if an error occurred (errno is set by
+ * \ref rbuffer_init()).
  */
-RCSW_API struct fifo* fifo_init(struct fifo*              fifo_in,
-                                const struct fifo_config* params) RCSW_WUR;
+static inline RCSW_WUR struct fifo*
+fifo_init(struct fifo* const fifo_in, const struct fifo_config* const params) {
+  RCSW_FPC_NV(NULL, NULL != params);
+  struct rbuffer_config rb_params = {.cmpe     = NULL,
+                                     .printe   = params->printe,
+                                     .elements = params->elements,
+                                     .elt_size = params->elt_size,
+                                     .max_elts = params->max_elts,
+                                     .flags    = params->flags |
+                                              RCSW_DS_RBUFFER_AS_FIFO};
+  /* struct fifo is struct rbuffer's only member, so the pointers convert */
+  return (struct fifo*)rbuffer_init((struct rbuffer*)fifo_in, &rb_params);
+}
 
 /**
  * \brief Destroy a FIFO.
@@ -179,7 +193,10 @@ RCSW_API struct fifo* fifo_init(struct fifo*              fifo_in,
  *
  * \param fifo The FIFO to destroy.
  */
-RCSW_API void fifo_destroy(struct fifo* fifo);
+static inline void fifo_destroy(struct fifo* const fifo) {
+  RCSW_FPC_V(NULL != fifo);
+  rbuffer_destroy(&fifo->rb);
+}
 
 /**
  * \brief Enqueue an element into the FIFO.
@@ -187,9 +204,12 @@ RCSW_API void fifo_destroy(struct fifo* fifo);
  * \param fifo The FIFO handle.
  * \param e The element to enqueue. Cannot be NULL.
  *
- * \return \ref status_t.
+ * \return \ref status_t. ERROR with errno=ENOSPC if the FIFO is full.
  */
-RCSW_API status_t fifo_add(struct fifo* fifo, const void* e);
+static inline status_t fifo_add(struct fifo* const fifo, const void* const e) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  return rbuffer_add(&fifo->rb, e);
+}
 
 /**
  * \brief Dequeue an element from the FIFO.
@@ -199,7 +219,10 @@ RCSW_API status_t fifo_add(struct fifo* fifo, const void* e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_remove(struct fifo* fifo, void* e);
+static inline status_t fifo_remove(struct fifo* const fifo, void* const e) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  return rbuffer_remove(&fifo->rb, e);
+}
 
 /**
  * \brief Clear a FIFO.
@@ -208,7 +231,10 @@ RCSW_API status_t fifo_remove(struct fifo* fifo, void* e);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_clear(struct fifo* fifo);
+static inline status_t fifo_clear(struct fifo* const fifo) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  return rbuffer_clear(&fifo->rb);
+}
 
 /**
  * \brief Apply an operation to all elements of the FIFO.
@@ -220,7 +246,10 @@ RCSW_API status_t fifo_clear(struct fifo* fifo);
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_map(struct fifo* fifo, void (*f)(void* e));
+static inline status_t fifo_map(struct fifo* const fifo, void (*f)(void* e)) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  return rbuffer_map(&fifo->rb, f);
+}
 
 /**
  * \brief Compute a cumulative result (sum, count, ...) over all elements of a
@@ -236,15 +265,20 @@ RCSW_API status_t fifo_map(struct fifo* fifo, void (*f)(void* e));
  *
  * \return \ref status_t.
  */
-RCSW_API status_t fifo_inject(struct fifo* fifo,
-                              void (*f)(void* e, void* res),
-                              void* result);
+static inline status_t fifo_inject(struct fifo* const fifo,
+                                   void (*f)(void* e, void* res),
+                                   void* const result) {
+  RCSW_FPC_NV(ERROR, NULL != fifo);
+  return rbuffer_inject(&fifo->rb, f, result);
+}
 
 /**
- * \brief Print a FIFO.
+ * \brief Print a FIFO. A NULL handle prints a placeholder.
  *
  * \param fifo The FIFO handle.
  */
-RCSW_API void fifo_print(struct fifo* fifo);
+static inline void fifo_print(struct fifo* const fifo) {
+  rbuffer_print(NULL == fifo ? NULL : &fifo->rb);
+}
 
 END_C_DECLS

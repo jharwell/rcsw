@@ -221,7 +221,7 @@ The most common options:
    * - ``RCSW_CONFIG_STDIO_PUTCHAR`` / ``_GETCHAR``
      - The character I/O functions ``stdio`` uses, e.g. your UART driver.
 
-See `Using RCSW <https://jharwell.github.io/rcsw/startup.html>`_ for every
+See `Using RCSW <https://jharwell.github.io/rcsw/src/startup.html>`_ for every
 option.
 
 Documentation

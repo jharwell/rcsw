@@ -117,7 +117,7 @@ CATCH_TEST_CASE("RCSW_IS_ODD / RCSW_IS_EVEN", "[core][utils][noalloc]") {
 }
 
 /*******************************************************************************
- * RCSW_IS_BETWEENC / O / HO
+ * RCSW_IS_BETWEENC / HO
  ******************************************************************************/
 CATCH_TEST_CASE("RCSW_IS_BETWEENC - closed interval [lo, hi]",
                 "[core][utils][noalloc]") {
@@ -126,15 +126,6 @@ CATCH_TEST_CASE("RCSW_IS_BETWEENC - closed interval [lo, hi]",
   CATCH_REQUIRE(RCSW_IS_BETWEENC(10, 0, 10)); /* at upper bound */
   CATCH_REQUIRE(!RCSW_IS_BETWEENC(-1, 0, 10));
   CATCH_REQUIRE(!RCSW_IS_BETWEENC(11, 0, 10));
-}
-
-CATCH_TEST_CASE("RCSW_IS_BETWEENO - open interval (lo, hi)",
-                "[core][utils][noalloc]") {
-  CATCH_REQUIRE(RCSW_IS_BETWEENO(5, 0, 10));
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(0, 0, 10));  /* lower bound excluded */
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(10, 0, 10)); /* upper bound excluded */
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(-1, 0, 10));
-  CATCH_REQUIRE(!RCSW_IS_BETWEENO(11, 0, 10));
 }
 
 CATCH_TEST_CASE("RCSW_IS_BETWEENHO - half-open interval [lo, hi)",

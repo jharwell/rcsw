@@ -73,17 +73,6 @@ char* stdio_strrep(const char* const __restrict__ original,
   return new_str;
 }
 
-void stdio_strrev(char* const s, size_t len) {
-  if (len < 2) {
-    return;
-  }
-  for (size_t i = 0, j = len - 1; i < j; ++i, --j) {
-    char tmp = s[i];
-    s[i]     = s[j];
-    s[j]     = tmp;
-  }
-} /* stdio_strrev() */
-
 size_t stdio_strlen(const char* const s) {
   RCSW_FPC_NV(0, NULL != s);
 

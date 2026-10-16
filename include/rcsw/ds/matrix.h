@@ -78,6 +78,8 @@ struct matrix_config {
  * dimensions of the matrix are small (if the dimensions are large AND the
  * matrix is sparse, it will definitely be really inefficient, and possibly
  * won't even fit into memory).
+ *
+ * \note \ref matrix_transpose() supports square matrices only.
  */
 struct matrix {
   /**
@@ -208,9 +210,13 @@ RCSW_API struct matrix* matrix_init(struct matrix*              matrix_in,
 RCSW_API void matrix_destroy(struct matrix* matrix);
 
 /**
- * \brief Transpose a static matrix.
+ * \brief Transpose a static matrix in place.
  *
- * \note Currently only works if the matrix is square.
+ * \note Square matrices only. Transposing a non-square matrix in place would
+ * also have to swap \ref matrix_config.n_rows and \ref matrix_config.n_cols
+ * and permute the storage by cycles, which is not implemented. A non-square
+ * matrix fails the function precondition (ERROR under \c LIBRA_FPC_RETURN). To
+ * transpose an M x N matrix, copy it element by element into an N x M one.
  *
  * \param matrix The matrix handle.
  *

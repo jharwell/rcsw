@@ -18,6 +18,7 @@
 #include <stddef.h>
 
 #include "rcsw/core/compilers.h"
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * Macros
@@ -125,16 +126,18 @@ RCSW_API size_t stdio_strlen(const char* s) RCSW_PURE;
 RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize);
 
 /**
- * \brief Reverse a string of known length.
+ * \brief Reverse a string of known length in place.
  *
- * Reverses a string of known length in O(N) time, because there is no need to
- * call strlen() to find the length of the string. Modified the original string
- * is by this function.
+ * O(\p len); no strlen() is needed because the length is given. The
+ * terminating NUL (if any) is not moved. Equivalent to
+ * \ref utils_arr8_reverse() on the string's bytes.
  *
  * \param s The string to reverse.
  * \param len Length of the string to reverse.
  */
-RCSW_API void stdio_strrev(char* s, size_t len);
+static inline void stdio_strrev(char* const s, size_t len) {
+  utils_arr8_reverse(s, len);
+}
 
 /**
  * \brief Search a string for another string.

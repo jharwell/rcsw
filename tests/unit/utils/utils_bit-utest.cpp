@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for rcsw/utils/bit.h: RCSW_TOPBIT().
+ * Unit tests for rcsw/utils/bit.h: RCSW_BIT_WIDTH().
  */
 
 /*******************************************************************************
@@ -14,21 +14,22 @@
 #define CATCH_CONFIG_PREFIX_ALL
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdint>
+
 #include "rcsw/utils/bit.h"
 
 /*******************************************************************************
  * Test Helper Functions
  ******************************************************************************/
 
-static void topbit_test() {
-  /* RCSW_TOPBIT isolates the MSB of each type */
-  CATCH_REQUIRE(RCSW_TOPBIT(uint8_t) == 0x80u);
-  CATCH_REQUIRE(RCSW_TOPBIT(uint16_t) == 0x8000u);
-  CATCH_REQUIRE(RCSW_TOPBIT(uint32_t) == 0x80000000u);
-  CATCH_REQUIRE(RCSW_TOPBIT(uint64_t) == 0x8000000000000000ull);
+static void bit_width_test() {
+  CATCH_REQUIRE(RCSW_BIT_WIDTH(uint8_t) == 8);
+  CATCH_REQUIRE(RCSW_BIT_WIDTH(uint16_t) == 16);
+  CATCH_REQUIRE(RCSW_BIT_WIDTH(uint32_t) == 32);
+  CATCH_REQUIRE(RCSW_BIT_WIDTH(uint64_t) == 64);
 }
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Bit TOPBIT Test", "[utils][bit][noalloc]") { topbit_test(); }
+CATCH_TEST_CASE("Bit width Test", "[utils][bit][noalloc]") { bit_width_test(); }

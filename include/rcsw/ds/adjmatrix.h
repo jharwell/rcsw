@@ -54,8 +54,8 @@ struct adjmatrix_config {
   bool_t is_directed;
 
   /**
-   * Are the graph edges weighted? If a graph is undirected it cannot be
-   * weighted.
+   * Are the graph edges weighted? Must be false if \ref adjmatrix_config.is_directed is false:
+   * weighted undirected graphs are not supported (see \ref adjmatrix).
    */
   bool_t is_weighted;
 };
@@ -65,9 +65,18 @@ struct adjmatrix_config {
  * \brief Implementation of adjacency matrix representation of a "static" graph.
  *
  * Static in the sense that the # of vertices in the graph cannot be changed
- * after initialization. Graphs can be both weighted/unweighted,
- * directed/undirected, per configuration. However, you can't have an undirected
- * graph that is weighted.
+ * after initialization. Graphs can be weighted or unweighted, and directed or
+ * undirected, with one exception:
+ *
+ * \note Weighted graphs must be directed. \ref adjmatrix_init() rejects
+ * <tt>is_weighted && !is_directed</tt> (function precondition: NULL under \c
+ * LIBRA_FPC_RETURN), because \ref adjmatrix_edge_addu() takes no weight. To
+ * model a weighted undirected graph, make it directed and add each edge in
+ * both directions with \ref adjmatrix_edge_addd(), and remove both directions
+ * when removing it.
+ *
+ * \note Edge weights are always \c double and unweighted edges are \c int;
+ * the element type is not configurable.
  *
  * Sentinel values in the matrix used for detecting if an edge exists are NAN
  * for weighted graphs and 0 for unweighted graphs, so don't use those values
@@ -261,10 +270,8 @@ RCSW_API status_t adjmatrix_edge_addd(struct adjmatrix* matrix,
 /**
  * \brief Add an undirected edge to the graph.
  *
- * Adding an edge  (u, v) will also automatically add an edge (v, u) with the
- * same value (1.0). This is OK because the having a graph that is both
- * undirected and weighted is disallowed, and was checked during
- * initialization.
+ * Adding an edge (u, v) also adds the edge (v, u). Undirected graphs are
+ * always unweighted (see \ref adjmatrix), so no weight is taken.
  *
  * \param matrix The matrix handle.
  * \param u Vertex #1.

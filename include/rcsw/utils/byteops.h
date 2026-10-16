@@ -47,10 +47,21 @@ BEGIN_C_DECLS
 /**
  * \brief Reverse the bytes of an array in place.
  *
- * \param arr  The byte array to reverse.
+ * Header-only, so that \ref stdio_strrev() can use it without linking against
+ * the utils module.
+ *
+ * \param arr  The byte array to reverse. Can be NULL if \p size is 0.
  * \param size Number of bytes in the array.
  */
-RCSW_API void utils_arr8_reverse(void* arr, size_t size);
+static inline void utils_arr8_reverse(void* const arr, size_t size) {
+  uint8_t* const a = (uint8_t*)arr;
+  for (size_t i = 0, j = size; i + 1 < j; ++i) {
+    --j;
+    uint8_t tmp = a[i];
+    a[i]        = a[j];
+    a[j]        = tmp;
+  } /* for() */
+}
 
 /**
  * \brief Swap two elements of any size.

@@ -35,17 +35,6 @@ status_t utils_string_gen(char* const buf, size_t len) {
   return OK;
 }
 
-void utils_arr8_reverse(void* const arr, size_t size) {
-  if (size < 2) {
-    return;
-  }
-  for (size_t i = 0, j = size - 1; i < j; i++, j--) {
-    uint8_t tmp        = ((uint8_t*)arr)[i];
-    ((uint8_t*)arr)[i] = ((uint8_t*)arr)[j];
-    ((uint8_t*)arr)[j] = tmp;
-  } /* for() */
-}
-
 void utils_elt_swap(void* const elt1, void* const elt2, size_t elt_size) {
   RCSW_FPC_V(NULL != elt1, NULL != elt2);
 

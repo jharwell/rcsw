@@ -40,7 +40,8 @@ struct dynmatrix_config {
   size_t elt_size;
 
   /**
-   * Configuration flags. See \ref dynmatrix.flags for valid flags.
+   * Configuration flags. See \ref dynmatrix.flags for valid flags; in
+   * particular, element storage is always heap-allocated.
    */
   uint32_t flags;
 
@@ -67,6 +68,12 @@ struct dynmatrix_config {
  *
  * Besides \ref dynmatrix_resize(), the matrix grows when \ref dynmatrix_set()
  * is given an out-of-bounds index; no other function resizes it.
+ *
+ * \note Only the handle can be caller-provided (\ref RCSW_NOALLOC_HANDLE). The
+ * row vector and every row are always heap-allocated, so \ref
+ * RCSW_NOALLOC_DATA and \ref RCSW_NOALLOC_META have no effect and a dynmatrix
+ * cannot be used in builds without a heap. Use \ref matrix (fixed
+ * dimensions, caller-provided storage allowed) there instead.
  */
 struct dynmatrix {
   /**
@@ -93,8 +100,11 @@ struct dynmatrix {
    * Configuration flags. Valid flags are:
    *
    * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_ZALLOC (zeroes the handle; elements are always
+   *   zero-initialized regardless)
    *
-   * All other flags are ignored. Elements are always zero-initialized.
+   * All other flags are ignored, including \ref RCSW_NOALLOC_DATA and \ref
+   * RCSW_NOALLOC_META.
    */
   uint32_t flags;
 
@@ -196,9 +206,12 @@ RCSW_API struct dynmatrix* dynmatrix_init(
 RCSW_API void dynmatrix_destroy(struct dynmatrix* matrix);
 
 /**
- * \brief Transpose a dynamic matrix.
+ * \brief Transpose a dynamic matrix in place.
  *
- * \note Currently only works if the matrix is square.
+ * \note Square matrices only; a non-square matrix fails the function
+ * precondition (ERROR under \c LIBRA_FPC_RETURN). For an M x N matrix, \ref
+ * dynmatrix_resize() it to K x K with K = max(M,N), transpose, then resize it
+ * to N x M.
  *
  * \param matrix The matrix handle.
  *

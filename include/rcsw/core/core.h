@@ -194,27 +194,6 @@ typedef enum {
 /* clang-format on */
 
 /**
- * \def RCSW_IS_BETWEENO(n, low, high)
- *
- * Readability macro for determining if something is between an upper and lower
- * bound (open=exclusive).
- *
- * You can obviously do this without a macro, but this is (1) more self
- * documenting, and (2) less error prone.
- */
-/* clang-format off */
-#define RCSW_IS_BETWEENO(n, low, high)         \
-  ({                                           \
-    typeof(n)    _n  = (n);                    \
-    typeof(low)  _lo = (low);                  \
-    typeof(high) _hi = (high);                 \
-    (void)(&_n == &_lo); /* type-same check */ \
-    (void)(&_n == &_hi);                       \
-    _n > _lo && _n < _hi;                      \
-  })
-/* clang-format on */
-
-/**
  * \def RCSW_IS_BETWEENHO(n, low, high)
  *
  * Readability macro for determining if something is between an upper and lower
