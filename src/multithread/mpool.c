@@ -48,13 +48,11 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   }
   memset(the_pool, 0, sizeof(*the_pool));
 
-  the_pool->flags    = params->flags;
-  the_pool->elt_size = params->elt_size;
-  the_pool->max_elts = params->max_elts;
+  the_pool->cfg = *params;
 
   ER_INFO("Init memory pool: max_elts=%zu,elt_size=%zu",
-          the_pool->max_elts,
-          the_pool->elt_size);
+          the_pool->cfg.max_elts,
+          the_pool->cfg.elt_size);
 
   /*
    * Each step is undone in reverse on failure. The embedded llists, csem and
@@ -93,10 +91,10 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   if (NULL == llist_init(&the_pool->free, &llist_config)) {
     goto free_meta;
   }
-  for (size_t i = 0; i < the_pool->max_elts; ++i) {
-    if (OK != llist_append(&the_pool->free,
-                           (uint8_t*)the_pool->elements +
-                             (i * the_pool->elt_size))) {
+  for (size_t i = 0; i < the_pool->cfg.max_elts; ++i) {
+    if (OK != llist_append(
+                &the_pool->free,
+                (uint8_t*)the_pool->elements + (i * the_pool->cfg.elt_size))) {
       goto destroy_free;
     }
   } /* for() */
@@ -127,8 +125,9 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
   } /* for(i..) */
 
   /* initialize locks */
-  if (NULL ==
-      csem_init(&the_pool->slots_avail, the_pool->max_elts, RCSW_NOALLOC_HANDLE)) {
+  if (NULL == csem_init(&the_pool->slots_avail,
+                        the_pool->cfg.max_elts,
+                        RCSW_NOALLOC_HANDLE)) {
     goto free_refs;
   }
   if (NULL == mutex_init(&the_pool->mutex, RCSW_NOALLOC_HANDLE)) {
@@ -139,17 +138,17 @@ struct mpool* mpool_init(struct mpool* const              pool_in,
 destroy_csem:
   csem_destroy(&the_pool->slots_avail);
 free_refs:
-  rcsw_free(the_pool->refs, the_pool->flags & RCSW_NOALLOC_META);
+  rcsw_free(the_pool->refs, the_pool->cfg.flags & RCSW_NOALLOC_META);
 destroy_alloc:
   llist_destroy(&the_pool->alloc);
 destroy_free:
   llist_destroy(&the_pool->free);
 free_meta:
-  rcsw_free(the_pool->meta, the_pool->flags & RCSW_NOALLOC_META);
+  rcsw_free(the_pool->meta, the_pool->cfg.flags & RCSW_NOALLOC_META);
 free_elements:
-  rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
+  rcsw_free(the_pool->elements, the_pool->cfg.flags & RCSW_NOALLOC_DATA);
 free_pool:
-  rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(the_pool, the_pool->cfg.flags & RCSW_NOALLOC_HANDLE);
   errno = ENOMEM;
   return NULL;
 } /* mpool_init() */
@@ -163,43 +162,50 @@ void mpool_destroy(struct mpool* const the_pool) {
   llist_destroy(&the_pool->free);
   llist_destroy(&the_pool->alloc);
 
-  rcsw_free(the_pool->elements, the_pool->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(the_pool->meta, the_pool->flags & RCSW_NOALLOC_META);
-  rcsw_free(the_pool->refs, the_pool->flags & RCSW_NOALLOC_META);
-  rcsw_free(the_pool, the_pool->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(the_pool->elements, the_pool->cfg.flags & RCSW_NOALLOC_DATA);
+  rcsw_free(the_pool->meta, the_pool->cfg.flags & RCSW_NOALLOC_META);
+  rcsw_free(the_pool->refs, the_pool->cfg.flags & RCSW_NOALLOC_META);
+  rcsw_free(the_pool, the_pool->cfg.flags & RCSW_NOALLOC_HANDLE);
 }
+
+/**
+ * \brief Move a free chunk to the allocated list and give it one reference.
+ *
+ * The caller has already taken a slot from \ref mpool.slots_avail, so a free
+ * chunk exists.
+ */
+static void* mpool_take_chunk(struct mpool* const the_pool) {
+  mutex_lock(&the_pool->mutex);
+
+  /* get the entry from free list and add to allocated list */
+  void* ptr = the_pool->free.first->data;
+  llist_remove(&the_pool->free, ptr);
+  llist_append(&the_pool->alloc, ptr);
+
+  /* One more THING using this chunk */
+  size_t idx = (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) /
+               the_pool->cfg.elt_size;
+  the_pool->refs[idx] = 1; /* a fresh allocation has one owner */
+
+  mutex_unlock(&the_pool->mutex);
+
+  ER_DEBUG("Got buffer %p, n_free=%zu,n_alloc=%zu",
+           ptr,
+           llist_size(&the_pool->free),
+           llist_size(&the_pool->alloc));
+  return ptr;
+} /* mpool_take_chunk() */
 
 void* mpool_req(struct mpool* const the_pool) {
   RCSW_FPC_NV(NULL, NULL != the_pool);
 
-  void* ptr = NULL;
   ER_DEBUG("Wait for buffer to become available: n_free=%zu,n_alloc=%zu",
            llist_size(&the_pool->free),
            llist_size(&the_pool->alloc));
 
   /* wait for an entry to become available */
   csem_wait(&the_pool->slots_avail);
-  mutex_lock(&the_pool->mutex);
-
-  /* get the entry from free list and add to allocated list */
-  ptr = the_pool->free.first->data;
-  llist_remove(&the_pool->free, the_pool->free.first->data);
-  llist_append(&the_pool->alloc, ptr);
-
-  /* One more THING using this chunk */
-  size_t idx =
-    (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
-  the_pool->refs[idx] = 1; /* a fresh allocation has one owner */
-
-  mutex_unlock(&the_pool->mutex);
-
-  ER_DEBUG("Got buffer %p,ref_count=%d, n_free=%zu,n_alloc=%zu",
-           ptr,
-           the_pool->refs[idx],
-           llist_size(&the_pool->free),
-           llist_size(&the_pool->alloc));
-
-  return ptr;
+  return mpool_take_chunk(the_pool);
 } /* mpool_req() */
 
 status_t mpool_timedreq(struct mpool* const          the_pool,
@@ -212,34 +218,23 @@ status_t mpool_timedreq(struct mpool* const          the_pool,
            llist_size(&the_pool->alloc));
   /* wait for an entry to become available */
   RCSW_CHECK(OK == csem_timedwait(&the_pool->slots_avail, to));
-  mutex_lock(&the_pool->mutex);
-
-  /* Remove the entry from free list and add to allocated list */
-  dptr_t* ptr = the_pool->free.first->data;
-  llist_remove(&the_pool->free, ptr);
-  llist_append(&the_pool->alloc, ptr);
-
-  /* One more THING using this chunk */
-  size_t idx =
-    (size_t)((uint8_t*)ptr - (uint8_t*)the_pool->elements) / the_pool->elt_size;
-  the_pool->refs[idx] = 1; /* a fresh allocation has one owner */
-
-  if (NULL != chunk) {
-    *chunk = ptr;
-  }
-
-  mutex_unlock(&the_pool->mutex);
-
-  ER_DEBUG("Got buffer %p,ref_count=%d, n_free=%zu,n_alloc=%zu",
-           ptr,
-           the_pool->refs[idx],
-           llist_size(&the_pool->free),
-           llist_size(&the_pool->alloc));
+  *chunk = mpool_take_chunk(the_pool);
   return OK;
 
 error:
   return ERROR;
 } /* mpool_timedreq() */
+
+status_t mpool_tryreq(struct mpool* const the_pool, void** chunk) {
+  RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != chunk);
+
+  if (OK != csem_trywait(&the_pool->slots_avail)) {
+    errno = ENOSPC; /* none free: don't wait */
+    return ERROR;
+  }
+  *chunk = mpool_take_chunk(the_pool);
+  return OK;
+} /* mpool_tryreq() */
 
 status_t mpool_release(struct mpool* const the_pool, void* const ptr) {
   RCSW_FPC_NV(ERROR, NULL != the_pool, NULL != ptr);
@@ -348,11 +343,11 @@ int mpool_ref_query(struct mpool* const the_pool, const void* const ptr) {
     return -1;
   }
   size_t offset = (size_t)(p - base);
-  if (offset >= the_pool->elt_size * the_pool->max_elts ||
-      0 != offset % the_pool->elt_size) {
+  if (offset >= the_pool->cfg.elt_size * the_pool->cfg.max_elts ||
+      0 != offset % the_pool->cfg.elt_size) {
     return -1;
   }
-  return (int)(offset / the_pool->elt_size);
+  return (int)(offset / the_pool->cfg.elt_size);
 } /* mpool_ref_query() */
 
 size_t mpool_ref_count(struct mpool* const the_pool, const void* const ptr) {

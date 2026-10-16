@@ -46,7 +46,6 @@ struct dynmatrix_config {
 
   size_t  n_rows;  ///< # rows in matrix.
   size_t  n_cols;  ///< # columns in matrix.
-  dptr_t* rows;    ///< Unused: dynmatrix storage is always heap-allocated.
 };
 
 /**

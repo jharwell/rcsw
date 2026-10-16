@@ -232,8 +232,8 @@ CATCH_TEST_CASE("ostree_init needs no flags from the caller", "[ds][ostree]") {
   struct bstree* t = ostree_init(nullptr, &c);
   CATCH_REQUIRE(nullptr != t);
   CATCH_REQUIRE(RCSW_NONE == c.flags); /* the caller's config is untouched */
-  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_OS);
-  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_RB);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_OS);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_RB);
 
   for (int32_t i = 0; i < 50; ++i) {
     int32_t k = ((i * 17) % 50) * 3; /* 0, 3, ..., 147 in scrambled order */

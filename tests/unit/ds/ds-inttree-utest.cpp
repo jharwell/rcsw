@@ -320,9 +320,9 @@ CATCH_TEST_CASE("inttree_init needs no flags or element size from the caller",
   /* the caller's config is untouched */
   CATCH_REQUIRE(RCSW_NONE == c.flags);
   CATCH_REQUIRE(0 == c.elt_size);
-  CATCH_REQUIRE(sizeof(struct interval_data) == t->elt_size);
-  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_INT);
-  CATCH_REQUIRE(t->flags & RCSW_DS_BSTREE_RB);
+  CATCH_REQUIRE(sizeof(struct interval_data) == t->cfg.elt_size);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_INT);
+  CATCH_REQUIRE(t->cfg.flags & RCSW_DS_BSTREE_RB);
 
   struct interval_data iv[] = {{.high = 20, .low = 10},
                                {.high = 40, .low = 30},

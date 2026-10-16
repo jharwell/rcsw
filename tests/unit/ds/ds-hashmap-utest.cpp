@@ -393,7 +393,7 @@ CATCH_TEST_CASE("hashmap: key_len selects short keys", "[ds][hashmap]") {
 
   struct hashmap* m = hashmap_init(nullptr, &c);
   CATCH_REQUIRE(nullptr != m);
-  CATCH_REQUIRE(sizeof(int) == m->key_len);
+  CATCH_REQUIRE(sizeof(int) == m->cfg.key_len);
 
   /* plain ints as keys: no padding to RCSW_HASHMAP_KEYSIZE needed */
   for (int k = 0; k < 8; ++k) {
@@ -421,7 +421,7 @@ CATCH_TEST_CASE("hashmap: key_len 0 means RCSW_HASHMAP_KEYSIZE-byte keys",
                 "[ds][hashmap]") {
   struct hashmap* m = make_map(4, 4, RCSW_NONE); /* key_len left 0 */
   CATCH_REQUIRE(nullptr != m);
-  CATCH_REQUIRE(RCSW_HASHMAP_KEYSIZE == m->key_len);
+  CATCH_REQUIRE(RCSW_HASHMAP_KEYSIZE == m->cfg.key_len);
 
   key_buf k = make_key("abc");
   int     v = 7;

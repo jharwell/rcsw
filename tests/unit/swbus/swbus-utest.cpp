@@ -582,3 +582,39 @@ CATCH_TEST_CASE("swbus_publish_release accepts an application-built "
   CATCH_REQUIRE(mpool_isempty(&bus->pools[0])); /* the pool was not touched */
   swbus_destroy(bus);
 }
+
+CATCH_TEST_CASE(
+  "swbus_publish_reserve moves on to the next pool when one is "
+  "full, and never blocks",
+  "[swbus]") {
+  struct mpool_config pools[2];
+  memset(pools, 0, sizeof(pools));
+  pools[0].elt_size = 16;
+  pools[0].max_elts = 1;
+  pools[1].elt_size = 64;
+  pools[1].max_elts = 1;
+
+  struct swbus_config c;
+  memset(&c, 0, sizeof(c));
+  c.pools     = pools;
+  c.max_pools = 2;
+  c.max_rxqs  = 1;
+  c.max_subs  = 4;
+  strcpy(c.name, "pools");
+  struct swbus* bus = swbus_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != bus);
+
+  struct swbus_rsrvn a, b, d;
+  CATCH_REQUIRE(OK == swbus_publish_reserve(bus, &a, 8));
+  CATCH_REQUIRE(16 == a.bp->cfg.elt_size); /* the smallest pool that fits */
+  CATCH_REQUIRE(OK == swbus_publish_reserve(bus, &b, 8));
+  CATCH_REQUIRE(64 == b.bp->cfg.elt_size); /* the first one is full */
+
+  errno = 0;
+  CATCH_REQUIRE(ERROR == swbus_publish_reserve(bus, &d, 8)); /* all full */
+  CATCH_REQUIRE(ENOSPC == errno);
+
+  CATCH_REQUIRE(OK == mpool_release(a.bp, a.data));
+  CATCH_REQUIRE(OK == mpool_release(b.bp, b.data));
+  swbus_destroy(bus);
+}

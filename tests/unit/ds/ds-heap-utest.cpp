@@ -470,3 +470,50 @@ CATCH_TEST_CASE("binheap extracts in order with duplicates and growth",
     }
   }
 }
+
+namespace {
+/* The scratch slot (index 0) of the heap under test */
+const void* g_scratch          = nullptr;
+int         g_scratch_compares = 0;
+
+int cmp_int_no_scratch(const void* a, const void* b) {
+  if (a == g_scratch || b == g_scratch) {
+    ++g_scratch_compares;
+  }
+  int x, y;
+  memcpy(&x, a, sizeof(x));
+  memcpy(&y, b, sizeof(y));
+  return (x > y) - (x < y);
+}
+} /* namespace */
+
+CATCH_TEST_CASE("binheap never compares against its scratch slot",
+                "[ds][binheap]") {
+  /*
+   * Slot 0 is scratch space holding zeroes or a stale copy; a cmpe that
+   * dereferences pointers inside elements would crash on it.
+   */
+  for (uint32_t flags : {(uint32_t)RCSW_NONE, (uint32_t)RCSW_DS_BINHEAP_MIN}) {
+    struct binheap_config c;
+    memset(&c, 0, sizeof(c));
+    c.cmpe            = cmp_int_no_scratch;
+    c.elt_size        = sizeof(int);
+    c.max_elts        = 32;
+    c.init_size       = 32; /* no reallocation, so slot 0 stays put */
+    c.flags           = flags;
+    struct binheap* h = binheap_init(nullptr, &c);
+    CATCH_REQUIRE(nullptr != h);
+    g_scratch          = darray_data_get(&h->arr, 0);
+    g_scratch_compares = 0;
+
+    for (int v : {5, 9, 1, 7, 3, 8, 2, 6, 4, 0}) {
+      CATCH_REQUIRE(OK == binheap_insert(h, &v));
+    }
+    while (!binheap_isempty(h)) {
+      int v;
+      CATCH_REQUIRE(OK == binheap_extract(h, &v));
+    }
+    CATCH_REQUIRE(0 == g_scratch_compares);
+    binheap_destroy(h);
+  }
+}

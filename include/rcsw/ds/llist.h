@@ -66,7 +66,18 @@ struct llist_config {
   int max_elts;
 
   /**
-   * Configuration flags. See \ref llist.flags for valid flags.
+   *
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   * - \ref RCSW_DS_LLIST_DB_DISOWN
+   * - \ref RCSW_DS_LLIST_DB_PTR
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -128,32 +139,18 @@ struct llist_space_mgmt {
  * \brief Linked list data structure.
  */
 struct llist {
-  /** For comparing two elements. Can be NULL. */
-  int (*cmpe)(const void* const e1, const void* const e2);
-  void (*printe)(const void* e);  ///< For printing an element. Can be NULL.
-  struct llist_space_mgmt space;
-  size_t                  current;  ///< number of nodes currently in the list.
-  int    max_elts;  ///< Maximum # of allowed elements. -1 = no upper limit.
-  size_t elt_size;  ///< Size in bytes of an element.
-  bool_t sorted;    ///< If true, list is currently sorted.
-  struct llist_node* first;  ///< First node in the list (for easy prepending)
-  struct llist_node* last;   ///< Last node in the list (for easy appending)
-
   /**
-   *
-   * Configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   * - \ref RCSW_NOALLOC_META
-   * - \ref RCSW_DS_LLIST_DB_DISOWN
-   * - \ref RCSW_DS_LLIST_DB_PTR
-   * - \ref RCSW_DS_SORTED
-   *
-   * All other flags are ignored.
+   * The configuration the list was initialized with. \ref llist_config.meta
+   * and \ref llist_config.elements are as passed (NULL unless caller-provided
+   * memory is used); \ref llist.space holds the views into them.
    */
-  uint32_t flags;
+  struct llist_config cfg;
+
+  struct llist_space_mgmt space;     ///< Views into caller-provided memory.
+  size_t                  current;   ///< # of nodes currently in the list.
+  bool_t                  sorted;    ///< If true, list is currently sorted.
+  struct llist_node*      first;     ///< First node (for easy prepending).
+  struct llist_node*      last;      ///< Last node (for easy appending).
 };
 
 /*******************************************************************************
@@ -215,7 +212,8 @@ BEGIN_C_DECLS
  */
 static inline bool_t llist_isfull(const struct llist* const list) {
   RCSW_FPC_NV(false, NULL != list);
-  return (list->max_elts != -1) && (list->current == (size_t)list->max_elts);
+  return (list->cfg.max_elts != -1) &&
+         (list->current == (size_t)list->cfg.max_elts);
 }
 
 /**

@@ -341,6 +341,10 @@
  *
  * Mark a function as depending only on its arguments and (possibly) global
  * memory reads, but with no side effects. Weaker than \ref RCSW_CONST.
+ *
+ * Setting \c errno is a side effect, so this must not be used on functions
+ * with \ref RCSW_FPC_NV() checks (or that set \c errno otherwise): the compiler
+ * may then drop or merge calls, and with them the \c errno update.
  */
 #define RCSW_PURE __attribute__((pure))
 #endif

@@ -120,17 +120,18 @@ static void binheap_sift_up(struct binheap* const heap, size_t i) {
   /*
    *  While child has higher priority than parent, replace child with parent.
    *  Set child index to parent.  Get next parent, and repeat until top of
-   *  heap is reached.
+   *  heap is reached. The heap is 1-indexed: index 1 is the top and slot 0 is
+   *  scratch space, so stop at 1 rather than comparing against slot 0.
    */
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
-    while (i != 0 &&
+    while (i > 1 &&
            heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
                           darray_data_get(&heap->arr, i)) > 0) {
       binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
       i = RCSW_BINHEAP_PARENT(i);
     } /* while() */
   } else {
-    while (i != 0 &&
+    while (i > 1 &&
            heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
                           darray_data_get(&heap->arr, i)) < 0) {
       binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));

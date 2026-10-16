@@ -22,14 +22,13 @@
  * Test Helper Functions
  ******************************************************************************/
 /*
- * The adjmatrix element type is always double (edge weights) or boolean
- * (unweighted); the T parameter is only used to vary elt_size for coverage.
+ * The adjmatrix element type is always double (edge weights) or int
+ * (unweighted), set from is_weighted; the T parameter is unused.
  */
 template <typename T>
 static void run_test(void (*test)(struct adjmatrix_config*)) {
   struct adjmatrix_config config;
   memset(&config, 0, sizeof(adjmatrix_config));
-  config.elt_size   = sizeof(T);
   config.n_vertices = TH_NUM_ITEMS;
   CATCH_REQUIRE(th::ds_init(&config) == OK);
 
@@ -86,7 +85,6 @@ static struct adjmatrix* make_adj(bool directed, bool weighted) {
   c.n_vertices  = 4;
   c.is_directed = directed;
   c.is_weighted = weighted;
-  c.elt_size    = weighted ? sizeof(double) : sizeof(int);
   return adjmatrix_init(nullptr, &c);
 }
 

@@ -221,20 +221,18 @@ struct minimon_cmd {
  * inside RCSW); applications configure it through \ref minimon_init().
  */
 struct minimon {
+  /**
+   * The configuration passed to \ref minimon_init() (or the defaults, if NULL
+   * was passed). \ref minimon_config.cmds is used in place; \ref
+   * minimon_config.n_cmds is 0 if it is NULL.
+   */
+  struct minimon_config cfg;
+
+  /** Always \ref stdio_putchar() / \ref stdio_getchar(). */
   struct minimon_stream_callbacks stream0;
-  struct minimon_stream_callbacks stream1;
 
   /** Built-ins in use: all of them, or just HELP. */
   size_t n_builtin_cmds;
-
-  /** The caller's commands, used in place (\ref minimon_config.cmds). */
-  const struct minimon_cmd* user_cmds;
-
-  /** # entries in \c user_cmds. */
-  size_t n_user_cmds;
-
-  struct minimon_irq_callbacks irqcb;
-  bool_t                       help_on_start;
 };
 
 /** \brief Pointer to a \c void(void) function, e.g. a \c jump target. */

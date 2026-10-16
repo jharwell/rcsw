@@ -61,7 +61,16 @@ struct hashmap_config {
   size_t elt_size;
 
   /**
-   * Configuration flags. See \ref hashmap.flags for valid flags.
+   * Run time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE.
+   * - \ref RCSW_NOALLOC_DATA.
+   * - \ref RCSW_NOALLOC_META.
+   * - \ref RCSW_DS_HASHMAP_LINPROB
+   * - \ref RCSW_DS_SORTED
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 
@@ -97,7 +106,6 @@ struct hashmap_config {
  * Provides detailed info about how well the hashmap is working.
  */
 struct hashmap_stats {
-  size_t n_buckets;   ///< Number of buckets in hashmap
   size_t n_nodes;     ///< Number of hashnodes in hashmap. Updated on add/remove.
   size_t n_adds;      ///< Number of adds to hashmap since last reset
   size_t n_addfails;  ///< Number of failures to add to hashmap since last reset
@@ -169,9 +177,13 @@ struct hashmap_space_mgmt {
  */
 struct hashmap {
   /**
-   * Hashing function. Can't be NULL (duh).
+   * The configuration the hashmap was initialized with. \ref
+   * hashmap_config.key_len is the key length in use (\ref RCSW_HASHMAP_KEYSIZE
+   * if 0 was passed). \ref hashmap_config.meta and \ref
+   * hashmap_config.elements are as passed (NULL unless caller-provided memory
+   * is used); \ref hashmap.space holds the views into them.
    */
-  status_t (*hash)(const void* const key, size_t len, uint32_t* out);
+  struct hashmap_config cfg;
 
   /**
    * Management of all node and element space for the hashmap.
@@ -179,25 +191,10 @@ struct hashmap {
   struct hashmap_space_mgmt space;
 
   /**
-   * Size of data elements for hashmap.
-   */
-  size_t elt_size;
-
-  /**
-   * Length of keys in bytes (1 to \ref RCSW_HASHMAP_KEYSIZE). See \ref
-   * hashmap_config.key_len.
-   */
-  size_t key_len;
-
-  /**
-   * Max number of of elements allowed in the hashmap.
+   * Max number of of elements allowed in the hashmap: \ref
+   * hashmap_config.bsize x \ref hashmap_config.n_buckets.
    */
   size_t max_elts;
-
-  /**
-   * Number of of buckets in the hashmap. Does not change after initialization.
-   */
-  size_t n_buckets;
 
   /**
    * Current hashmap statistics
@@ -208,20 +205,6 @@ struct hashmap {
    * Is the hashmap currently sorted?
    */
   bool_t sorted;
-
-  /**
-   * Run time configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE.
-   * - \ref RCSW_NOALLOC_DATA.
-   * - \ref RCSW_NOALLOC_META.
-   * - \ref RCSW_DS_HASHMAP_LINPROB
-   * - \ref RCSW_DS_SORTED
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
 };
 
 /**
@@ -343,8 +326,8 @@ RCSW_API status_t hashmap_clear(struct hashmap* map);
  * \brief Returns the data from the hashmap corresponding to the given key.
  *
  * \param map The hashmap handle.
- * \param key Key to match with. Must point to \ref hashmap.key_len readable
- *            bytes.
+ * \param key Key to match with. Must point to \ref
+ *            hashmap_config.key_len readable bytes.
  *
  * \return The data, or NULL if an error occurred or the data was not found.
  */
@@ -360,7 +343,7 @@ RCSW_API void* hashmap_data_get(struct hashmap* map, const void* key);
  * returned (no duplicates are allowed).
  *
  * \param map The hashmap handle.
- * \param key The key to add. Must point to \ref hashmap.key_len readable
+ * \param key The key to add. Must point to \ref hashmap_config.key_len readable
  *            bytes.
  * \param data The data to add.
  *

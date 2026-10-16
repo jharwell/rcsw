@@ -34,9 +34,7 @@ BEGIN_C_DECLS
  *
  * \return Computed 8-bit checksum
  */
-RCSW_API uint8_t utils_xchks8(const uint8_t* buf,
-                              size_t         n_bytes,
-                              uint8_t        seed) RCSW_PURE;
+RCSW_API uint8_t utils_xchks8(const uint8_t* buf, size_t n_bytes, uint8_t seed);
 
 /**
  * \brief Compute an 16-bit checksum (XOR, rotate)
@@ -53,7 +51,7 @@ RCSW_API uint8_t utils_xchks8(const uint8_t* buf,
  */
 RCSW_API uint16_t utils_xchks16(const uint16_t* buf,
                                 size_t          n_bytes,
-                                uint16_t        seed) RCSW_PURE;
+                                uint16_t        seed);
 
 /**
  * \brief Compute an 32-bit checksum (XOR, rotate)
@@ -70,7 +68,7 @@ RCSW_API uint16_t utils_xchks16(const uint16_t* buf,
  */
 RCSW_API uint32_t utils_xchks32(const uint32_t* buf,
                                 size_t          n_bytes,
-                                uint32_t        seed) RCSW_PURE;
+                                uint32_t        seed);
 
 /**
  * \brief Compute an 8-bit checksum (add-ignore-carry)
@@ -81,9 +79,7 @@ RCSW_API uint32_t utils_xchks32(const uint32_t* buf,
  *
  * \return computed 8-bit checksum
  */
-RCSW_API uint8_t utils_achks8(const uint8_t* buf,
-                              size_t         n_bytes,
-                              uint8_t        seed) RCSW_PURE;
+RCSW_API uint8_t utils_achks8(const uint8_t* buf, size_t n_bytes, uint8_t seed);
 
 /**
  * \brief Compute an 16-bit checksum (add-ignore-carry)
@@ -100,7 +96,7 @@ RCSW_API uint8_t utils_achks8(const uint8_t* buf,
  */
 RCSW_API uint16_t utils_achks16(const uint16_t* buf,
                                 size_t          n_bytes,
-                                uint16_t        seed) RCSW_PURE;
+                                uint16_t        seed);
 
 /**
  * \brief Compute an 32-bit checksum (add-ignore-carry)
@@ -117,7 +113,7 @@ RCSW_API uint16_t utils_achks16(const uint16_t* buf,
  */
 RCSW_API uint32_t utils_achks32(const uint32_t* buf,
                                 size_t          n_bytes,
-                                uint32_t        seed) RCSW_PURE;
+                                uint32_t        seed);
 
 /**
  * \brief Compute the standard CRC-32 (IEEE 802.3 / Ethernet, zlib, PNG) of a

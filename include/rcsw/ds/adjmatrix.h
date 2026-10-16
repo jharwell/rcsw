@@ -39,12 +39,6 @@ struct adjmatrix_config {
   dptr_t* elements;
 
   /**
-   * Ignored: the element size is set from \ref adjmatrix_config.is_weighted
-   * (\c double if weighted, \c int if not).
-   */
-  size_t elt_size;
-
-  /**
    * Configuration flags. See \ref adjmatrix.flags for valid flags.
    */
   uint32_t flags;
@@ -97,14 +91,10 @@ struct adjmatrix {
   size_t n_edges;
 
   /**
-   * Size of elements in bytes (only used to make edge queries a bit faster.)
+   * Underlying matrix implementation handle. Its \ref matrix_config.n_rows is
+   * the number of vertices, and its \ref matrix_config.elt_size the size of an
+   * edge (\c double if weighted, \c int if not).
    */
-  size_t elt_size;
-
-  /** Numer of vertices in the graph */
-  size_t n_vertices;
-
-  /** Underlying matrix implementation handle. */
   struct matrix matrix;
 
   /**
@@ -118,6 +108,10 @@ struct adjmatrix {
    */
   uint32_t flags;
 };
+/** \brief The number of vertices in the graph. */
+static inline size_t adjmatrix_n_vertices(const struct adjmatrix* matrix) {
+  return matrix->matrix.cfg.n_rows;
+}
 
 /*******************************************************************************
  * Public API
@@ -139,8 +133,8 @@ static inline void* adjmatrix_access(const struct adjmatrix* const matrix,
                                      size_t                        v) {
   RCSW_FPC_NV(NULL,
               NULL != matrix,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
   return matrix_access(&matrix->matrix, u, v);
 }
 
@@ -172,14 +166,14 @@ static inline bool_t adjmatrix_edge_query(const struct adjmatrix* const matrix,
                                           size_t                        v) {
   RCSW_FPC_NV(false,
               NULL != matrix,
-              u < matrix->n_vertices,
-              v < matrix->n_vertices);
+              u < adjmatrix_n_vertices(matrix),
+              v < adjmatrix_n_vertices(matrix));
   if (matrix->is_weighted) {
     double w;
     memcpy(&w, adjmatrix_access(matrix, u, v), sizeof(w)); /* may be unaligned */
     return !isnan(w);
   }
-  return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->elt_size);
+  return !utils_zchk(adjmatrix_access(matrix, u, v), matrix->matrix.cfg.elt_size);
 }
 
 /**

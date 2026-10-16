@@ -92,7 +92,17 @@ struct bstree_config {
   int max_elts;
 
   /**
-   * Configuration flags. See \ref bstree.flags for valid flags.
+   * Configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   * - \ref RCSW_DS_BSTREE_INT
+   * - \ref RCSW_DS_BSTREE_OS
+   * - \ref RCSW_DS_BSTREE_RB
+   * - \ref RCSW_ZALLOC
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -167,14 +177,14 @@ struct bstree_space_mgmt {
  */
 struct bstree {
   /**
-   * For comparing the keys from two different elements. Cannot be NULL.
+   * The configuration the tree was initialized with, with \ref
+   * bstree_config.flags, \ref bstree_config.elt_size and \ref
+   * bstree_config.cmpkey as the tree uses them (\ref ostree_init() and \ref
+   * inttree_init() set some of these themselves). \ref bstree_config.meta and
+   * \ref bstree_config.elements are as passed (NULL unless caller-provided
+   * memory is used); \ref bstree.space holds the views into them.
    */
-  int (*cmpkey)(const void* const a, const void* const b);
-
-  /**
-   * For printing an element. Can be NULL.
-   */
-  void (*printe)(const void* const e);
+  struct bstree_config cfg;
 
   /**
    * Management of all node and element space for the tree.
@@ -190,32 +200,6 @@ struct bstree {
    * Current depth as a traversal progresses.
    */
   size_t depth;
-
-  /**
-   * Configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   * - \ref RCSW_NOALLOC_META
-   * - \ref RCSW_DS_BSTREE_INT
-   * - \ref RCSW_DS_BSTREE_OS
-   * - \ref RCSW_DS_BSTREE_RB
-   * - \ref RCSW_ZALLOC
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
-
-  /**
-   * Max # of elements for tree. -1 indicates no limit.
-   */
-
-  int max_elts;
-
-  /**
-   * Size of each element in bytes.
-   */
-  size_t elt_size;
 
   /**
    * Root of the tree (sentinel). root->left should always point to the node
@@ -244,7 +228,7 @@ BEGIN_C_DECLS
  */
 static inline bool_t bstree_isfull(const struct bstree* const bst) {
   RCSW_FPC_NV(false, NULL != bst);
-  return (bst->max_elts != -1) && (bst->current == (size_t)bst->max_elts);
+  return (bst->cfg.max_elts != -1) && (bst->current == (size_t)bst->cfg.max_elts);
 }
 
 /**

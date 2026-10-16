@@ -63,8 +63,8 @@ static int inttree_cmp_key(const void* a, const void* b) {
  ******************************************************************************/
 void inttree_init_helper(const struct bstree* tree) {
   struct interval_data nil_data = {.low = INT_MIN, .high = INT_MIN};
-  ds_elt_copy(tree->nil->data, &nil_data, tree->elt_size);
-  ds_elt_copy(tree->root->data, &nil_data, tree->elt_size);
+  ds_elt_copy(tree->nil->data, &nil_data, tree->cfg.elt_size);
+  ds_elt_copy(tree->root->data, &nil_data, tree->cfg.elt_size);
   ((struct inttree_node*)tree->nil)->max_high  = INT_MIN;
   ((struct inttree_node*)tree->root)->max_high = INT_MIN;
 } /* inttree_init_helper() */

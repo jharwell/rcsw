@@ -122,7 +122,7 @@ RCSW_API size_t stdio_strlen(const char* s) RCSW_PURE;
  * \return The length of the string.
  */
 
-RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize) RCSW_PURE;
+RCSW_API size_t stdio_strnlen(const char* s, size_t maxsize);
 
 /**
  * \brief Reverse a string of known length.
@@ -236,15 +236,17 @@ RCSW_API int stdio_strcmp(const char* s1, const char* s2) RCSW_PURE;
  * \brief Replace a occurrences of one substring within another string with
  * a new substring.
  *
- * If new is not large enough to hold the new string formed by replacing all
- * occurrences of pattern with replacement, undefined behavior will occur.
+ * Nothing is allocated: \p new_str must be large enough to hold the string
+ * formed by replacing all occurrences of \p pattern with \p replacement,
+ * plus the NUL; otherwise the behavior is undefined.
  *
  * \param original The string to replacement stuff in.
  * \param pattern The substring to replace.
  * \param replacement The substring to replace occurrences of pattern with.
- * \param new_str The updated string.
+ * \param new_str Where to write the updated string. Must not overlap the
+ *                other arguments.
  *
- * \return The updated string.
+ * \return \p new_str, or NULL if an argument is NULL.
  */
 RCSW_API char* stdio_strrep(const char* __restrict__ original,
                             const char* __restrict__ pattern,

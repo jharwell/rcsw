@@ -36,11 +36,7 @@ struct matrix* matrix_init(struct matrix* const              matrix_in,
                sizeof(struct matrix),
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(matrix);
-  matrix->flags    = params->flags;
-  matrix->elt_size = params->elt_size;
-  matrix->printe   = params->printe;
-  matrix->n_rows   = params->n_rows;
-  matrix->n_cols   = params->n_cols;
+  matrix->cfg = *params;
 
   matrix->elements =
     rcsw_alloc(params->elements,
@@ -58,8 +54,8 @@ error:
 void matrix_destroy(struct matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
 
-  rcsw_free(matrix->elements, matrix->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(matrix, matrix->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(matrix->elements, matrix->cfg.flags & RCSW_NOALLOC_DATA);
+  rcsw_free(matrix, matrix->cfg.flags & RCSW_NOALLOC_HANDLE);
 } /* matrix_destroy() */
 
 status_t matrix_transpose(struct matrix* const matrix) {
@@ -69,12 +65,12 @@ status_t matrix_transpose(struct matrix* const matrix) {
    * Assuming matrix is square, the simple algorithm can be used. First and
    * last entries in matrix/array don't move, hence starting at 1.
    */
-  ER_DEBUG("Transpose %zu x %zu matrix", matrix->n_rows, matrix->n_cols);
-  for (size_t i = 1; i < matrix->n_rows; ++i) {
+  ER_DEBUG("Transpose %zu x %zu matrix", matrix->cfg.n_rows, matrix->cfg.n_cols);
+  for (size_t i = 1; i < matrix->cfg.n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
       utils_elt_swap(matrix_access(matrix, i, j),
-                  matrix_access(matrix, j, i),
-                     matrix->elt_size);
+                     matrix_access(matrix, j, i),
+                     matrix->cfg.elt_size);
     } /* for(j..) */
   } /* for(i..) */
   return OK;
@@ -82,20 +78,20 @@ status_t matrix_transpose(struct matrix* const matrix) {
 
 void matrix_print(const struct matrix* const matrix) {
   RCSW_FPC_V(NULL != matrix);
-  ER_ASSERT(NULL != matrix->printe, "matrix_print() requires printe()");
+  ER_ASSERT(NULL != matrix->cfg.printe, "matrix_print() requires printe()");
 
   DPRINTF("{");
-  for (size_t i = 0; i < matrix->n_rows; ++i) {
+  for (size_t i = 0; i < matrix->cfg.n_rows; ++i) {
     DPRINTF("{");
-    for (size_t j = 0; j < matrix->n_cols; ++j) {
-      matrix->printe(matrix_access(matrix, i, j));
-      if (j < matrix->n_cols - 1) {
+    for (size_t j = 0; j < matrix->cfg.n_cols; ++j) {
+      matrix->cfg.printe(matrix_access(matrix, i, j));
+      if (j < matrix->cfg.n_cols - 1) {
         DPRINTF(",");
       }
     } /* for(j..) */
 
     DPRINTF("}");
-    if (i < matrix->n_rows - 1) {
+    if (i < matrix->cfg.n_rows - 1) {
       DPRINTF("\n");
     }
   } /* for(i..) */

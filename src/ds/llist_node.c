@@ -25,12 +25,14 @@ BEGIN_C_DECLS
 
 struct llist_node* llist_node_alloc(struct llist* const list) {
   struct llist_node* node = NULL;
-  if (list->flags & RCSW_NOALLOC_META) {
+  if (list->cfg.flags & RCSW_NOALLOC_META) {
     int alloc_idx = allocm_alloc(list->space.node_map);
     RCSW_CHECK(-1 != alloc_idx);
     node = (list->space.nodes + alloc_idx);
 
-    ER_TRACE("Allocated llist_node %zu/%d", list->current + 1, list->max_elts);
+    ER_TRACE("Allocated llist_node %zu/%d",
+             list->current + 1,
+             list->cfg.max_elts);
   } else {
     node = rcsw_alloc(NULL, sizeof(struct llist_node), RCSW_NONE);
     RCSW_CHECK_PTR(node);
@@ -43,12 +45,12 @@ error:
 } /* llist_node_alloc() */
 
 void llist_node_dealloc(struct llist* const list, struct llist_node* node) {
-  if (list->flags & RCSW_NOALLOC_META) {
+  if (list->cfg.flags & RCSW_NOALLOC_META) {
     int index = (int)(node - list->space.nodes);
 
     allocm_free(list->space.node_map, (size_t)index);
 
-    ER_TRACE("Deallocated llist_node %d/%d", index + 1, list->max_elts);
+    ER_TRACE("Deallocated llist_node %d/%d", index + 1, list->cfg.max_elts);
   } else {
     rcsw_free(node, RCSW_NONE);
   }
@@ -72,12 +74,12 @@ struct llist_node* llist_node_create(struct llist* const list,
    * Get space for the datablock and copy the data, unless the list stores
    * caller pointers (RCSW_DS_LLIST_DB_DISOWN or RCSW_DS_LLIST_DB_PTR)
    */
-  if (list->flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
+  if (list->cfg.flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
     node->data = data_in;
   } else {
     node->data = llist_node_datablock_alloc(list);
     RCSW_CHECK_PTR(node->data);
-    ds_elt_copy(node->data, data_in, list->elt_size);
+    ds_elt_copy(node->data, data_in, list->cfg.elt_size);
   }
   return node;
 
@@ -97,18 +99,18 @@ void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
   }
 
   /* don't deallocate: we never allocated! */
-  if (list->flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
+  if (list->cfg.flags & (RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR)) {
     return;
   }
 
-  if (list->flags & RCSW_NOALLOC_DATA) {
+  if (list->cfg.flags & RCSW_NOALLOC_DATA) {
     size_t block_idx =
       (size_t)((uint8_t*)datablock - (uint8_t*)list->space.datablocks) /
-      list->elt_size;
+      list->cfg.elt_size;
 
     allocm_free(list->space.db_map, block_idx);
 
-    ER_TRACE("Deallocated data block %zu/%d", block_idx, list->max_elts);
+    ER_TRACE("Deallocated data block %zu/%d", block_idx, list->cfg.max_elts);
   } else {
     rcsw_free(datablock, RCSW_NONE);
   }
@@ -117,15 +119,15 @@ void llist_node_datablock_dealloc(struct llist* const list, dptr_t* datablock) {
 dptr_t* llist_node_datablock_alloc(struct llist* const list) {
   dptr_t* datablock = NULL;
 
-  if (list->flags & RCSW_NOALLOC_DATA) {
+  if (list->cfg.flags & RCSW_NOALLOC_DATA) {
     int alloc_idx = allocm_alloc(list->space.db_map);
     RCSW_CHECK(-1 != alloc_idx);
     datablock = (void*)((uint8_t*)list->space.datablocks +
-                        ((size_t)alloc_idx * list->elt_size));
+                        ((size_t)alloc_idx * list->cfg.elt_size));
 
-    ER_TRACE("Allocated data block %d/%d", alloc_idx, list->max_elts);
+    ER_TRACE("Allocated data block %d/%d", alloc_idx, list->cfg.max_elts);
   } else {
-    datablock = rcsw_alloc(NULL, list->elt_size, RCSW_NONE);
+    datablock = rcsw_alloc(NULL, list->cfg.elt_size, RCSW_NONE);
     RCSW_CHECK_PTR(datablock);
   }
 

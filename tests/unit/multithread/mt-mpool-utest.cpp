@@ -382,3 +382,23 @@ CATCH_TEST_CASE("mpool_init with RCSW_NOALLOC_META needs the meta memory",
   c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META;
   CATCH_REQUIRE(nullptr == mpool_init(&pool, &c));
 }
+
+CATCH_TEST_CASE("mpool_tryreq fails with ENOSPC instead of waiting",
+                "[multithread][mpool]") {
+  struct mpool* p     = make_pool(1);
+  void*         chunk = nullptr;
+  CATCH_REQUIRE(OK == mpool_tryreq(p, &chunk));
+  CATCH_REQUIRE(nullptr != chunk);
+
+  void* none = nullptr;
+  errno      = 0;
+  CATCH_REQUIRE(ERROR == mpool_tryreq(p, &none)); /* returns at once */
+  CATCH_REQUIRE(ENOSPC == errno);
+  CATCH_REQUIRE(nullptr == none);
+
+  CATCH_REQUIRE(OK == mpool_release(p, chunk));
+  CATCH_REQUIRE(OK == mpool_tryreq(p, &none));
+  CATCH_REQUIRE(chunk == none);
+  CATCH_REQUIRE(OK == mpool_release(p, none));
+  mpool_destroy(p);
+}

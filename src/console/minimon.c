@@ -13,6 +13,8 @@
 
 #include <inttypes.h>
 
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "console", "minimon")
+#define RCSW_ER_MODID LOG4CL_CONSOLE_MINIMON
 #include "rcsw/core/core.h"
 #include "rcsw/er/client.h"
 #include "rcsw/stdio/printf.h"
@@ -136,22 +138,22 @@ static bool_t mini_streq_nocase(const char* a, const char* b) {
  *           from it (load).
  */
 static bool_t mini_progress_on(bool_t tx) {
-  return tx ? (NULL != g_minimon.stream1.putchar)
-            : (NULL != g_minimon.stream1.getchar);
+  return tx ? (NULL != g_minimon.cfg.stream1.putchar)
+            : (NULL != g_minimon.cfg.stream1.getchar);
 }
 
 static void mini_data_byte_put(char c, void* extra) {
   struct minimon* m = extra;
-  if (NULL != m->stream1.putchar) {
-    m->stream1.putchar(c);
+  if (NULL != m->cfg.stream1.putchar) {
+    m->cfg.stream1.putchar(c);
   } else {
     stdio_putchar(c);
   }
 }
 static int mini_data_byte_get(void* extra) {
   struct minimon* m = extra;
-  if (NULL != m->stream1.getchar) {
-    return m->stream1.getchar();
+  if (NULL != m->cfg.stream1.getchar) {
+    return m->cfg.stream1.getchar();
   }
   return stdio_getchar();
 }
@@ -498,7 +500,7 @@ static uint32_t mini_parse(char* buffer, char** argv) {
  * caller's table.
  */
 static size_t mini_n_cmds(void) {
-  return g_minimon.n_builtin_cmds + g_minimon.n_user_cmds;
+  return g_minimon.n_builtin_cmds + g_minimon.cfg.n_cmds;
 }
 
 /**
@@ -509,7 +511,7 @@ static const struct minimon_cmd* mini_cmd_get(size_t i) {
   if (i < g_minimon.n_builtin_cmds) {
     return &g_minimon_builtin_cmds[i];
   }
-  return &g_minimon.user_cmds[i - g_minimon.n_builtin_cmds];
+  return &g_minimon.cfg.cmds[i - g_minimon.n_builtin_cmds];
 }
 
 /**
@@ -689,11 +691,11 @@ static void mini_cmd_jump(RCSW_UNUSED const char*         cmdname,
   vfp_t func = (vfp_t)(uintptr_t)addr;
 
   /* mask and clear interrupts */
-  if (NULL != g_minimon.irqcb.clear_all) {
-    g_minimon.irqcb.clear_all();
+  if (NULL != g_minimon.cfg.irqcb.clear_all) {
+    g_minimon.cfg.irqcb.clear_all();
   }
-  if (NULL != g_minimon.irqcb.mask_all) {
-    g_minimon.irqcb.mask_all();
+  if (NULL != g_minimon.cfg.irqcb.mask_all) {
+    g_minimon.cfg.irqcb.mask_all();
   }
 
   /* branch */
@@ -843,22 +845,20 @@ void minimon_init(const struct minimon_config* config) {
     config = &defaults;
   }
 
+  RCSW_ER_MODULE_INIT();
+
   /*
    * Nothing is copied: the built-ins are a static table, and the caller's
    * table is used in place. HELP (the first built-in) is always available.
    */
   g_minimon.n_builtin_cmds =
     config->include_builtin ? RCSW_ARRAY_ELTS(g_minimon_builtin_cmds) : 1;
-  g_minimon.user_cmds   = config->cmds;
-  g_minimon.n_user_cmds = (NULL != config->cmds) ? config->n_cmds : 0;
-
-  g_minimon.irqcb           = config->irqcb;
-  g_minimon.stream1.putchar = config->stream1.putchar;
-  g_minimon.stream1.getchar = config->stream1.getchar;
-
+  g_minimon.cfg = *config;
+  if (NULL == g_minimon.cfg.cmds) {
+    g_minimon.cfg.n_cmds = 0;
+  }
   g_minimon.stream0.putchar = stdio_putchar;
   g_minimon.stream0.getchar = stdio_getchar;
-  g_minimon.help_on_start   = config->help_on_start;
 } /* minimon_init() */
 
 void minimon_start(void) {
@@ -895,7 +895,7 @@ void minimon_start(void) {
   stdio_puts(buf);
 
   /* display the monitor tag line */
-  if (g_minimon.help_on_start) {
+  if (g_minimon.cfg.help_on_start) {
     const union minimon_cmd_arg no_args[MINIMON_CMD_MAX_ARGS] = {{.s = NULL}};
     mini_cmd_help_all("help", no_args);
   } else {

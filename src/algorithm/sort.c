@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define RCSW_ER_MODNAME RCSW_ER_MODNAME_BUILDER("rcsw", "alg", "sort")
+#define RCSW_ER_MODID LOG4CL_ALG_SORT
 #include "rcsw/core/fpc.h"
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"

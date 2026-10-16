@@ -24,7 +24,7 @@
  * Macros
  ******************************************************************************/
 #define RCSW_DS_RBUFFER_TYPE(rb) \
-  (((rb)->flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
+  (((rb)->cfg.flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
 
 /*******************************************************************************
  * Private API
@@ -34,7 +34,7 @@
  * whether it holds live data.
  */
 static void* rbuffer_slot(const struct rbuffer* const rb, size_t slot) {
-  return (uint8_t*)rb->elements + (slot * rb->elt_size);
+  return (uint8_t*)rb->elements + (slot * rb->cfg.elt_size);
 }
 
 /*
@@ -73,26 +73,21 @@ struct rbuffer* rbuffer_init(struct rbuffer*                    rb_in,
                sizeof(struct rbuffer),
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(rb);
-  rb->flags = params->flags;
+  rb->cfg = *params;
 
   rb->elements = rcsw_alloc(params->elements,
                             params->max_elts * params->elt_size,
                             params->flags & (RCSW_NOALLOC_DATA | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(rb->elements);
-
-  rb->elt_size = params->elt_size;
-  rb->printe   = params->printe;
-  rb->cmpe     = params->cmpe;
   rb->start    = 0;
   rb->current  = 0;
-  rb->max_elts = params->max_elts;
 
   ER_DEBUG("type=%s,max_elts=%zu,elt_size=%zu,flags=0x%08x",
            RCSW_DS_RBUFFER_TYPE(rb),
-           rb->max_elts,
-           rb->elt_size,
-           rb->flags);
+           rb->cfg.max_elts,
+           rb->cfg.elt_size,
+           rb->cfg.flags);
   return rb;
 
 error:
@@ -103,28 +98,28 @@ error:
 void rbuffer_destroy(struct rbuffer* rb) {
   RCSW_FPC_V(NULL != rb);
 
-  rcsw_free(rb->elements, rb->flags & RCSW_NOALLOC_DATA);
-  rcsw_free(rb, rb->flags & RCSW_NOALLOC_HANDLE);
+  rcsw_free(rb->elements, rb->cfg.flags & RCSW_NOALLOC_DATA);
+  rcsw_free(rb, rb->cfg.flags & RCSW_NOALLOC_HANDLE);
 } /* rbuffer_destroy() */
 
 status_t rbuffer_add(struct rbuffer* const rb, const void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, e != NULL);
 
   /* do not add if acting as FIFO and currently full */
-  if ((rb->flags & RCSW_DS_RBUFFER_AS_FIFO) && rbuffer_isfull(rb)) {
+  if ((rb->cfg.flags & RCSW_DS_RBUFFER_AS_FIFO) && rbuffer_isfull(rb)) {
     ER_WARN("Not adding new element: FIFO full");
     errno = ENOSPC;
     return ERROR;
   }
 
   /* add element */
-  ds_elt_copy(rbuffer_slot(rb, (rb->start + rb->current) % rb->max_elts),
+  ds_elt_copy(rbuffer_slot(rb, (rb->start + rb->current) % rb->cfg.max_elts),
               e,
-              rb->elt_size);
+              rb->cfg.elt_size);
 
   /* start wrapped around to end--overwrite */
   if (rbuffer_isfull(rb)) {
-    rb->start = (rb->start + 1) % rb->max_elts;
+    rb->start = (rb->start + 1) % rb->cfg.max_elts;
   } else {
     ++rb->current;
   }
@@ -136,12 +131,12 @@ void* rbuffer_data_get(const struct rbuffer* const rb, size_t idx) {
   RCSW_FPC_NV(NULL, rb != NULL, idx < rb->current);
 
   /* idx is logical: 0 is the front (oldest) element */
-  return rbuffer_slot(rb, (rb->start + idx) % rb->max_elts);
+  return rbuffer_slot(rb, (rb->start + idx) % rb->cfg.max_elts);
 } /* rbuffer_data_get() */
 
 status_t rbuffer_serve_front(const struct rbuffer* const rb, void* const e) {
   RCSW_FPC_NV(ERROR, rb != NULL, e != NULL, !rbuffer_isempty(rb));
-  ds_elt_copy(e, rbuffer_slot(rb, rb->start), rb->elt_size);
+  ds_elt_copy(e, rbuffer_slot(rb, rb->start), rb->cfg.elt_size);
   return OK;
 } /* rbuffer_serve_front() */
 
@@ -157,7 +152,7 @@ status_t rbuffer_remove(struct rbuffer* const rb, void* const e) {
     rbuffer_serve_front(rb, e);
   }
 
-  rb->start = (rb->start + 1) % rb->max_elts;
+  rb->start = (rb->start + 1) % rb->cfg.max_elts;
   --rb->current;
 
   return OK;
@@ -165,12 +160,12 @@ status_t rbuffer_remove(struct rbuffer* const rb, void* const e) {
 
 int rbuffer_index_query(struct rbuffer* const rb, const void* const e) {
   RCSW_FPC_NV(-1, rb != NULL, e != NULL);
-  ER_ASSERT(NULL != rb->cmpe, "rbuffer_index_query() requires cmpe()");
+  ER_ASSERT(NULL != rb->cfg.cmpe, "rbuffer_index_query() requires cmpe()");
 
   /* Search live elements from the front; the result is a logical index, as
    * accepted by rbuffer_data_get(). */
   for (size_t off = 0; off < rb->current; ++off) {
-    if (rb->cmpe(e, rbuffer_data_get(rb, off)) == 0) {
+    if (rb->cfg.cmpe(e, rbuffer_data_get(rb, off)) == 0) {
       return (int)off;
     }
   } /* for(off..) */
@@ -181,7 +176,7 @@ status_t rbuffer_clear(struct rbuffer* const rb) {
   RCSW_FPC_NV(ERROR, rb != NULL);
 
   /* Live elements may wrap around the end, so zero the whole buffer */
-  memset(rb->elements, 0, rb->max_elts * rb->elt_size);
+  memset(rb->elements, 0, rb->cfg.max_elts * rb->cfg.elt_size);
   rb->current = 0;
   rb->start   = 0;
 
@@ -221,10 +216,10 @@ void rbuffer_print(struct rbuffer* const rb) {
     DPRINTF(RCSW_ER_MODNAME " : < Empty >\n");
     return;
   }
-  ER_ASSERT(NULL != rb->printe, "rbuffer_print() requires printe()");
+  ER_ASSERT(NULL != rb->cfg.printe, "rbuffer_print() requires printe()");
 
   for (size_t i = 0; i < rb->current; ++i) {
-    rb->printe(rbuffer_data_get(rb, i));
+    rb->cfg.printe(rbuffer_data_get(rb, i));
   } /* for() */
   DPRINTF("\n");
 } /* rbuffer_print() */

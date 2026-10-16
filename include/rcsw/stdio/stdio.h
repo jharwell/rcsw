@@ -118,7 +118,7 @@ RCSW_API int stdio_getchar(void);
  *
  * \return The converted result. Values outside the range of int wrap.
  */
-RCSW_API int stdio_atoi(const char* s, int base) RCSW_PURE;
+RCSW_API int stdio_atoi(const char* s, int base);
 
 /**
  * \brief Buffer size sufficient for any \ref stdio_itoad() result, including

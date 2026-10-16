@@ -57,7 +57,14 @@ struct mpool_config {
   size_t max_elts;
 
   /**
-   * Configuration flags. See \ref mpool.flags for valid flags.
+   * Run time configuration flags. Valid flags are:
+   *
+   * - \ref RCSW_ZALLOC
+   * - \ref RCSW_NOALLOC_HANDLE
+   * - \ref RCSW_NOALLOC_DATA
+   * - \ref RCSW_NOALLOC_META
+   *
+   * All other flags are ignored.
    */
   uint32_t flags;
 };
@@ -68,6 +75,14 @@ struct mpool_config {
  * Memory chunks must be fixed size.
  */
 struct mpool {
+  /**
+   * The configuration the pool was initialized with. \ref
+   * mpool_config.elements and \ref mpool_config.meta are as passed (NULL if
+   * the library allocated the storage); use \ref mpool.elements and \ref
+   * mpool.meta for the storage in use.
+   */
+  struct mpool_config cfg;
+
   /** The chunks of managed memory. */
   dptr_t* elements;
 
@@ -86,12 +101,6 @@ struct mpool {
   /** Reference counting. Same length as max # elements. */
   int* refs;
 
-  /** Size of elements in the pool in bytes. */
-  size_t elt_size;
-
-  /** Max # of elements in the pool. Must be > 0. */
-  size_t max_elts;
-
   /**
    * Used to wait for a chunk to become free in \ref mpool_req().
    */
@@ -99,18 +108,6 @@ struct mpool {
 
   /** Lock around most operations for concurrency safety. */
   struct mutex mutex;
-
-  /**
-   * Run time configuration flags. Valid flags are:
-   *
-   * - \ref RCSW_ZALLOC
-   * - \ref RCSW_NOALLOC_HANDLE
-   * - \ref RCSW_NOALLOC_DATA
-   * - \ref RCSW_NOALLOC_META
-   *
-   * All other flags are ignored.
-   */
-  uint32_t flags;
 };
 
 /*******************************************************************************
@@ -193,7 +190,7 @@ static inline size_t mpool_size(const struct mpool* const pool) {
  */
 static inline size_t mpool_capacity(const struct mpool* const pool) {
   RCSW_FPC_NV(0, NULL != pool);
-  return pool->max_elts;
+  return pool->cfg.max_elts;
 }
 
 /**
@@ -237,7 +234,7 @@ RCSW_API void* mpool_req(struct mpool* the_pool);
  *
  * \param to Timeout.
  *
- * \param chunk The pointer to fill. Can be NULL.
+ * \param chunk The pointer to fill.
  *
  * \return \ref OK with the chunk in \p *chunk, or \ref ERROR on timeout or
  * error.
@@ -245,6 +242,18 @@ RCSW_API void* mpool_req(struct mpool* the_pool);
 RCSW_API status_t mpool_timedreq(struct mpool*          the_pool,
                                  const struct timespec* to,
                                  void**                 chunk);
+
+/**
+ * \brief Request a memory chunk from a \ref mpool without waiting.
+ *
+ * \param the_pool The mpool handle.
+ *
+ * \param chunk The pointer to fill.
+ *
+ * \return \ref OK with the chunk in \p *chunk, or \ref ERROR with
+ * errno=ENOSPC if no chunk is free right now.
+ */
+RCSW_API status_t mpool_tryreq(struct mpool* the_pool, void** chunk);
 
 /**
  * \brief Release a chunk of memory from a \ref mpool.

@@ -12,13 +12,14 @@ Reusable C Software (RCSW)
                             :target: https://coveralls.io/github/jharwell/rcsw?branch=devel
 .. |license| image:: https://img.shields.io/github/license/jharwell/rcsw
                      :target: https://github.com/jharwell/rcsw/blob/master/LICENSE
-.. |docs| image:: https://github.com/jharwell/rcsw/actions/workflows/pages.yml/badge.svg?branch=master
-                  :target: https://jharwell.github.io/rcsw
 .. |maintenance| image:: https://img.shields.io/badge/Maintained%3F-yes-green.svg
+
+.. |standard| image:: https://img.shields.io/badge/C-11%20(gnu11)-blue?logo=c
 
 :Release: |ci-master| |coverage-master|
 :Development: |ci-devel| |coverage-devel|
-:Misc: |license| |docs| |maintenance|
+:Requires: |standard| |license|
+:Misc: |maintenance|
 
 RCSW is a C library of building blocks (data structures, algorithms,
 synchronization, logging, and the small runtime pieces an embedded project

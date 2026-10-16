@@ -175,6 +175,18 @@ CATCH_TEST_CASE("grind_init defaults to the monotonic clock", "[tool][grind]") {
   c.gettime             = nullptr;
   struct grinder* g     = grind_init(nullptr, &c);
   CATCH_REQUIRE(nullptr != g);
-  CATCH_REQUIRE(clock_monotime == g->gettime);
+  CATCH_REQUIRE(clock_monotime == g->cfg.gettime);
+  grind_destroy(g);
+}
+
+CATCH_TEST_CASE("grind_init does not keep the caller's names array",
+                "[tool][grind]") {
+  struct grind_config c = base_config(RCSW_GRIND_MODE_COUNT, RCSW_NONE);
+  struct grinder*     g = grind_init(nullptr, &c);
+  CATCH_REQUIRE(nullptr != g);
+  /* the names were copied into the grindees */
+  CATCH_REQUIRE(nullptr == g->cfg.names);
+  CATCH_REQUIRE(0 == strcmp("a", g->grindees[0].name));
+  CATCH_REQUIRE(c.n_inst == g->cfg.n_inst);
   grind_destroy(g);
 }

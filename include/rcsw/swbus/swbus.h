@@ -108,8 +108,13 @@ struct swbus_config {
  * is placed in each subscribed receive queue.
  */
 struct swbus_rxq_ent {
-  /** Pointer to the buffer with the actual data. */
-  dptr_t* data;
+  /**
+   * Pointer to the buffer with the actual data. Pool buffers are carved at
+   * multiples of the pool's element size, so the buffer is only as aligned as
+   * that size allows: copy out of it, or use element sizes that are multiples
+   * of the alignment the packet type needs.
+   */
+  void* data;
 
   /** Packet size in bytes. */
   size_t pkt_size;
@@ -143,8 +148,12 @@ struct swbus_rxq_ent {
  * chosen.
  */
 struct swbus_rsrvn {
-  /** Pointer to the buffer with the actual data. */
-  dptr_t* data;
+  /**
+   * Pointer to the buffer with the actual data. As with \ref
+   * swbus_rxq_ent.data, pool buffers are only as aligned as the pool's element
+   * size allows.
+   */
+  void* data;
 
   /**
    * Packet size in bytes. Set by \ref swbus_publish_reserve(); \ref

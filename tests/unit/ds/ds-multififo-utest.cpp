@@ -90,7 +90,8 @@ static void child_test(int len, struct multififo_config* config) {
 
   struct fifo* child = &multififo->children.fifos[0];
   uint8_t      assembled_elt[sizeof(element8)];
-  size_t       child_fifo_size = multififo->root.rb.elt_size / child->rb.elt_size;
+  size_t       child_fifo_size =
+    multififo->root.rb.cfg.elt_size / child->rb.cfg.elt_size;
 
   size_t n_elts = multififo_size(multififo);
   while (!multififo_isempty(multififo)) {
@@ -100,7 +101,7 @@ static void child_test(int len, struct multififo_config* config) {
     for (size_t j = 0; j < child_fifo_size; ++j) {
       CATCH_REQUIRE(OK == fifo_remove(child, next));
       CATCH_REQUIRE(fifo_size(child) == child_fifo_size - j - 1);
-      next += child->rb.elt_size;
+      next += child->rb.cfg.elt_size;
     } /* for(j..) */
     T e;
     CATCH_REQUIRE(multififo_remove(multififo, &e) == OK);

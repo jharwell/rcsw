@@ -37,7 +37,8 @@ int stdio_getchar(void) { return RCSW_CONFIG_STDIO_GETCHAR(); }
 
 size_t stdio_puts(const char* const s) {
   size_t i;
-  for (i = 0; i < stdio_strlen(s); i++) {
+  /* Stop at the NUL: computing stdio_strlen() every iteration is O(n^2) */
+  for (i = 0; '\0' != s[i]; i++) {
     stdio_putchar(s[i]);
   } /* for() */
   return i;

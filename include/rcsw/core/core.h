@@ -412,20 +412,15 @@ typedef enum {
 /*******************************************************************************
  * Other Macros
  ******************************************************************************/
-#ifndef __cplusplus
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-
 /**
  * \def RCSW_STATIC_ASSERT Compile time asserts for size, alignment, etc.
+ *
+ * RCSW requires C11 (or C++11), which provide static assertions natively.
  */
+#if defined(__cplusplus)
+#define RCSW_STATIC_ASSERT(...) static_assert(__VA_ARGS__)
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #define RCSW_STATIC_ASSERT(...) _Static_assert(__VA_ARGS__)
 #else
-
-#define RCSW_STATIC_ASSERT(expr, msg)                                  \
-  enum { RCSW_JOIN(RCSW_STATIC_ASSERT, __LINE__) = (1 / (!!(expr))) }; \
-  (void)(sizeof(msg))
-
-#endif /* __STDC_VERSION__ */
-
-#endif /* __cplusplus */
+#error "RCSW requires C11 or later"
+#endif

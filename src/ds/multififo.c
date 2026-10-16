@@ -34,11 +34,12 @@ static status_t multififo_children_feed(struct multififo* fifo) {
      * Each child FIFO may/will have a different # elements in it, depending on
      * its chunk size vs. the root FIFO.
      */
-    size_t n_elts = fifo->root.rb.elt_size / fifo->children.fifos[i].rb.elt_size;
+    size_t n_elts =
+      fifo->root.rb.cfg.elt_size / fifo->children.fifos[i].rb.cfg.elt_size;
 
     for (size_t j = 0; j < n_elts; ++j) {
       uint8_t* target = (uint8_t*)fifo_front(&fifo->root) +
-                        (fifo->children.fifos[i].rb.elt_size * j);
+                        (fifo->children.fifos[i].rb.cfg.elt_size * j);
       RCSW_CHECK(OK == fifo_add(&fifo->children.fifos[i], target));
       fifo->front_refmask |= 1 << i;
     } /* for(j..) */

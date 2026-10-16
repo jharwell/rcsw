@@ -847,3 +847,29 @@ CATCH_TEST_CASE("LLIST_FOREACH scopes its variable to the loop",
   CATCH_REQUIRE(4321 == digits);
   llist_destroy(l);
 }
+
+CATCH_TEST_CASE("llist keeps its configuration, and copies inherit it",
+                "[ds][llist]") {
+  struct llist *l = make_list(8, RCSW_DS_SORTED);
+  CATCH_REQUIRE(nullptr != l);
+  CATCH_REQUIRE(cmp_key == l->cfg.cmpe);
+  CATCH_REQUIRE(sizeof(kv) == l->cfg.elt_size);
+  CATCH_REQUIRE(8 == l->cfg.max_elts);
+  CATCH_REQUIRE(RCSW_DS_SORTED == l->cfg.flags);
+  CATCH_REQUIRE(nullptr == l->cfg.elements); /* heap storage */
+
+  kv e = {1, 0};
+  CATCH_REQUIRE(OK == llist_append(l, &e));
+
+  /* the copy takes the element configuration from the list, flags from us */
+  struct llist *c = llist_copy(l, RCSW_NONE, nullptr, nullptr);
+  CATCH_REQUIRE(nullptr != c);
+  CATCH_REQUIRE(l->cfg.cmpe == c->cfg.cmpe);
+  CATCH_REQUIRE(l->cfg.printe == c->cfg.printe);
+  CATCH_REQUIRE(l->cfg.elt_size == c->cfg.elt_size);
+  CATCH_REQUIRE(l->cfg.max_elts == c->cfg.max_elts);
+  CATCH_REQUIRE(RCSW_NONE == c->cfg.flags);
+  CATCH_REQUIRE(std::vector<int>({1}) == keys_of(c));
+  llist_destroy(c);
+  llist_destroy(l);
+}
