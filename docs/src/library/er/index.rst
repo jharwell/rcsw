@@ -105,7 +105,7 @@ Plugin Comparison
 
    * - Runtime level adjustment
      - No
-     - Yes
+     - Yes\ :sup:`†`
      - Yes
      - ``simple`` is compile-time only.
 
@@ -125,9 +125,10 @@ Plugin Comparison
      - N/A
      - Yes\ :sup:`†`
      - N/A (zlog-internal)
-     - \ :sup:`†` On POSIX, LOG4CL serializes module installation, removal,
-       lookup and level changes internally. Don't call ``RCSW_ER_DEINIT()``
-       while other threads are reporting.
+     - \ :sup:`†` On POSIX, reporting and installing modules are safe from
+       any thread. Removing modules, changing levels and
+       ``RCSW_ER_DEINIT()`` must happen while no other thread is reporting,
+       e.g. at startup or shutdown.
 
    * - Best for
      - Bare-metal, bootstraps, no OS

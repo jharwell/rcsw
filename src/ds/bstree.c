@@ -372,11 +372,11 @@ status_t bstree_remove(struct bstree* const tree, const void* const key) {
   RCSW_FPC_NV(ERROR, tree != NULL, key != NULL);
 
   struct bstree_node* victim = bstree_node_query(tree, tree->root->left, key);
-  RCSW_CHECK_PTR(victim);
+  if (NULL == victim) {
+    errno = ENOENT;
+    return ERROR;
+  }
   return bstree_delete(tree, victim, NULL);
-
-error:
-  return ERROR;
 } /* bstree_remove() */
 
 /* NOLINTNEXTLINE(readability-function-size) */

@@ -63,8 +63,8 @@ which modules are available under each :cmake:variable:`RCSW_BUILD_FOR` setting.
      - ✓
 
    * - :ref:`library/console`
-     - ✗ (bare-metal only)
-     - ✓
+     - Built for testing only
+     - ✓ (intended target)
 
 .. toctree::
    :maxdepth: 1

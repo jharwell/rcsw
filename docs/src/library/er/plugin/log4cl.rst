@@ -21,7 +21,7 @@ Each emitted logging statement is of the form::
 
   <RCSW_ER_MODNAME> [LVL] <message>
 
-``LVL`` is one of [FATAL, ERROR, INFO, WARN, DEBUG, TRACE], and ``<message>`` is
+``LVL`` is one of [FATAL, ERROR, WARN, INFO, DEBUG, TRACE], and ``<message>`` is
 the rendered message. :c:macro:`RCSW_ER_MODNAME` defines the logical name of the
 module.
 
@@ -67,14 +67,17 @@ This plugin is useful in:
 
    * - ``RCSW_ER_PLUGIN_INSMOD``
 
-     - Idempotent for the same arguments. Default reporting level after
-       installation is INFO.
+     - Idempotent: installing an installed ID changes nothing. A new module
+       starts at the default level, INFO unless changed with
+       :c:func:`log4cl_default_lvl_set`; statements from modules that were
+       never installed are filtered at that level too.
 
    * - ``RCSW_ER_PLUGIN_LVL_CHECK``
 
-     - Thread-safe. On POSIX, installation, removal and lookup are serialized
-       internally; don't call ``RCSW_ER_DEINIT()`` while other threads are
-       reporting.
+     - Safe from any thread on POSIX, as is installing modules. Removing
+       modules (:c:func:`log4cl_rmmod`), changing levels
+       (:c:func:`log4cl_mod_lvl_set`, :c:func:`log4cl_default_lvl_set`) and
+       ``RCSW_ER_DEINIT()`` must happen while no other thread is reporting.
 
    * - :c:macro:`RCSW_ER_MODNAME`
 

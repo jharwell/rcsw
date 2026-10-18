@@ -331,7 +331,7 @@ RCSW_API void bstree_destroy(struct bstree* tree);
  * \param tree The BST handle
  * \param key Key to match in the search for the node to delete
  *
- * \return \ref status_t
+ * \return \ref status_t. ERROR with errno=ENOENT if no node has \p key.
  */
 RCSW_API status_t bstree_remove(struct bstree* tree, const void* key);
 

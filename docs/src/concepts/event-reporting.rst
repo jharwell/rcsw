@@ -28,10 +28,12 @@ two macros before including ``rcsw/er/client.h``:
 
 Several files can share a module by defining the same ID and name.
 
-A module is *active* once it has been installed, normally with
-:c:macro:`RCSW_ER_MODULE_INIT` in the module's initialization function.
-Statements in a module that isn't active are suppressed at run time, for
-plugins that support per-module control.
+A module is installed with :c:macro:`RCSW_ER_MODULE_INIT`, normally in the
+module's initialization function, and from then on has its own run-time level
+(for plugins with per-module levels). Under LOG4CL, statements from a module
+that was never installed, for example because its initialization ran before
+``RCSW_ER_INIT()``, are still reported, filtered at the default level (INFO,
+changeable with :c:func:`log4cl_default_lvl_set`).
 
 .. _concepts/event-reporting/ids:
 
@@ -39,13 +41,15 @@ Module ID allocation
 ====================
 
 Only the LOG4CL plugin uses module IDs; the others ignore
-:c:macro:`RCSW_ER_MODID`. Under LOG4CL, two files with the same ID share a
-module, so whichever installs it last decides its level.
+:c:macro:`RCSW_ER_MODID`. Under LOG4CL, two files with the same ID share one
+module and one level; installing it again changes nothing.
 
-RCSW reserves the lower 32 bits (``0x00000000XXXXXXXX``) for its own modules.
-Application and library code should use IDs in the upper 32 bits. A simple
-scheme for a multi-library project is a 16-bit prefix per library and a 16-bit
-per-file number:
+RCSW's own modules use the small IDs below ``LOG4CL_EXTERNAL`` (see
+``rcsw/er/plugin/log4cl.h``), and files that don't define an ID share
+``0xFFFFFFFF``. Any other value is yours. Keeping application and library IDs
+in the upper 32 bits stays clear of both, and leaves room for a simple scheme
+in a multi-library project: a 16-bit prefix per library and a 16-bit per-file
+number:
 
 .. code-block:: c
 

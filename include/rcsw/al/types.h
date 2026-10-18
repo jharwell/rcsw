@@ -111,8 +111,8 @@
  *
  * \note A C11 \c _Alignas approach was considered but rejected: \c _Alignas
  * is not permitted on a \c typedef (C11 §6.7.5), and placing it on a
- * single-member struct wrapper breaks call-site transparency between the C11
- * and pre-C11 paths. The integer-width trick is already sufficient — \c
+ * single-member struct wrapper would change how \c dptr_t is used at every
+ * call site. The integer-width trick is already sufficient — \c
  * _Alignof(uint32_t)==4 guarantees 4-byte-aligned array elements just as
  * reliably as \c _Alignas(4) would.
  *

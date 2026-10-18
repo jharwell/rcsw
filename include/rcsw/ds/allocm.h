@@ -54,7 +54,7 @@ static inline size_t allocm_n_entries(size_t n_blocks) { return n_blocks + 1; }
  * \brief The # of bytes an allocation map for \p n_blocks blocks occupies.
  *
  * Each entry is \ref dptr_t aligned and sized, so storage laid out after the
- * map keeps \ref RCSW_CONFIG_PTR_ALIGN alignment.
+ * map keeps \c RCSW_CONFIG_PTR_ALIGN alignment.
  */
 static inline size_t allocm_map_bytes(size_t n_blocks) {
   return allocm_n_entries(n_blocks) * sizeof(struct allocm_entry);

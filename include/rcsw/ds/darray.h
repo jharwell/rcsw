@@ -488,6 +488,8 @@ RCSW_API void darray_print(const struct darray* arr);
  *
  * \param arr  The darray to iterate over.
  *
+ * \param type \ref ITER_FORWARD or \ref ITER_BACKWARD.
+ *
  * \param classify Optional filter predicate; pass NULL for no filtering.
  *
  * \return \p iter on success, or NULL on error.

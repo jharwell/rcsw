@@ -25,8 +25,8 @@
  * \brief The direction of iteration.
  */
 enum ds_iter_type {
-  ITER_FORWARD,
-  ITER_BACKWARD,
+  ITER_FORWARD,  /**< From the front of the structure to the back. */
+  ITER_BACKWARD, /**< From the back to the front, where supported. */
 };
 
 /*

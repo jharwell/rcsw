@@ -202,7 +202,7 @@ struct hashmap {
   struct hashmap_stats stats;
 
   /**
-   * With \ref RCSW_DS_HASHMAP_LINPROB: the furthest past its home bucket any
+   * Only used with \ref RCSW_DS_HASHMAP_LINPROB. The furthest past its home bucket any
    * node has been placed since init or the last \ref hashmap_clear(). Lookups
    * probe only this many buckets after the home bucket. Never decreases on
    * remove, so it is always an upper bound. Always 0 without linear probing.
@@ -375,7 +375,7 @@ RCSW_API status_t hashmap_add(struct hashmap* map,
  *
  * \param map The hashmap handle.
  * \param key The key for the data to remove. Must point to \ref
- *            hashmap.key_len readable bytes.
+ *            hashmap_config.key_len readable bytes.
  *
  * \return \ref status_t
  */

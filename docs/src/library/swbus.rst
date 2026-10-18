@@ -72,6 +72,25 @@ Initialization
    /* Subscribe the RXQ to PID 0x10 */
    swbus_subscribe(&bus, rxq, 0x10);
 
+Running without the heap
+------------------------
+
+Three regions can come from the caller, and with all three the bus does no
+heap allocation (apart from what the POSIX synchronization primitives do
+internally):
+
+- **Bus metadata** (the pool and RXQ handles and the subscription list):
+  pass :c:macro:`RCSW_NOALLOC_META` and a buffer of
+  ``swbus_meta_space(max_pools, max_rxqs, max_subs)`` bytes in
+  :c:member:`swbus_config.meta`. Regions inside it are aligned to
+  :cmake:variable:`RCSW_CONFIG_PTR_ALIGN`, which must therefore be at least
+  the target's pointer alignment.
+- **Pool buffers**: per pool, through each :c:struct:`mpool_config` in
+  :c:member:`swbus_config.pools`.
+- **RXQ storage**: per queue, through :c:func:`swbus_rxq_init`.
+
+See :ref:`concepts/memory-model` for sizing and alignment in general.
+
 Publishing
 ==========
 
@@ -173,7 +192,8 @@ API Summary
 
    * - :c:func:`swbus_publish_reserve()`
      - Allocate a buffer from the appropriate pool and return a reservation
-       handle. Does not notify subscribers.
+       handle. Does not notify subscribers. Never blocks: if no pool has a
+       free buffer large enough, it fails at once with ``ENOSPC``.
 
    * - :c:func:`swbus_publish_release()`
      - Notify all subscribers of a PID using a previously reserved buffer.

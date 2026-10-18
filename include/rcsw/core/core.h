@@ -392,7 +392,9 @@ typedef enum {
  * Other Macros
  ******************************************************************************/
 /**
- * \def RCSW_STATIC_ASSERT Compile time asserts for size, alignment, etc.
+ * \def RCSW_STATIC_ASSERT
+ *
+ * Compile time asserts for size, alignment, etc.
  *
  * RCSW requires C11 (or C++11), which provide static assertions natively.
  */

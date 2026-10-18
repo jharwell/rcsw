@@ -58,10 +58,22 @@ Each region the caller provides must be large enough for everything the
 library will put in it:
 
 - **Handle**: at least ``sizeof(struct xx)``.
-- **Data**: ``xx_element_space(max_elts, elt_size)`` bytes.
-- **Metadata**: ``xx_meta_space(max_elts)`` bytes, for modules that have
-  metadata (lists, trees, hashmaps, memory pools). Contiguous structures such
-  as :c:struct:`darray` and :c:struct:`rbuffer` have none.
+- **Data**: usually ``xx_element_space(max_elts, elt_size)`` bytes.
+- **Metadata**: usually ``xx_meta_space(max_elts)`` bytes, for modules that
+  have metadata (lists, trees, hashmaps, memory pools, multififo, swbus).
+  Contiguous structures such as :c:struct:`darray` and :c:struct:`rbuffer`
+  have none.
+
+A few sizing functions take different arguments because the structure is
+sized differently:
+
+- :c:func:`hashmap_element_space()`
+- :c:func:`hashmap_meta_space`
+- :c:func:`inttree_element_space`
+- :c:func:`multififo_meta_space`
+- :c:func:`swbus_meta_space`
+
+Each one's API documentation lists its arguments.
 
 The sizing functions include any internal bookkeeping (allocation maps,
 sentinel nodes), so the result can be larger than ``max_elts * elt_size``.
@@ -98,8 +110,8 @@ x86, ARM, RISC-V and smaller embedded targets.
 
 The short version:
 
-- Pass memory aligned to at least :c:macro:`RCSW_CONFIG_PTR_ALIGN` (any
-  ``dptr_t`` array is), sized with the structure's ``*_element_space()`` /
+- Pass memory aligned to at least :cmake:variable:`RCSW_CONFIG_PTR_ALIGN`
+  (any ``dptr_t`` array is), sized with the structure's ``*_element_space()`` /
   ``*_meta_space()`` functions.
 - Set ``elt_size`` to ``sizeof`` your element type.
 - Every internal node and element is then naturally aligned, at every
@@ -109,8 +121,9 @@ Element ``i`` of a data structure's element pool is at ``i * elt_size`` from the
 start of the pool, exactly like a C array. With ``elt_size == sizeof(T)``, every
 element therefore has ``T``'s alignment, because ``sizeof(T)`` is always a
 multiple of ``_Alignof(T)``. An ``elt_size`` that is not a multiple of
-:c:macro:`RCSW_CONFIG_PTR_ALIGN` is allowed; elements then have their type's
-alignment but not the stronger :c:macro:`RCSW_CONFIG_PTR_ALIGN`.
+:cmake:variable:`RCSW_CONFIG_PTR_ALIGN` is allowed; elements then have their
+type's alignment but not the stronger
+:cmake:variable:`RCSW_CONFIG_PTR_ALIGN`.
 
 The same applies to :c:struct:`mpool` chunks, and therefore to :c:struct:`swbus`
 packet buffers: chunk ``i`` is at ``i * elt_size``, so a pool with 170-byte
@@ -122,12 +135,12 @@ accessing them as structs.
 ``dptr_t`` and ``RCSW_CONFIG_PTR_ALIGN``
 ----------------------------------------
 
-:c:macro:`RCSW_CONFIG_PTR_ALIGN` is the alignment RCSW promises for the start of
-every element and node in RCSW-managed memory. ``dptr_t`` is an unsigned integer
-type with exactly that alignment, so a ``dptr_t[]`` buffer is always suitably
-aligned for use as caller-provided storage. Choose the alignment of the most
-strictly aligned type you store; e.g., 8 on 64-bit targets that store pointers,
-or structs containing them.
+:cmake:variable:`RCSW_CONFIG_PTR_ALIGN` is the alignment RCSW promises for the
+start of every element and node in RCSW-managed memory. ``dptr_t`` is an
+unsigned integer type with exactly that alignment, so a ``dptr_t[]`` buffer is
+always suitably aligned for use as caller-provided storage. Choose the
+alignment of the most strictly aligned type you store; e.g., 8 on 64-bit
+targets that store pointers, or structs containing them.
 
 The library checks at build time that the target's ABI really gives ``dptr_t``
 that alignment; on 32-bit x86, for example, ``uint64_t`` is only 4-byte aligned
@@ -136,11 +149,11 @@ in structs, so 8 is rejected there.
 Why internal structs are not packed
 -----------------------------------
 
-Nodes and other internal structs (:c:struct:`bstree_node`,
-:c:struct:`ostree_node`, :c:struct:`inttree_node`, :c:struct:`llist_node`, :c:struct:`hashnode`,
-:c:struct:`allocm_entry`, etc) are declared with natural alignment, and with
-``aligned(sizeof(dptr_t))`` where an array of them must keep every element
-aligned. They are deliberately **not** ``packed``.
+Nodes and other internal structs (:c:struct:`bstree_node`, ``struct
+ostree_node``, ``struct inttree_node``, ``struct llist_node``,
+:c:struct:`hashnode`, :c:struct:`allocm_entry`, etc) are declared with natural
+alignment, and with ``aligned(sizeof(dptr_t))`` where an array of them must
+keep every element aligned. They are deliberately **not** ``packed``.
 
 ``packed`` removes padding by placing each member immediately after the previous
 one. ``aligned`` only raises the alignment of the struct as a whole; it does not
@@ -170,7 +183,7 @@ The shared tree node prefix
 ---------------------------
 
 The binary search tree code is shared by plain, red-black, order-statistic
-(:c:struct:`ostree_node`) and interval (:c:struct:`inttree_node`) trees, and
+(``struct ostree_node``) and interval (``struct inttree_node``) trees, and
 walks every node through a ``struct bstree_node *``. The variant nodes therefore
 begin with the same members as :c:struct:`bstree_node` (``key``, ``data``,
 ``left``, ``right``, ``parent``, ``red``), and their extra member (``count`` /
@@ -178,5 +191,5 @@ begin with the same members as :c:struct:`bstree_node` (``key``, ``data``,
 so they can share one node pool, with a stride of ``sizeof(struct
 bstree_node)``.
 
-This enforced at build time: a change that breaks the overlay fails to compile
-instead of corrupting trees at run time.
+This is enforced at build time: a change that breaks the overlay fails to
+compile instead of corrupting trees at run time.

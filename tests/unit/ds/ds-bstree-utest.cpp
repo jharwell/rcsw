@@ -12,6 +12,7 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
+#include <cerrno>
 #include <cstddef>
 #include <vector>
 
@@ -400,4 +401,38 @@ CATCH_TEST_CASE("tree nodes are naturally aligned and pack into arrays",
   static_assert(sizeof(struct bstree_node) == sizeof(struct ostree_node));
   static_assert(sizeof(struct bstree_node) == sizeof(struct inttree_node));
   CATCH_SUCCEED();
+}
+
+CATCH_TEST_CASE("bstree_remove of a missing key fails with ENOENT",
+                "[ds][bstree]") {
+  for (uint32_t flags : {0U, static_cast<uint32_t>(RCSW_DS_BSTREE_RB)}) {
+    struct bstree_config c;
+    memset(&c, 0, sizeof(c));
+    c.cmpkey         = th::cmp_int;
+    c.elt_size       = sizeof(int32_t);
+    c.max_elts       = -1;
+    c.flags          = flags;
+    struct bstree* t = bstree_init(nullptr, &c);
+    CATCH_REQUIRE(nullptr != t);
+
+    int32_t absent = 7;
+    errno          = 0;
+    CATCH_REQUIRE(ERROR == bstree_remove(t, &absent)); /* empty tree */
+    CATCH_REQUIRE(ENOENT == errno);
+
+    for (int32_t k : {5, 3, 9}) {
+      CATCH_REQUIRE(OK == bstree_insert(t, &k, &k));
+    }
+    errno = 0;
+    CATCH_REQUIRE(ERROR == bstree_remove(t, &absent));
+    CATCH_REQUIRE(ENOENT == errno);
+    CATCH_REQUIRE(3 == bstree_size(t));
+
+    int32_t present = 3;
+    CATCH_REQUIRE(OK == bstree_remove(t, &present));
+    errno = 0;
+    CATCH_REQUIRE(ERROR == bstree_remove(t, &present)); /* already removed */
+    CATCH_REQUIRE(ENOENT == errno);
+    bstree_destroy(t);
+  }
 }

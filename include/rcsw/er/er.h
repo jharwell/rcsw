@@ -85,7 +85,7 @@
  * define every \c RCSW_ER_PLUGIN_* macro that \c rcsw/er/plugin/plugin.h checks
  * for before \c rcsw/er/client.h is included (e.g., in a header passed with
  * \c -include). Leaving \c RCSW_CONFIG_ER_PLUGIN undefined selects LOG4CL,
- * because an undefined macro is 0 in \c #if. See \rcswdoc{library/er}.
+ * because an undefined macro is 0 in \c \#if. See \rcswdoc{library/er}.
  * @{
  */
 

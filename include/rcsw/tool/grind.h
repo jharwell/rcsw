@@ -25,11 +25,12 @@
 /*******************************************************************************
  * Macros
  ******************************************************************************/
-#if defined(RCSW_NO_GRIND)
-#define RCSW_GRIND_START(the_grinder, name)
-#define RCSW_GRIND_END(the_grinder, name)
-#define RCSW_GRIND_COUNT(the_grinder, name)
-#define RCSW_GRIND_TICK(the_grinder, name)
+#if defined(RCSW_CONFIG_NO_GRIND)
+/* Compiled out: each macro is an empty statement and evaluates nothing */
+#define RCSW_GRIND_START(the_grinder, name) ((void)0)
+#define RCSW_GRIND_END(the_grinder, name) ((void)0)
+#define RCSW_GRIND_COUNT(the_grinder, name) ((void)0)
+#define RCSW_GRIND_TICK(the_grinder, name) ((void)0)
 #else
 /**
  * \brief Compile-time macro for \ref grind_capture_start()
@@ -335,6 +336,8 @@ struct grinder {
  * \param grind_in Caller storage for the handle, used only if \ref
  *                 RCSW_NOALLOC_HANDLE is passed; ignored (may be NULL)
  *                 otherwise. See \rcswdoc{concepts/memory-model}.
+ *
+ * \param config The initialization parameters.
  *
  * \return The initialized grinder, or NULL if an error occurred.
  */

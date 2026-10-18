@@ -10,7 +10,8 @@ A general, yet highly performant data structures library. It is highly
 run-time configurable: the memory used by the data structure handle, the
 elements the data structure will manage, and structure metadata can each be
 independently provided by the calling application or ``malloc()``\ed by the
-library.
+library. (The one exception is :c:struct:`dynmatrix`, whose rows are always
+heap-allocated; only its handle can be caller-provided.)
 
 .. WARNING::
 
@@ -47,8 +48,8 @@ Available Structures
      - Append/prepend: O(1); query: O(n); sort: O(n log n)
 
    * - FIFO
-     - Built on :c:struct:`rbuffer`. Strict FIFO semantics; add fails when
-       full.
+     - A header-only wrapper around an :c:struct:`rbuffer` in FIFO mode:
+       strict FIFO semantics, and an add fails with ``ENOSPC`` when full.
      - :c:struct:`fifo`
      - Push/pop: O(1)
 
@@ -98,14 +99,17 @@ Available Structures
 
    * - Hashmap
      - Fixed-size buckets, each a dynamic array. Keys are
-       :c:macro:`RCSW_HASHMAP_KEYSIZE` (64) bytes. When a bucket is full, an
-       add fails unless :c:macro:`RCSW_DS_HASHMAP_LINPROB` is set, which
-       probes the following buckets. The hash function is supplied in
-       :c:member:`hashmap_config.hash`; ``rcsw/utils/hash.h`` provides
-       several.
+       :c:member:`hashmap_config.key_len` bytes (0 means
+       :c:macro:`RCSW_HASHMAP_KEYSIZE`). When a bucket is full, an add
+       fails unless :c:macro:`RCSW_DS_HASHMAP_LINPROB` is set, which puts the
+       node in the next bucket with space; lookups then also search up to
+       :c:member:`hashmap.max_probe` buckets past the home bucket. The hash
+       function is supplied in :c:member:`hashmap_config.hash`;
+       ``rcsw/utils/hash.h`` provides several.
      - :c:struct:`hashmap`
-     - Insert/query: amortized O(1); worst case O(n) under pathological
-       hash collisions
+     - Insert/query: O(bucket size), times ``max_probe + 1`` with linear
+       probing; :c:func:`hashmap_gather` reports how far from random the
+       hash function is.
 
    * - Binary heap
      - Built using dynamic array. A max heap, or a min heap with
@@ -115,6 +119,7 @@ Available Structures
 
    * - Matrix
      - Static matrix; dimensions cannot change after initialization.
+       :c:func:`matrix_transpose` handles square matrices only.
      - :c:struct:`matrix`
      - Element access: O(1)
 
@@ -127,7 +132,8 @@ Available Structures
    * - Adjacency Matrix
      - Dimensions (# vertices) cannot change after initialization.
        Efficient graph representation; works best on densely connected
-       graphs.
+       graphs. Weighted graphs must be directed; model a weighted undirected
+       graph by adding each edge in both directions.
      - :c:struct:`adjmatrix`
      - Edge query: O(1)
 
@@ -179,8 +185,9 @@ concept.
    * - ``XX_remove()``
      - Remove an element: by value (:c:struct:`llist`, :c:struct:`hashmap`,
        :c:struct:`bstree`), by index (:c:struct:`darray`) or from the front
-       (:c:struct:`fifo`, :c:struct:`rbuffer`). Removing an element that
-       isn't present returns ``ERROR`` with ``errno = ENOENT``.
+       (:c:struct:`fifo`, :c:struct:`rbuffer`). Removing a value or key that
+       isn't present returns ``ERROR`` with ``errno = ENOENT``; an
+       out-of-range index fails the precondition check (``EINVAL``).
 
    * - ``XX_clear()``
      - Remove all elements without destroying the structure. The handle
@@ -231,10 +238,11 @@ concept.
        index (``darray_idx_query()``). See per-structure documentation.
 
    * - ``XX_data_get()``
-     - Return a pointer to an element by index. Out-of-range indices are
-       the caller's error, and the response varies: :c:func:`rbuffer_data_get`
-       returns ``NULL``, while :c:func:`darray_data_get` reports a FATAL event
-       and fails an ``assert()``.
+     - Return a pointer to an element by index (by key for
+       :c:func:`hashmap_data_get`). Out-of-range indices are the caller's
+       error, and the response varies: :c:func:`rbuffer_data_get` returns
+       ``NULL``, while :c:func:`darray_data_get` reports a FATAL event and
+       fails an ``assert()``.
 
 .. _library/ds/memory:
 
@@ -281,11 +289,11 @@ On failure, functions return ``NULL`` (pointer-returning) or ``ERROR``
    * - ``ENOENT``
      - The element, key or edge isn't present (:c:func:`llist_remove`,
        :c:func:`llist_splice`, :c:func:`hashmap_remove`,
-       :c:func:`adjmatrix_edge_remove`).
+       :c:func:`bstree_remove`, :c:func:`adjmatrix_edge_remove`).
 
    * - ``EAGAIN``
-     - :c:func:`bstree_init` or :c:func:`fifo_init` failed partway through,
-       or :c:struct:`multififo` is busy (see :c:func:`multififo_islocked`).
+     - :c:func:`bstree_init` failed partway through, or
+       :c:struct:`multififo` is busy (see :c:func:`multififo_islocked`).
 
 .. NOTE::
 

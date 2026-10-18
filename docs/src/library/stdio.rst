@@ -62,10 +62,13 @@ See the header for full signatures. Highlights:
 
 - :c:func:`stdio_puts()` writes a string without a trailing newline
   (unlike POSIX ``puts``).
-- :c:func:`stdio_atoi()` requires an explicit base argument and a ``0x``
-  prefix for hex input.
+- :c:func:`stdio_atoi()` requires an explicit base argument; for base 16 an
+  optional ``0x``/``0X`` prefix is skipped.
 - :c:func:`stdio_itoad()` and :c:func:`stdio_itoax()` are 32-bit only.
 
 ``#include "rcsw/stdio/string.h"`` has the string and memory routines
 (:c:func:`stdio_strlen`, :c:func:`stdio_strcmp`, :c:func:`stdio_memcpy`, ...)
-and character class macros (:c:macro:`RCSW_STDIO_ISDIGIT` and friends).
+and ASCII-only character class functions (:c:func:`stdio_isdigit`,
+:c:func:`stdio_ishex`, :c:func:`stdio_isalpha`, ...). Like ``<ctype.h>``
+they take an ``int`` and return 1 or 0, but they don't depend on the locale,
+and a negative ``char`` value is in no class.

@@ -58,9 +58,9 @@
 /**
  * \brief The LOG4CL module codes used by RCSW.
  *
- * When defining your own module codes, you should always start them at or
- * above \c LOG4CL_EXTERNAL, so as to not conflict with the internal codes in
- * RCSW. See \rcswdoc{concepts/event-reporting/ids}.
+ * Your own module IDs must not be below \c LOG4CL_EXTERNAL (these codes) or
+ * equal to 0xFFFFFFFF (the default \ref RCSW_ER_MODID). Using the upper 32 bits
+ * avoids both; see \rcswdoc{concepts/event-reporting/ids}.
  */
 #define RCSW_LOG4CL_MODULES                                                   \
   LOG4CL_SELF, LOG4CL_DS_BSTREE, LOG4CL_DS_DARRAY, LOG4CL_DS_LLIST,           \

@@ -64,7 +64,7 @@ struct fifo_config {
  * forwards to the matching rbuffer_*() function. This implementation is more
  * full-featured than \ref rawfifo, but is not safe to use in ISRs.
  *
- * Handle storage and the valid flags are as for \ref rbuffer: \ref
+ * Handle storage and the valid flags are as for \ref rbuffer, namely \ref
  * RCSW_ZALLOC, \ref RCSW_NOALLOC_HANDLE and \ref RCSW_NOALLOC_DATA (in \ref
  * fifo_config.flags); all other flags are ignored.
  */
