@@ -249,8 +249,8 @@ error:
   return rc;
 } /* bstree_traverse_nodes_postorder() */
 
-int bstree_node_print(const struct bstree* const      tree, /* parent tree */
-                      const struct bstree_node* const node) {
+int bstree_node_print(const struct bstree* const tree, /* parent tree */
+                      struct bstree_node* const  node) {
   tree->cfg.printe(node->data);
   return 0;
 } /* bstree_node_print() */

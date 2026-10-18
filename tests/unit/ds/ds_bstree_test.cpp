@@ -30,7 +30,10 @@ std::vector<int32_t> g_inorder;
  * API Functions
  ******************************************************************************/
 int verify_nodes_int(const struct bstree* const tree,
-                     struct inttree_node* const node) {
+                     struct bstree_node* const  base) {
+  /* Traversal callbacks take the base node type; an inttree node starts
+   * with a bstree node, so the cast is valid. */
+  auto*               node = reinterpret_cast<inttree_node*>(base);
   uint8_t*            left_key;
   uint8_t*            right_key;
   struct bstree_node* nil = tree->nil;
@@ -40,7 +43,7 @@ int verify_nodes_int(const struct bstree* const tree,
    */
 
   if (node != reinterpret_cast<inttree_node*>(nil)) {
-    if (node->right != reinterpret_cast<inttree_node*>(nil)) {
+    if (node->left != reinterpret_cast<inttree_node*>(nil)) {
       CATCH_REQUIRE(node->max_high >= node->left->max_high);
     }
     if (node->right != reinterpret_cast<inttree_node*>(nil)) {

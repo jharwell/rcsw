@@ -134,8 +134,7 @@ static void remove_test(int len, struct bstree_config* config) {
     g_n_elements = (int)tree->current;
     if (tree->current > 0) {
       CATCH_REQUIRE(bstree_traverse(tree,
-                                    reinterpret_cast<th::bst::bst_verify_cb>(
-                                      th::bst::verify_nodes_int),
+                                    th::bst::verify_nodes_int,
                                     TRAVERSE_INORDER) == OK);
     }
   }

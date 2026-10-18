@@ -33,8 +33,6 @@ using test_t = void (*)(int len, struct bstree_config *config,
 using rm_test_t = void (*)(int len, int remove_type,
                            struct bstree_config *config,
                            bst_verify_cb verify_cb);
-typedef int (*int_verify_cb)(const struct bstree *const tree,
-                             struct inttree_node *const node);
 
 /*******************************************************************************
  * Forward Decls
@@ -61,7 +59,7 @@ int verify_nodes_bst(const struct bstree *const tree,
  * \return 0 if OK, nonzero otherwise
  */
 int verify_nodes_int(const struct bstree *const tree,
-                     struct inttree_node *const node);
+                     struct bstree_node *const node);
 
 extern std::vector<int32_t> g_inorder;
 
