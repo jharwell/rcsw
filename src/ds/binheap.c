@@ -124,16 +124,14 @@ static void binheap_sift_up(struct binheap* const heap, size_t i) {
    *  scratch space, so stop at 1 rather than comparing against slot 0.
    */
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
-    while (i > 1 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
-                          darray_data_get(&heap->arr, i)) > 0) {
+    while (i > 1 && heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
+                                   darray_data_get(&heap->arr, i)) > 0) {
       binheap_swap(heap, i, binheap_parent(i));
       i = binheap_parent(i);
     } /* while() */
   } else {
-    while (i > 1 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
-                          darray_data_get(&heap->arr, i)) < 0) {
+    while (i > 1 && heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
+                                   darray_data_get(&heap->arr, i)) < 0) {
       binheap_swap(heap, i, binheap_parent(i));
       i = binheap_parent(i);
     } /* while() */

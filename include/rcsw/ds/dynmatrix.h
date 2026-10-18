@@ -45,8 +45,8 @@ struct dynmatrix_config {
    */
   uint32_t flags;
 
-  size_t  n_rows;  ///< # rows in matrix.
-  size_t  n_cols;  ///< # columns in matrix.
+  size_t n_rows;  ///< # rows in matrix.
+  size_t n_cols;  ///< # columns in matrix.
 };
 
 /**

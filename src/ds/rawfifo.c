@@ -23,8 +23,7 @@
 BEGIN_C_DECLS
 
 /* Address of slot i: elements are packed at an elt_size-byte stride */
-static inline uint8_t* rawfifo_slot(const struct rawfifo* const fifo,
-                                    size_t                      i) {
+static inline uint8_t* rawfifo_slot(const struct rawfifo* const fifo, size_t i) {
   return (uint8_t*)fifo->elements + ((i % fifo->max_elts) * fifo->elt_size);
 }
 

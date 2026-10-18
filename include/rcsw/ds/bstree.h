@@ -216,12 +216,13 @@ BEGIN_C_DECLS
  * \brief Get the root node of the tree.
  *
  * The tree's \ref bstree.root is a sentinel; the real root is its left
- * child. Returns \ref bstree.nil if the tree is empty.
+ * child. Returns \ref bstree.nil if the tree is empty, and NULL if \p tree is
+ * NULL (function precondition).
  */
 static inline struct bstree_node* bstree_root(const struct bstree* const tree) {
+  RCSW_FPC_NV(NULL, NULL != tree);
   return tree->root->left;
 }
-
 
 /**
  * \brief Determine if a \ref bstree is currently full.

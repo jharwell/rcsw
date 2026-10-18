@@ -318,7 +318,7 @@ CATCH_TEST_CASE("mpool_req survives EINTR while waiting for a chunk",
 }
 
 CATCH_TEST_CASE("mpool_element_space is exactly the chunk storage",
-                "[multithread][mpool][noalloc]") {
+                "[multithread][mpool]") {
   constexpr size_t kChunks = 8;
   constexpr size_t kSize   = 16;
   CATCH_REQUIRE(kChunks * kSize == mpool_element_space(kChunks, kSize));

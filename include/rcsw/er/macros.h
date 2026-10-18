@@ -23,7 +23,6 @@
  ******************************************************************************/
 #include <assert.h>
 #include <errno.h>
-#include <stdlib.h> /* abort() for ER_FATAL_SENTINEL() */
 
 #include "rcsw/core/compilers.h"
 #include "rcsw/er/er.h"
@@ -107,8 +106,8 @@
  */
 #if (RCSW_ERL == RCSW_ERL_FATAL)
 
-#define ER_FATAL(msg, ...)                                    \
-  do {                                                        \
+#define ER_FATAL(msg, ...)                                           \
+  do {                                                               \
     DPRINTF(RCSW_ER_MODNAME " [FATAL]: " msg "\r\n", ##__VA_ARGS__); \
   } while (0)
 
@@ -123,9 +122,9 @@
                 __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_FATAL_IMPL(handle, ...)                   \
+#define ER_FATAL_IMPL(handle, ...)                 \
   do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, FATAL)) {   \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, FATAL)) { \
       ER_REPORT(FATAL, handle, __VA_ARGS__);       \
     }                                              \
   } while (0)
@@ -152,7 +151,7 @@
 /* \cond INTERNAL */
 #define ER_ERR_IMPL(handle, ...)                   \
   do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, ERROR)) {   \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, ERROR)) { \
       ER_REPORT(ERROR, handle, __VA_ARGS__);       \
     }                                              \
   } while (0)
@@ -202,11 +201,11 @@
   ER_WARN_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, RCSW_ER_MODNAME), __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_WARN_IMPL(handle, ...)                   \
-  do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, WARN)) {   \
+#define ER_WARN_IMPL(handle, ...)                 \
+  do {                                            \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, WARN)) { \
       ER_REPORT(WARN, handle, __VA_ARGS__);       \
-    }                                              \
+    }                                             \
   } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_WARN */
@@ -230,11 +229,11 @@
   ER_INFO_IMPL(RCSW_ER_PLUGIN_HANDLE(RCSW_ER_MODID, RCSW_ER_MODNAME), __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_INFO_IMPL(handle, ...)                   \
-  do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, INFO)) {   \
+#define ER_INFO_IMPL(handle, ...)                 \
+  do {                                            \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, INFO)) { \
       ER_REPORT(INFO, handle, __VA_ARGS__);       \
-    }                                              \
+    }                                             \
   } while (0)
 /* \endcond */
 #endif /* RCSW_ERL >= RCSW_ERL_INFO */
@@ -259,9 +258,9 @@
                 __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_DEBUG_IMPL(handle, ...)                   \
+#define ER_DEBUG_IMPL(handle, ...)                 \
   do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, DEBUG)) {   \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, DEBUG)) { \
       ER_REPORT(DEBUG, handle, __VA_ARGS__);       \
     }                                              \
   } while (0)
@@ -288,9 +287,9 @@
                 __VA_ARGS__)
 
 /* \cond INTERNAL */
-#define ER_TRACE_IMPL(handle, ...)                   \
+#define ER_TRACE_IMPL(handle, ...)                 \
   do {                                             \
-    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, TRACE)) {   \
+    if (RCSW_ER_PLUGIN_LVL_CHECK(handle, TRACE)) { \
       ER_REPORT(TRACE, handle, __VA_ARGS__);       \
     }                                              \
   } while (0)
@@ -311,14 +310,14 @@
  *
  * This macro is only available if the event reporting level is > NONE.
  */
-#define ER_REPORT(lvl, handle, msg, ...)     \
-  do {                                       \
-    RCSW_ER_PLUGIN_REPORT(lvl,               \
-                          handle,            \
-                          RCSW_ER_MODID,     \
-                          RCSW_ER_MODNAME,   \
-                          msg "\r\n",        \
-                          ##__VA_ARGS__);    \
+#define ER_REPORT(lvl, handle, msg, ...)   \
+  do {                                     \
+    RCSW_ER_PLUGIN_REPORT(lvl,             \
+                          handle,          \
+                          RCSW_ER_MODID,   \
+                          RCSW_ER_MODNAME, \
+                          msg "\r\n",      \
+                          ##__VA_ARGS__);  \
   } while (0)
 
 #endif /* (RCSW_ERL != RCSW_ERL_NONE) */
@@ -343,12 +342,12 @@
  * cond is evaluated exactly once, in the if(); the assert() only reports the
  * failure (its text includes cond).
  */
-#define ER_ASSERT(cond, msg, ...)                 \
-  do {                                            \
-    if (RCSW_UNLIKELY(!(cond))) {                 \
-      ER_FATAL(msg, ##__VA_ARGS__);               \
-      assert(0 && "ER_ASSERT failed: " #cond);    \
-    }                                             \
+#define ER_ASSERT(cond, msg, ...)                   \
+  do {                                              \
+    if (RCSW_UNLIKELY(!(cond))) {                   \
+      ER_FATAL(msg, ##__VA_ARGS__);                 \
+      assert((cond) && "ER_ASSERT failed: " #cond); \
+    }                                               \
   } while (0)
 
 /**
@@ -357,11 +356,11 @@
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit a warning message.
  */
-#define ER_CONDW(cond, msg, ...)        \
-  do {                              \
-    if (cond) {                     \
+#define ER_CONDW(cond, msg, ...)   \
+  do {                             \
+    if (cond) {                    \
       ER_WARN(msg, ##__VA_ARGS__); \
-    }                               \
+    }                              \
   } while (0)
 
 /**
@@ -370,11 +369,11 @@
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit an informational message.
  */
-#define ER_CONDI(cond, msg, ...)        \
-  do {                              \
-    if (cond) {                     \
+#define ER_CONDI(cond, msg, ...)   \
+  do {                             \
+    if (cond) {                    \
       ER_INFO(msg, ##__VA_ARGS__); \
-    }                               \
+    }                              \
   } while (0)
 
 /**
@@ -383,7 +382,7 @@
  * Check a boolean condition \a cond in a function. If condition IS true,
  * emit a debug message.
  */
-#define ER_CONDD(cond, msg, ...)        \
+#define ER_CONDD(cond, msg, ...)    \
   do {                              \
     if (cond) {                     \
       ER_DEBUG(msg, ##__VA_ARGS__); \
@@ -409,12 +408,12 @@
  * \a msg as an ERROR event and go to the function's \c error label, which
  * must exist.
  */
-#define ER_CHECK(cond, msg, ...)    \
-  do {                              \
-    if (RCSW_UNLIKELY(!(cond))) {   \
-      ER_ERR(msg, ##__VA_ARGS__);   \
-      goto error;                   \
-    }                               \
+#define ER_CHECK(cond, msg, ...)  \
+  do {                            \
+    if (RCSW_UNLIKELY(!(cond))) { \
+      ER_ERR(msg, ##__VA_ARGS__); \
+      goto error;                 \
+    }                             \
   } while (0)
 
 /**
@@ -447,11 +446,11 @@
  * does this.
  */
 /** \cond INTERNAL */
-#define RCSW_ER_DISCARD_(...)                \
-  do {                                       \
-    if (0) {                                 \
-      RCSW_ER_PLUGIN_PRINTF(__VA_ARGS__);    \
-    }                                        \
+#define RCSW_ER_DISCARD_(...)             \
+  do {                                    \
+    if (0) {                              \
+      RCSW_ER_PLUGIN_PRINTF(__VA_ARGS__); \
+    }                                     \
   } while (0)
 /** \endcond */
 
@@ -504,4 +503,3 @@
 #ifndef DPRINTF
 #define DPRINTF(...) RCSW_ER_DISCARD_(__VA_ARGS__)
 #endif
-

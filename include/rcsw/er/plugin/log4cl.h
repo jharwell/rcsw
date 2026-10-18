@@ -62,12 +62,12 @@
  * equal to 0xFFFFFFFF (the default \ref RCSW_ER_MODID). Using the upper 32 bits
  * avoids both; see \rcswdoc{concepts/event-reporting/ids}.
  */
-#define RCSW_LOG4CL_MODULES                                                   \
-  LOG4CL_SELF, LOG4CL_DS_BSTREE, LOG4CL_DS_DARRAY, LOG4CL_DS_LLIST,           \
-    LOG4CL_DS_HASHMAP, LOG4CL_DS_RBUFFER, LOG4CL_MT_MPOOL, LOG4CL_SWBUS,      \
-    LOG4CL_GRIND, LOG4CL_DS_BINHEAP, LOG4CL_DS_MULTIFIFO,                    \
-    LOG4CL_DS_ADJMATRIX, LOG4CL_DS_MATRIX, LOG4CL_DS_DYNMATRIX,               \
-    LOG4CL_MT_RDWRLOCK, LOG4CL_ALG_SORT, LOG4CL_CONSOLE_MINIMON, LOG4CL_EXTERNAL
+#define RCSW_LOG4CL_MODULES                                                     \
+  LOG4CL_SELF, LOG4CL_DS_BSTREE, LOG4CL_DS_DARRAY, LOG4CL_DS_LLIST,             \
+    LOG4CL_DS_HASHMAP, LOG4CL_DS_RBUFFER, LOG4CL_MT_MPOOL, LOG4CL_SWBUS,        \
+    LOG4CL_GRIND, LOG4CL_DS_BINHEAP, LOG4CL_DS_MULTIFIFO, LOG4CL_DS_ADJMATRIX,  \
+    LOG4CL_DS_MATRIX, LOG4CL_DS_DYNMATRIX, LOG4CL_MT_RDWRLOCK, LOG4CL_ALG_SORT, \
+    LOG4CL_CONSOLE_MINIMON, LOG4CL_EXTERNAL
 
 /** \brief Module codes generated from \ref RCSW_LOG4CL_MODULES. */
 enum log4cl_module_codes { RCSW_XTABLE_SEQ_ENUM(RCSW_LOG4CL_MODULES) };
@@ -116,7 +116,6 @@ struct RCSW_ATTR(aligned(sizeof(dptr_t))) log4cl_module {
  * suppressed.
  *
  * \par Configure modules before reporting concurrently
- *
  * A report looks up its module under the lock, then checks the module's level
  * after releasing it. Installing modules (\ref log4cl_insmod()) is safe at
  * any time, but the following must only be called while no other thread can

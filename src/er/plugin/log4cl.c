@@ -36,7 +36,7 @@ static struct log4cl_plugin g_log4cl;
  * ran after log4cl_init()) are filtered at the default level instead of being
  * silently dropped. Its level tracks g_log4cl.default_lvl.
  */
-static struct log4cl_module s_log4cl_default_mod = {
+static struct log4cl_module g_log4cl_default_mod = {
   .id   = -1,
   .lvl  = RCSW_ERL_INFO,
   .name = "default",
@@ -140,7 +140,7 @@ status_t log4cl_init(void) {
       rstat = ERROR;
     } else {
       g_log4cl.default_lvl     = RCSW_ERL_INFO;
-      s_log4cl_default_mod.lvl = RCSW_ERL_INFO;
+      g_log4cl_default_mod.lvl = RCSW_ERL_INFO;
       g_log4cl.initialized     = true;
     }
   }
@@ -193,7 +193,7 @@ struct log4cl_module* log4cl_mod_query(int64_t id) {
     struct log4cl_module key = {.id = id};
     mod                      = llist_data_query(g_log4cl.modules, &key);
     if (NULL == mod) {
-      mod = &s_log4cl_default_mod; /* not installed: use the default level */
+      mod = &g_log4cl_default_mod; /* not installed: use the default level */
     }
   }
   LOG4CL_UNLOCK();
@@ -253,7 +253,7 @@ status_t log4cl_mod_lvl_set(int64_t id, uint8_t lvl) {
 void log4cl_default_lvl_set(uint8_t lvl) {
   LOG4CL_WRLOCK();
   g_log4cl.default_lvl     = lvl;
-  s_log4cl_default_mod.lvl = lvl;
+  g_log4cl_default_mod.lvl = lvl;
   LOG4CL_UNLOCK();
 } /* log4cl_default_lvl_set() */
 

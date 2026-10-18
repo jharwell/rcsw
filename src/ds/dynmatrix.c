@@ -240,7 +240,7 @@ status_t dynmatrix_transpose(struct dynmatrix* const matrix) {
   for (size_t i = 1; i < matrix->n_rows; ++i) {
     for (size_t j = 0; j < i; ++j) {
       utils_elt_swap(dynmatrix_access(matrix, i, j),
-                  dynmatrix_access(matrix, j, i),
+                     dynmatrix_access(matrix, j, i),
                      matrix->elt_size);
     } /* for(j..) */
   } /* for(i..) */

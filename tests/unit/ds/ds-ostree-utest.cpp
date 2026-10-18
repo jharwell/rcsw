@@ -250,6 +250,14 @@ CATCH_TEST_CASE("ostree_init needs no flags from the caller", "[ds][ostree]") {
 
 CATCH_TEST_CASE("ostree nodes in caller-provided storage are aligned",
                 "[ds][ostree][noalloc]") {
+  /*
+   * Nodes hold pointers, and caller-provided metadata is only laid out to
+   * RCSW_CONFIG_PTR_ALIGN, so this only holds when that is at least pointer
+   * alignment (see concepts/memory-model).
+   */
+  if (RCSW_CONFIG_PTR_ALIGN < alignof(void*)) {
+    CATCH_SKIP("RCSW_CONFIG_PTR_ALIGN is below pointer alignment on this host");
+  }
   constexpr size_t     kN = 20;
   std::vector<dptr_t>  meta(ostree_meta_space(kN) / sizeof(dptr_t));
   std::vector<dptr_t>  elements(ostree_element_space(kN, sizeof(int32_t)) /
@@ -261,8 +269,9 @@ CATCH_TEST_CASE("ostree nodes in caller-provided storage are aligned",
   c.max_elts = kN;
   c.meta     = meta.data();
   c.elements = elements.data();
-  c.flags    = RCSW_NOALLOC_META | RCSW_NOALLOC_DATA;
-  struct bstree* t = ostree_init(nullptr, &c);
+  c.flags    = RCSW_NOALLOC_HANDLE | RCSW_NOALLOC_META | RCSW_NOALLOC_DATA;
+  struct bstree  handle;
+  struct bstree* t = ostree_init(&handle, &c);
   CATCH_REQUIRE(nullptr != t);
 
   for (int32_t i = 0; i < static_cast<int32_t>(kN); ++i) {

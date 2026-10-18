@@ -78,8 +78,8 @@ struct rbuffer* rbuffer_init(struct rbuffer*                    rb_in,
                             params->flags & (RCSW_NOALLOC_DATA | RCSW_ZALLOC));
 
   RCSW_CHECK_PTR(rb->elements);
-  rb->start    = 0;
-  rb->current  = 0;
+  rb->start   = 0;
+  rb->current = 0;
 
   ER_DEBUG("type=%s,max_elts=%zu,elt_size=%zu,flags=0x%08x",
            rbuffer_type_str(rb),

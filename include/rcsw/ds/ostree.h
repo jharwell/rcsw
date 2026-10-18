@@ -142,7 +142,8 @@ static inline struct ostree_node* ostree_node_query(
  *
  * \param tree The ostree handle.
  *
- * \param node_in The node to start searching at (usually <tt>ostree_root(tree)</tt>).
+ * \param node_in The node to start searching at (usually
+ * <tt>ostree_root(tree)</tt>).
  *
  * \param i The element rank to select.
  *

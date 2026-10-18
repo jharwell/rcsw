@@ -39,10 +39,10 @@ _Static_assert(sizeof(struct ostree_node) == sizeof(struct bstree_node),
  * the platform ABI; these checks make any mismatch a build error instead of
  * silent corruption.
  */
-#define BSTREE_NODE_SAME_OFFSET(TYPE, MEMBER, BST_MEMBER)          \
-  _Static_assert(offsetof(struct TYPE, MEMBER) ==                  \
-                     offsetof(struct bstree_node, BST_MEMBER),     \
-                 #TYPE "." #MEMBER " must overlay bstree_node." #BST_MEMBER)
+#define BSTREE_NODE_SAME_OFFSET(TYPE, MEMBER, BST_MEMBER)                      \
+  _Static_assert(                                                              \
+    offsetof(struct TYPE, MEMBER) == offsetof(struct bstree_node, BST_MEMBER), \
+    #TYPE "." #MEMBER " must overlay bstree_node." #BST_MEMBER)
 
 BSTREE_NODE_SAME_OFFSET(ostree_node, key, key);
 BSTREE_NODE_SAME_OFFSET(ostree_node, data, data);

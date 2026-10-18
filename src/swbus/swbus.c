@@ -24,7 +24,6 @@
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
-
 static status_t swbus_subscriber_notify(struct swbus*         swb,
                                         struct mpool*         bp,
                                         struct swbus_sub*     sub,
@@ -94,6 +93,7 @@ static int swbus_sub_cmp(const void* a, const void* b) {
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct swbus* swbus_init(struct swbus*              swb_in,
                          const struct swbus_config* params) {
   RCSW_FPC_NV(NULL,

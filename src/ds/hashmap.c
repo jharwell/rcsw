@@ -196,6 +196,7 @@ static int hashnode_cmp(const void* const n1, const void* const n2) {
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+/* NOLINTNEXTLINE(readability-function-size) */
 struct hashmap* hashmap_init(struct hashmap*                    map_in,
                              const struct hashmap_config* const params) {
   RCSW_FPC_NV(NULL,
@@ -275,7 +276,7 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
   map->space.hashnodes =
     (void*)((uint8_t*)map->space.datablocks +
             utils_align_size(db_space_per_bucket * map->cfg.n_buckets,
-                            sizeof(dptr_t)));
+                             sizeof(dptr_t)));
 
   size_t hn_space_per_bucket =
     darray_element_space(params->bsize, sizeof(struct hashnode));

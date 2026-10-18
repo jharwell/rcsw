@@ -50,8 +50,9 @@ void th_printn(const void* node);
 int th_key_cmp(const void* a, const void* b) RCSW_PURE;
 
 /**
- * \brief Stub implementation so that unit tests OTHER than the stdio test
- * (which defines its own version of this) link.
+ * \brief Default character output for test builds that set
+ * RCSW_CONFIG_STDIO_PUTCHAR=th_putchar: forwards to putchar(). Weak, so the
+ * stdio test can define its own.
  */
 int th_putchar(int c);
 

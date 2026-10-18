@@ -18,6 +18,7 @@
 #include <cstring>
 #include <map>
 #include <mutex>
+#include <random>
 #include <thread>
 
 #include <catch2/catch_test_macros.hpp>
@@ -304,11 +305,17 @@ static void concurrent_stress_test(const struct swbus_config* config,
   std::mutex        mtx;
 
   auto dist   = std::uniform_int_distribution<size_t>(0, config->max_pools - 1);
-  auto pub_cb = [&]() {
+  /*
+   * Each thread gets its own engine: th::make_rng() is a single shared
+   * engine, and drawing from it in several threads at once is a data race.
+   */
+  auto pub_cb = [&](size_t id) {
+    std::mt19937 rng{Catch::getSeed() + 1000U + static_cast<uint32_t>(id)};
+    auto         pick = dist;
     for (size_t i = 0; i < TH_RXQ_SIZE * 2 / n_threads; ++i) {
       status_t rval = swbus_publish(swbus,
                                     i % TH_MAX_PID,
-                                    config->pools[dist(th::make_rng())].elt_size,
+                                    config->pools[pick(rng)].elt_size,
                                     buf);
       mtx.lock();
       checks.push_back(rval == OK);
@@ -317,9 +324,11 @@ static void concurrent_stress_test(const struct swbus_config* config,
   };
   auto dist2  = std::uniform_int_distribution<size_t>(0, 1000);
   auto sub_cb = [&](size_t id) {
+    std::mt19937    rng{Catch::getSeed() + static_cast<uint32_t>(id)};
+    auto            pick  = dist2;
     size_t          count = 0;
     status_t        rval;
-    struct timespec to = {.tv_sec = 0, .tv_nsec = (int64_t)dist2(th::make_rng())};
+    struct timespec to = {.tv_sec = 0, .tv_nsec = (int64_t)pick(rng)};
     auto&           subs = subscriptions[id];
     while (count < 100) {
       struct swbus_rxq_ent* ent = swbus_rxq_timedwait(swbus, rxqs[id], &to);
@@ -350,7 +359,7 @@ static void concurrent_stress_test(const struct swbus_config* config,
   } /* for(i..) */
 
   for (size_t i = 0; i < n_publishers; ++i) {
-    publishers.push_back(std::thread(pub_cb));
+    publishers.push_back(std::thread(pub_cb, i));
   } /* for(i..) */
 
   for (size_t i = 0; i < n_consumers; ++i) {

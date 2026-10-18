@@ -31,6 +31,7 @@
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct bstree* bstree_init_internal(struct bstree*                    tree_in,
                                     const struct bstree_config* const params,
                                     size_t                            node_size) {
@@ -43,9 +44,9 @@ struct bstree* bstree_init_internal(struct bstree*                    tree_in,
                params->flags & (RCSW_NOALLOC_HANDLE | RCSW_ZALLOC));
   RCSW_CHECK_PTR(tree);
 
-  tree->cfg   = *params;
-  tree->root  = NULL;
-  tree->nil   = NULL;
+  tree->cfg  = *params;
+  tree->root = NULL;
+  tree->nil  = NULL;
 
   if (params->flags & RCSW_NOALLOC_META) {
     RCSW_CHECK_PTR(params->meta);

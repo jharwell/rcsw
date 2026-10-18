@@ -20,7 +20,6 @@
 
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
-#include "rcsw/utils/bit.h"
 
 /*******************************************************************************
  * Public API

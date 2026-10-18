@@ -116,7 +116,8 @@ RCSW_API status_t utils_mem_dump16(const void* buf, size_t n_bytes);
 RCSW_API void utils_mem_dump8(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 4 byte words in memory in hexadecimal (see the file description), with offsets
+ * \brief Dump 4 byte words in memory in hexadecimal (see the file description),
+ * with offsets
  *
  * \param buf Address for start of dump. If this is not 32-bit aligned, ERROR is
  *            returned.
@@ -128,7 +129,8 @@ RCSW_API void utils_mem_dump8(const void* buf, size_t n_bytes);
 RCSW_API status_t utils_mem_dump32v(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 2 byte words in memory in hexadecimal (see the file description), with offsets
+ * \brief Dump 2 byte words in memory in hexadecimal (see the file description),
+ * with offsets
  *
  * \param buf Address for start of dump. If this is not 16-bit aligned, ERROR is
  *            returned.
@@ -140,7 +142,8 @@ RCSW_API status_t utils_mem_dump32v(const void* buf, size_t n_bytes);
 RCSW_API status_t utils_mem_dump16v(const void* buf, size_t n_bytes);
 
 /**
- * \brief Dump 1 byte words in memory in hexadecimal (see the file description), with offsets
+ * \brief Dump 1 byte words in memory in hexadecimal (see the file description),
+ * with offsets
  *
  * \param buf Address for start of dump
  * \param n_bytes How large of a dump to take, in bytes

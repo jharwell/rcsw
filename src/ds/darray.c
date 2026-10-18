@@ -158,6 +158,7 @@ static inline uint8_t* darray_raw(const struct darray* const arr, size_t i) {
 /*******************************************************************************
  * Public API
  ******************************************************************************/
+/* NOLINTNEXTLINE(readability-function-size) */
 struct darray* darray_init(struct darray*                    arr_in,
                            const struct darray_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->elt_size > 0, params->max_elts != 0);
@@ -332,9 +333,7 @@ status_t darray_insert(struct darray* const arr,
             darray_raw(arr, index),
             (arr->current - index) * arr->elt_size);
   } else { /* if not, just move element at index to end of array */
-    memmove(darray_raw(arr, arr->current),
-            darray_raw(arr, index),
-            arr->elt_size);
+    memmove(darray_raw(arr, arr->current), darray_raw(arr, index), arr->elt_size);
   }
   memcpy(darray_raw(arr, index), e, arr->elt_size);
   arr->current++;
@@ -445,7 +444,9 @@ status_t darray_data_copy(struct darray* const       arr1,
 
   if (arr2->current > arr1->capacity) {
     if (-1 != arr1->max_elts && arr2->current > (size_t)arr1->max_elts) {
-      ER_ERR("Cannot copy %zu elements: max_elts=%d", arr2->current, arr1->max_elts);
+      ER_ERR("Cannot copy %zu elements: max_elts=%d",
+             arr2->current,
+             arr1->max_elts);
       errno = ENOSPC;
       return ERROR;
     }

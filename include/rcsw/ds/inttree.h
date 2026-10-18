@@ -192,7 +192,8 @@ RCSW_API struct bstree* inttree_init(struct bstree*              tree_in,
 /**
  * \brief Determine if the given interval overlaps any in the interval tree.
  *
- * To search the entire tree, pass <tt>inttree_root(tree)</tt> (see \ref inttree_root()) as \p root.
+ * To search the entire tree, pass <tt>inttree_root(tree)</tt> (see \ref
+ * inttree_root()) as \p root.
  * (\c tree->root is a sentinel, not the root node.)
  *
  * \param tree The interval tree handle

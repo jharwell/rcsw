@@ -20,8 +20,8 @@
 #include "rcsw/ds/ds.h"
 #include "rcsw/ds/llist.h"
 #include "rcsw/er/client.h"
-#include "rcsw/utils/byteops.h"
 #include "rcsw/er/macros.h"
+#include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
  * Constants
@@ -120,8 +120,8 @@ static int partition(void* const a,
       break;
     }
     utils_elt_swap(arr + ((size_t)left * elt_size),
-              arr + ((size_t)right * elt_size),
-              elt_size);
+                   arr + ((size_t)right * elt_size),
+                   elt_size);
   } /* for(;;) */
 
   if (right != min_index) {

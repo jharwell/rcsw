@@ -118,7 +118,6 @@ static inline size_t binheap_rchild(size_t i) { return (2 * i) + 1; }
  */
 static inline size_t binheap_parent(size_t i) { return i / 2; }
 
-
 /**
  * \brief Determine if the heap is currently full.
  *

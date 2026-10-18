@@ -130,6 +130,13 @@ Plugin Comparison
        ``RCSW_ER_DEINIT()`` must happen while no other thread is reporting,
        e.g. at startup or shutdown.
 
+   * - Works with :cmake:variable:`RCSW_CONFIG_NOALLOC`
+     - Yes
+     - No
+     - Yes
+     - LOG4CL keeps its modules in a heap-allocated list. zlog allocates
+       through its own library, not RCSW.
+
    * - Best for
      - Bare-metal, bootstraps, no OS
      - Embedded systems, moderate complexity

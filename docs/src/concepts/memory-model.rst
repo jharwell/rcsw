@@ -142,6 +142,13 @@ always suitably aligned for use as caller-provided storage. Choose the
 alignment of the most strictly aligned type you store; e.g., 8 on 64-bit
 targets that store pointers, or structs containing them.
 
+RCSW's own list and tree nodes contain pointers, so with caller-provided
+metadata (:c:macro:`RCSW_NOALLOC_META`) the value must also be at least the
+target's pointer alignment. Below that (e.g., 4 on a 64-bit target), every
+node in the metadata region has misaligned pointers: undefined behavior that
+works on x86 but traps or slows down on stricter targets. Metadata the
+library allocates itself is not affected.
+
 The library checks at build time that the target's ABI really gives ``dptr_t``
 that alignment; on 32-bit x86, for example, ``uint64_t`` is only 4-byte aligned
 in structs, so 8 is rejected there.

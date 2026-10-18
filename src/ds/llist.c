@@ -271,6 +271,7 @@ const struct ds_ops llist_iter_ops = {
  ******************************************************************************/
 BEGIN_C_DECLS
 
+/* NOLINTNEXTLINE(readability-function-size) */
 struct llist* llist_init(struct llist*                    list_in,
                          const struct llist_config* const params) {
   RCSW_FPC_NV(NULL, params != NULL, params->max_elts != 0, params->elt_size > 0);
@@ -317,9 +318,9 @@ struct llist* llist_init(struct llist*                    list_in,
       "passed\n");
   }
 
-  list->first    = NULL;
-  list->last     = NULL;
-  list->sorted   = false;
+  list->first  = NULL;
+  list->last   = NULL;
+  list->sorted = false;
 
   ER_DEBUG("elt_size=%zu max_elts=%d flags=0x%08x",
            list->cfg.elt_size,
@@ -685,8 +686,9 @@ struct llist* llist_filter(struct llist* list,
    */
   uint32_t ptr_flags = RCSW_DS_LLIST_DB_DISOWN | RCSW_DS_LLIST_DB_PTR;
   if ((flags & ptr_flags) && !(list->cfg.flags & ptr_flags)) {
-    ER_ERR("Cannot filter into a list storing pointers from a list owning its "
-           "data: the pointers would dangle");
+    ER_ERR(
+      "Cannot filter into a list storing pointers from a list owning its "
+      "data: the pointers would dangle");
     errno = EINVAL;
     return NULL;
   }
@@ -732,7 +734,6 @@ error:
   return NULL;
 } /* llist_filter() */
 
-/* NOLINTNEXTLINE(readability-function-size) */
 status_t llist_remove_if(struct llist* list,
                          bool_t (*pred)(const void* const e)) {
   RCSW_FPC_NV(ERROR, list != NULL, pred != NULL);
@@ -768,8 +769,9 @@ status_t llist_remove_if(struct llist* list,
 
 error:
   return ERROR;
-} /* llist_remove_if() */
+}
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t llist_splice(struct llist*      list1,
                       struct llist*      list2,
                       struct llist_node* node) {
@@ -854,7 +856,7 @@ status_t llist_splice(struct llist*      list1,
   }
   rcsw_free(list2, list2->cfg.flags & RCSW_NOALLOC_HANDLE);
   return OK;
-} /* llist_splice() */
+}
 
 status_t llist_map(struct llist* list, void (*f)(void* e)) {
   RCSW_FPC_NV(ERROR, list != NULL, f != NULL);
@@ -863,7 +865,7 @@ status_t llist_map(struct llist* list, void (*f)(void* e)) {
   /* f() may have modified elements */
   list->sorted = false;
   return OK;
-} /* llist_map() */
+}
 
 status_t llist_inject(struct llist* const list,
                       void (*f)(void* e, void* res),
@@ -873,7 +875,7 @@ status_t llist_inject(struct llist* const list,
   LLIST_FOREACH(list, next, curr) { f(curr->data, result); }
 
   return OK;
-} /* llist_inject() */
+}
 
 struct ds_iterator* llist_iter_init(struct ds_iterator* iter,
                                     struct llist*       list,

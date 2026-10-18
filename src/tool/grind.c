@@ -31,8 +31,8 @@
 /*******************************************************************************
  * Private API
  ******************************************************************************/
-static inline const char*
-grinder_mode_str(const struct grinder* const the_grinder) {
+static inline const char* grinder_mode_str(
+  const struct grinder* const the_grinder) {
   switch (the_grinder->cfg.mode) {
     case RCSW_GRIND_MODE_COUNT:
       return "counting";
@@ -514,6 +514,7 @@ error:
   return ERROR;
 } /* grind_start */
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t grind_capture_end(struct grinder* const the_grinder,
                            const char* const     name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
@@ -589,6 +590,7 @@ error:
   return ERROR;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t grind_capture_tick(struct grinder* const the_grinder,
                             const char* const     name) {
   RCSW_FPC_NV(ERROR, NULL != the_grinder, NULL != name);
@@ -678,6 +680,7 @@ error:
   return ERROR;
 }
 
+/* NOLINTNEXTLINE(readability-function-size) */
 status_t grind_capture_count(struct grinder* const the_grinder,
                              const char* const     name) {
   RCSW_FPC_NV(ERROR, the_grinder != NULL, NULL != name);
@@ -815,16 +818,16 @@ int grind_report_utilization_buf(const struct grinder* const the_grinder,
    * snprintf() semantics: keep counting once the buffer is full so the caller
    * learns how large it needs to be.
    */
-#define GRIND_APPEND(...)                                               \
-  do {                                                                  \
+#define GRIND_APPEND(...)                                                \
+  do {                                                                   \
     /* NULL + 0 is undefined in C, so a sizing call passes NULL as is */ \
     int n_ = snprintf((NULL == buf) ? NULL : buf + RCSW_MIN(total, len), \
-                      len - RCSW_MIN(total, len),                       \
-                      __VA_ARGS__);                                     \
-    if (n_ < 0) {                                                       \
-      return -1;                                                        \
-    }                                                                   \
-    total += (size_t)n_;                                                \
+                      len - RCSW_MIN(total, len),                        \
+                      __VA_ARGS__);                                      \
+    if (n_ < 0) {                                                        \
+      return -1;                                                         \
+    }                                                                    \
+    total += (size_t)n_;                                                 \
   } while (0)
 
   GRIND_APPEND("Interval: %.8f\n", divisor);

@@ -65,7 +65,7 @@ static struct minimon g_minimon;
  * \brief Displays the help message for minimon showing valid commands and what
  * the syntax for each is.
  */
-static void mini_cmd_help_all(const char* cmdname,
+static void mini_cmd_help_all(const char*                  cmdname,
                               const union minimon_cmd_arg* args);
 
 /**
@@ -73,8 +73,7 @@ static void mini_cmd_help_all(const char* cmdname,
  * contents of memory are printed to the serial terminal. The address is not
  * checked for alignment.
  */
-static void mini_cmd_read(const char* cmdname,
-                          const union minimon_cmd_arg* args);
+static void mini_cmd_read(const char* cmdname, const union minimon_cmd_arg* args);
 
 /**
  * \brief Writes 1 or more words of memory, starting at the specified
@@ -83,7 +82,7 @@ static void mini_cmd_read(const char* cmdname,
  ** For large writes, the progress is printed to the serial terminal. The
  * starting address is not checked for word-alignment.
  */
-static void mini_cmd_write(const char* cmdname,
+static void mini_cmd_write(const char*                  cmdname,
                            const union minimon_cmd_arg* args);
 
 /**
@@ -93,22 +92,19 @@ static void mini_cmd_write(const char* cmdname,
  * This function only applies to the CPU that minimon is running on;
  * multiprocessing jumps not supported.
  */
-static void mini_cmd_jump(const char* cmdname,
-                          const union minimon_cmd_arg* args);
+static void mini_cmd_jump(const char* cmdname, const union minimon_cmd_arg* args);
 
 /**
  * \brief Receives a program byte by byte through the serial terminal
  * and then writes it to the specified memory location.
  */
-static void mini_cmd_load(const char* cmdname,
-                          const union minimon_cmd_arg* args);
+static void mini_cmd_load(const char* cmdname, const union minimon_cmd_arg* args);
 
 /**
  * \brief Send bytes from a specified memory location through the serial
  * terminal.
  */
-static void mini_cmd_send(const char* cmdname,
-                          const union minimon_cmd_arg* args);
+static void mini_cmd_send(const char* cmdname, const union minimon_cmd_arg* args);
 
 /*******************************************************************************
  * Private Functions
@@ -192,8 +188,8 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
                .long_help  = "The number of 32-bit words to read",
                .required   = false,
                .dflt       = {.num = 1}}}},
-  {.name   = "load",
-   .alias  = "l",
+  {.name  = "load",
+   .alias = "l",
    .help =
      "Load bytes from the remote target into memory, via stream1 if set (else "
      "stdio_getchar())",
@@ -245,14 +241,18 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
           "\t\tNMEA - The source buffer as 32-bit words (SIZE rounded up to\r\n"
           "\t\t       whole words), in ASCII packets of " RCSW_XSTR(
             MINIMON_NMEA_CHUNK_SIZE) " bytes:\r\n"
-          "\t\t\r\n"
-          "\t\t       $SEND,ID,X,Y,Z,...*CC\r\n"
-          "\t\t\r\n"
-          "\t\t       ID is the 0-based packet index. X,Y,Z,... are the\r\n"
-          "\t\t       words in unsigned decimal. CC is a one byte rotating\r\n"
-          "\t\t       XOR checksum of the characters between '$' and '*',\r\n"
-          "\t\t       in two hex digits. See docs for more details.\r\n"
-          "\t\t\r\n",
+                                     "\t\t\r\n"
+                                     "\t\t       $SEND,ID,X,Y,Z,...*CC\r\n"
+                                     "\t\t\r\n"
+                                     "\t\t       ID is the 0-based packet index. "
+                                     "X,Y,Z,... are the\r\n"
+                                     "\t\t       words in unsigned decimal. CC "
+                                     "is a one byte rotating\r\n"
+                                     "\t\t       XOR checksum of the characters "
+                                     "between '$' and '*',\r\n"
+                                     "\t\t       in two hex digits. See docs for "
+                                     "more details.\r\n"
+                                     "\t\t\r\n",
         .required = true,
       }}},
   {.name   = "write",
@@ -297,7 +297,6 @@ static const struct minimon_cmd g_minimon_builtin_cmds[] = {
      }},
 };
 
-
 /*******************************************************************************
  * Private Functions
  ******************************************************************************/
@@ -316,7 +315,8 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
   const char* digits = numstr;
   bool_t      is_hex = false;
 
-  if (stdio_strncmp(numstr, "0X", 2) == 0 || stdio_strncmp(numstr, "0x", 2) == 0) {
+  if (stdio_strncmp(numstr, "0X", 2) == 0 ||
+      stdio_strncmp(numstr, "0x", 2) == 0) {
     is_hex = true;
     digits += 2;
   }
@@ -324,9 +324,9 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
   size_t max_digits = is_hex ? 8 : 10;
   if (length == 0 || length > max_digits) {
     ER_ERR("'%s': expected 1-%zu %s digits",
-               numstr,
-               max_digits,
-               is_hex ? "hex" : "decimal");
+           numstr,
+           max_digits,
+           is_hex ? "hex" : "decimal");
     return ERROR;
   }
 
@@ -620,7 +620,7 @@ static void mini_cmd_help(const struct minimon_cmd* cmd,
   } /* for(j..) */
 } /* mini_cmd_help() */
 
-static void mini_cmd_help_all(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_help_all(RCSW_UNUSED const char*      cmdname,
                               const union minimon_cmd_arg* args) {
   const char* target = args[0].s;
 
@@ -652,7 +652,7 @@ static void mini_cmd_help_all(RCSW_UNUSED const char*         cmdname,
   }
 } /* mini_cmd_help() */
 
-static void mini_cmd_read(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_read(RCSW_UNUSED const char*      cmdname,
                           const union minimon_cmd_arg* args) {
   uint32_t addr = args[0].num;
   uint32_t size = args[1].num;
@@ -662,7 +662,8 @@ static void mini_cmd_read(RCSW_UNUSED const char*         cmdname,
   for (uint32_t i = 0; i < size; i++) {
     if ((i % MINIMON_READ_WORDS_PER_LINE) == 0) {
       /* show starting address for the next line of words */
-      stdio_printf("\r\n0x%08" PRIX32 ": ", addr + (i * (uint32_t)sizeof(uint32_t)));
+      stdio_printf("\r\n0x%08" PRIX32 ": ",
+                   addr + (i * (uint32_t)sizeof(uint32_t)));
     }
 
     /* do the actual read and display it */
@@ -670,7 +671,7 @@ static void mini_cmd_read(RCSW_UNUSED const char*         cmdname,
   }
 } /* mini_cmd_read() */
 
-static void mini_cmd_write(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_write(RCSW_UNUSED const char*      cmdname,
                            const union minimon_cmd_arg* args) {
   uint32_t addr  = args[0].num;
   uint32_t value = args[1].num;
@@ -683,7 +684,7 @@ static void mini_cmd_write(RCSW_UNUSED const char*         cmdname,
   }
 } /* mini_cmd_write() */
 
-static void mini_cmd_jump(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_jump(RCSW_UNUSED const char*      cmdname,
                           const union minimon_cmd_arg* args) {
   uint32_t addr = args[0].num;
 
@@ -703,7 +704,7 @@ static void mini_cmd_jump(RCSW_UNUSED const char*         cmdname,
   asm volatile("nop ; nop ; nop");
 } /* mini_cmd_jump() */
 
-static void mini_cmd_load(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_load(RCSW_UNUSED const char*      cmdname,
                           const union minimon_cmd_arg* args) {
   uint32_t addr = args[0].num;
   uint32_t size = args[1].num;
@@ -764,11 +765,10 @@ static void mini_cmd_send_nmea(const volatile uint32_t* addrp,
    */
   for (uint32_t pkt = 0; pkt * MINIMON_NMEA_WORDS_PER_PKT < n_words; ++pkt) {
     if (progress) {
-      stdio_printf("\rSending %" PRIu32 " bytes using protocol 'nmea'...%" PRIu32
-                   "%%",
-                   size,
-                   (uint32_t)((uint64_t)pkt * MINIMON_NMEA_CHUNK_SIZE * 100 /
-                              size));
+      stdio_printf(
+        "\rSending %" PRIu32 " bytes using protocol 'nmea'...%" PRIu32 "%%",
+        size,
+        (uint32_t)((uint64_t)pkt * MINIMON_NMEA_CHUNK_SIZE * 100 / size));
     }
     mini_data_byte_put('$', &g_minimon);
     int     n        = stdio_snprintf(tmp, sizeof(tmp), "SEND,%" PRIu32, pkt);
@@ -813,14 +813,14 @@ static void mini_cmd_send_raw(const volatile uint32_t* addrp,
   } /* while(...) */
 }
 
-static void mini_cmd_send(RCSW_UNUSED const char*         cmdname,
+static void mini_cmd_send(RCSW_UNUSED const char*      cmdname,
                           const union minimon_cmd_arg* args) {
   uint32_t    addr      = args[0].num;
   uint32_t    size      = args[1].num;
   const char* protocolp = args[2].s;
 
   /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-  const volatile uint32_t* addrp = (const volatile uint32_t*)(uintptr_t)addr;
+  const volatile uint32_t* addrp    = (const volatile uint32_t*)(uintptr_t)addr;
   bool_t                   progress = mini_progress_on(true);
   if (mini_streq_nocase(protocolp, "raw")) {
     mini_cmd_send_raw(addrp, size, progress);

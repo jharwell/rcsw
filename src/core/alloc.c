@@ -99,6 +99,7 @@ void rcsw_free(void* ptr, uint32_t flags) {
 
 #if defined(RCSW_CONFIG_NOALLOC)
   /* memory allocation is disabled entirely--nothing to do */
+  (void)flags;
   return;
 #else
   /*

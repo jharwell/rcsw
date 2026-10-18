@@ -54,8 +54,9 @@ struct adjmatrix_config {
   bool_t is_directed;
 
   /**
-   * Are the graph edges weighted? Must be false if \ref adjmatrix_config.is_directed is false:
-   * weighted undirected graphs are not supported (see \ref adjmatrix).
+   * Are the graph edges weighted? Must be false if \ref
+   * adjmatrix_config.is_directed is false: weighted undirected graphs are not
+   * supported (see \ref adjmatrix).
    */
   bool_t is_weighted;
 };

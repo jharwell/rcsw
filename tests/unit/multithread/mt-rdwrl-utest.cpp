@@ -99,12 +99,18 @@ static void concurrency_test(uint32_t flags, size_t n_threads) {
   // NOLINTNEXTLINE(readability-function-cognitive-complexity)
   auto cb = [&](size_t id) {
     struct timespec to = {.tv_sec = 0, .tv_nsec = 1000000};
+    /*
+     * One engine per thread: th::make_rng() is a single shared engine, and
+     * drawing from it in several threads at once is a data race.
+     */
+    std::mt19937 rng{Catch::getSeed() + static_cast<uint32_t>(id)};
+    auto         coin = dist;
     while (n_readers < 1000 || n_writers < 1000) {
       /* randomly choose to be a reader/writer */
-      bool is_writer = dist(th::make_rng());
+      bool is_writer = coin(rng);
 
       /* randomly choose to use a timeout or not */
-      bool use_to = dist(th::make_rng());
+      bool use_to = coin(rng);
 
       if (is_writer) {
         if (use_to) {

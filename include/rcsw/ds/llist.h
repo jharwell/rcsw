@@ -146,11 +146,11 @@ struct llist {
    */
   struct llist_config cfg;
 
-  struct llist_space_mgmt space;     ///< Views into caller-provided memory.
-  size_t                  current;   ///< # of nodes currently in the list.
-  bool_t                  sorted;    ///< If true, list is currently sorted.
-  struct llist_node*      first;     ///< First node (for easy prepending).
-  struct llist_node*      last;      ///< Last node (for easy appending).
+  struct llist_space_mgmt space;    ///< Views into caller-provided memory.
+  size_t                  current;  ///< # of nodes currently in the list.
+  bool_t                  sorted;   ///< If true, list is currently sorted.
+  struct llist_node*      first;    ///< First node (for easy prepending).
+  struct llist_node*      last;     ///< Last node (for easy appending).
 };
 
 /*******************************************************************************
@@ -174,8 +174,9 @@ struct llist {
  * \param VAR The name of the \ref llist_node* local variable to each node will be
  *            assigned to when iterating over the list.
  */
-#define LLIST_FOREACH(LIST, DIR, VAR) \
-  for (struct llist_node*(VAR) = (LIST)->first; (VAR) != NULL; (VAR) = (VAR)->DIR)
+#define LLIST_FOREACH(LIST, DIR, VAR)                            \
+  for (struct llist_node * (VAR) = (LIST)->first; (VAR) != NULL; \
+       (VAR)                     = (VAR)->DIR)
 
 /**
  * \brief Same as \ref LLIST_FOREACH(). but the \p START parameter allows you to
@@ -198,7 +199,7 @@ struct llist {
  *            the list.
  */
 #define LLIST_ITER(LIST, START, DIR, VAR) \
-  for (struct llist_node*(VAR) = (START); (VAR) != NULL; (VAR) = (VAR)->DIR)
+  for (struct llist_node * (VAR) = (START); (VAR) != NULL; (VAR) = (VAR)->DIR)
 
 /*******************************************************************************
  * Public API
@@ -559,7 +560,6 @@ RCSW_API status_t llist_map(struct llist* list, void (*f)(void* e));
 RCSW_API status_t llist_inject(struct llist* list,
                                void (*f)(void* e, void* res),
                                void* result);
-
 
 /**
  * \brief Vtable of traversal operations for \ref llist.

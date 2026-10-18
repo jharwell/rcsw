@@ -431,7 +431,7 @@ CATCH_TEST_CASE("hashmap: key_len 0 means RCSW_HASHMAP_KEYSIZE-byte keys",
 }
 
 CATCH_TEST_CASE("hashmap_init rejects key_len above RCSW_HASHMAP_KEYSIZE",
-                "[ds][hashmap]") {
+                "[ds][hashmap][noalloc]") {
   struct hashmap_config c;
   memset(&c, 0, sizeof(c));
   c.elt_size  = sizeof(int);
@@ -464,7 +464,7 @@ CATCH_TEST_CASE("hashmap_init fails cleanly without promised caller memory",
 }
 
 CATCH_TEST_CASE("hashmap_element_space is enough for any element size",
-                "[ds][hashmap][noalloc]") {
+                "[ds][hashmap]") {
   /* 12 bytes: the datablocks do not end on a dptr_t boundary */
   struct rec {
     char tag[12];

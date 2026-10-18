@@ -19,6 +19,7 @@
  * Includes
  ******************************************************************************/
 #define CATCH_CONFIG_PREFIX_ALL
+#include <cerrno>
 #include <csetjmp>
 #include <cstdio>
 #include <cstring>
@@ -70,6 +71,25 @@ struct minimon_cmd make_finish_cmd() {
  * \p config defaults to the built-ins plus a single "finish" command;
  * \p after_init runs between minimon_init() and minimon_start().
  */
+/*
+ * A read/write file to capture stdout into. On Linux this is an anonymous
+ * memfd, so it works where the filesystem (or /tmp) is read-only, as in some
+ * CI containers; tmpfile() is the fallback.
+ */
+FILE* open_capture() {
+#if defined(__linux__) && defined(MFD_CLOEXEC)
+  int fd = memfd_create("minimon-capture", MFD_CLOEXEC);
+  if (fd >= 0) {
+    FILE* f = fdopen(fd, "w+");
+    if (nullptr != f) {
+      return f;
+    }
+    close(fd);
+  }
+#endif
+  return tmpfile();
+}
+
 uint32_t run_monitor(const char*                  input,
                      const struct minimon_config* config     = nullptr,
                      const std::function<void()>& after_init = {},
@@ -83,7 +103,12 @@ uint32_t run_monitor(const char*                  input,
   fflush(stdout);
   int   saved_in  = dup(STDIN_FILENO);
   int   saved_out = dup(STDOUT_FILENO);
-  FILE* capture   = (nullptr != output) ? tmpfile() : nullptr;
+  FILE* capture   = (nullptr != output) ? open_capture() : nullptr;
+  if (nullptr != output) {
+    /* Fail loudly: without a capture file the output would just be lost */
+    CATCH_INFO("could not create an output capture file: " << strerror(errno));
+    CATCH_REQUIRE(nullptr != capture);
+  }
   int   sink = (nullptr != capture) ? fileno(capture)
                                     : open("/dev/null", O_WRONLY);
   dup2(fds[0], STDIN_FILENO);
@@ -356,6 +381,7 @@ CATCH_TEST_CASE("minimon write and read access memory",
   std::string           in = "w " + addr_of(mem) + " 0xDEADBEEF 2\n" + "read " +
                    addr_of(mem) + " 3\n" + "finish 1\n";
   CATCH_REQUIRE(1 == run_monitor(in.c_str(), &c, {}, &out));
+  CATCH_INFO("captured output: [" << out << "]");
   CATCH_REQUIRE(0xDEADBEEFU == mem[0]);
   CATCH_REQUIRE(0xDEADBEEFU == mem[1]);
   CATCH_REQUIRE(0x12345678U == mem[2]);
@@ -374,6 +400,7 @@ CATCH_TEST_CASE("minimon send raw on stream0 sends exactly SIZE bytes",
   std::string           out;
   std::string in = "send " + addr_of(mem) + " 6 RAW\nfinish 1\n";
   CATCH_REQUIRE(1 == run_monitor(in.c_str(), &c, {}, &out));
+  CATCH_INFO("mem at " << addr_of(mem) << ", captured output: [" << out << "]");
   CATCH_REQUIRE(out.find("ABCDEF") != std::string::npos);
   CATCH_REQUIRE(out.find("ABCDEFG") == std::string::npos);
   /* no progress text mixed into the data */
@@ -391,6 +418,7 @@ CATCH_TEST_CASE("minimon send and load use stream1, with progress on stream0",
   std::string           out;
   std::string in = "send " + addr_of(mem) + " 6 raw\nfinish 1\n";
   CATCH_REQUIRE(1 == run_monitor(in.c_str(), &c, {}, &out));
+  CATCH_INFO("captured output: [" << out << "]");
   CATCH_REQUIRE("ABCDEF" == g_s1_out);
   CATCH_REQUIRE(out.find("Sending 6 bytes") != std::string::npos);
 

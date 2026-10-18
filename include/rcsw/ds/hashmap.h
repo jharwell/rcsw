@@ -19,8 +19,8 @@
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
 #include "rcsw/ds/darray.h"
-#include "rcsw/utils/align.h"
 #include "rcsw/ds/ds.h"
+#include "rcsw/utils/align.h"
 
 /*******************************************************************************
  * Constant Definitions
@@ -202,10 +202,10 @@ struct hashmap {
   struct hashmap_stats stats;
 
   /**
-   * Only used with \ref RCSW_DS_HASHMAP_LINPROB. The furthest past its home bucket any
-   * node has been placed since init or the last \ref hashmap_clear(). Lookups
-   * probe only this many buckets after the home bucket. Never decreases on
-   * remove, so it is always an upper bound. Always 0 without linear probing.
+   * Only used with \ref RCSW_DS_HASHMAP_LINPROB. The furthest past its home
+   * bucket any node has been placed since init or the last \ref hashmap_clear().
+   * Lookups probe only this many buckets after the home bucket. Never decreases
+   * on remove, so it is always an upper bound. Always 0 without linear probing.
    */
   size_t max_probe;
 
@@ -271,7 +271,7 @@ static inline size_t hashmap_element_space(size_t n_buckets,
   size_t max_elts = n_buckets * bucket_size;
   return ds_meta_space(max_elts) +
          utils_align_size(ds_elt_space_simple(max_elts, elt_size),
-                         sizeof(dptr_t)) +
+                          sizeof(dptr_t)) +
          darray_element_space(max_elts, sizeof(struct hashnode));
 }
 

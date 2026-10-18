@@ -35,7 +35,7 @@ int g_evaluated = 0;
  * Test Cases
  ******************************************************************************/
 CATCH_TEST_CASE("RCSW_CONFIG_NO_GRIND compiles the RCSW_GRIND_* macros out",
-                "[tool][grind]") {
+                "[tool][grind][noalloc]") {
   g_evaluated = 0;
   /* Arguments are never evaluated, so a NULL grinder is never used */
   RCSW_GRIND_START(touch(), 0);

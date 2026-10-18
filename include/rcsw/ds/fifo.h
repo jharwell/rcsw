@@ -19,6 +19,7 @@
 #include "rcsw/core/compilers.h"
 #include "rcsw/core/core.h"
 #include "rcsw/core/fpc.h"
+#include "rcsw/ds/ds.h"
 #include "rcsw/ds/rbuffer.h"
 
 /*******************************************************************************
@@ -172,16 +173,16 @@ static inline size_t fifo_element_space(size_t max_elts, size_t elt_size) {
  * \return The initialized FIFO, or NULL if an error occurred (errno is set by
  * \ref rbuffer_init()).
  */
-static inline RCSW_WUR struct fifo*
-fifo_init(struct fifo* const fifo_in, const struct fifo_config* const params) {
+static inline RCSW_WUR struct fifo* fifo_init(
+  struct fifo* const fifo_in, const struct fifo_config* const params) {
   RCSW_FPC_NV(NULL, NULL != params);
-  struct rbuffer_config rb_params = {.cmpe     = NULL,
-                                     .printe   = params->printe,
-                                     .elements = params->elements,
-                                     .elt_size = params->elt_size,
-                                     .max_elts = params->max_elts,
-                                     .flags    = params->flags |
-                                              RCSW_DS_RBUFFER_AS_FIFO};
+  struct rbuffer_config rb_params = {
+    .cmpe     = NULL,
+    .printe   = params->printe,
+    .elements = params->elements,
+    .elt_size = params->elt_size,
+    .max_elts = params->max_elts,
+    .flags    = params->flags | RCSW_DS_RBUFFER_AS_FIFO};
   /* struct fifo is struct rbuffer's only member, so the pointers convert */
   return (struct fifo*)rbuffer_init((struct rbuffer*)fifo_in, &rb_params);
 }

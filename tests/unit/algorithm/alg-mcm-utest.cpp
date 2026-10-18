@@ -111,7 +111,7 @@ CATCH_TEST_CASE("MCM - Optimize Called Twice", "[alg][mcm]") {
   mcm_opt_destroy(&mcm);
 }
 
-CATCH_TEST_CASE("MCM - NULL Args to Report/Print Rejected", "[alg][mcm]") {
+CATCH_TEST_CASE("MCM - NULL Args to Report/Print Rejected", "[alg][mcm][noalloc]") {
   CATCH_REQUIRE(ERROR == mcm_opt_report(nullptr, nullptr));
   CATCH_REQUIRE(ERROR == mcm_opt_print(nullptr));
 }
