@@ -84,16 +84,16 @@ static void verify_heap(struct binheap* heap) {
   while (++i <= binheap_size(heap)) {
     T* parent = (T*)darray_data_get(&heap->arr, i);
 
-    if (RCSW_BINHEAP_LCHILD(i) <= binheap_size(heap)) {
-      T* lc = (T*)darray_data_get(&heap->arr, RCSW_BINHEAP_LCHILD(i));
+    if (binheap_lchild(i) <= binheap_size(heap)) {
+      T* lc = (T*)darray_data_get(&heap->arr, binheap_lchild(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, lc) <= 0);
       } else {
         CATCH_REQUIRE(heap->arr.cmpe(parent, lc) >= 0);
       }
     }
-    if (RCSW_BINHEAP_RCHILD(i) <= binheap_size(heap)) {
-      T* rc = (T*)darray_data_get(&heap->arr, RCSW_BINHEAP_RCHILD(i));
+    if (binheap_rchild(i) <= binheap_size(heap)) {
+      T* rc = (T*)darray_data_get(&heap->arr, binheap_rchild(i));
       if (heap->flags & RCSW_DS_BINHEAP_MIN) {
         CATCH_REQUIRE(heap->arr.cmpe(parent, rc) <= 0);
       } else {

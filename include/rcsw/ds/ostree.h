@@ -22,14 +22,6 @@
 #include "rcsw/ds/ds.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * \copydoc RCSW_BSTREE_ROOT()
- */
-#define RCSW_OSTREE_ROOT(tree) ((struct ostree_node*)RCSW_BSTREE_ROOT(tree))
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 /**
@@ -62,6 +54,15 @@ struct RCSW_ATTR(aligned(sizeof(dptr_t))) ostree_node {
  * Private API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of an order-statistic tree.
+ *
+ * As \ref bstree_root(), typed as a \c struct \c ostree_node*.
+ */
+static inline struct ostree_node* ostree_root(const struct bstree* const tree) {
+  return (struct ostree_node*)bstree_root(tree);
+}
+
 /**
  * \brief Initialize the order-statistic tree specific bits of a BST.
  *
@@ -141,7 +142,7 @@ static inline struct ostree_node* ostree_node_query(
  *
  * \param tree The ostree handle.
  *
- * \param node_in The node to start searching at (should probably be the root).
+ * \param node_in The node to start searching at (usually \ref ostree_root(tree)).
  *
  * \param i The element rank to select.
  *

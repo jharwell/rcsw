@@ -8,7 +8,8 @@
  * Unit tests for rcsw/utils/align.h.
  *
  * Covers:
- *   align.h  — RCSW_IS_MEM_ALIGNED, RCSW_IS_SIZE_ALIGNED, RCSW_ALIGN_SIZE
+ *   align.h  — utils_is_pow2(), utils_is_addr_aligned(), utils_is_mem_aligned(),
+ *              utils_is_size_aligned(), utils_align_size()
  */
 
 /*******************************************************************************
@@ -29,84 +30,111 @@
 static void is_mem_aligned_test() {
   /* A 16-byte aligned buffer is aligned to 1, 2, 4, 8, and 16 bytes */
   alignas(16) uint8_t buf[64];
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(buf, 1));
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(buf, 2));
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(buf, 4));
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(buf, 8));
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(buf, 16));
+  CATCH_REQUIRE(utils_is_mem_aligned(buf, 1));
+  CATCH_REQUIRE(utils_is_mem_aligned(buf, 2));
+  CATCH_REQUIRE(utils_is_mem_aligned(buf, 4));
+  CATCH_REQUIRE(utils_is_mem_aligned(buf, 8));
+  CATCH_REQUIRE(utils_is_mem_aligned(buf, 16));
 
   /* Deliberately misaligned pointer (buf + 1 is never 2-byte aligned) */
   uint8_t* misaligned = buf + 1;
-  CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(misaligned, 2));
-  CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(misaligned, 4));
+  CATCH_REQUIRE(!utils_is_mem_aligned(misaligned, 2));
+  CATCH_REQUIRE(!utils_is_mem_aligned(misaligned, 4));
 
   /* uintptr_t arithmetic: offset by 3 from a 4-aligned address is not 4-aligned
    */
   uint8_t* off3 = buf + 3;
-  CATCH_REQUIRE(!RCSW_IS_MEM_ALIGNED(off3, 4));
+  CATCH_REQUIRE(!utils_is_mem_aligned(off3, 4));
 
-  /* NULL is trivially 0 mod anything → aligned to any power of two */
-  CATCH_REQUIRE(RCSW_IS_MEM_ALIGNED(nullptr, 4));
+  /* NULL is trivially 0 mod anything, so aligned to everything */
+  CATCH_REQUIRE(utils_is_mem_aligned(nullptr, 4));
 }
 
 static void is_size_aligned_test() {
   /* Exact multiples are aligned */
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(0, 4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(4, 4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(8, 4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(16, 4));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(64, 8));
-  CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(128, 16));
+  CATCH_REQUIRE(utils_is_size_aligned(0, 4));
+  CATCH_REQUIRE(utils_is_size_aligned(4, 4));
+  CATCH_REQUIRE(utils_is_size_aligned(8, 4));
+  CATCH_REQUIRE(utils_is_size_aligned(16, 4));
+  CATCH_REQUIRE(utils_is_size_aligned(64, 8));
+  CATCH_REQUIRE(utils_is_size_aligned(128, 16));
 
   /* Non-multiples are not aligned */
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(1, 4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(3, 4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(5, 4));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(7, 8));
-  CATCH_REQUIRE(!RCSW_IS_SIZE_ALIGNED(15, 16));
+  CATCH_REQUIRE(!utils_is_size_aligned(1, 4));
+  CATCH_REQUIRE(!utils_is_size_aligned(3, 4));
+  CATCH_REQUIRE(!utils_is_size_aligned(5, 4));
+  CATCH_REQUIRE(!utils_is_size_aligned(7, 8));
+  CATCH_REQUIRE(!utils_is_size_aligned(15, 16));
 }
 
 static void align_size_test() {
   /* Values already aligned are unchanged */
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(0, 4) == 0u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(4, 4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(8, 4) == 8u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(16, 8) == 16u);
+  CATCH_REQUIRE(utils_align_size(0, 4) == 0u);
+  CATCH_REQUIRE(utils_align_size(4, 4) == 4u);
+  CATCH_REQUIRE(utils_align_size(8, 4) == 8u);
+  CATCH_REQUIRE(utils_align_size(16, 8) == 16u);
 
   /* Unaligned values round up to the next multiple */
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(1, 4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(3, 4) == 4u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(5, 4) == 8u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(7, 8) == 8u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(9, 8) == 16u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(15, 16) == 16u);
-  CATCH_REQUIRE(RCSW_ALIGN_SIZE(17, 16) == 32u);
+  CATCH_REQUIRE(utils_align_size(1, 4) == 4u);
+  CATCH_REQUIRE(utils_align_size(3, 4) == 4u);
+  CATCH_REQUIRE(utils_align_size(5, 4) == 8u);
+  CATCH_REQUIRE(utils_align_size(7, 8) == 8u);
+  CATCH_REQUIRE(utils_align_size(9, 8) == 16u);
+  CATCH_REQUIRE(utils_align_size(15, 16) == 16u);
+  CATCH_REQUIRE(utils_align_size(17, 16) == 32u);
 
-  /* Result must always be IS_SIZE_ALIGNED */
+  /* Result must always be size-aligned */
   for (size_t s = 0; s <= 64; ++s) {
-    CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(RCSW_ALIGN_SIZE(s, 4), 4));
-    CATCH_REQUIRE(RCSW_IS_SIZE_ALIGNED(RCSW_ALIGN_SIZE(s, 8), 8));
+    CATCH_REQUIRE(utils_is_size_aligned(utils_align_size(s, 4), 4));
+    CATCH_REQUIRE(utils_is_size_aligned(utils_align_size(s, 8), 8));
   }
 }
 
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Align IS_MEM_ALIGNED Test", "[utils][align][noalloc]") {
+CATCH_TEST_CASE("utils_is_mem_aligned Test", "[utils][align][noalloc]") {
   is_mem_aligned_test();
 }
-CATCH_TEST_CASE("Align IS_SIZE_ALIGNED Test", "[utils][align][noalloc]") {
+CATCH_TEST_CASE("utils_is_size_aligned Test", "[utils][align][noalloc]") {
   is_size_aligned_test();
 }
-CATCH_TEST_CASE("Align ALIGN_SIZE Test", "[utils][align][noalloc]") {
+CATCH_TEST_CASE("utils_align_size Test", "[utils][align][noalloc]") {
   align_size_test();
 }
 
-CATCH_TEST_CASE("RCSW_ALIGN_SIZE keeps the full width of its size argument",
+CATCH_TEST_CASE("utils_align_size works in the full width of size_t",
                 "[utils][align][noalloc]") {
-  /* a 32-bit alignment must not truncate a 64-bit size */
-  uint64_t big = 0x100000005ULL;
-  CATCH_REQUIRE(0x100000008ULL == RCSW_ALIGN_SIZE(big, 8U));
-  CATCH_REQUIRE(8U == RCSW_ALIGN_SIZE(5U, 8));
-  CATCH_REQUIRE(16U == RCSW_ALIGN_SIZE(static_cast<size_t>(13), 4));
+#if SIZE_MAX > UINT32_MAX
+  size_t big = static_cast<size_t>(0x100000005ULL);
+  CATCH_REQUIRE(static_cast<size_t>(0x100000008ULL) == utils_align_size(big, 8));
+#endif
+  CATCH_REQUIRE(8U == utils_align_size(5U, 8));
+  CATCH_REQUIRE(16U == utils_align_size(13, 4));
+}
+
+CATCH_TEST_CASE("utils_is_pow2", "[utils][align][noalloc]") {
+  CATCH_REQUIRE(!utils_is_pow2(0));
+  CATCH_REQUIRE(utils_is_pow2(1));
+  CATCH_REQUIRE(utils_is_pow2(2));
+  CATCH_REQUIRE(!utils_is_pow2(3));
+  CATCH_REQUIRE(utils_is_pow2(4096));
+  CATCH_REQUIRE(!utils_is_pow2(4097));
+  CATCH_REQUIRE(utils_is_pow2(SIZE_MAX / 2 + 1));
+}
+
+CATCH_TEST_CASE("Alignment preconditions fail cleanly",
+                "[utils][align][noalloc]") {
+  /* Under LIBRA_FPC_RETURN: non-power-of-two and zero alignments */
+  CATCH_REQUIRE(!utils_is_size_aligned(6, 3));
+  CATCH_REQUIRE(!utils_is_size_aligned(0, 0));
+  CATCH_REQUIRE(0U == utils_align_size(5, 3));
+  CATCH_REQUIRE(0U == utils_align_size(5, 0));
+  int x = 0;
+  CATCH_REQUIRE(!utils_is_mem_aligned(&x, 0));
+  CATCH_REQUIRE(!utils_is_addr_aligned(16, 0));
+  /* Address/pointer alignment accepts any nonzero alignment */
+  CATCH_REQUIRE(utils_is_addr_aligned(12, 3));
+  CATCH_REQUIRE(!utils_is_addr_aligned(13, 3));
+  CATCH_REQUIRE(utils_is_addr_aligned(0, 7));
 }

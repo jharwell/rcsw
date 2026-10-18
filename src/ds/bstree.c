@@ -472,7 +472,7 @@ void bstree_print(struct bstree* const tree) {
     return;
   }
 
-  bstree_traverse_nodes_inorder(tree, RCSW_BSTREE_ROOT(tree), bstree_node_print);
+  bstree_traverse_nodes_inorder(tree, bstree_root(tree), bstree_node_print);
 } /* bstree_print() */
 
 END_C_DECLS

@@ -94,7 +94,7 @@ static void achks_test() {
 static void crc32_test() {
   /* Known CRC32 value for the canonical 8-byte Ethernet frame */
   uint32_t crc = utils_crc32(crcframe, sizeof(crcframe), 0);
-  CATCH_REQUIRE(RCSW_BSWAP32(crc) == 0x0b5e0332u);
+  CATCH_REQUIRE(utils_bswap32(crc) == 0x0b5e0332u);
 
   /* Different data must produce a different CRC */
   uint8_t alt[] = {0x4d, 0x54, 0x30, 0x30, 0x01, 0x02, 0x03, 0x05};
@@ -110,7 +110,7 @@ static void crc32_bitwise_test() {
   for (size_t n = 0; n <= sizeof(buf); n += 13) {
     CATCH_REQUIRE(utils_crc32(buf, n, 0) == utils_crc32_bitwise(buf, n, 0));
   }
-  CATCH_REQUIRE(RCSW_BSWAP32(utils_crc32_bitwise(crcframe, sizeof(crcframe), 0)) ==
+  CATCH_REQUIRE(utils_bswap32(utils_crc32_bitwise(crcframe, sizeof(crcframe), 0)) ==
                 0x0b5e0332u);
 }
 

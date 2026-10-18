@@ -29,14 +29,22 @@
 #include "rcsw/utils/time.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-#define GRINDER_TYPE(the_grinder) \
-  ((RCSW_GRIND_MODE_COUNT == (the_grinder)->cfg.mode) ? "counting" : "timing")
-
-/*******************************************************************************
  * Private API
  ******************************************************************************/
+static inline const char*
+grinder_mode_str(const struct grinder* const the_grinder) {
+  switch (the_grinder->cfg.mode) {
+    case RCSW_GRIND_MODE_COUNT:
+      return "counting";
+    case RCSW_GRIND_MODE_DURATION:
+      return "duration timing";
+    case RCSW_GRIND_MODE_PERIOD:
+      return "period timing";
+    default:
+      return "unknown";
+  }
+}
+
 /**
  * \brief Find the largest datapoint of a \ref grindee.
  *
@@ -449,7 +457,7 @@ struct grinder* grind_init(struct grinder*                  grind_in,
     the_grinder->grindees[i].tsize = config->tsize;
   } /* for(i..) */
 
-  ER_DEBUG("Configured for %s\n", GRINDER_TYPE(the_grinder));
+  ER_DEBUG("Configured for %s\n", grinder_mode_str(the_grinder));
   ER_DEBUG("Grindees (%zu total):\n", the_grinder->cfg.n_inst);
 
   for (size_t i = 0; i < the_grinder->cfg.n_inst; i++) {

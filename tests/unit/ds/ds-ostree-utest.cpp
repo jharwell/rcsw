@@ -92,7 +92,7 @@ static void select_test(int len, struct bstree_config* config) {
 
     /* After each insert, all previously inserted elements must be selectable */
     for (int j = 0; j <= i; ++j) {
-      struct ostree_node* node = ostree_select(tree, RCSW_OSTREE_ROOT(tree), j);
+      struct ostree_node* node = ostree_select(tree, ostree_root(tree), j);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(((struct element8*)node->data)->value1 ==
                     insert_arr[j].value1);
@@ -108,7 +108,7 @@ static void select_test(int len, struct bstree_config* config) {
     for (int j = i + 1; j < len; ++j) {
       int                 rank = j - i - 1;
       struct ostree_node* node =
-        ostree_select(tree, RCSW_OSTREE_ROOT(tree), rank);
+        ostree_select(tree, ostree_root(tree), rank);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(((struct element8*)node->data)->value1 ==
                     insert_arr[j].value1);
@@ -143,7 +143,7 @@ static void rank_test(int len, struct bstree_config* config) {
     /* Verify rank of every inserted element after each insertion */
     for (int j = 0; j <= i; ++j) {
       struct ostree_node* node =
-        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j]);
+        ostree_node_query(tree, ostree_root(tree), &insert_arr[j]);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(ostree_rank(tree, node) == j);
     }
@@ -156,7 +156,7 @@ static void rank_test(int len, struct bstree_config* config) {
 
     for (int j = i + 1; j < len; ++j) {
       struct ostree_node* node =
-        ostree_node_query(tree, RCSW_OSTREE_ROOT(tree), &insert_arr[j].value1);
+        ostree_node_query(tree, ostree_root(tree), &insert_arr[j].value1);
       CATCH_REQUIRE(nullptr != node);
       CATCH_REQUIRE(ostree_rank(tree, node) == j - i - 1);
     }
@@ -207,11 +207,11 @@ CATCH_TEST_CASE(
     std::sort(present.begin(), present.end());
 
     int32_t n;
-    CATCH_REQUIRE(th::bst::count_ok(t, RCSW_OSTREE_ROOT(t), &n));
+    CATCH_REQUIRE(th::bst::count_ok(t, ostree_root(t), &n));
     CATCH_REQUIRE(static_cast<size_t>(n) == present.size());
     for (size_t r = 0; r < present.size(); ++r) {
       struct ostree_node* node =
-        ostree_select(t, RCSW_OSTREE_ROOT(t), static_cast<int>(r));
+        ostree_select(t, ostree_root(t), static_cast<int>(r));
       CATCH_REQUIRE(nullptr != node);
       int32_t key;
       memcpy(&key, node->key, sizeof(key));
@@ -240,7 +240,7 @@ CATCH_TEST_CASE("ostree_init needs no flags from the caller", "[ds][ostree]") {
     CATCH_REQUIRE(OK == ostree_insert(t, &k, &k));
   }
   for (int32_t r = 0; r < 50; ++r) {
-    struct ostree_node* n = ostree_select(t, RCSW_OSTREE_ROOT(t), r);
+    struct ostree_node* n = ostree_select(t, ostree_root(t), r);
     CATCH_REQUIRE(nullptr != n);
     CATCH_REQUIRE(r * 3 == *reinterpret_cast<int32_t*>(n->key));
     CATCH_REQUIRE(r == ostree_rank(t, n));
@@ -270,7 +270,7 @@ CATCH_TEST_CASE("ostree nodes in caller-provided storage are aligned",
     CATCH_REQUIRE(OK == ostree_insert(t, &v, &v));
   }
   for (int32_t r = 0; r < static_cast<int32_t>(kN); ++r) {
-    struct ostree_node* n = ostree_select(t, RCSW_OSTREE_ROOT(t), r);
+    struct ostree_node* n = ostree_select(t, ostree_root(t), r);
     CATCH_REQUIRE(nullptr != n);
     CATCH_REQUIRE(r == *reinterpret_cast<int32_t*>(n->data));
     /* the pointer members are naturally aligned in every node */

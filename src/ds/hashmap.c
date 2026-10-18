@@ -273,7 +273,7 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
    * hashmap_element_space() */
   map->space.hashnodes =
     (void*)((uint8_t*)map->space.datablocks +
-            RCSW_ALIGN_SIZE(db_space_per_bucket * map->cfg.n_buckets,
+            utils_align_size(db_space_per_bucket * map->cfg.n_buckets,
                             sizeof(dptr_t)));
 
   size_t hn_space_per_bucket =

@@ -43,14 +43,6 @@ enum bstree_traversal_type {
 };
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * Convenience macro for getting a reference to the root node in the tree.
- */
-#define RCSW_BSTREE_ROOT(tree) ((tree)->root->left)
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 struct allocm_entry;
@@ -220,6 +212,16 @@ struct bstree {
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of the tree.
+ *
+ * The tree's \ref bstree.root is a sentinel; the real root is its left
+ * child. Returns \ref bstree.nil if the tree is empty.
+ */
+static inline struct bstree_node* bstree_root(const struct bstree* const tree) {
+  return tree->root->left;
+}
+
 
 /**
  * \brief Determine if a \ref bstree is currently full.

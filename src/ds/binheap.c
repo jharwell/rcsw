@@ -58,8 +58,8 @@ static void binheap_swap(struct binheap* const heap, size_t i1, size_t i2) {
  */
 static void binheap_sift_down(struct binheap* const heap, size_t m) {
   RCSW_FPC_V(NULL != heap);
-  size_t l_child = RCSW_BINHEAP_LCHILD(m);
-  size_t r_child = RCSW_BINHEAP_RCHILD(m);
+  size_t l_child = binheap_lchild(m);
+  size_t r_child = binheap_rchild(m);
   size_t n_elts  = binheap_size(heap);
 
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
@@ -125,17 +125,17 @@ static void binheap_sift_up(struct binheap* const heap, size_t i) {
    */
   if (heap->flags & RCSW_DS_BINHEAP_MIN) {
     while (i > 1 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
+           heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
                           darray_data_get(&heap->arr, i)) > 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
+      binheap_swap(heap, i, binheap_parent(i));
+      i = binheap_parent(i);
     } /* while() */
   } else {
     while (i > 1 &&
-           heap->arr.cmpe(darray_data_get(&heap->arr, RCSW_BINHEAP_PARENT(i)),
+           heap->arr.cmpe(darray_data_get(&heap->arr, binheap_parent(i)),
                           darray_data_get(&heap->arr, i)) < 0) {
-      binheap_swap(heap, i, RCSW_BINHEAP_PARENT(i));
-      i = RCSW_BINHEAP_PARENT(i);
+      binheap_swap(heap, i, binheap_parent(i));
+      i = binheap_parent(i);
     } /* while() */
   }
 }

@@ -21,14 +21,6 @@
 #include "rcsw/ds/bstree.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * Convenience macro for getting a reference to the root node in the tree
- */
-#define RCSW_INTTREE_ROOT(tree) ((struct inttree_node*)RCSW_BSTREE_ROOT(tree))
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 /**
@@ -87,6 +79,15 @@ RCSW_LOCAL void inttree_init_helper(const struct bstree* tree);
  *
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Get the root node of an interval tree.
+ *
+ * As \ref bstree_root(), typed as a \c struct \c inttree_node*.
+ */
+static inline struct inttree_node* inttree_root(const struct bstree* const tree) {
+  return (struct inttree_node*)bstree_root(tree);
+}
+
 /**
  * \brief Determine if an interval tree is full.
  *
@@ -191,7 +192,7 @@ RCSW_API struct bstree* inttree_init(struct bstree*              tree_in,
 /**
  * \brief Determine if the given interval overlaps any in the interval tree.
  *
- * To search the entire tree, pass \ref RCSW_INTTREE_ROOT(tree) as \p root.
+ * To search the entire tree, pass \ref inttree_root(tree) as \p root.
  * (\c tree->root is a sentinel, not the root node.)
  *
  * \param tree The interval tree handle

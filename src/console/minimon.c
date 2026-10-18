@@ -332,7 +332,7 @@ static status_t mini_validate_int(char* numstr, uint32_t* num) {
 
   /* check string contents for characters not valid in this base */
   for (size_t i = 0; i < length; i++) {
-    bool_t ok = is_hex ? RCSW_STDIO_ISHEX(digits[i]) : RCSW_STDIO_ISDIGIT(digits[i]);
+    bool_t ok = is_hex ? stdio_ishex(digits[i]) : stdio_isdigit(digits[i]);
     if (!ok) {
       ER_ERR("'%s': invalid character '%c'", numstr, digits[i]);
       return ERROR;

@@ -197,7 +197,7 @@ static void overlap_test(int len, struct bstree_config* config) {
   for (int i = 0; i < len; ++i) {
     struct interval_data* result =
       (interval_data*)inttree_overlap_search(tree,
-                                             RCSW_INTTREE_ROOT(tree),
+                                             inttree_root(tree),
                                              &search_arr[i]);
 
     if (overlap_arr[i]) {
@@ -280,13 +280,13 @@ CATCH_TEST_CASE(
     d.high = low + static_cast<int32_t>(rng() % 500);
     CATCH_REQUIRE(OK == inttree_insert(t, &d));
     int32_t m;
-    CATCH_REQUIRE(th::bst::max_high_ok(t, RCSW_INTTREE_ROOT(t), &m));
+    CATCH_REQUIRE(th::bst::max_high_ok(t, inttree_root(t), &m));
   }
   std::shuffle(lows.begin(), lows.end(), rng);
   for (size_t i = 0; i < lows.size() / 2; ++i) {
     CATCH_REQUIRE(OK == inttree_remove(t, &lows[i]));
     int32_t m;
-    CATCH_REQUIRE(th::bst::max_high_ok(t, RCSW_INTTREE_ROOT(t), &m));
+    CATCH_REQUIRE(th::bst::max_high_ok(t, inttree_root(t), &m));
   }
   bstree_destroy(t);
 }
@@ -332,11 +332,11 @@ CATCH_TEST_CASE("inttree_init needs no flags or element size from the caller",
   struct interval_data hit_q  = {.high = 36, .low = 35};
   struct interval_data miss_q = {.high = 49, .low = 41};
   struct inttree_node* hit =
-    inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &hit_q);
+    inttree_overlap_search(t, inttree_root(t), &hit_q);
   CATCH_REQUIRE(nullptr != hit);
   CATCH_REQUIRE(30 == reinterpret_cast<struct interval_data*>(hit->data)->low);
   CATCH_REQUIRE(nullptr ==
-                inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &miss_q));
+                inttree_overlap_search(t, inttree_root(t), &miss_q));
   bstree_destroy(t);
 }
 
@@ -368,7 +368,7 @@ CATCH_TEST_CASE("inttree_overlap_search agrees with a brute-force scan",
           return d.low <= query.high && query.low <= d.high;
         });
       bool found = nullptr !=
-                   inttree_overlap_search(t, RCSW_INTTREE_ROOT(t), &query);
+                   inttree_overlap_search(t, inttree_root(t), &query);
       CATCH_REQUIRE(expected == found);
     }
   };

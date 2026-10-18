@@ -7,7 +7,7 @@
  *
  * \ingroup utils
  *
- * \brief Byte-level macros and functions, such as swapping and string generation.
+ * \brief Byte-level functions, such as swapping and string generation.
  */
 
 #pragma once
@@ -22,28 +22,33 @@
 #include "rcsw/core/core.h"
 #include "rcsw/utils/bit.h"
 
-/******************************************************************************
- * Macros
- ******************************************************************************/
-/** \brief Swap the byte order of a 16-bit value. */
-#define RCSW_BSWAP16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
-
-/** \brief Swap the byte order of a 32-bit value. */
-#define RCSW_BSWAP32(w32)                    \
-  ((((uint32_t)(w32) & 0xFF000000U) >> 24) | \
-   (((uint32_t)(w32) & 0x00FF0000U) >> 8) |  \
-   (((uint32_t)(w32) & 0x0000FF00U) << 8) |  \
-   (((uint32_t)(w32) & 0x000000FFU) << 24))
-
-/** \brief Swap the byte order of a 64-bit value. */
-#define RCSW_BSWAP64(w64)                                            \
-  (((uint64_t)RCSW_BSWAP32((uint64_t)(w64) & 0xFFFFFFFFU) << 32) | \
-   (uint64_t)RCSW_BSWAP32((uint64_t)(w64) >> 32))
-
 /*******************************************************************************
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Swap the byte order of a 16-bit value.
+ */
+static inline uint16_t utils_bswap16(uint16_t w16) {
+  return (uint16_t)((w16 >> 8) | (w16 << 8));
+}
+
+/**
+ * \brief Swap the byte order of a 32-bit value.
+ */
+static inline uint32_t utils_bswap32(uint32_t w32) {
+  return ((w32 & 0xFF000000U) >> 24) | ((w32 & 0x00FF0000U) >> 8) |
+         ((w32 & 0x0000FF00U) << 8) | ((w32 & 0x000000FFU) << 24);
+}
+
+/**
+ * \brief Swap the byte order of a 64-bit value.
+ */
+static inline uint64_t utils_bswap64(uint64_t w64) {
+  return ((uint64_t)utils_bswap32((uint32_t)w64) << 32) |
+         utils_bswap32((uint32_t)(w64 >> 32));
+}
+
 /**
  * \brief Reverse the bytes of an array in place.
  *

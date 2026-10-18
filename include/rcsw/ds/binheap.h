@@ -24,24 +24,6 @@
 #include "rcsw/ds/darray.h"
 
 /*******************************************************************************
- * Macro Definitions
- ******************************************************************************/
-/**
- * \brief Get the index of the left child of an element in a \ref binheap.
- */
-#define RCSW_BINHEAP_LCHILD(i) (2 * (i))
-
-/**
- * \brief Get the index of the right child of an element in a \ref binheap.
- */
-#define RCSW_BINHEAP_RCHILD(i) ((2 * (i)) + 1)
-
-/**
- * \brief Get the index of the parent of an element in a \ref binheap.
- */
-#define RCSW_BINHEAP_PARENT(i) ((i) / 2)
-
-/*******************************************************************************
  * Types
  ******************************************************************************/
 /**
@@ -119,6 +101,23 @@ struct binheap {
  * Public API
  ******************************************************************************/
 BEGIN_C_DECLS
+/**
+ * \brief Index of the left child of element \p i in a \ref binheap.
+ *
+ * Indices are 1-based (slot 0 is scratch space), so the root is 1.
+ */
+static inline size_t binheap_lchild(size_t i) { return 2 * i; }
+
+/**
+ * \brief Index of the right child of element \p i in a \ref binheap.
+ */
+static inline size_t binheap_rchild(size_t i) { return (2 * i) + 1; }
+
+/**
+ * \brief Index of the parent of element \p i in a \ref binheap.
+ */
+static inline size_t binheap_parent(size_t i) { return i / 2; }
+
 
 /**
  * \brief Determine if the heap is currently full.

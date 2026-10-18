@@ -39,8 +39,8 @@ uint8_t utils_xchks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
 uint16_t utils_xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   RCSW_FPC_NV((uint16_t)0xFFFF,
               buf != NULL,
-              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
-              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
+              utils_is_mem_aligned(buf, sizeof(uint16_t)),
+              utils_is_size_aligned(n_bytes, sizeof(uint16_t)));
 
   uint16_t chks16 = seed;
 
@@ -57,8 +57,8 @@ uint16_t utils_xchks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed)
 uint32_t utils_xchks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
-              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
-              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
+              utils_is_mem_aligned(buf, sizeof(uint32_t)),
+              utils_is_size_aligned(n_bytes, sizeof(uint32_t)));
 
   uint32_t chks32 = seed;
 
@@ -87,8 +87,8 @@ uint8_t utils_achks8(const uint8_t* const buf, size_t n_bytes, uint8_t seed) {
 uint16_t utils_achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed) {
   RCSW_FPC_NV(0xFFFF,
               buf != NULL,
-              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint16_t)),
-              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint16_t)));
+              utils_is_mem_aligned(buf, sizeof(uint16_t)),
+              utils_is_size_aligned(n_bytes, sizeof(uint16_t)));
 
   uint16_t chks16 = seed;
   for (size_t i = 0; i < (n_bytes / sizeof(uint16_t)); ++i) {
@@ -100,8 +100,8 @@ uint16_t utils_achks16(const uint16_t* const buf, size_t n_bytes, uint16_t seed)
 uint32_t utils_achks32(const uint32_t* const buf, size_t n_bytes, uint32_t seed) {
   RCSW_FPC_NV(0xFFFFFFFF,
               buf != NULL,
-              RCSW_IS_MEM_ALIGNED(buf, sizeof(uint32_t)),
-              RCSW_IS_SIZE_ALIGNED(n_bytes, sizeof(uint32_t)));
+              utils_is_mem_aligned(buf, sizeof(uint32_t)),
+              utils_is_size_aligned(n_bytes, sizeof(uint32_t)));
 
   uint32_t chks32 = seed;
 

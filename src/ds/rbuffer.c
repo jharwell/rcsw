@@ -21,14 +21,12 @@
 #include "rcsw/er/client.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-#define RCSW_DS_RBUFFER_TYPE(rb) \
-  (((rb)->cfg.flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER")
-
-/*******************************************************************************
  * Private API
  ******************************************************************************/
+static inline const char* rbuffer_type_str(const struct rbuffer* const rb) {
+  return (rb->cfg.flags & RCSW_DS_RBUFFER_AS_FIFO) ? "FIFO" : "RBUFFER";
+}
+
 /*
  * The element in physical slot \p slot (0 <= slot < max_elts), regardless of
  * whether it holds live data.
@@ -84,7 +82,7 @@ struct rbuffer* rbuffer_init(struct rbuffer*                    rb_in,
   rb->current  = 0;
 
   ER_DEBUG("type=%s,max_elts=%zu,elt_size=%zu,flags=0x%08x",
-           RCSW_DS_RBUFFER_TYPE(rb),
+           rbuffer_type_str(rb),
            rb->cfg.max_elts,
            rb->cfg.elt_size,
            rb->cfg.flags);

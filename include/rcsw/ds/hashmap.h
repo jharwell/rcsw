@@ -262,7 +262,7 @@ static inline size_t hashmap_element_space(size_t n_buckets,
                                            size_t elt_size) {
   size_t max_elts = n_buckets * bucket_size;
   return ds_meta_space(max_elts) +
-         RCSW_ALIGN_SIZE(ds_elt_space_simple(max_elts, elt_size),
+         utils_align_size(ds_elt_space_simple(max_elts, elt_size),
                          sizeof(dptr_t)) +
          darray_element_space(max_elts, sizeof(struct hashnode));
 }

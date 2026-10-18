@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for rcsw/utils/byteops.h: byte-swap macros (BSWAP16/32/64),
+ * Unit tests for rcsw/utils/byteops.h: utils_bswap16/32/64(),
  * utils_arr8_reverse(), utils_elt_swap(), and utils_string_gen().
  */
 
@@ -23,31 +23,31 @@
  * Test Helper Functions
  ******************************************************************************/
 
-static void bswap_macros_test() {
+static void bswap_test() {
   /* Single active byte migrates to the opposite end */
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0001)) == 0x0100u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x00000001)) == 0x01000000u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0000000000000001)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x0001)) == 0x0100u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x00000001)) == 0x01000000u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x0000000000000001)) ==
                 UINT64_C(0x0100000000000000));
 
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x8000)) == 0x0080u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x80000000)) == 0x00000080u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x8000000000000000)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x8000)) == 0x0080u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x80000000)) == 0x00000080u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x8000000000000000)) ==
                 UINT64_C(0x0000000000000080));
 
   /* Known byte-reversal patterns */
-  CATCH_REQUIRE(RCSW_BSWAP16(uint16_t(0x0123)) == 0x2301u);
-  CATCH_REQUIRE(RCSW_BSWAP32(uint32_t(0x01234567)) == 0x67452301u);
-  CATCH_REQUIRE(RCSW_BSWAP64(uint64_t(0x0123456789ABCDEFull)) ==
+  CATCH_REQUIRE(utils_bswap16(uint16_t(0x0123)) == 0x2301u);
+  CATCH_REQUIRE(utils_bswap32(uint32_t(0x01234567)) == 0x67452301u);
+  CATCH_REQUIRE(utils_bswap64(uint64_t(0x0123456789ABCDEFull)) ==
                 UINT64_C(0xEFCDAB8967452301));
 
-  /* Applying BSWAP twice restores the original value */
+  /* Applying bswap twice restores the original value */
   uint16_t v16 = 0xABCDu;
   uint32_t v32 = 0x01234567u;
   uint64_t v64 = UINT64_C(0x0123456789ABCDEF);
-  CATCH_REQUIRE(RCSW_BSWAP16(RCSW_BSWAP16(v16)) == v16);
-  CATCH_REQUIRE(RCSW_BSWAP32(RCSW_BSWAP32(v32)) == v32);
-  CATCH_REQUIRE(RCSW_BSWAP64(RCSW_BSWAP64(v64)) == v64);
+  CATCH_REQUIRE(utils_bswap16(utils_bswap16(v16)) == v16);
+  CATCH_REQUIRE(utils_bswap32(utils_bswap32(v32)) == v32);
+  CATCH_REQUIRE(utils_bswap64(utils_bswap64(v64)) == v64);
 }
 
 static void arr8_reverse_test() {
@@ -134,8 +134,8 @@ static void string_gen_test() {
 /*******************************************************************************
  * Test Cases
  ******************************************************************************/
-CATCH_TEST_CASE("Byteops BSWAP Macros Test", "[utils][byteops][noalloc]") {
-  bswap_macros_test();
+CATCH_TEST_CASE("Byteops bswap Test", "[utils][byteops][noalloc]") {
+  bswap_test();
 }
 CATCH_TEST_CASE("Byteops arr8_reverse Test", "[utils][byteops][noalloc]") {
   arr8_reverse_test();

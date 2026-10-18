@@ -21,40 +21,43 @@
 #include "rcsw/utils/byteops.h"
 
 /*******************************************************************************
- * Macros
- ******************************************************************************/
-/**
- * \name Character classification
- *
- * ASCII-only, locale-independent tests on a single character. Each evaluates to
- * 1 or 0. \p c may be evaluated more than once.
- * @{
- */
-/** \brief Printable character (space through tilde). */
-#define RCSW_STDIO_ISPRINTABLE(c) (((c) >= ' ' && (c) <= '~') ? 1 : 0)
-/** \brief A space. Tabs and newlines do not count. */
-#define RCSW_STDIO_ISSPACE(c) (((c) == ' ') ? 1 : 0)
-/** \brief Lowercase letter. */
-#define RCSW_STDIO_ISLOWER(c) (((c) >= 'a' && (c) <= 'z') ? 1 : 0)
-/** \brief Uppercase letter. */
-#define RCSW_STDIO_ISUPPER(c) (((c) >= 'A' && (c) <= 'Z') ? 1 : 0)
-/** \brief Decimal digit. */
-#define RCSW_STDIO_ISDIGIT(c) (((c) >= '0' && (c) <= '9') ? 1 : 0)
-/** \brief Hexadecimal digit, either case. */
-#define RCSW_STDIO_ISHEX(c)                               \
-  (RCSW_STDIO_ISDIGIT(c) || ((c) >= 'a' && (c) <= 'f') || \
-       ((c) >= 'A' && (c) <= 'F')                         \
-     ? 1                                                  \
-     : 0)
-/** \brief Letter, either case. */
-#define RCSW_STDIO_ISALPHA(c) \
-  ((((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z')) ? 1 : 0)
-/** @} */
-
-/*******************************************************************************
  * PUBLIC API
  ******************************************************************************/
 BEGIN_C_DECLS
+
+/**
+ * \name Character classification
+ *
+ * ASCII-only, locale-independent tests on a single character. Each returns 1
+ * or 0. Values outside 0-127 (including negative \c char values) are never in
+ * any class.
+ * @{
+ */
+/** \brief Printable character (space through tilde). */
+static inline int stdio_isprintable(int c) { return c >= ' ' && c <= '~'; }
+
+/** \brief A space. Tabs and newlines do not count. */
+static inline int stdio_isspace(int c) { return c == ' '; }
+
+/** \brief Lowercase letter. */
+static inline int stdio_islower(int c) { return c >= 'a' && c <= 'z'; }
+
+/** \brief Uppercase letter. */
+static inline int stdio_isupper(int c) { return c >= 'A' && c <= 'Z'; }
+
+/** \brief Decimal digit. */
+static inline int stdio_isdigit(int c) { return c >= '0' && c <= '9'; }
+
+/** \brief Hexadecimal digit, either case. */
+static inline int stdio_ishex(int c) {
+  return stdio_isdigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+/** \brief Letter, either case. */
+static inline int stdio_isalpha(int c) {
+  return stdio_islower(c) || stdio_isupper(c);
+}
+/** @} */
 
 /**
  * \brief Copy memory.

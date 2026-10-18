@@ -23,8 +23,10 @@
 BEGIN_C_DECLS
 
 /* Address of slot i: elements are packed at an elt_size-byte stride */
-#define RAWFIFO_SLOT(fifo, i) \
-  ((uint8_t*)(fifo)->elements + (((i) % (fifo)->max_elts) * (fifo)->elt_size))
+static inline uint8_t* rawfifo_slot(const struct rawfifo* const fifo,
+                                    size_t                      i) {
+  return (uint8_t*)fifo->elements + ((i % fifo->max_elts) * fifo->elt_size);
+}
 
 status_t rawfifo_init(struct rawfifo* const fifo,
                       void* const           buf,
@@ -60,7 +62,7 @@ size_t rawfifo_deq(struct rawfifo* fifo, void* e, size_t n_elts) {
 
   for (size_t i = 0; i < n_elts; i++) {
     memcpy((uint8_t*)e + (i * fifo->elt_size),
-           RAWFIFO_SLOT(fifo, from + i),
+           rawfifo_slot(fifo, from + i),
            fifo->elt_size);
   } /* for() */
 
@@ -88,7 +90,7 @@ size_t rawfifo_enq(struct rawfifo* const fifo,
   n_elts = RCSW_MIN(fifo->max_elts - used - 1, n_elts);
 
   for (size_t i = 0; i < n_elts; i++) {
-    memcpy(RAWFIFO_SLOT(fifo, to + i),
+    memcpy(rawfifo_slot(fifo, to + i),
            (const uint8_t*)elts + (i * fifo->elt_size),
            fifo->elt_size);
   } /* for() */
