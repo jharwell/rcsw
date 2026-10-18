@@ -202,6 +202,14 @@ struct hashmap {
   struct hashmap_stats stats;
 
   /**
+   * With \ref RCSW_DS_HASHMAP_LINPROB: the furthest past its home bucket any
+   * node has been placed since init or the last \ref hashmap_clear(). Lookups
+   * probe only this many buckets after the home bucket. Never decreases on
+   * remove, so it is always an upper bound. Always 0 without linear probing.
+   */
+  size_t max_probe;
+
+  /**
    * Is the hashmap currently sorted?
    */
   bool_t sorted;
@@ -339,8 +347,13 @@ RCSW_API void* hashmap_data_get(struct hashmap* map, const void* key);
  * This function takes the key and data for the new node, calculates the hash
  * for it, and then adds it to the correct bucket. If the bucket is currently
  * full, it returns failure, unless \ref RCSW_DS_HASHMAP_LINPROB was passed
- * during initialization. If the node already exists in the bucket, failure is
- * returned (no duplicates are allowed).
+ * during initialization, in which case the node goes into the next bucket with
+ * space. If the key already exists, failure is returned (no duplicates are
+ * allowed).
+ *
+ * With linear probing, the duplicate check (and every lookup of an absent key)
+ * looks at the home bucket plus \ref hashmap.max_probe buckets after it, so it
+ * stays as cheap as without probing until nodes start to spill.
  *
  * \param map The hashmap handle.
  * \param key The key to add. Must point to \ref hashmap_config.key_len readable

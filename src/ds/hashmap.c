@@ -110,8 +110,9 @@ static void hashmap_db_dealloc(const struct hashmap* const map,
 /**
  * \brief Locate the hashnode for a key.
  *
- * Looks in the bucket the key hashes to and, if linear probing is enabled,
- * in every other bucket (a key may have overflowed into any of them).
+ * Looks in the bucket the key hashes to and, if linear probing is enabled, in
+ * the next max_probe buckets: no node has ever been placed further from its
+ * home bucket than that.
  *
  * \param map The hashmap handle.
  * \param node A hashnode carrying the (zero-padded) key.
@@ -124,8 +125,7 @@ static void hashmap_find(const struct hashmap* const  map,
                          size_t                       home,
                          int*                         bucket_index,
                          int*                         node_index) {
-  size_t n_probe =
-    (map->cfg.flags & RCSW_DS_HASHMAP_LINPROB) ? map->cfg.n_buckets : 1;
+  size_t n_probe = map->max_probe + 1; /* max_probe is 0 without LINPROB */
 
   for (size_t k = 0; k < n_probe; ++k) {
     size_t b   = (home + k) % map->cfg.n_buckets;
@@ -224,6 +224,7 @@ struct hashmap* hashmap_init(struct hashmap*                    map_in,
   map->stats.n_collisions = 0;
   map->stats.n_adds       = 0;
   map->stats.n_addfails   = 0;
+  map->max_probe          = 0;
   map->sorted             = false;
   map->space.elements     = NULL;
   map->space.buckets      = NULL;
@@ -370,7 +371,8 @@ status_t hashmap_add(struct hashmap* const map,
         struct darray* candidate =
           map->space.buckets + ((home + k) % map->cfg.n_buckets);
         if (!darray_isfull(candidate)) {
-          bucket = candidate;
+          bucket         = candidate;
+          map->max_probe = RCSW_MAX(map->max_probe, k);
           break;
         }
       } /* for(k..) */
@@ -485,6 +487,7 @@ status_t hashmap_clear(struct hashmap* const map) {
   }
   allocm_init(map->space.db_map, map->max_elts);
   map->stats.n_nodes = 0;
+  map->max_probe     = 0;
   map->sorted        = false;
   return OK;
 

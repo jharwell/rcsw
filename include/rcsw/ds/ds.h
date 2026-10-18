@@ -65,8 +65,9 @@ enum exec_type {
  * \brief Indicate that the \ref hashmap should perform linear probing if the
  * bucket that an item hashes into is currently full.
  *
- * Results in greater hashmap utilization, but possibly longer
- * insert/remove/lookup times.
+ * Results in greater hashmap utilization. Lookups (including the duplicate
+ * check on every add) search the home bucket and up to \ref hashmap.max_probe
+ * buckets after it, which grows as nodes spill out of full buckets.
  */
 #define RCSW_DS_HASHMAP_LINPROB (1 << (RCSW_MODFLAGS_SHIFT + 2))
 

@@ -582,3 +582,96 @@ CATCH_TEST_CASE("hashmap_gather exposes a degenerate hash function",
   CATCH_REQUIRE(std::fabs(stats.hash_quality - expected) < 1e-9);
   hashmap_destroy(m);
 }
+
+CATCH_TEST_CASE("hashmap: linear probing searches only max_probe buckets",
+                "[ds][hashmap]") {
+  /* Every key's home is the same bucket: 40 keys / 4 per bucket = 10 buckets */
+  constexpr size_t kBuckets = 16;
+  struct hashmap*  m =
+    make_int_map(kBuckets, 4, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  CATCH_REQUIRE(0 == m->max_probe);
+
+  int v = 1;
+  for (uint32_t k = 0; k < 40; ++k) {
+    v = static_cast<int>(k);
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(9 == m->max_probe); /* the 10th bucket is 9 past home */
+
+  /* Every key is still found, including the furthest spilled ones */
+  for (uint32_t k = 0; k < 40; ++k) {
+    auto* got = static_cast<int*>(hashmap_data_get(m, &k));
+    CATCH_REQUIRE(nullptr != got);
+    CATCH_REQUIRE(static_cast<int>(k) == *got);
+  }
+  uint32_t absent = 1000;
+  CATCH_REQUIRE(nullptr == hashmap_data_get(m, &absent));
+
+  /* Duplicates are rejected wherever the original was placed */
+  for (uint32_t k : {0U, 21U, 39U}) {
+    errno = 0;
+    CATCH_REQUIRE(ERROR == hashmap_add(m, &k, &v));
+    CATCH_REQUIRE(EEXIST == errno);
+  }
+
+  /* Removing from the home bucket and from the last spilled bucket */
+  for (uint32_t k : {0U, 39U}) {
+    CATCH_REQUIRE(OK == hashmap_remove(m, &k));
+    CATCH_REQUIRE(nullptr == hashmap_data_get(m, &k));
+  }
+  CATCH_REQUIRE(9 == m->max_probe); /* remove never lowers it */
+  for (uint32_t k = 1; k < 39; ++k) {
+    CATCH_REQUIRE(nullptr != hashmap_data_get(m, &k));
+  }
+
+  CATCH_REQUIRE(OK == hashmap_clear(m));
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: max_probe stays 0 until a node spills",
+                "[ds][hashmap]") {
+  /* Each bucket can hold every key, so nothing ever spills */
+  struct hashmap* m =
+    make_int_map(8, 8, RCSW_DS_HASHMAP_LINPROB, utils_hash_fnv1a);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < 8; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+
+  /* Without LINPROB a full bucket fails instead of spilling */
+  m = make_int_map(4, 1, 0, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  uint32_t k0 = 0;
+  uint32_t k1 = 1;
+  CATCH_REQUIRE(OK == hashmap_add(m, &k0, &v));
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &k1, &v));
+  CATCH_REQUIRE(0 == m->max_probe);
+  hashmap_destroy(m);
+}
+
+CATCH_TEST_CASE("hashmap: linear probing wraps past the last bucket",
+                "[ds][hashmap]") {
+  /* One slot per bucket and a single home: the probe visits every bucket */
+  constexpr size_t kBuckets = 8;
+  struct hashmap*  m =
+    make_int_map(kBuckets, 1, RCSW_DS_HASHMAP_LINPROB, constant_hash);
+  CATCH_REQUIRE(nullptr != m);
+  int v = 1;
+  for (uint32_t k = 0; k < kBuckets; ++k) {
+    CATCH_REQUIRE(OK == hashmap_add(m, &k, &v));
+  }
+  CATCH_REQUIRE(kBuckets - 1 == m->max_probe);
+  uint32_t extra = kBuckets;
+  errno          = 0;
+  CATCH_REQUIRE(ERROR == hashmap_add(m, &extra, &v));
+  CATCH_REQUIRE(ENOSPC == errno);
+  for (uint32_t k = 0; k < kBuckets; ++k) {
+    CATCH_REQUIRE(nullptr != hashmap_data_get(m, &k));
+  }
+  hashmap_destroy(m);
+}
