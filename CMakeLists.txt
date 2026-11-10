@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 
-project(rcsw VERSION 1.2.31)
+project(rcsw)
 
 # ##############################################################################
 # Packaging bootstrap
@@ -34,7 +34,7 @@ cpmaddpackage(
   GIT_REPOSITORY
   https://github.com/jharwell/libra.git
   VERSION
-  0.13.16
+  0.13.17
   GIT_TAG
   v0.13.17
   DOWNLOAD_ONLY
